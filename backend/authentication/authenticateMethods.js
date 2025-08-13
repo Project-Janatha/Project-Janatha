@@ -8,6 +8,9 @@
  * Methods for authentication.
  */
 
+const constantFile = require('constants');
+const userBase = constantFile.userBase;
+
 /**
  * Checks if a user is authenticated.
  * @param {JSON} req The request of the query
@@ -23,6 +26,12 @@ function isAuthenticated(req, res, next)
         res.status(403).json({"message": "User not authenticated"});
     }
 }
+/**
+ * Registers a new user.
+ * @param {JSON} req 
+ * @param {JSON} res 
+ * @returns A response with status.
+ */
 async function register(req, res)
 {
     const {username, password} = req.body;
@@ -63,6 +72,12 @@ async function register(req, res)
         return res.status(500).json({"message": "Server error during password hashing"});
     }
 }
+/**
+ * Authenticates a user.
+ * @param {JSON} req 
+ * @param {JSON} res 
+ * @returns A response with status.
+ */
 async function authenticate(req, res)
 {
     const {username, password} = req.body;
