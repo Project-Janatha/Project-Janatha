@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Tester</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md space-y-8">
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">Authentication Tester</h1>
+
+        <!-- Message Display Area -->
+        <div id="message-display" class="bg-gray-100 p-4 rounded-lg text-gray-700 text-center hidden">
+            <!-- Messages will be displayed here -->
+        </div>
+
+        <!-- Registration Section -->
+        <section class="border border-gray-200 p-6 rounded-xl shadow-sm">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4 text-center">Register</h2>
+            <form id="registerForm" class="space-y-4">
+                <div>
+                    <label for="regUsername" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input type="text" id="regUsername" name="username" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                </div>
+                <div>
+                    <label for="regPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="regPassword" name="password" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-semibold transition duration-200">
+                    Register
+                </button>
+            </form>
+        </section>
+
+        <!-- Login Section -->
+        <section class="border border-gray-200 p-6 rounded-xl shadow-sm">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4 text-center">Login</h2>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label for="loginUsername" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input type="text" id="loginUsername" name="username" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                </div>
+                <div>
+                    <label for="loginPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="loginPassword" name="password" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-semibold transition duration-200">
+                    Login
+                </button>
+            </form>
+        </section>
+
+        <!-- Logout Section -->
+        <section class="border border-gray-200 p-6 rounded-xl shadow-sm">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4 text-center">Logout</h2>
+            <form id="logoutForm" class="space-y-4">
+                <p class="text-gray-600 text-center">Click the button below to deauthenticate your session.</p>
+                <button type="submit" class="w-full bg-red-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 font-semibold transition duration-200">
+                    Logout
+                </button>
+            </form>
+        </section>
+    </div>
+
+    <script>
+        const messageDisplay = document.getElementById('message-display');
+
+        /**
+         * Displays a message to the user.
+         * @param {string} message The message to display.
+         * @param {string} type The type of message ('success', 'error').
+         */
+        function showMessage(message, type) {
+            messageDisplay.textContent = message;
+            messageDisplay.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+            if (type === 'error') {
+                messageDisplay.classList.add('bg-red-100', 'text-red-700');
+            } else {
+                messageDisplay.classList.add('bg-green-100', 'text-green-700');
+            }
+            // Automatically hide message after 5 seconds
+            setTimeout(() => {
+                messageDisplay.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Handle Registration Form Submission
+        document.getElementById('registerForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showMessage(result.message, 'success');
+                } else {
+                    showMessage(result.message || 'Registration failed.', 'error');
+                }
+            } catch (error) {
+                console.error('Error during registration:', error);
+                showMessage('An error occurred during registration.', 'error');
+            }
+        });
+
+        // Handle Login Form Submission
+        document.getElementById('loginForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch('/authenticate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showMessage(result.message, 'success');
+                } else {
+                    showMessage(result.message || 'Login failed.', 'error');
+                }
+            } catch (error) {
+                console.error('Error during login:', error);
+                showMessage('An error occurred during login.', 'error');
+            }
+        });
+
+        // Handle Logout Form Submission
+        document.getElementById('logoutForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            try {
+                const response = await fetch('/deauthenticate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showMessage(result.message, 'success');
+                } else {
+                    showMessage(result.message || 'Logout failed.', 'error');
+                }
+            } catch (error) {
+                console.error('Error during logout:', error);
+                showMessage('An error occurred during logout.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
