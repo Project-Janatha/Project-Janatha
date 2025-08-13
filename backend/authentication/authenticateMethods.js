@@ -7,9 +7,12 @@
  * Last Date Modified: August 12, 2025
  * Methods for authentication.
  */
+const Datastore = require('nedb');
 
-const constantFile = require('constants');
-const userBase = constantFile.userBase;
+//Start constants
+const usersBase = new Datastore({"filename": "users.db", "autoload":true});
+//const constantFile = require('../constants');
+
 
 /**
  * Checks if a user is authenticated.
