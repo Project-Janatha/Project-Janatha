@@ -7,7 +7,9 @@
  * Last Date Modified: August 12, 2025
  * Methods for authentication.
  */
-const Datastore = require('nedb');
+import Datastore from '@seald-io/nedb';
+import { hash, compareSync } from 'bcryptjs';
+const SALT_ROUNDS = 10;
 
 //Start constants
 const usersBase = new Datastore({"filename": "users.db", "autoload":true});
@@ -44,31 +46,32 @@ async function register(req, res)
         return res.status(400).json({"message": "Username and password are required."});
     }
     try{
-        usersBase.findOne({"username": username}, (err, existing) =>
+        usersBase.findOne({"username": username}, async (err, existing) =>
         {
             if(err)
             {
+                console.log(err);
                 return res.status(500).json({"message": "Internal server error"});
             }
             if(existing)
             {
                 return res.status(409).json({"message": "User already exists"});
             }
-        }
-    );
-    let passwordHash = await cryptography.hash(password, SALT_ROUNDS);
-    const newUser = {'username': username, 'passwordHash': password};
-    usersBase.insert(newUser, (err, user) =>
+            let passwordHash = await hash(password, SALT_ROUNDS);
+            const newUser = {'username': username, 'passwordHash': passwordHash};
+            usersBase.insert(newUser, (err, user) =>
     {
         if(err)
         {
+            console.log(err);
             return res.status(500).json({"message": "Internal server error"});
         }
-        return res.status(201).json(
-            {"message": "User created successfully"}
-        );
+        return res.status(201).json({"message": "User created successfully"});
     })
 
+        }
+    );
+    
     }catch(err)
     {
         console.error("Error: Password hashing ", err);
@@ -92,25 +95,27 @@ async function authenticate(req, res)
     usersBase.findOne({"username": username}, (err, user) => {
         if(err)
         {
+            console.log(err);
             return res.status(500).json({"message": "Internal server error during authentication"});
         }
         if(!user)
         {
             return res.status(401).json({"message": "User does not exist"});
         }
-        if(cryptography.compareSync(password, user.passwordHash))
+        if(!compareSync(password, user.passwordHash))
         {
             return res.status(401).json({"message": "Invalid credentials"});
         }
         req.session.userId = user._id;
         req.session.username = user.username;
-        res.status(200).json({"message": "Authentication successful!"});
+        return res.status(200).json({"message": "Authentication successful!"});
     });
     
 }
 async function deauthenticate(req, res)
 {
     req.session.destroy((err) => {
+        console.log(err);
         return (err) ? res.status(500).json({"message": "Internal server error in logout"}) : res.status(200).json({"message": "Deauthentication successful!"});
     });
 }
@@ -118,4 +123,4 @@ async function deauthenticate(req, res)
 
 
 
-module.exports = {isAuthenticated, register, authenticate, deauthenticate};
+export default {isAuthenticated, register, authenticate, deauthenticate};

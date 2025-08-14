@@ -11,18 +11,18 @@
 //Imports
 console.log("Imports");
 console.log("Starting express");
-const express = require('express');
-console.log("Express")
-const Datastore = require('nedb');
-console.log("nedb")
-const cryptography = require('bcryptjs');
-console.log("Bcrypt")
-const session = require('express-session');
-console.log("Session")
-const fs = require('fs');
+import express from 'express';
+console.log("Express");
+import Datastore from '@seald-io/nedb';
+console.log("nedb");
+import cryptography from 'bcryptjs';
+console.log("Bcrypt");
+import session from 'express-session';
+console.log("Session");
+import fs from 'fs';
 console.log("Fs");
 console.log("Custom imports");
-const auth = require('./authentication/authenticateMethods');
+import auth from './authentication/authenticateMethods.js';
 console.log("Authenticate meth");
 
 
@@ -53,7 +53,8 @@ app.use(session({
 console.log("Entering definitions");
 app.get("/", (req, res) => {
     console.log("Sending Tester!");
-    return res.status(200).send(fs.readFileSync("./testerIndex.html"));
+    res.set("Content-Type", "text/html");
+    return res.status(200).send(fs.readFileSync("./backend/testerIndex.html"));
 });
 
 app.post("/register", async (req, res) => {
