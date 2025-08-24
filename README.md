@@ -1,4 +1,4 @@
-# Project-Janatha
+## Project-Janatha
 The official project to connect the CHYKs of Chinmaya Mission West!
 
 May Gurudev's and Lord Krishna's grace be with us.
