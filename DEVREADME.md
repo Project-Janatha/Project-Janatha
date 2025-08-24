@@ -1,9 +1,21 @@
-###Conventions:
-**Flags**
+### Conventions:
+
+## Flags
 Use in single line comments. //@[FLAG]
 *DATABASEPH*: This line is a line that puts items in a test database. Change to production when ready.
+*OSSPECIFIC*: This line is specific to a certain operating system (iOS, Android, or Web).
 
-# Headers
+## Merge Strategies
+*If two people are working on the same branch:*
+```
+git config pull.rebase false
+git pull origin [BRANCH]
+```
+
+*If two people are working on different branches:*
+Start a PR. A PR **must be approved by a different developer** than the one who initiates it. That developer must show in their approval or denial message why they took the action they did. 
+
+## Headers
 Sample File Header: 
 ```
 /**
