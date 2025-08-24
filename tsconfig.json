@@ -1,4 +1,14 @@
 {
-  "compilerOptions": {},
+  "compilerOptions": {
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "tailwind.config": [
+        "./tailwind.config.js"
+      ],
+      "tslib": ["node_modules/tslib"]
+    },
+  },
   "extends": "expo/tsconfig.base"
 }
