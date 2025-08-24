@@ -40,3 +40,6 @@ Sample File Header:
  ```
 
  **Please ensure your method headers and file headers are compliant before pushing.**
+
+ ## Imports
+ **Ensure all imports are done with ES syntax.**
