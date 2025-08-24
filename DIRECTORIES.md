@@ -17,3 +17,10 @@ backend/authentication/authenticateMethods.js: Methods for authentication
     *register(req, res): Registers a new user.*
     *authenticate(req, res): Authenticates a user.* 
     *deauthenticate(req, res): Deauthenticates a user.*
+
+**Frontend:**
+frontend/react-app: React Native application
+    react-app/app: main app components
+        app/_layouts.tsx: sets UI provider for application
+            *@EXPORT RootLayout: sets colors and fonts for ThemeProvider.*
+        app/
