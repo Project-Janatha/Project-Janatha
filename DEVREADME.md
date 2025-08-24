@@ -1,5 +1,5 @@
-## Conventions:
-# Flags
+###Conventions:
+**Flags**
 Use in single line comments. //@[FLAG]
 *DATABASEPH*: This line is a line that puts items in a test database. Change to production when ready.
 
@@ -28,4 +28,3 @@ Sample File Header:
  ```
 
  **Please ensure your method headers and file headers are compliant before pushing.**
-
