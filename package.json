@@ -1,4 +1,13 @@
 {
   "name": "Project-Janatha",
-  "packageManager": "yarn@4.5.0"
+  "packageManager": "yarn@4.5.0",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest", 
+    "build": "webpack"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
 }
