@@ -11,6 +11,7 @@
     "jest": "^29.0.0"
   },
   "dependencies": {
-    "expo": "^53.0.20"
+    "expo": "^53.0.20",
+    "expo-router": "^5.1.4"
   }
 }
