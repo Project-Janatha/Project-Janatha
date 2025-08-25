@@ -9,5 +9,8 @@
   },
   "devDependencies": {
     "jest": "^29.0.0"
+  },
+  "dependencies": {
+    "expo": "^53.0.20"
   }
 }
