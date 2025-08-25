@@ -42,7 +42,7 @@
     "turbo": "^1.13.4",
     "typescript": "~5.8.3",
     "ultra-runner": "^3.10.5",
-    "vitest": "^2.1.1"
+    "vitest": "^3.2.4"
   },
   "packageManager": "yarn@4.5.0",
   "engines": {
