@@ -24,3 +24,5 @@ frontend/react-app: React Native application
         app/_layouts.tsx: sets UI provider for application
             *@EXPORT RootLayout: sets colors and fonts for ThemeProvider.*
         app/
+
+TODO: Update directories with new file structure
