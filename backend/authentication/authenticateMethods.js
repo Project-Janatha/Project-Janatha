@@ -10,6 +10,9 @@
 import Datastore from '@seald-io/nedb';
 import { hash, compareSync } from 'bcryptjs';
 import constants from '../constants.js';
+import user from '../profiles/user.js';
+import center from '../profiles/center.js';
+import location from '../location/location.js';
 const SALT_ROUNDS = 10;
 
 //Start constants
@@ -68,7 +71,8 @@ async function register(req, res)
                 return res.status(409).json({"message": "User already exists"});
             }
             let passwordHash = await hash(password, SALT_ROUNDS);
-            const newUser = {'username': username, 'passwordHash': passwordHash};
+            let userObject = new user.User(username, true);
+            const newUser = {'username': username, 'passwordHash': passwordHash, 'userObject': userObject.toJSON()};
             usersBase.insert(newUser, (err, user) =>
     {
         if(err)
@@ -151,8 +155,136 @@ function checkUserExistence(username)
             }
         });
 }
+/**
+ * Constructs a User object by username.
+ * @param {string} username The user's username.
+ * @returns {user.User | null} If the user exists, returns a user constructed with their data. Else, returns null.
+ */
+function getUserByUsername(username)
+{
+    if(checkUserExistence(username))
+    {
+        let constructedUser = user.User(username);
+        usersBase.findOne({'username': username}, async (err, existing) => {
+            if(err)
+            {
+                return null;
+            }else{
+                constructedUser.buildFromJSON(existing.userObject);
+            }
+        });
+        return constructedUser;
+    }
+    return null;
+}
+/**
+ * Updates a user's data in the database.
+ * @param {string} username The username of the user to update the data of.
+ * @param {user.User} user The user to update the user data with.
+ * @returns {boolean} A boolean representing if the operation was successful.
+ */
+function updateUserData(username, user)
+{
+    let flag = false;
+    usersBase.update({'username': username}, {$set: {'userObject': user.toJSON()}}, {}, (err, numReplaced) => {
+        flag = !(err || !numReplaced);
+    });
+    return flag;
+}
+/**
+ * Checks if a centerID exists in the database. 
+ * @param {number} centerID The Center ID to check.
+ * @returns {boolean | null} A boolean representing if the centerID exists, or null for any errors.
+ */
+function centerIDExists(centerID)
+{
+    usersBase.findOne({'centerID': centerID}, async (err, center) => {
+        if(err)
+        {
+            return null;
+        }
+        if(center)
+        {
+            return true;
+        }
+        
+    });
+    return false;
+}
+/**
+ * Gets a Center by centerID.
+ * @param {number} centerID The ID of the center to get
+ * @returns {center.Center | null} A constructed Center object, or null if an error occurred/the center does not exist.
+ */
+function getCenterByCenterID(centerID)
+{
+    if(centerIDExists(centerID))
+    {
+        usersBase.findOne({'centerID': centerID}, async (err, centered) => {
+            if(err)
+            {
+                return null;
+            }
+            if(center)
+            {
+                let c = new center.Center(new location.Location(0,0), 'Hello World!');
+                return c.buildFromJSON(centered.centerObject);
+            }
+        })
+    }
+    return null;
+}
+/**
+ * Stores a Center by centerID.
+ * @param {number} centerID The generated centerID of the center.
+ * @param {center.Center} centerObject The object representing the center.
+ * @returns {boolean} A boolean representing the success or failure of the operation.
+ */
+function storeCenter(centerID, centerObject)
+{
+    if(centerObject.centerID != centerID || centerIDExists(centerID))
+    {
+        return false;
+    }
+    let center = {'centerID': centerID, 'centerObject': centerObject.toJSON()};
+    usersBase.insert(center, async (err, c) => {
+        if(err)
+        {
+            return false;
+        }
+        if(c)
+        {
+            return true;
+        }
+    });
+    return false;
+}
+/**
+ * Updates a center in the database.
+ * @param {number} centerID The center ID to update.
+ * @param {center.Center} centerObject The Center to update data with.
+ * @returns {boolean} A boolean representing the success or failure of the operation.
+ */
+function updateCenter(centerID, centerObject)
+{
+    if(centerObject.centerID != centerID)
+    {
+        return false;
+    }
+    usersBase.update({'centerID': centerID}, {$set: {'centerObject': centerObject.toJSON()}}, {}, (err, numUpdated) => {
+        if(err)
+        {
+            return false;
+        }
+        if(numUpdated)
+        {
+            return true;
+        }
+    });
+    return false;
+}
 
 
 
 
-export default {isAuthenticated, register, authenticate, deauthenticate, checkUserExistence};
+export default {isAuthenticated, register, authenticate, deauthenticate, checkUserExistence, getUserByUsername, updateUserData, centerIDExists, getCenterByCenterID, storeCenter, updateCenter};

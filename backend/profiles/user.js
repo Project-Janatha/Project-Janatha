@@ -1,5 +1,5 @@
 /**
- * userProfile.js
+ * user.js
  * 
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
  * Author: Sahanav Sai Ramesh
@@ -19,10 +19,11 @@ class User
  * Creates a user provided a username.
  * 
  * @param {string} username The user's username, as stored in users.db.
+ * @param {boolean} isCalledAtRegistration A boolean representing if this method is called at registration.
  */
-  constructor(username)
+  constructor(username, isCalledAtRegistration)
   {
-    if(auth.checkUserExistence(username))
+    if(isCalledAtRegistration || auth.checkUserExistence(username))
     {
       this.username = username;
       this.center = -1;
@@ -116,4 +117,23 @@ class User
   {
     return JSON.stringify(this.toJSON());
   }
+  /**
+   * Builds this user from JSON.
+   * @param {JSON} data The JSON from which to build the user.
+   */
+  buildFromJSON(data)
+  {
+    if(data.exists)
+    {
+      this.username = data.username;
+      this.center = data.center;
+      this.points = data.points;
+      this.isVerified = data.isVerified;
+      this.verificationLevel = data.verificationLevel;
+      this.exists = data.exists;
+      this.isActive = data.isActive;
+    }
+  }
 }
+
+export default {User};
