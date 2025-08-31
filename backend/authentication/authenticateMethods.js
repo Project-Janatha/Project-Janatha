@@ -9,6 +9,7 @@
  */
 import Datastore from '@seald-io/nedb';
 import { hash, compareSync } from 'bcryptjs';
+import constants from '../constants.js';
 const SALT_ROUNDS = 10;
 
 //Start constants
@@ -17,7 +18,7 @@ const usersBase = new Datastore({"filename": "users.db", "autoload":true});
 
 
 /**
- * Checks if a user is authenticated.
+ * Checks if a user is authenticated. Acts as middleware.
  * @param {JSON} req The request of the query
  * @param {JSON} res The result of the query.
  * @param {function} next The function to call next.
@@ -31,6 +32,15 @@ function isAuthenticated(req, res, next)
         res.status(403).json({"message": "User not authenticated"});
     }
 }
+/**
+ * Checks if user is admin.
+ * @param {JSON} req The request
+ * @returns {boolean} A boolean representing if the user is admin or not.
+ */
+function isUserAdmin(req) {
+    return req.session.userId && req.session.username && req.session.username === constants.ADMIN_NAME;
+}
+
 /**
  * Registers a new user.
  * @param {JSON} req 
@@ -119,8 +129,30 @@ async function deauthenticate(req, res)
         return (err) ? res.status(500).json({"message": "Internal server error in logout"}) : res.status(200).json({"message": "Deauthentication successful!"});
     });
 }
+/**
+ * Checks user existence.
+ * @param {string} username 
+ * @returns {boolean} A boolean representing the state of the user's existence.
+ */
+function checkUserExistence(username)
+{
+    usersBase.findOne({"username": username}, async (err, existing) =>
+        {
+            if(err)
+            {
+                console.log(err);
+                return res.status(500).json({"message": "Internal server error"});
+            }
+            if(existing)
+            {
+                return true; //existing is not a boolean, so if condition is used
+            }else{
+                return false; 
+            }
+        });
+}
 
 
 
 
-export default {isAuthenticated, register, authenticate, deauthenticate};
+export default {isAuthenticated, register, authenticate, deauthenticate, checkUserExistence};
