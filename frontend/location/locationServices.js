@@ -31,3 +31,5 @@ async function getCurrentPosition()
         return [];
     }
 }
+
+export {getLocationAccess, getCurrentPosition};
