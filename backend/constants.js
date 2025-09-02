@@ -13,7 +13,9 @@
 import Datastore from 'nedb';
 
 //Start constants
+//Databases
 const usersBase = new Datastore({"filename": "users.db", "autoload":true});
+const eventsBase = new Datastore({'filename': 'events.db', 'autoload': true});
 
 //Admin constants
 const ADMIN_NAME = "Brahman";
@@ -29,7 +31,13 @@ const GLOBAL_HEAD = 1000008;
 //Center-Based constants
 const CENTER_ID_VARIABILITY = 9108100899;
 
+//Event-Based constants
+const EVENT_ID_VARIABILITY = 910810089910081000008;
+const TIER_DESCALE = 1081008;
+//Event Categories
+const SATSANG = 91;
+const BHIKSHA = 92;
 
 
 //Export
-export default {usersBase, ADMIN_NAME, NORMAL_USER, SEVAK, SENIOR_SEVAK, BRAHMACHARI, SWAMI, GLOBAL_HEAD, CENTER_ID_VARIABILITY};
+export default {usersBase, eventsBase, ADMIN_NAME, NORMAL_USER, SEVAK, SENIOR_SEVAK, BRAHMACHARI, SWAMI, GLOBAL_HEAD, CENTER_ID_VARIABILITY, EVENT_ID_VARIABILITY, TIER_DESCALE, SATSANG, BHIKSHA};
