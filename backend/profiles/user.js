@@ -4,7 +4,7 @@
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
  * Author: Sahanav Sai Ramesh
  * Date Authored: August 30, 2025
- * Last Date Modified: August 30, 2025
+ * Last Date Modified: September 2, 2025
  * All the methods concerning a user profile.
  */
 import auth from '../authentication/authenticateMethods.js';
@@ -21,7 +21,7 @@ class User
  * @param {string} username The user's username, as stored in users.db.
  * @param {boolean} isCalledAtRegistration A boolean representing if this method is called at registration.
  */
-  constructor(username, isCalledAtRegistration)
+  constructor(username, isCalledAtRegistration = false)
   {
     if(isCalledAtRegistration || auth.checkUserExistence(username))
     {
@@ -32,6 +32,7 @@ class User
       this.verificationLevel = constants.NORMAL_USER;
       this.exists = true;
       this.isActive = false;
+      this.id = '';
     }else{
       console.error('User does not exist!');
       this.exists = false;
@@ -105,7 +106,8 @@ class User
       "isVerified": this.isVerified,
       "verificationLevel": this.verificationLevel,
       "exists": this.exists,
-      "isActive": this.isActive
+      "isActive": this.isActive,
+      'id': this.id
     };
   }
   /**
@@ -132,7 +134,29 @@ class User
       this.verificationLevel = data.verificationLevel;
       this.exists = data.exists;
       this.isActive = data.isActive;
+      this.id = data.id;
     }
+  }
+  /**
+   * Retrieves the unique user ID from users.db and sets this User's ID to that.
+   * NOTE: This method may have to be changed with the classic variability method used in Center and Event based on how testing and deployment flows.
+   * @returns {boolean | string} A boolean representing the success of this operation, or the ID fetched.
+   */
+  retrieveID()
+  {
+    constants.usersBase.findOne({username: this.username}, (err, doc) =>
+    {
+      if(err)
+      {
+        return false;
+      }
+      if(doc)
+      {
+        this.id = doc._id;
+        return this.id;
+      }
+    });
+    return false;
   }
 }
 

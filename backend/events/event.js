@@ -10,6 +10,8 @@
 import location from '../location/location.js';
 import center from '../profiles/center.js';
 import user from '../profiles/user.js';
+import constants from '../constants.js';
+import store from 'eventStorage.js';
 /**
  * Represents an Event.
  */
@@ -27,7 +29,7 @@ class Event{
     this.date = date;
     this.center = cen;
     this.endorsers = []; //An array of user.Users containing all the event endorsers. Must have status of greater than 
-    this.id = 0; //A number that represents the unique ID of this event.
+    this.id = 0; //TODO make a method for this. A number that represents the unique ID of this event.
     this.tier = 0; //The calculated tier of the event.
     this.peopleAttending = 0; //A number that represents how many people are going to the event.
     this.description = "";
@@ -71,5 +73,77 @@ class Event{
     tier /= constants.TIER_DESCALE;
     
   }
+  /**
+   * Sets the description of this Event.
+   * @param {string} desc The description to set.
+   */
+  setDescription(desc)
+  {
+    this.description = desc;
+  }
+  /**
+   * Turns this Event object into JSON.
+   * 
+   * @returns {JSON} This Event as JSON.
+   */
+  toJSON()
+  {
+    let endorserJSON = [];
+    for(i in this.endorsers)
+    {
+      endorserJSON += this.endorsers[i].toJSON();
+    }
+    return {
+      'location': this.location.toJSON(),
+      'date': this.date.toISOString(),
+      'center': this.center.toJSON(),
+      'endorsers': endorserJSON,
+      'id': this.id,
+      'tier': this.tier,
+      'peopleAttending': this.peopleAttending,
+      'description': this.description
+    };
+  }
+/**
+ * Builds this object from JSON data.
+ * @param {JSON} data The data from which the Event should be built.
+ */
+  buildFromJSON(data)
+  {
+    let loc = new location.Location(0,0);
+    loc.buildFromJSON(data.location);
+    this.location = loc;
+    this.date = new Date(data.date);
+    let cen = new center.Center(loc, 'blank');
+    cen.buildFromJSON(data.center);
+    let endorserArr = [];
+    let b = new user.User(null)
+    for(i in data.endorsers)
+    {
+      b.buildFromJSON(data.endorsers[i]);
+      endorserArr.push(b);
+      b = new user.User(null);
+    }
+    this.endorsers = endorserArr;
+    this.id = parseInt(data.id);
+    this.tier = parseInt(data.tier);
+    this.peopleAttending = parseInt(data.peopleAttending);
+    this.description = data.description;
+  }
+  /**
+   * Assigns a new unique ID to this object.
+   * 
+   * @returns The ID assigned.
+   */
+  assignID()
+  {
+    let me = Math.round(Math.random()*constants.EVENT_ID_VARIABILITY);
+    while(!store.checkEventUniqueness(id))
+    {
+      me = Math.round(Math.random()*constants.EVENT_ID_VARIABILITY);
+    }
+    this.id = me;
+    return me;
+  }
 }
-export {Event};
+export default {Event};
