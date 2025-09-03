@@ -2,6 +2,10 @@ import { Link, Tabs } from 'expo-router'
 import { Button, useTheme } from 'tamagui'
 import { Home, Compass } from '@tamagui/lucide-icons'
 
+/**
+ * TabLayout Component - The main layout for the tab-based navigation.
+ * @return {JSX.Element} A TabLayout component that sets up tab navigation with theming.
+ */
 export default function TabLayout() {
   const theme = useTheme()
 

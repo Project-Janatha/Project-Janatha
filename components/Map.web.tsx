@@ -36,6 +36,11 @@ mapboxgl.accessToken = "pk.eyJ1IjoicHJvamVjdC1qYW5hdGhhIiwiYSI6ImNtZjNkencybzBkY
 //   }
 // });
 
+/**
+ * Map Component
+ * @param {any} props - Props passed to the Map component.
+ * @return {JSX.Element} A Map component that displays a map using mapboxgl.
+ */
 export default function Map(props: any) {
   const mapContainer = useRef(null);
   const map = useRef<mapboxgl.Map | null>(null);

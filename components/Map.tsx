@@ -13,6 +13,7 @@
  */
 import MapView from "react-native-maps";
 import { StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
 import {getCurrentPosition} from 'frontend/location/locationServices';
 
 const styles = StyleSheet.create({
@@ -25,16 +26,41 @@ const styles = StyleSheet.create({
   },
 });
 
+ /**
+ * Map Component
+ * @return {JSX.Element} A Map component that displays a map using react-native-maps.
+ */
 export default function Map(props: any) {
-  return (<MapView    
-        style={styles.map} 
-        initialRegion={getCurrentPosition()}
-        showsUserLocation={true}
-        showsMyLocationButton={true}
-        showsCompass={true}
-        scrollEnabled={true}
-        zoomEnabled={true}
-        pitchEnabled={true}
-        rotateEnabled={true}>
-      </MapView>)
+  const [region, setRegion] = useState<any>(null);
+
+  useEffect(() => {
+    getCurrentPosition().then((position: any) => {
+      // Ensure position has latitude and longitude
+      setRegion({
+        latitude: position.latitude,
+        longitude: position.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
+    });
+  }, []);
+
+  return (
+    <MapView
+      style={styles.map}
+      initialRegion={region || {
+        latitude: 37.78825,
+        longitude: -122.4324,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      }}
+      showsUserLocation={true}
+      showsMyLocationButton={true}
+      showsCompass={true}
+      scrollEnabled={true}
+      zoomEnabled={true}
+      pitchEnabled={true}
+      rotateEnabled={true}
+    />
+  );
 };

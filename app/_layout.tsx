@@ -9,6 +9,7 @@ import { SplashScreen, Stack } from 'expo-router'
 import { Provider } from 'components/Provider'
 import { useTheme } from 'tamagui'
 
+
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
@@ -22,6 +23,10 @@ export const unstable_settings = {
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync()
 
+/**
+ * RootLayout Component
+ * @return {JSX.Element} A Map component that displays a map using mapboxgl.
+ */
 export default function RootLayout() {
   const [interLoaded, interError] = useFonts({
     Inter: require('@tamagui/font-inter/otf/Inter-Medium.otf'),

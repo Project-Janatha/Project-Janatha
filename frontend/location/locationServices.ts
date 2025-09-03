@@ -2,7 +2,7 @@
  * locationServices.js
  * 
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
- * Author: Sahanav Sai Ramesh, Abhiram Ramachandran
+ * Authors: Sahanav Sai Ramesh, Abhiram Ramachandran
  * Date Authored: August 27, 2025
  * Last Date Modified: September 3, 2025
  * Frontend geolocation methods in Expo.
