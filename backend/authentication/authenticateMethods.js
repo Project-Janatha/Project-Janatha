@@ -4,7 +4,7 @@
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
  * Author: Sahanav Sai Ramesh
  * Date Authored: August 12, 2025
- * Last Date Modified: August 12, 2025
+ * Last Date Modified: August 30, 2025
  * Methods for authentication.
  */
 import Datastore from '@seald-io/nedb';
@@ -287,4 +287,4 @@ function updateCenter(centerID, centerObject)
 
 
 
-export default {isAuthenticated, register, authenticate, deauthenticate, checkUserExistence, getUserByUsername, updateUserData, centerIDExists, getCenterByCenterID, storeCenter, updateCenter};
+export default {isAuthenticated, register, authenticate, deauthenticate, checkUserExistence, getUserByUsername, updateUserData, centerIDExists, getCenterByCenterID, storeCenter, updateCenter, isUserAdmin};
