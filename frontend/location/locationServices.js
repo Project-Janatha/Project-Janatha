@@ -2,13 +2,14 @@
  * locationServices.js
  * 
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
- * Author: Sahanav Sai Ramesh
+ * Author: Sahanav Sai Ramesh, Abhiram Ramachandran
  * Date Authored: August 27, 2025
- * Last Date Modified: August 27, 2025
+ * Last Date Modified: September 3, 2025
  * Frontend geolocation methods in Expo.
  */
 
 import * as Location from 'expo-location'
+import { Platform } from 'react-native';
 /**
  * Gets location access.
  * @return {boolean} A boolean representing if location access is present or not.
@@ -24,11 +25,26 @@ async function getLocationAccess()
  */
 async function getCurrentPosition()
 {
-    if(getLocationAccess()){
-        let loc = await Location.getCurrentPositionAsync();
-        return [loc.coords.latitude, loc.coords.longitude];
-    }else{
-        return [];
+    // TODO: figure out location services for web
+    if (Platform.OS === 'web') {
+      // Use browser's Geolocation API
+      return new Promise((resolve) => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => resolve([position.coords.latitude, position.coords.longitude]),
+                    () => resolve(defaultLocation)
+                );
+            } else {
+                resolve(defaultLocation);
+            }
+        });
+    } else {
+        if(getLocationAccess()){
+            let loc = await Location.getCurrentPositionAsync();
+            return [loc.coords.latitude, loc.coords.longitude];
+        }else{
+            return [];
+        }
     }
 }
 
