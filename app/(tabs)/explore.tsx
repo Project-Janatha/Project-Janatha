@@ -1,8 +1,12 @@
-import { Text} from 'tamagui'
-import Map from 'components/Map';
+import { Button, Input, ZStack } from 'tamagui'
+import { Map, SearchBar } from 'components';
+import { Search } from '@tamagui/lucide-icons';
 
 export default function ExploreScreen() {
   return (
-    <Map />
+    <ZStack flex={1}>
+      <Map />
+      <SearchBar />
+    </ZStack>
   )
 }
