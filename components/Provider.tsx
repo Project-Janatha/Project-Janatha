@@ -4,6 +4,12 @@ import { ToastProvider, ToastViewport } from '@tamagui/toast'
 import { CurrentToast } from './CurrentToast'
 import config from '../tamagui.config'
 
+//TODO: Describe this component
+/**
+ * Provider Component
+ * @param {children, ...rest} config - Props passed to the TamaguiProvider component.
+ * @return {JSX.Element} A Provider component that wraps the application with Tamagui and Toast providers.
+ */
 export function Provider({ children, ...rest }: Omit<TamaguiProviderProps, 'config'>) {
   const colorScheme = useColorScheme()
 

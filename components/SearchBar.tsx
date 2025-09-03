@@ -11,13 +11,20 @@
  * Dependencies:
  * - @rnmapbox/maps: For rendering maps and handling map-related functionalities.
  */
-import { Input, Button } from 'tamagui';
+import { Input, Button, View } from 'tamagui';
 import { Search } from '@tamagui/lucide-icons';
 
+/**
+ * SearchBar Component
+ * @param {any} props - Props passed to the Map component.
+ * @return {JSX.Element} A Map component that displays a map using mapboxgl.
+ */
 export default function SearchBar(props: any) {
   return (
-  <>
+  <View 
+    position="absolute"
+    height="$1">
     <Input placeholder="Type here" />
-  </>
+  </View>
   )
 }

@@ -6,7 +6,7 @@
  * Date Authored: September 2, 2025
  * Last Date Modified: September 2, 2025
  * 
- * This file exports a all components.
+ * This file exports all components.
  * 
  */
 
