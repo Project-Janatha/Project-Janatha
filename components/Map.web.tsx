@@ -1,5 +1,5 @@
 /**
- * Map.tsx
+ * Map.web.tsx
  * 
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
  * Author: Abhiram Ramachandran
@@ -45,7 +45,7 @@ export default function Map(props: any) {
       map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/streets-v11", // Or your custom style
-      center: [0,0], // Starting position [lng, lat]
+      center: [0,0], // TODO: replace with getCurrentPosition()
       zoom: 9 // Starting zoom
       })
 }, []);

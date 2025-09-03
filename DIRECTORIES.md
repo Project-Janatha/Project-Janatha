@@ -19,10 +19,9 @@ backend/authentication/authenticateMethods.js: Methods for authentication
     *deauthenticate(req, res): Deauthenticates a user.*
 
 **Frontend:**
-frontend/react-app: React Native application
-    react-app/app: main app components
-        app/_layouts.tsx: sets UI provider for application
-            *@EXPORT RootLayout: sets colors and fonts for ThemeProvider.*
-        app/
+frontend/location: Location services
+    location/locationServices.js: gets current position upon asking for permission
+        *@EXPORT getCurrentPosition(): returns array containing user lat and lng*
 
 TODO: Update directories with new file structure
+TODO: Find good file tree extension to make this easier
