@@ -10,6 +10,8 @@
 
 import * as Location from 'expo-location'
 import { Platform } from 'react-native';
+
+const defaultLocation: [number, number] = [32.17654435811957, 76.3594513732331]; // Default loc - Saandeepany
 /**
  * Gets location access.
  * @return {boolean} A boolean representing if location access is present or not.
@@ -31,7 +33,7 @@ async function getCurrentPosition()
       return new Promise((resolve) => {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (position) => resolve([position.coords.latitude, position.coords.longitude]),
+                    (position) => resolve([position.coords.longitude, position.coords.latitude]),
                     () => resolve(defaultLocation)
                 );
             } else {
@@ -39,7 +41,7 @@ async function getCurrentPosition()
             }
         });
     } else {
-        if(getLocationAccess()){
+        if(await getLocationAccess()){
             let loc = await Location.getCurrentPositionAsync();
             return [loc.coords.latitude, loc.coords.longitude];
         }else{
