@@ -53,7 +53,7 @@ export default function Map(props: any) {
       });
 
       map.current.addControl(
-        new mapboxgl.GeolocagteControl(
+        new mapboxgl.GeolocateControl(
           {
             trackUserLocation: true,
             showUserHeading: true
