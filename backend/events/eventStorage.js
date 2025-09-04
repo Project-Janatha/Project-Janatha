@@ -5,7 +5,7 @@
  * 
  * Author: Sahanav Sai Ramesh
  * Date Authored: 9/2/2025
- * Last Date Modified: 9/2/2025
+ * Last Date Modified: 9/3/2025
  * 
  * Storage of the Event structure in databases.
  */
@@ -85,4 +85,22 @@ function checkEventUniqueness(id)
   });
   return true;
 }
-export default {checkEventUniqueness, updateEvent, storeEvent};
+/**
+ * Gets an event by the event ID.
+ * @param {string} id The ID of the event to get.
+ * @returns {event.Event | null} The resulting event or null if no event was found.
+ */
+function getEventByID(id)
+{
+  constants.eventsBase.findOne({'eventID': id}, (err, doc) => {
+    if(err)
+    {
+      return null;
+    }
+    if(doc){
+      return doc;
+    }
+  });
+  return null;
+}
+export default {checkEventUniqueness, updateEvent, storeEvent, getEventByID};
