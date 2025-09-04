@@ -4,7 +4,7 @@
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
  * Author: Sahanav Sai Ramesh
  * Date Authored: August 30, 2025
- * Last Date Modified: August 30, 2025
+ * Last Date Modified: September 3, 2025
  * All the methods concerning an event.
  */
 import location from '../location/location.js';
@@ -12,6 +12,7 @@ import center from '../profiles/center.js';
 import user from '../profiles/user.js';
 import constants from '../constants.js';
 import store from 'eventStorage.js';
+import auth from '../authentication/authenticateMethods.js';
 /**
  * Represents an Event.
  */
@@ -144,6 +145,37 @@ class Event{
     }
     this.id = me;
     return me;
+  }
+  /**
+   * Adds an event to the user.
+   * @param {string} uname The username of the user to add.
+   * @returns {user.User | null} The User with the event added
+   */
+  addSelfToUserFromDB(uname)
+  {
+    let u = auth.getUserByUsername(uname);
+    if(u && !(this.id in u.events))
+    {
+        u.events.push(this.id);
+        this.peopleAttending++;
+        return u;
+    }
+    return null;
+  }
+    /**
+   * Adds an event to the user.
+   * @param {user.User} u The User to add.
+   * @returns {user.User | null} The User with the event added
+   */
+  addSelfToUser(u)
+  {
+    if(u && !(this.id in u.events))
+    {
+      u.events.push(this.id);
+      this.peopleAttending++;
+      return u;
+    }
+    return null;
   }
 }
 export default {Event};

@@ -4,11 +4,12 @@
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
  * Author: Sahanav Sai Ramesh
  * Date Authored: August 30, 2025
- * Last Date Modified: September 2, 2025
+ * Last Date Modified: September 3, 2025
  * All the methods concerning a user profile.
  */
 import auth from '../authentication/authenticateMethods.js';
 import constants from '../constants.js';
+import event from '../events/event.js';
 
 /**
  * Represents a user of the app.
@@ -33,6 +34,7 @@ class User
       this.exists = true;
       this.isActive = false;
       this.id = '';
+      this.events = [];
     }else{
       console.error('User does not exist!');
       this.exists = false;
@@ -99,6 +101,7 @@ class User
    */
   toJSON()
   {
+    
     return {
       "username": this.username,
       "center": this.center,
@@ -107,7 +110,8 @@ class User
       "verificationLevel": this.verificationLevel,
       "exists": this.exists,
       "isActive": this.isActive,
-      'id': this.id
+      'id': this.id,
+      'events': this.events
     };
   }
   /**
@@ -135,6 +139,7 @@ class User
       this.exists = data.exists;
       this.isActive = data.isActive;
       this.id = data.id;
+      this.events = data.events;
     }
   }
   /**
@@ -159,5 +164,6 @@ class User
     return false;
   }
 }
+
 
 export default {User};
