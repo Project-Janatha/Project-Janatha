@@ -23,7 +23,7 @@ export const UserContext = createContext({
   logout: () => {},
 });
 
-export function UserProvider({ children }) {
+export default function UserProvider({ children }) {
   const [user, setUser] = useState(null);
 
   const login = (userData) => {
