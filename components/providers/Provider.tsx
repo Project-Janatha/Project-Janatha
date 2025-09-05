@@ -11,7 +11,7 @@ import config from '../../tamagui.config'
  * @param {Omit<TamaguiProviderProps, 'config'> } rest - Other props passed to the TamaguiProvider component.
  * @return {JSX.Element} A Provider component that wraps the application with Tamagui and Toast providers.
  */
-export function Provider({ children, ...rest }: Omit<TamaguiProviderProps, 'config'>) {
+export default function Provider({ children, ...rest }: Omit<TamaguiProviderProps, 'config'>) {
   const colorScheme = useColorScheme()
 
   return (
