@@ -10,6 +10,7 @@ import { UserContext } from 'components';
  */
 export default function HomeScreen() {
   const { user } = useContext(UserContext);
+  // TODO: Fix user context implementation
   return (
     <YStack flex={1} items="center" gap="$8" px="$10" pt="$5" bg="$background">
       <H2>Hari Om, {/*{user?.username ?? "guest"}*/}!</H2>

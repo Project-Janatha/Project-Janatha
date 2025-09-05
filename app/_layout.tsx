@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
 import { useFonts } from 'expo-font'
 import { SplashScreen, Stack } from 'expo-router'
-import { Provider } from 'components/Provider'
+import { Provider } from 'components/providers/Providers/Provider'
 import { useTheme } from 'tamagui'
 
 
