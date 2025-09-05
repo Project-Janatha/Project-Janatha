@@ -7,7 +7,8 @@ import config from '../tamagui.config'
 //TODO: Describe this component
 /**
  * Provider Component
- * @param {children, ...rest} config - Props passed to the TamaguiProvider component.
+ * @param {Omit<TamaguiProviderProps, 'config'> } children - Children props passed to the TamaguiProvider component.
+ * @param {Omit<TamaguiProviderProps, 'config'> } rest - Other props passed to the TamaguiProvider component.
  * @return {JSX.Element} A Provider component that wraps the application with Tamagui and Toast providers.
  */
 export function Provider({ children, ...rest }: Omit<TamaguiProviderProps, 'config'>) {
