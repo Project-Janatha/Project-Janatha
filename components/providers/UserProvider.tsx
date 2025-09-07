@@ -13,7 +13,7 @@
  */
 
 // TODO: Improve upon this file and interface with backend auth system
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export const UserContext = createContext({
   user: null,
@@ -25,10 +25,14 @@ export const UserContext = createContext({
 
 export default function UserProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const
 
   const login = (userData) => {
-    // if (!userData) 
-    //   useEffect(() => );
+    useEffect(() => { 
+      if (!userData) 
+        fetch('http://localhost:8008/register').then(res => res.json()).then(data => setUser(data.username))
+        }, [userData]);
     setUser(userData);
   };
 
