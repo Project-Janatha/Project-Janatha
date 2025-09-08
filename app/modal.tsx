@@ -7,7 +7,7 @@ export default function LogInScreen(props) {
   return (
     <View flex={1} bg="$background" p="$4">
       <YStack gap="$4">
-        <H2 style='bold'>Log In</H2>
+        <H2 fontWeight={'$5'}>Log In</H2>
         <Input placeholder="Username" />
         <Input placeholder="Password" secureTextEntry />
 
