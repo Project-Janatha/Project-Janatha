@@ -4,6 +4,11 @@ import { Anchor, H2, Paragraph, XStack, YStack } from 'tamagui'
 import { ToastControl } from 'components/CurrentToast'
 import { UserContext } from 'components';
 
+type User = {
+  username?: string;
+  // add other user properties if needed
+};
+
 /**
  * HomeScreen Component
  * @return {JSX.Element} A HomeScreen component that displays a welcome message and instructions.
