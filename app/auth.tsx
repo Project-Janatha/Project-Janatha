@@ -2,12 +2,13 @@ import React, { useContext } from 'react'
 import { Anchor, H2, Paragraph, View, Button, XStack, YStack, Input } from 'tamagui'
 import { UserContext } from 'components'
 
-export default function LogInScreen(props) {
-  const { login, signup } = useContext(UserContext);
+export default function AuthScreen(props) {
+  const { login, signup, error, loading } = useContext(UserContext);
   return (
     <View flex={1} bg="$background" p="$4">
       <YStack gap="$4">
         <H2 fontWeight={'$5'}>Log In</H2>
+        {error && <Paragraph color="red">{error}</Paragraph>}
         <Input placeholder="Username" />
         <Input placeholder="Password" secureTextEntry />
 

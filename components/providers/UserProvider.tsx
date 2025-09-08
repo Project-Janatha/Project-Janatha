@@ -27,40 +27,51 @@ type User = {
   events: any[];
 };
 
-const url = 'http://localhost:8008/';
+const url = 'http://localhost:8008';
 
 export const UserContext = createContext<{
   user: User | null;
   setUser: (user: User | null) => void;
   isAuthenticated: boolean;
+  loading: boolean;
+  error: string | null;
   login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  signup: (username: string, password: string) => Promise<void>;
 }>({
   user: null,
   setUser: () => {},
   isAuthenticated: false,
+  loading: false,
+  error: null,
   login: async () => {},
-  logout: () => {},
+  logout: async () => {},
+  signup: async () => {},
 });
 
 export default function UserProvider({ children }) {
-  const [user, setUser] = useState<User|null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const login = async (username: string, password: string) => {
     setLoading(true);
-    const endpoint = url + 'authenticate';
+    setError(null);
+    const endpoint = `${url}/authenticate`;
     try {
       const response = await fetch(endpoint, {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'}, 
+        credentials: 'include',
         body: JSON.stringify({username, password})
       })
+
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
-        if (data) {
-          setUser({
+          throw new Error('Login failed');
+      }
+      setUser({
             username: data.username,
             center: data.center ?? -1,
             points: data.points ?? 0,
@@ -71,9 +82,7 @@ export default function UserProvider({ children }) {
             id: data.id,
             events: data.events ?? []
           });
-        }
-      }
-      throw new Error('Login failed');
+      
     } catch(error) {
         setError(error.message);
     } finally { 
@@ -105,7 +114,7 @@ export default function UserProvider({ children }) {
   };
 
   const logout = async () => {
-    const endpoint = url + 'deauthenticate';
+    const endpoint = `${url}/deauthenticate`;
     try {
       const response = await fetch(endpoint, {
         method: 'POST', 
@@ -120,19 +129,27 @@ export default function UserProvider({ children }) {
         setError(error.message);
     }
   };
+  // TODO: Implement signup function with onboarding flow
+  const signup = async (username: string, password: string) => {
+
+  };
 
   return (
     <UserContext.Provider value={{
       user,
       setUser,
       isAuthenticated: !!user,
+      loading,
+      error,
       login,
       logout,
+      signup,
     }}>
       {children}
     </UserContext.Provider>
   );
 }
+
 
 // Usage in a component:
 const { user, isAuthenticated, login, logout } = useContext(UserContext);
