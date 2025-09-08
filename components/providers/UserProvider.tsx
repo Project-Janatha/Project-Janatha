@@ -104,7 +104,7 @@ export default function UserProvider({ children }) {
   };
 
   const logout = () => {
-    //setUser(null);
+    
   };
 
   return (
