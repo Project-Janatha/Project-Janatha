@@ -15,24 +15,91 @@
 // TODO: Improve upon this file and interface with backend auth system
 import React, { createContext, useContext, useState, useEffect, use } from 'react';
 
-export const UserContext = createContext({
+type User = {
+  username: string;
+  center: number;
+  points: number;
+  isVerified: boolean;
+  verificationLevel: number;
+  exists: boolean;
+  isActive: boolean;
+  id: string;
+  events: any[];
+};
+
+const url = 'http://localhost:8008/';
+
+export const UserContext = createContext<{
+  user: User | null;
+  setUser: (user: User | null) => void;
+  isAuthenticated: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
+}>({
   user: null,
-  setUser: (user: any) => {},
+  setUser: () => {},
   isAuthenticated: false,
-  login: (user: any) => {},
+  login: async () => {},
   logout: () => {},
 });
 
 export default function UserProvider({ children }) {
-  const [user, setUser] = useState(null);
-  // const [loading, setLoading] = useState(true);
-  // const
+  const [user, setUser] = useState<User|null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const login = (userData) => {
-    useEffect(() => { 
-      if (!userData) 
-        fetch('http://localhost:8008/authenticate').then(res => res.json()).then(data => setUser(data.username))
-        }, [userData]);
+  const login = async (username: string, password: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch(url + 'authenticate', {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'}, 
+        body: JSON.stringify({username, password})
+      })
+      if (response.ok) {
+        const data = await response.json();
+        if (data) {
+          setUser({
+            username: data.username,
+            center: data.center ?? -1,
+            points: data.points ?? 0,
+            isVerified: data.isVerified ?? false,
+            verificationLevel: data.verificationLevel ?? 0,
+            exists: true,
+            isActive: data.isActive ?? false,
+            id: data.id,
+            events: data.events ?? []
+          });
+        }
+      }
+      throw new Error('Login failed');
+    } catch(error) {
+        setError(error);
+    } finally { 
+      setLoading(false); 
+    }
+    //   const data = await response.json();
+    //   if (!response.ok) {
+    //     throw new Error(data.message || 'Login failed');
+    //   }
+    //   setUser({
+    //     username: data.username,
+    //     center: data.center ?? -1,
+    //     points: data.points ?? 0,
+    //     isVerified: data.isVerified ?? false,
+    //     verificationLevel: data.verificationLevel ?? 0,
+    //     exists: true,
+    //     isActive: data.isActive ?? false,
+    //     id: data._id,
+    //     events: data.events ?? []
+    //   });
+    //   setError(null);
+    // }
+    // useEffect(() => {
+      // const endpoint = url + 'authenticate';
+      // if (!userData) 
+      //   fetch(url).then(res => res.json()).then(data => setUser(data.username))
+      //   }, [userData]);
     //setUser(userData);
   };
 
