@@ -50,8 +50,9 @@ export default function UserProvider({ children }) {
 
   const login = async (username: string, password: string) => {
     setLoading(true);
+    const endpoint = url + 'authenticate';
     try {
-      const response = await fetch(url + 'authenticate', {
+      const response = await fetch(endpoint, {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'}, 
         body: JSON.stringify({username, password})
@@ -74,9 +75,9 @@ export default function UserProvider({ children }) {
       }
       throw new Error('Login failed');
     } catch(error) {
-        setError(error);
+        setError(error.message);
     } finally { 
-      setLoading(false); 
+        setLoading(false); 
     }
     //   const data = await response.json();
     //   if (!response.ok) {
@@ -103,8 +104,21 @@ export default function UserProvider({ children }) {
     //setUser(userData);
   };
 
-  const logout = () => {
-    
+  const logout = async () => {
+    const endpoint = url + 'deauthenticate';
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST', 
+        credentials: 'include', 
+      });
+      if (response.ok) {
+        setUser(null);
+        setError(null);
+      }
+      throw new Error('Logout failed');
+    } catch(error) {
+        setError(error.message);
+    }
   };
 
   return (
