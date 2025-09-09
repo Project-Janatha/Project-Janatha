@@ -10,5 +10,7 @@
  * 
  */
 
+export { default as Provider } from './providers/Provider';
 export { default as Map } from './Map';
 export { default as SearchBar } from './SearchBar';
+export { default as UserProvider, UserContext } from './providers/UserProvider';
