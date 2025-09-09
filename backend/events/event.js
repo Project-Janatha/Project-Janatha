@@ -54,7 +54,7 @@ class Event{
    * Adds to it the amount of people within the event multiplied by the numerical ranking constants.NORMAL_USER.
    * Multiplies it by the 1 + amount of people with numerical ranking constants.BRAHMACHARI or above.
    * 
-   * @returns The tier of the event.
+   * @returns {number} The tier of the event.
    */
   calculateTier()
   {
@@ -72,6 +72,7 @@ class Event{
     tier += this.peopleAttending*constants.NORMAL_USER;
     tier *= brahmachariAndAbove+1;
     tier /= constants.TIER_DESCALE;
+    return tier;
     
   }
   /**
@@ -151,13 +152,14 @@ class Event{
    * @param {string} uname The username of the user to add.
    * @returns {user.User | null} The User with the event added
    */
-  addSelfToUserFromDB(uname)
+  addSelfToUserByUsername(uname)
   {
     let u = auth.getUserByUsername(uname);
     if(u && !(this.id in u.events))
     {
         u.events.push(this.id);
         this.peopleAttending++;
+        this.calculateTier();
         return u;
     }
     return null;
