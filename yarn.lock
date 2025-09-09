@@ -4715,6 +4715,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/cors@npm:^2":
+  version: 2.8.19
+  resolution: "@types/cors@npm:2.8.19"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10/9545cc532c9218754443f48a0c98c1a9ba4af1fe54a3425c95de75ff3158147bb39e666cb7c6bf98cc56a9c6dc7b4ce5b2cbdae6b55d5942e50c81b76ed6b825
+  languageName: node
+  linkType: hard
+
 "@types/geojson@npm:7946.0.8":
   version: 7946.0.8
   resolution: "@types/geojson@npm:7946.0.8"
@@ -6180,6 +6189,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cors@npm:^2.8.5":
+  version: 2.8.5
+  resolution: "cors@npm:2.8.5"
+  dependencies:
+    object-assign: "npm:^4"
+    vary: "npm:^1"
+  checksum: 10/66e88e08edee7cbce9d92b4d28a2028c88772a4c73e02f143ed8ca76789f9b59444eed6b1c167139e76fa662998c151322720093ba229f9941365ada5a6fc2c6
+  languageName: node
+  linkType: hard
+
 "cosmiconfig@npm:^5.0.5":
   version: 5.2.1
   resolution: "cosmiconfig@npm:5.2.1"
@@ -6981,12 +7000,14 @@ __metadata:
     "@tamagui/metro-plugin": "npm:^1.132.23"
     "@tamagui/toast": "npm:^1.132.23"
     "@teovilla/react-native-web-maps": "npm:^0.9.5"
+    "@types/cors": "npm:^2"
     "@types/react": "npm:~19.0.10"
     "@types/react-native": "npm:^0.73.0"
     babel-preset-expo: "npm:~13.0.0"
     bcryptjs: "npm:^3.0.2"
     burnt: "npm:^0.12.2"
     concurrently: "npm:^9.2.1"
+    cors: "npm:^2.8.5"
     expo: "npm:53.0.7"
     expo-build-properties: "npm:~0.14.6"
     expo-font: "npm:~13.3.1"
@@ -9984,7 +10005,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"object-assign@npm:^4.0.1, object-assign@npm:^4.1.0, object-assign@npm:^4.1.1":
+"object-assign@npm:^4, object-assign@npm:^4.0.1, object-assign@npm:^4.1.0, object-assign@npm:^4.1.1":
   version: 4.1.1
   resolution: "object-assign@npm:4.1.1"
   checksum: 10/fcc6e4ea8c7fe48abfbb552578b1c53e0d194086e2e6bbbf59e0a536381a292f39943c6e9628af05b5528aa5e3318bb30d6b2e53cadaf5b8fe9e12c4b69af23f
@@ -12407,9 +12428,9 @@ __metadata:
   linkType: hard
 
 "undici@npm:^6.18.2 || ^7.0.0":
-  version: 7.15.0
-  resolution: "undici@npm:7.15.0"
-  checksum: 10/f48170c88c25d5fed0d7a3d6df9f1b6af97b530c8d799508af685ffa9913e75eb85394c0d3c0be2765548388fdd487e172da5659da8a1b052493cd809482fe06
+  version: 7.16.0
+  resolution: "undici@npm:7.16.0"
+  checksum: 10/2bb71672b23d3dc0f56f1b7fb6c936e4487a350db46eaafc03f2f9107f99cdf8e51ecdd32e589e2381ef47a64b6369cfb31f328b2c3ea663023aa47bc5258b9e
   languageName: node
   linkType: hard
 
@@ -12431,9 +12452,9 @@ __metadata:
   linkType: hard
 
 "unicode-match-property-value-ecmascript@npm:^2.1.0":
-  version: 2.2.0
-  resolution: "unicode-match-property-value-ecmascript@npm:2.2.0"
-  checksum: 10/9fd53c657aefe5d3cb8208931b4c34fbdb30bb5aa9a6c6bf744e2f3036f00b8889eeaf30cb55a873b76b6ee8b5801ea770e1c49b3352141309f58f0ebb3011d8
+  version: 2.2.1
+  resolution: "unicode-match-property-value-ecmascript@npm:2.2.1"
+  checksum: 10/a42bebebab4c82ea6d8363e487b1fb862f82d1b54af1b67eb3fef43672939b685780f092c4f235266b90225863afa1258d57e7be3578d8986a08d8fc309aabe1
   languageName: node
   linkType: hard
 
@@ -12581,7 +12602,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vary@npm:^1.1.2, vary@npm:~1.1.2":
+"vary@npm:^1, vary@npm:^1.1.2, vary@npm:~1.1.2":
   version: 1.1.2
   resolution: "vary@npm:1.1.2"
   checksum: 10/31389debef15a480849b8331b220782230b9815a8e0dbb7b9a8369559aed2e9a7800cd904d4371ea74f4c3527db456dc8e7ac5befce5f0d289014dbdf47b2242
