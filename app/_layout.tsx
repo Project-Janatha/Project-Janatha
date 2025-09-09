@@ -6,8 +6,9 @@ import { StatusBar } from 'expo-status-bar'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
 import { useFonts } from 'expo-font'
 import { SplashScreen, Stack } from 'expo-router'
-import { Provider } from 'components/Provider'
-import { useTheme } from 'tamagui'
+import { Provider } from 'components';
+import { useTheme } from 'tamagui';
+import { UserProvider } from 'components';
 
 
 export {
@@ -52,7 +53,11 @@ export default function RootLayout() {
 }
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
-  return <Provider>{children}</Provider>
+  return (
+    <UserProvider>
+      <Provider>{children}</Provider>
+    </UserProvider>
+  )
 }
 
 function RootLayoutNav() {

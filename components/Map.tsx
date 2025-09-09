@@ -28,6 +28,7 @@ const styles = StyleSheet.create({
 
  /**
  * Map Component
+ * @param {any} props - Props passed to the Map component.
  * @return {JSX.Element} A Map component that displays a map using react-native-maps.
  */
 export default function Map(props: any) {
