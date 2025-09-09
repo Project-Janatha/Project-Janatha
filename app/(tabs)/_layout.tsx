@@ -30,9 +30,9 @@ export default function TabLayout() {
           title: 'Home',
           tabBarIcon: ({ color }) => <Home color={color as any} />,
           headerRight: () => (
-            <Link href="/modal" asChild>
+            <Link href="/auth" asChild>
               <Button mr="$4" size="$2.5">
-                Hello!
+                Log In/Sign Up
               </Button>
             </Link>
           ),

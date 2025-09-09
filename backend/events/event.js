@@ -11,7 +11,7 @@ import location from '../location/location.js';
 import center from '../profiles/center.js';
 import user from '../profiles/user.js';
 import constants from '../constants.js';
-import store from 'eventStorage.js';
+import store from './eventStorage.js';
 import auth from '../authentication/authenticateMethods.js';
 /**
  * Represents an Event.
