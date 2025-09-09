@@ -69,9 +69,7 @@ export default function UserProvider({ children }) {
       const data = await response.json();
 
       if (response.ok) {
-          throw new Error('Login failed');
-      }
-      setUser({
+          setUser({
             username: data.username,
             center: data.center ?? -1,
             points: data.points ?? 0,
@@ -82,35 +80,15 @@ export default function UserProvider({ children }) {
             id: data.id,
             events: data.events ?? []
           });
-      
+      } else {
+        throw new Error('Login failed');
+      }
     } catch(error) {
+        console.error("Login error:", error);
         setError(error.message);
     } finally { 
         setLoading(false); 
     }
-    //   const data = await response.json();
-    //   if (!response.ok) {
-    //     throw new Error(data.message || 'Login failed');
-    //   }
-    //   setUser({
-    //     username: data.username,
-    //     center: data.center ?? -1,
-    //     points: data.points ?? 0,
-    //     isVerified: data.isVerified ?? false,
-    //     verificationLevel: data.verificationLevel ?? 0,
-    //     exists: true,
-    //     isActive: data.isActive ?? false,
-    //     id: data._id,
-    //     events: data.events ?? []
-    //   });
-    //   setError(null);
-    // }
-    // useEffect(() => {
-      // const endpoint = url + 'authenticate';
-      // if (!userData) 
-      //   fetch(url).then(res => res.json()).then(data => setUser(data.username))
-      //   }, [userData]);
-    //setUser(userData);
   };
 
   const logout = async () => {
@@ -149,7 +127,3 @@ export default function UserProvider({ children }) {
     </UserContext.Provider>
   );
 }
-
-
-// Usage in a component:
-const { user, isAuthenticated, login, logout } = useContext(UserContext);
