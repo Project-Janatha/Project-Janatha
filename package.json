@@ -32,6 +32,7 @@
     "bcryptjs": "^3.0.2",
     "burnt": "^0.12.2",
     "concurrently": "^9.2.1",
+    "cors": "^2.8.5",
     "expo": "53.0.7",
     "expo-build-properties": "~0.14.6",
     "expo-font": "~13.3.1",
@@ -68,6 +69,7 @@
     "@tamagui/babel-plugin": "^1.132.23",
     "@tamagui/cli": "^1.132.23",
     "@tamagui/metro-plugin": "^1.132.23",
+    "@types/cors": "^2",
     "@types/react": "~19.0.10",
     "@types/react-native": "^0.73.0",
     "typescript": "~5.8.3"
