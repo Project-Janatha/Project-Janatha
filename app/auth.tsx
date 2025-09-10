@@ -1,14 +1,25 @@
 import React, { useState, useContext } from 'react'
+import { useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Anchor, H2, Paragraph, View, Button, XStack, Form, Input, YStack } from 'tamagui'
+import { Anchor, H2, Paragraph, View, Button, XStack, Form, Input, YStack, Image} from 'tamagui'
+import { Moon, Sun } from '@tamagui/lucide-icons';
 import { UserContext } from 'components'
 
 export default function AuthScreen(props) {
   const router = useRouter();
+  const colorScheme = useColorScheme()
+  const [isDark, setIsDark] = useState(colorScheme === 'dark')
   const { login, signup, error, loading } = useContext(UserContext);
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
 
+  const toggleTheme = () => {
+    setIsDark(!isDark)
+    // Update system theme preference
+    if (window?.localStorage) {
+      window.localStorage.setItem('theme', !isDark ? 'dark' : 'light')
+    }
+  }
   const handleUsername = ({ target }) => setUsername(target.value);
   const handlePassword = ({ target }) => setPassword(target.value);
   const handleLogin = async () => {
@@ -27,6 +38,26 @@ export default function AuthScreen(props) {
     p="$4"
     justify="center"
     items={"center"}>
+      <Button 
+      position='absolute'
+      t='$4'
+      r='$4'
+      size="$2.5"
+      onPress={toggleTheme}
+      icon={isDark ? <Sun size={20} /> : <Moon size={20} />}
+      theme={isDark ? 'yellow' : 'blue'}
+      />
+      {/* Top Section */}
+      <YStack items="center" pt="$8">
+        {isDark ? (
+          <Image source={require("../assets/images/chinmaya_logo_dark.svg")}/>
+          ) : (
+          <Image source={require("../assets/images/chinmaya_logo_light.svg")}/>
+          )}
+        <Paragraph color="#888">
+          Log in to continue
+        </Paragraph>
+      </YStack>
       <Form
         items="center"
         width={'auto'}

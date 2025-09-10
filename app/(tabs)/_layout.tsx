@@ -1,6 +1,6 @@
 import { Link, Tabs } from 'expo-router'
 import { Button, useTheme } from 'tamagui'
-import { Home, Compass } from '@tamagui/lucide-icons'
+import { Home, Compass, User } from '@tamagui/lucide-icons'
 
 /**
  * TabLayout Component - The main layout for the tab-based navigation.
@@ -31,8 +31,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Home color={color as any} />,
           headerRight: () => (
             <Link href="/auth" asChild>
-              <Button mr="$4" size="$2.5">
-                Log In/Sign Up
+              <Button mr="$4" size="$2.5" icon={<User size={20} color={theme.color} />}>
               </Button>
             </Link>
           ),
