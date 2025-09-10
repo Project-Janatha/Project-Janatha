@@ -9,22 +9,14 @@
     "fonts": {
     "family": "AnekLatin",
         "fonts": [
-          { "asset": "assets/fonts/AnekLatin-Thin.ttf", "weight": "100" },
-          { "asset": "assets/fonts/AnekLatin-ThinItalic.ttf", "weight": "100", "style": "italic" },
-          { "asset": "assets/fonts/AnekLatin-ExtraLight.ttf", "weight": "200" },
-          { "asset": "assets/fonts/AnekLatin-ExtraLightItalic.ttf", "weight": "200", "style": "italic" },
-          { "asset": "assets/fonts/AnekLatin-Light.ttf", "weight": "300" },
-          { "asset": "assets/fonts/AnekLatin-LightItalic.ttf", "weight": "300", "style": "italic" },
-          { "asset": "assets/fonts/AnekLatin-Regular.ttf", "weight": "400" },
-          { "asset": "assets/fonts/AnekLatin-Italic.ttf", "weight": "400", "style": "italic" },
-          { "asset": "assets/fonts/AnekLatin-Medium.ttf", "weight": "500" },
-          { "asset": "assets/fonts/AnekLatin-MediumItalic.ttf", "weight": "500", "style": "italic" },
-          { "asset": "assets/fonts/AnekLatin-SemiBold.ttf", "weight": "600" },
-          { "asset": "assets/fonts/AnekLatin-SemiBoldItalic.ttf", "weight": "600", "style": "italic" },
-          { "asset": "assets/fonts/AnekLatin-Bold.ttf", "weight": "700" },
-          { "asset": "assets/fonts/AnekLatin-BoldItalic.ttf", "weight": "700", "style": "italic" },
-          { "asset": "assets/fonts/AnekLatin-ExtraBold.ttf", "weight": "800" },
-          { "asset": "assets/fonts/AnekLatin-ExtraBoldItalic.ttf", "weight": "800", "style": "italic" }
+          { "asset": "./assets/fonts/AnekLatin-Thin.ttf", "weight": "100" },
+          { "asset": "./assets/fonts/AnekLatin-ExtraLight.ttf", "weight": "200" },
+          { "asset": "./assets/fonts/AnekLatin-Light.ttf", "weight": "300" },
+          { "asset": "./assets/fonts/AnekLatin-Regular.ttf", "weight": "400" },
+          { "asset": "./assets/fonts/AnekLatin-Medium.ttf", "weight": "500" },
+          { "asset": "./assets/fonts/AnekLatin-SemiBold.ttf", "weight": "600" },
+          { "asset": "./assets/fonts/AnekLatin-Bold.ttf", "weight": "700" },
+          { "asset": "./assets/fonts/AnekLatin-ExtraBold.ttf", "weight": "800" }
         ]
       },
     "userInterfaceStyle": "automatic",
