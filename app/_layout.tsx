@@ -29,19 +29,26 @@ SplashScreen.preventAutoHideAsync()
  * @return {JSX.Element} A Map component that displays a map using mapboxgl.
  */
 export default function RootLayout() {
-  const [interLoaded, interError] = useFonts({
-    Inter: require('@tamagui/font-inter/otf/Inter-Medium.otf'),
-    InterBold: require('@tamagui/font-inter/otf/Inter-Bold.otf'),
-  })
+  // const [interLoaded, interError] = useFonts({
+  //   Inter: require('@tamagui/font-inter/otf/Inter-Medium.otf'),
+  //   InterBold: require('@tamagui/font-inter/otf/Inter-Bold.otf'),
+  // })
+
+
+  const [loaded, loadError] = useFonts({
+    'AnekLatin': require('../assets/fonts/AnekLatin-Regular.ttf'),
+    'AnekLatin-Medium': require('../assets/fonts/AnekLatin-Medium.ttf'),
+    'AnekLatin-Bold': require('../assets/fonts/AnekLatin-Bold.ttf'),
+  });
 
   useEffect(() => {
-    if (interLoaded || interError) {
+    if (loaded || loadError) {
       // Hide the splash screen after the fonts have loaded (or an error was returned) and the UI is ready.
       SplashScreen.hideAsync()
     }
-  }, [interLoaded, interError])
+  }, [loaded, loadError])
 
-  if (!interLoaded && !interError) {
+  if (!loaded && !loadError) {
     return null
   }
 

@@ -72,7 +72,7 @@ export default function UserProvider({ children }) {
 
       if (response.ok) {
         const data = await response.json();
-        const user = data.userObject;
+        const user = data.user;
         console.log("Login response data:", data);
           setUser({
             username: user.username,
