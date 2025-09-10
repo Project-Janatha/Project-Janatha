@@ -69,9 +69,8 @@ export default function UserProvider({ children }) {
           username: username, 
           password: password})
       })
-
+      const data = await response.json();
       if (response.ok) {
-        const data = await response.json();
         const user = data.user;
         console.log("Login response data:", data);
           setUser({
@@ -85,12 +84,17 @@ export default function UserProvider({ children }) {
             id: user._id,
             events: user.events ?? []
           });
-      } else {
-        throw new Error('Login failed');
-      }
+        } else {
+          const errorMessage = data.message || `Request failed with status ${response.status}`;
+          setError(errorMessage); // Set the error state in the context
+          throw new Error(errorMessage);
+        }
     } catch(error) {
         console.error("Login error:", error);
-        setError(error.message);
+        if (!error.message.includes('Request failed')) {
+          setError(error.message);
+        }
+        throw error;
     } finally { 
         setLoading(false); 
     }

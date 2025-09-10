@@ -1,8 +1,16 @@
 import { defaultConfig } from '@tamagui/config/v4'
-import { createFont, createTamagui, isWeb } from 'tamagui'
+import { createFont, createTamagui, createTokens, isWeb } from 'tamagui'
+const tokens = createTokens({
+  ...defaultConfig.tokens,
+  color: {
+    primary: '#C2410C', // orange-800
+    primaryPress: '#9A3412', // orange-900
+  }
+})
+
 
 const systemFont = createFont({
-  family: isWeb ? 'Anek Latin, Arial, sans-serif' : 'AnekLatin',
+  family: 'AnekLatin-Regular',
   size: {
     1: 12,
     2: 14,
@@ -36,6 +44,7 @@ const systemFont = createFont({
     6: '600',
     7: '700',
     8: '800',
+    default: '400',
   },
   letterSpacing: {
     1: 0,
@@ -44,17 +53,20 @@ const systemFont = createFont({
   },
   // (native only) swaps out fonts by face/style
   face: {
-    100: { normal: 'AnekLatin-Thin', italic: 'AnekLatin-ThinItalic' },
-    200: { normal: 'AnekLatin-ExtraLight', italic: 'AnekLatin-ExtraLightItalic' },
-    300: { normal: 'AnekLatin-Light', italic: 'AnekLatin-LightItalic' },
-    400: { normal: 'AnekLatin-Regular', italic: 'AnekLatin-Italic' },
-    500: { normal: 'AnekLatin-Medium', italic: 'AnekLatin-MediumItalic' },
-    600: { normal: 'AnekLatin-SemiBold', italic: 'AnekLatin-SemiBoldItalic' },
-    700: { normal: 'AnekLatin-Bold', italic: 'AnekLatin-BoldItalic' },
-    800: { normal: 'AnekLatin-ExtraBold', italic: 'AnekLatin-ExtraBoldItalic' }
+    100: { normal: 'AnekLatin-Thin' },
+    200: { normal: 'AnekLatin-ExtraLight' },
+    300: { normal: 'AnekLatin-Light' },
+    400: { normal: 'AnekLatin-Regular' },
+    500: { normal: 'AnekLatin-Medium', },
+    600: { normal: 'AnekLatin-SemiBold', },
+    700: { normal: 'AnekLatin-Bold', },
+    800: { normal: 'AnekLatin-ExtraBold', }
   },
 })
-
+const buttonActiveState = {
+  backgroundColor: tokens.color.primaryPress,
+  scale: isWeb ? 0.95 : 0.97,
+}
 const config = createTamagui({
   ...defaultConfig,
   fonts: {
@@ -62,9 +74,44 @@ const config = createTamagui({
     heading: systemFont,
     body: systemFont,
   },
+  themes: {
+    light: {
+      ...defaultConfig.themes.light,
+      background: 'white',
+      color: 'black',
+      buttonBackground: tokens.color.primary,
+      buttonColor: 'white',
+    },
+    dark: {
+      ...defaultConfig.themes.dark,
+      background: 'black',
+      color: 'white',
+      buttonBackground: tokens.color.primary,
+      buttonColor: 'white',
+    },
+    light_Button: {
+      backgroundHover: tokens.color.primaryPress,
+      backgroundPress: tokens.color.primaryPress,
+      color: 'white',
+
+    },
+    dark_Button: {
+      background: tokens.color.primary,
+      backgroundHover: tokens.color.primaryPress,
+      backgroundPress: tokens.color.primaryPress,
+      color: 'white',
+    },
+  },
   media: {
     ...defaultConfig.media,
     // add your own media queries here, if wanted
+  },
+  tokens,
+  defaultProps: {
+    Button: {
+      pressStyle: buttonActiveState,
+      hoverStyle: buttonActiveState
+    },
   },
 })
 
