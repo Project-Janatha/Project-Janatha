@@ -11,6 +11,8 @@
 //Imports
 console.log("Imports");
 console.log("Starting express");
+import cors from 'cors';
+console.log("CORS");
 import express from 'express';
 console.log("Express");
 import Datastore from '@seald-io/nedb';
@@ -35,6 +37,13 @@ const SALT_ROUNDS = 10;
 console.log("Entering init");
 const app = express();
 console.log("Entering usages");
+app.use(cors({
+  origin: 'http://localhost:8081', // Your Expo web client URL
+  credentials: true, // Required for cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 console.log("Entering session usage");
