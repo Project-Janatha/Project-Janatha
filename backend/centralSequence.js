@@ -107,9 +107,14 @@ app.post("/deauthenticate", async (req, res) => {
  *  Event Removal
  *  Event Fetch
  *  Event Updates
+ *  Update Registration
  *  User Removal
  *  User Updates
+ *  Get User Events
+ *  Fetch All Centers
+ *  Fetch All Events Affiliated with CenterID
  */
+
 /**
  * Event adding pathway.
  * 
