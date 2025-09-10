@@ -11,12 +11,27 @@ import Datastore from '@seald-io/nedb';
 import { hash, compareSync } from 'bcryptjs';
 import constants from '../constants.js';
 import user from '../profiles/user.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import center from '../profiles/center.js';
 import location from '../location/location.js';
 const SALT_ROUNDS = 10;
 
 //Start constants
-const usersBase = new Datastore({"filename": "users.db", "autoload":true});
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const dbDir = path.join(__dirname, '..', 'db');
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir);
+}
+
+const usersBase = new Datastore({
+    "filename": path.join(dbDir, "users.db"), 
+    "autoload":true
+});
 //const constantFile = require('../constants');
 
 
