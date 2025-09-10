@@ -103,4 +103,24 @@ function getEventByID(id)
   });
   return null;
 }
-export default {checkEventUniqueness, updateEvent, storeEvent, getEventByID};
+/**
+ * Removes an event by ID.
+ * @param {number} id The ID of the event to remove.
+ * @returns {boolean | undefined} A boolean representing the success of the operation, or undefined if an error occurred.
+ */
+function removeEventByID(id)
+{
+  constants.eventsBase.remove({'eventID': id}, {}, (err, num) =>
+  {
+    if(err)
+    {
+      return undefined;
+    }
+    if(num)
+    {
+      return true;
+    }
+  });
+  return false;
+}
+export default {checkEventUniqueness, updateEvent, storeEvent, getEventByID, removeEventByID};

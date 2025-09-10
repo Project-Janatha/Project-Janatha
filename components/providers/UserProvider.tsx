@@ -13,14 +13,40 @@
  */
 
 // TODO: Improve upon this file and interface with backend auth system
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, use } from 'react';
 
-export const UserContext = createContext({
+type User = {
+  username: string;
+  center: number;
+  points: number;
+  isVerified: boolean;
+  verificationLevel: number;
+  exists: boolean;
+  isActive: boolean;
+  id: string;
+  events: any[];
+};
+
+const url = 'http://localhost:8008';
+
+export const UserContext = createContext<{
+  user: User | null;
+  setUser: (user: User | null) => void;
+  isAuthenticated: boolean;
+  loading: boolean;
+  error: string | null;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  signup: (username: string, password: string) => Promise<void>;
+}>({
   user: null,
-  setUser: (user: any) => {},
+  setUser: () => {},
   isAuthenticated: false,
-  login: (user: any) => {},
-  logout: () => {},
+  loading: false,
+  error: null,
+  login: async () => {},
+  logout: async () => {},
+  signup: async () => {},
 });
 
 export default function UserProvider({ children }) {
@@ -93,13 +119,13 @@ export default function UserProvider({ children }) {
       user,
       setUser,
       isAuthenticated: !!user,
+      loading,
+      error,
       login,
       logout,
+      signup,
     }}>
       {children}
     </UserContext.Provider>
   );
 }
-
-// Usage in a component:
-const { user, isAuthenticated, login, logout } = useContext(UserContext);
