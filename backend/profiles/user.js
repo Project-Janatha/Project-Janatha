@@ -163,6 +163,26 @@ class User
     });
     return false;
   }
+  /**
+   * Removes a user by username.
+   * @param {string} uname 
+   * @returns {boolean | undefined} A boolean representing the success of the operation, or undefined if an error occurred.
+   */
+  removeUserByUsername(uname)
+  {
+    constants.eventsBase.remove({'username': uname}, {}, (err, num) =>
+    {
+      if(err)
+      {
+        return undefined;
+      }
+      if(num)
+      {
+        return true;
+      }
+    });
+    return false;
+  }
 }
 
 
