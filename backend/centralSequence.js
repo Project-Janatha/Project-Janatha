@@ -45,7 +45,7 @@ console.log("Entering init");
 const app = express();
 console.log("Entering usages");
 app.use(cors({
-  origin: 'http://localhost:8081', // Your Expo web client URL
+  origin: true, // ONLY FOR DEV PURPOSES. Change this to your frontend URL in production
   credentials: true, // Required for cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
