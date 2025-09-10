@@ -24,14 +24,68 @@ export const UserContext = createContext({
 });
 
 export default function UserProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const login = (userData) => {
-    setUser(userData);
+  const login = async (username: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    const endpoint = `${url}/authenticate`;
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'}, 
+        credentials: 'include',
+        body: JSON.stringify({
+          username: username, 
+          password: password})
+      })
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Login response data:", data);
+          setUser({
+            username: data.username,
+            center: data.center ?? -1,
+            points: data.points ?? 0,
+            isVerified: data.isVerified ?? false,
+            verificationLevel: data.verificationLevel ?? 0,
+            exists: true,
+            isActive: data.isActive ?? false,
+            id: data._id,
+            events: data.events ?? []
+          });
+      } else {
+        throw new Error('Login failed');
+      }
+    } catch(error) {
+        console.error("Login error:", error);
+        setError(error.message);
+    } finally { 
+        setLoading(false); 
+    }
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    const endpoint = `${url}/deauthenticate`;
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST', 
+        credentials: 'include', 
+      });
+      if (response.ok) {
+        setUser(null);
+        setError(null);
+      }
+      throw new Error('Logout failed');
+    } catch(error) {
+        setError(error.message);
+    }
+  };
+  // TODO: Implement signup function with onboarding flow
+  const signup = async (username: string, password: string) => {
+
   };
 
   return (
