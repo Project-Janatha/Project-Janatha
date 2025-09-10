@@ -122,7 +122,7 @@ async function authenticate(req, res)
         }
         req.session.userId = user._id;
         req.session.username = user.username;
-        return res.status(200).json({"message": "Authentication successful!"});
+        return res.status(200).json({"message": "Authentication successful!", 'user': user.userObject});
     });
     
 }

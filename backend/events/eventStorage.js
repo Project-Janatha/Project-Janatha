@@ -14,6 +14,7 @@ import event from './event.js';
 import constants from '../constants.js';
 import user from '../profiles/user.js';
 import center from '../profiles/center.js';
+//TODO: create getEventsByCenterID
 
 /**
  * Stores an event in the database.

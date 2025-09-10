@@ -22,17 +22,18 @@ class Event{
    * Constructs an event.
    * @param {location.Location} loc The location of the Event.
    * @param {Date} date The Date at which the Event takes place.
-   * @param {center.Center} cen The Center with which the Event is affiliated.
+   * @param {string} cen The Center ID of the Center with which the Event is affiliated.
    */
   constructor(loc, date, cen)
   {
     this.location = loc;
     this.date = date;
     this.center = cen;
-    this.endorsers = []; //An array of user.Users containing all the event endorsers. Must have status of greater than 
+    this.endorsers = []; //An array of strings containing all the event endorser usernames. Must have status of greater than constants.SEVAK
     this.id = 0; //TODO make a method for this. A number that represents the unique ID of this event.
     this.tier = 0; //The calculated tier of the event.
     this.peopleAttending = 0; //A number that represents how many people are going to the event.
+    this.usersAttending = []; 
     this.description = "";
   }
   /**
@@ -103,6 +104,7 @@ class Event{
       'id': this.id,
       'tier': this.tier,
       'peopleAttending': this.peopleAttending,
+      'usersAttending': this.usersAttending,
       'description': this.description
     };
   }
@@ -116,20 +118,12 @@ class Event{
     loc.buildFromJSON(data.location);
     this.location = loc;
     this.date = new Date(data.date);
-    let cen = new center.Center(loc, 'blank');
-    cen.buildFromJSON(data.center);
-    let endorserArr = [];
-    let b = new user.User(null)
-    for(i in data.endorsers)
-    {
-      b.buildFromJSON(data.endorsers[i]);
-      endorserArr.push(b);
-      b = new user.User(null);
-    }
-    this.endorsers = endorserArr;
+    this.center = data.center;
+    this.endorsers = data.endorsers;
     this.id = parseInt(data.id);
     this.tier = parseInt(data.tier);
     this.peopleAttending = parseInt(data.peopleAttending);
+    this.usersAttending = data.usersAttending;
     this.description = data.description;
   }
   /**
