@@ -13,6 +13,8 @@
  */
 
 // TODO: Improve upon this file and interface with backend auth system
+// TODO: Enable post calls from android and ios to backend server
+// TODO: Enable persistent login sessions using cookies or tokens
 import React, { createContext, useContext, useState, useEffect, use } from 'react';
 
 type User = {
@@ -70,17 +72,18 @@ export default function UserProvider({ children }) {
 
       if (response.ok) {
         const data = await response.json();
+        const user = data.userObject;
         console.log("Login response data:", data);
           setUser({
-            username: data.username,
-            center: data.center ?? -1,
-            points: data.points ?? 0,
-            isVerified: data.isVerified ?? false,
-            verificationLevel: data.verificationLevel ?? 0,
+            username: user.username,
+            center: user.center ?? -1,
+            points: user.points ?? 0,
+            isVerified: user.isVerified ?? false,
+            verificationLevel: user.verificationLevel ?? 0,
             exists: true,
-            isActive: data.isActive ?? false,
-            id: data._id,
-            events: data.events ?? []
+            isActive: user.isActive ?? false,
+            id: user._id,
+            events: user.events ?? []
           });
       } else {
         throw new Error('Login failed');
