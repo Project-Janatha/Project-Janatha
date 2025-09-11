@@ -2,14 +2,16 @@ import React, { useState, useContext } from 'react'
 import { Appearance, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Anchor, H3, Paragraph, View, Button, XStack, Form, Input, YStack, Image} from 'tamagui'
-import { Moon, Sun } from '@tamagui/lucide-icons';
+import { Code, Moon, Sun } from '@tamagui/lucide-icons';
 import { UserContext, PrimaryButton, AuthInput } from 'components'
+import { Platform } from 'react-native';
 
 export default function AuthScreen(props) {
   const router = useRouter();
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark';
-  const { checkUserExists, login, signup, loading } = useContext(UserContext);
+  const { checkUserExists, login, signup, setUser, loading } = useContext(UserContext);
+  const isWeb = Platform.OS === 'web';
   
   //Possible auth steps
   type AuthStep = 'initial' | 'login' | 'signup' | null;
@@ -65,6 +67,7 @@ export default function AuthScreen(props) {
         setError('Passwords do not match.');
       }
       return;
+    }
     try {
       await signup(username, password);
       router.replace('/(tabs)');
@@ -72,7 +75,6 @@ export default function AuthScreen(props) {
       setError(error.message || 'Failed to sign up. Please try again.');
     }
   };
-}
 
   return (
     <YStack 
@@ -98,7 +100,7 @@ export default function AuthScreen(props) {
       <Form
         items="center"
         
-        width="25%"
+        width={isWeb? "40%" : "90%"}
         gap="$2"
         onSubmit={() => {
           if (authStep === "login") {
@@ -118,39 +120,62 @@ export default function AuthScreen(props) {
           value={username}
           width = "100%"
           />
-          <Form.Trigger asChild>
-            <PrimaryButton 
-              width={'100%'} 
-              disabled={loading || (authStep !== 'initial' && !password)} >
-              {loading ? 'Please wait...' : authStep === 'login' ? 'Log In' : authStep === 'signup' ? 'Sign Up' : 'Continue'}
-            </PrimaryButton>
-          </Form.Trigger>
         {authStep === 'login' && (
-          <XStack gap="$4" width="100%">
           <AuthInput 
             placeholder="Password" 
             onChangeText={setPassword} 
             value={password}
+            width={"100%"}
             secureTextEntry />
-          </XStack>
           )}
         {authStep === 'signup' && (
-          <XStack gap="$4" width="100%">
+          <YStack gap="$2" width="100%">
             <AuthInput 
               placeholder="Password" 
               onChangeText={setPassword} 
               value={password}
+              width={"100%"}
               secureTextEntry 
             />
             <AuthInput 
               placeholder="Confirm password" 
               onChangeText={setConfrimPassword}  
               value={confirmPassword}
+              width={"100%"}
               secureTextEntry 
             />
-          </XStack>
+          </YStack>
           )}
+        <Form.Trigger asChild>
+          <PrimaryButton 
+            width={'100%'} 
+            disabled={loading || (authStep !== 'initial' && !password)} >
+            {loading ? 'Please wait...' : authStep === 'login' ? 'Log In' : authStep === 'signup' ? 'Sign Up' : 'Continue'}
+          </PrimaryButton>
+      </Form.Trigger>
       </Form>
+      <Button 
+        icon={<Code color={isDark ? "white" : "black"} />} 
+        onPress={() => {
+          const devUser = {
+            username: 'dev_user',
+            id: 'dev_id',
+            center: -1,
+            points: 999,
+            isVerified: true,
+            verificationLevel: 99,
+            exists: true,
+            isActive: true,
+            events: [],
+          };
+          // Set the mock user in the context
+          setUser(devUser);
+          // Navigate to the main screen
+          router.push('/(tabs)');
+        }}
+      >
+        Dev Mode
+      </Button>
     </YStack>
   );
 }
