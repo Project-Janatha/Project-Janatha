@@ -165,9 +165,9 @@ function checkUserExistence(username)
             if(existing)
             {
                 return true; //existing is not a boolean, so if condition is used
-            }else{
-                return false; 
             }
+                return false; 
+            
         });
 }
 /**
