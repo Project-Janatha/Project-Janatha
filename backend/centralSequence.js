@@ -113,17 +113,25 @@ app.post("/deauthenticate", async (req, res) => {
  * Requires:
  * {'username': string}
  */
-app.post('/userExistence', async (req, res) => {
+app.post('/userExistence', (req, res) => {
     return res.status(200).json({'existence': auth.checkUserExistence(req.username)});
 });
 /**
  * Center addition pathway.
  * 
  * Requires:
- * {}
+ * {'latitude': number, 'longitude': number, 'centerName': string}
  */
 app.post('/addCenter', async (req, res) => {
-    
+    let c = new center.Center(new location.Location(req.body.latitude, req.body.longitude), req.body.centerName);
+    let id = c.assignCenterID();
+    let success = auth.storeCenter(id, c);
+    if(!success)
+    {
+        return res.status(503).json({'message': "Internal server error OR center ID not unique"});
+    }else{
+        return res.status(200).json({'message': 'Operation successful', 'id': id});
+    }
 });
 /**
  * Verifies a User. This is an Admin Only request.
@@ -142,7 +150,7 @@ app.post('/verifyUser', async (req, res) =>
         }
         if(!user)
         {
-            return res.status(404).send({'message': 'User not found.'});
+            return res.status(404).json({'message': 'User not found.'});
         }
         let u = new user.User(req.body.usernameToVerify);
         u.buildFromJSON(us.userObject);
@@ -150,19 +158,77 @@ app.post('/verifyUser', async (req, res) =>
         auth.updateUserData(req.body.username, u);
         if(status)
         {
-            return res.status(200).send({'message': 'Verification successful.'});
+            return res.status(200).json({'message': 'Verification successful.'});
         }else{
             return res.status(401).send({'message': 'Insufficient permission to authorize.'});
         }
     });
 });
-app.post('/verifyCenter', (req, res) => {})
+/**
+ * Verifies a center. Admin Only request.
+ * 
+ * Requires:
+ * {'centerID': number}
+ */
+app.post('/verifyCenter', (req, res) => {
+    let c = auth.getCenterByCenterID((req.body.centerID instanceof number) ? req.body.centerID : parseInt(req.body.centerID));
+
+    if(c.verify(req))
+    {
+        return res.status(200).json({'message': 'Successful verification!'});
+    }else{
+        return res.status(401).json({'message': 'User is not authorized to verify or verification failed at another point.'});
+    }
+});
+/**
+ * Removes a center. Admin Only request.
+ * 
+ * Requires:
+ *  {'centerID': number}
+ */
+app.post('/removeCenter', (req, res) => {
+    if(auth.removeCenter((req.body.centerID instanceof number) ? req.body.centerID : parseInt(req.body.centerID), req))
+    {
+        return res.status(200).json({'message': 'Successful removal!'});
+    }else{
+        return res.status(401).json({'message': 'Insufficient permissions'});
+    }
+});
+/**
+ * Updates a user in the database.
+ * Requires:
+ * {'userJSON': JSON, 'username': string}
+ * userJSON must be valid JSON that can be built into a User properly, or this will throw.
+ */
+app.post('/userUpdate', (req, res) =>
+{
+    return (auth.updateUserData(req.body.username, (new user.User(req.body.username)).buildFromJSON(req.body.userJSON))) ? res.status(200).json({'message': 'Operation successful.'}) : res.status(400).json({'message': "userJSON is malformed."})
+});
+/**
+ * Attempts to force this server to brew Coffee.
+ * 
+ * Requires:
+ * {}
+ */
+app.post('/brewCoffee', (req, res) => {
+    return res.status(418).json({'message': 'This server is a teapot, and cannot brew coffee. It not just cannot, but it will not. How dare you disgrace this server with a request to brew coffee? This is a server that brews tea. Masala Chai >>> Filter Coffee.'});
+});
+
+app.post('/fetchAllCenters', (req, res) =>
+{
+    let li = auth.getAllCenters();
+    if(li)
+    {
+        return res.status(200).json({'message': 'Successful', 'centersList': li});
+    }
+    return res.status(503).json({'message': 'Internal server error.'});
+})
+//Should I make a method that only fetches some centers in a certain latitude-longitude range?
+//If so, please make this boolean true.
+const SAHANAV_SHOULD_IMPLEMENT_FEATURE = false;
 /**
  * Pathways required for:
- *  Center Addition
  *  Center Fetch
- *  Center Removal
- *  Verification of User and Center
  *  Event Removal
  *  Event Fetch
  *  Event Updates
