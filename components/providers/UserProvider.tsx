@@ -37,6 +37,7 @@ export const UserContext = createContext<{
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
+  checkUserExists: (username: string) => Promise<boolean>;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   signup: (username: string, password: string) => Promise<void>;
@@ -46,6 +47,7 @@ export const UserContext = createContext<{
   isAuthenticated: false,
   loading: false,
   error: null,
+  checkUserExists: async () => false,
   login: async () => {},
   logout: async () => {},
   signup: async () => {},
@@ -55,6 +57,29 @@ export default function UserProvider({ children }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const checkUserExists = async (username: string) => {
+    const endpoint = `${url}/user-exists`;
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'}, 
+        credentials: 'include',
+        body: JSON.stringify({username: username}),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        return data.exists;
+      } else {
+        const errorMessage = data.message || `Request failed with status ${response.status}`;
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      } 
+    } catch(error) {
+        console.error("Couldn't fetch from server: ", error);
+        setError(error.message);
+      }
+  };
 
   const login = async (username: string, password: string) => {
     setLoading(true);
@@ -128,6 +153,7 @@ export default function UserProvider({ children }) {
       isAuthenticated: !!user,
       loading,
       error,
+      checkUserExists,
       login,
       logout,
       signup,

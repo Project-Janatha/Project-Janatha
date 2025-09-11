@@ -9,7 +9,31 @@
  * This file exports all components.
  * 
  */
+import { styled, Button, Input } from 'tamagui';
 
+export const PrimaryButton = styled(Button, {
+  name: 'PrimaryButton',
+  background: '$primary',
+  color: 'white',
+
+  pressStyle: {
+    background: '$primaryPress',
+    scale: 0.97,
+  },
+  hoverStyle: {
+    background: '$primaryPress',
+    scale: 0.97,
+  },
+});
+
+export const AuthInput = styled(Input, {
+  name: 'AuthInput',
+  background: '$gray', // Shaded background
+  color: '$color',
+  borderWidth: 0, // Add borderWidth to the default state
+  // borderColor: '$gray4',
+});
+  
 export { default as Provider } from './providers/Provider';
 export { default as Map } from './Map';
 export { default as SearchBar } from './SearchBar';
