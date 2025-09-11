@@ -17,7 +17,30 @@
 // TODO: Enable persistent login sessions using cookies or tokens
 import React, { createContext, useContext, useState, useEffect, use } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
+const storage = {
+  getItemAsync: (key: string) => {
+    if (Platform.OS === 'web') {
+      return Promise.resolve(localStorage.getItem(key));
+    }
+    return SecureStore.getItemAsync(key);
+  },
+  setItemAsync: (key: string, value: string) => {
+    if (Platform.OS === 'web') {
+      localStorage.setItem(key, value);
+      return Promise.resolve();
+    }
+    return SecureStore.setItemAsync(key, value);
+  },
+  deleteItemAsync: (key: string) => {
+    if (Platform.OS === 'web') {
+      localStorage.removeItem(key);
+      return Promise.resolve();
+    }
+    return SecureStore.deleteItemAsync(key);
+  },
+};
 const SESSION_KEY = 'user_session';
 
 type User = {
@@ -65,7 +88,7 @@ export default function UserProvider({ children }) {
     setLoading(true);
     const loadSession = async () => {
       try {
-        const session = await SecureStore.getItemAsync(SESSION_KEY);
+        const session = await storage.getItemAsync(SESSION_KEY);
         if (session) {
           setUser(JSON.parse(session));
         }
@@ -80,6 +103,7 @@ export default function UserProvider({ children }) {
 
   const checkUserExists = async (username: string) => {
     setLoading(true);
+    console.log("Checking existence for username:", username);
     const endpoint = `${url}/userExistence`;
     try {
       const response = await fetch(endpoint, {
@@ -101,7 +125,9 @@ export default function UserProvider({ children }) {
     } catch(error) {
         console.error("Couldn't fetch from server: ", error);
         setError(error.message);
-      }
+    } finally { 
+        setLoading(false); 
+    }
   };
 
   const login = async (username: string, password: string) => {
@@ -122,7 +148,7 @@ export default function UserProvider({ children }) {
         const user = data.user;
         console.log("Login response data:", data);
           setUser(user);
-          await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(user));
+          await storage.setItemAsync(SESSION_KEY, JSON.stringify(user));
         } else {
           const errorMessage = data.message || `Request failed with status ${response.status}`;
           setError(errorMessage); // Set the error state in the context
@@ -150,7 +176,7 @@ export default function UserProvider({ children }) {
       });
       if (response.ok) {
         setUser(null);
-        await SecureStore.deleteItemAsync(SESSION_KEY); // Clears stored session
+        await storage.deleteItemAsync(SESSION_KEY); // Clears stored session
         setError(null);
       }
       throw new Error('Logout failed');
