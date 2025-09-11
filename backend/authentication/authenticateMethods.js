@@ -37,9 +37,9 @@ const usersBase = new Datastore({
 
 /**
  * Checks if a user is authenticated. Acts as middleware.
- * @param {JSON} req The request of the query
- * @param {JSON} res The result of the query.
- * @param {function} next The function to call next.
+ * @param {Request} req The request of the query
+ * @param {Request} res The result of the query.
+ * @param {function} next The function to call next, provided that the user is authenticated.
  */
 function isAuthenticated(req, res, next)
 {
@@ -52,17 +52,17 @@ function isAuthenticated(req, res, next)
 }
 /**
  * Checks if user is admin.
- * @param {JSON} req The request
+ * @param {Request} req The request
  * @returns {boolean} A boolean representing if the user is admin or not.
  */
 function isUserAdmin(req) {
-    return req.session.userId && req.session.username && req.session.username === constants.ADMIN_NAME;
+    return req.session.userId && req.session.username && (req.session.username === constants.ADMIN_NAME);
 }
 
 /**
  * Registers a new user.
- * @param {JSON} req 
- * @param {JSON} res 
+ * @param {Request} req 
+ * @param {Request} res 
  * @returns A response with status.
  */
 async function register(req, res)
@@ -109,8 +109,8 @@ async function register(req, res)
 }
 /**
  * Authenticates a user.
- * @param {JSON} req 
- * @param {JSON} res 
+ * @param {Request} req 
+ * @param {Request} res 
  * @returns A response with status.
  */
 async function authenticate(req, res)
@@ -165,9 +165,9 @@ function checkUserExistence(username)
             if(existing)
             {
                 return true; //existing is not a boolean, so if condition is used
-            }else{
-                return false; 
             }
+                return false; 
+            
         });
 }
 /**
@@ -214,7 +214,7 @@ function updateUserData(username, user)
 function centerIDExists(centerID)
 {
     usersBase.findOne({'centerID': centerID}, async (err, center) => {
-        if(err)
+        if(isNaN(centerID) || err)
         {
             return null;
         }
@@ -257,7 +257,7 @@ function getCenterByCenterID(centerID)
  */
 function storeCenter(centerID, centerObject)
 {
-    if(centerObject.centerID != centerID || centerIDExists(centerID))
+    if(centerObject.centerID != centerID || centerIDExists(centerID) || isNaN(centerID) || centerID == null)
     {
         return false;
     }
@@ -298,8 +298,49 @@ function updateCenter(centerID, centerObject)
     });
     return false;
 }
+/**
+ * Removes a center.
+ * @param {number} centerID The center ID of the center.
+ * @param {Request} req A request from the admin, confirming that sufficient permissions exist.
+ * @returns {boolean | undefined} A boolean representing the success of the operation. If an error occurred, returns undefined.
+ */
+function removeCenter(centerID, req)
+{
+
+    if(isUserAdmin(req))
+    {
+    usersBase.remove({'centerID': centerID}, {}, (err, num) =>
+    {
+        if(err)
+        {
+            return undefined;
+        }
+        if(num)
+        {
+            return true;
+        }
+    });
+    }
+    return false;
+}
+/**
+ * Gets a list of all centers.
+ * 
+ * @returns {boolean | JSON[]} Returns a boolean representing the success of the operation, or the array of all centers as JSON.
+ */
+function getAllCenters()
+{
+    usersBase.find({'centerID': {$exists: true}}, (err, docs) => 
+    {
+        if(err)
+        {
+            return false;
+        }
+        return docs;
+    });
+}
 
 
 
 
-export default {isAuthenticated, register, authenticate, deauthenticate, checkUserExistence, getUserByUsername, updateUserData, centerIDExists, getCenterByCenterID, storeCenter, updateCenter, isUserAdmin};
+export default {isAuthenticated, register, authenticate, deauthenticate, checkUserExistence, getUserByUsername, updateUserData, centerIDExists, getCenterByCenterID, getAllCenters, storeCenter, updateCenter, removeCenter, isUserAdmin};
