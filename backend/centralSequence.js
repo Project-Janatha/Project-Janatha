@@ -113,7 +113,7 @@ app.post("/deauthenticate", async (req, res) => {
  * Requires:
  * {'username': string}
  */
-app.post('/userExistence', async (req, res) => {
+app.post('/userExistence', (req, res) => {
     return res.status(200).json({'existence': auth.checkUserExistence(req.username)});
 });
 /**
@@ -196,7 +196,7 @@ app.post('/removeCenter', (req, res) => {
 });
 /**
  * Updates a user in the database.
- * 
+ * Requires:
  * {'userJSON': JSON, 'username': string}
  * userJSON must be valid JSON that can be built into a User properly, or this will throw.
  */
@@ -204,10 +204,28 @@ app.post('/userUpdate', (req, res) =>
 {
     return (auth.updateUserData(req.body.username, (new user.User(req.body.username)).buildFromJSON(req.body.userJSON))) ? res.status(200).json({'message': 'Operation successful.'}) : res.status(400).json({'message': "userJSON is malformed."})
 });
-
+/**
+ * Attempts to force this server to brew Coffee.
+ * 
+ * Requires:
+ * {}
+ */
 app.post('/brewCoffee', (req, res) => {
     return res.status(418).json({'message': 'This server is a teapot, and cannot brew coffee. It not just cannot, but it will not. How dare you disgrace this server with a request to brew coffee? This is a server that brews tea. Masala Chai >>> Filter Coffee.'});
+});
+
+app.post('/fetchAllCenters', (req, res) =>
+{
+    let li = auth.getAllCenters();
+    if(li)
+    {
+        return res.status(200).json({'message': 'Successful', 'centersList': li});
+    }
+    return res.status(503).json({'message': 'Internal server error.'});
 })
+//Should I make a method that only fetches some centers in a certain latitude-longitude range?
+//If so, please make this boolean true.
+const SAHANAV_SHOULD_IMPLEMENT_FEATURE = false;
 /**
  * Pathways required for:
  *  Center Fetch
