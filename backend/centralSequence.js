@@ -114,8 +114,49 @@ app.post("/deauthenticate", async (req, res) => {
  * {'username': string}
  */
 app.post('/userExistence', async (req, res) => {
-    return res.status(200).send({'existence': auth.checkUserExistence(req.username)});
+    return res.status(200).json({'existence': auth.checkUserExistence(req.username)});
 });
+/**
+ * Center addition pathway.
+ * 
+ * Requires:
+ * {}
+ */
+app.post('/addCenter', async (req, res) => {
+    
+});
+/**
+ * Verifies a User. This is an Admin Only request.
+ * 
+ * Requires:
+ * {'usernameToVerify': string, 'usernameCalling': string, 'verificationLevel': number}
+ * 
+ */
+app.post('/verifyUser', async (req, res) =>
+{
+    constants.usersBase.findOne({'username': req.body.usernameToVerify}, (err, us) =>
+    {
+        if(err)
+        {
+            return res.status(503).send({'message': 'Internal Server Error'});
+        }
+        if(!user)
+        {
+            return res.status(404).send({'message': 'User not found.'});
+        }
+        let u = new user.User(req.body.usernameToVerify);
+        u.buildFromJSON(us.userObject);
+        let status = u.verify(req.body.verificationLevel, req);
+        auth.updateUserData(req.body.username, u);
+        if(status)
+        {
+            return res.status(200).send({'message': 'Verification successful.'});
+        }else{
+            return res.status(401).send({'message': 'Insufficient permission to authorize.'});
+        }
+    });
+});
+app.post('/verifyCenter', (req, res) => {})
 /**
  * Pathways required for:
  *  Center Addition

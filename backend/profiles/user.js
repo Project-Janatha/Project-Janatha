@@ -67,7 +67,7 @@ class User
   /**
    * 
    * @param {number} verifyLevel The level at which the user should be verified. See constants.js.
-   * @param {JSON} req A request made by the admin user to verify that admin is making this request. 
+   * @param {Request} req A request made by the admin user to verify that admin is making this request. 
    * @returns {boolean} A boolean representing if the verification was successful or not.
    */
   verify(verifyLevel, req)
