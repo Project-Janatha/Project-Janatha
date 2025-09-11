@@ -8,7 +8,7 @@
     "upgrade:tamagui": "yarn up '*tamagui*'@latest '@tamagui/*'@latest",
     "upgrade:tamagui:canary": "yarn up '*tamagui*'@canary '@tamagui/*'@canary",
     "check:tamagui": "tamagui check",
-    "start": "expo start -c",
+    "start": "npm install tamagui expo; npm install; yarn install; expo start -c",
     "start:backend": "npm install bcryptjs express express-session @seald-io/nedb; npm install && yarn install; node ./backend/centralSequence.js",
     "start:all": "concurrently \"yarn start:backend\" \"yarn start\"",
     "android": "expo run:android",

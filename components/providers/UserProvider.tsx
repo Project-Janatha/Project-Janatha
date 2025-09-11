@@ -65,7 +65,7 @@ export default function UserProvider({ children }) {
         method: 'POST', 
         headers: {'Content-Type': 'application/json'}, 
         credentials: 'include',
-        body: JSON.stringify({username: username}),
+        body: JSON.stringify({username : username}),
       });
       const data = await response.json();
       if (response.ok) {
