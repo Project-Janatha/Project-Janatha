@@ -16,6 +16,9 @@
 // TODO: Enable post calls from android and ios to backend server
 // TODO: Enable persistent login sessions using cookies or tokens
 import React, { createContext, useContext, useState, useEffect, use } from 'react';
+import * as SecureStore from 'expo-secure-store';
+
+const SESSION_KEY = 'user_session';
 
 type User = {
   username: string;
@@ -58,7 +61,25 @@ export default function UserProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    setLoading(true);
+    const loadSession = async () => {
+      try {
+        const session = await SecureStore.getItemAsync(SESSION_KEY);
+        if (session) {
+          setUser(JSON.parse(session));
+        }
+    } catch (error) {
+        console.error("Failed to load session:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadSession();
+  }, []);
+
   const checkUserExists = async (username: string) => {
+    setLoading(true);
     const endpoint = `${url}/userExistence`;
     try {
       const response = await fetch(endpoint, {
@@ -100,17 +121,8 @@ export default function UserProvider({ children }) {
       if (response.ok) {
         const user = data.user;
         console.log("Login response data:", data);
-          setUser({
-            username: user.username,
-            center: user.center ?? -1,
-            points: user.points ?? 0,
-            isVerified: user.isVerified ?? false,
-            verificationLevel: user.verificationLevel ?? 0,
-            exists: true,
-            isActive: user.isActive ?? false,
-            id: user._id,
-            events: user.events ?? []
-          });
+          setUser(user);
+          await SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(user));
         } else {
           const errorMessage = data.message || `Request failed with status ${response.status}`;
           setError(errorMessage); // Set the error state in the context
@@ -127,7 +139,9 @@ export default function UserProvider({ children }) {
     }
   };
 
+  // Deauths user from backend and clears session.
   const logout = async () => {
+    setLoading(true);
     const endpoint = `${url}/deauthenticate`;
     try {
       const response = await fetch(endpoint, {
@@ -136,16 +150,37 @@ export default function UserProvider({ children }) {
       });
       if (response.ok) {
         setUser(null);
+        await SecureStore.deleteItemAsync(SESSION_KEY); // Clears stored session
         setError(null);
       }
       throw new Error('Logout failed');
     } catch(error) {
         setError(error.message);
+    } finally {
+        setLoading(false);
     }
   };
   // TODO: Implement signup function with onboarding flow
   const signup = async (username: string, password: string) => {
-
+    setLoading(true);
+    try {
+      const endpoint = `${url}/register`;
+      const response = await fetch(endpoint, {
+        method: 'POST', 
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username: username, password: password}),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        await login(username, password);
+      }
+      throw new Error('Signup failed:', data.message);
+    } catch(error) {
+        console.error("Signup error:", error);
+        setError(error.message);
+    } finally {
+        setLoading(false);
+    }
   };
 
   return (
