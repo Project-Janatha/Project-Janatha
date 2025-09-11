@@ -13,15 +13,15 @@ import { styled, Button, Input } from 'tamagui';
 
 export const PrimaryButton = styled(Button, {
   name: 'PrimaryButton',
-  background: '$primary',
+  bg: '$primary',
   color: 'white',
 
   pressStyle: {
-    background: '$primaryPress',
+    bg: '$primaryPress',
     scale: 0.97,
   },
   hoverStyle: {
-    background: '$primaryPress',
+    bg: '$primaryPress',
     scale: 0.97,
   },
 });

@@ -22,8 +22,6 @@ export default function AuthScreen(props) {
   // state for error messages
   const [error, setError] = useState('');
 
-  const handleUsername = ({ target }) => setUsername(target.value);
-  const handlePassword = ({ target }) => setPassword(target.value);
   const handleContinue = async () => {
     setError('');
     if (!username) {
@@ -75,22 +73,24 @@ export default function AuthScreen(props) {
       >
         <AuthInput 
           placeholder="Email" 
-          onChange={handleUsername}
+          onChangeText={setUsername}
+          value={username}
           width = "100%"
           />
           <Form.Trigger asChild>
-            <PrimaryButton width={'100%'}>
-              Continue
+            <PrimaryButton 
+              width={'100%'} 
+              disabled={loading || (authStep !== 'initial' && !password)} >
+              {loading ? 'Please wait...' : authStep === 'login' ? 'Log In' : authStep === 'signup' ? 'Sign Up' : 'Continue'}
             </PrimaryButton>
           </Form.Trigger>
         {authStep === 'login' && (
           <XStack gap="$4" width="100%">
-          <AuthInput placeholder="Password" onChange={handlePassword} secureTextEntry />
-          <Form.Trigger asChild>
-            <PrimaryButton width={'100%'}>
-              Sign In
-            </PrimaryButton>
-          </Form.Trigger>
+          <AuthInput 
+            placeholder="Password" 
+            onChangeText={setPassword} 
+            value={password}
+            secureTextEntry />
           </XStack>
           )}
 

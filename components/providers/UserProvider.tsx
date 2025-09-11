@@ -55,11 +55,11 @@ export const UserContext = createContext<{
 
 export default function UserProvider({ children }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const checkUserExists = async (username: string) => {
-    const endpoint = `${url}/user-exists`;
+    const endpoint = `${url}/userExistence`;
     try {
       const response = await fetch(endpoint, {
         method: 'POST', 
@@ -69,9 +69,11 @@ export default function UserProvider({ children }) {
       });
       const data = await response.json();
       if (response.ok) {
-        return data.exists;
+        console.log("User existence response data:", data);
+        return data.existence;
       } else {
         const errorMessage = data.message || `Request failed with status ${response.status}`;
+        console.log("Error checking user existence: ", errorMessage);
         setError(errorMessage);
         throw new Error(errorMessage);
       } 
