@@ -323,8 +323,24 @@ function removeCenter(centerID, req)
     }
     return false;
 }
+/**
+ * Gets a list of all centers.
+ * 
+ * @returns {boolean | JSON[]} Returns a boolean representing the success of the operation, or the array of all centers as JSON.
+ */
+function getAllCenters()
+{
+    usersBase.find({'centerID': {$exists: true}}, (err, docs) => 
+    {
+        if(err)
+        {
+            return false;
+        }
+        return docs;
+    });
+}
 
 
 
 
-export default {isAuthenticated, register, authenticate, deauthenticate, checkUserExistence, getUserByUsername, updateUserData, centerIDExists, getCenterByCenterID, storeCenter, updateCenter, removeCenter, isUserAdmin};
+export default {isAuthenticated, register, authenticate, deauthenticate, checkUserExistence, getUserByUsername, updateUserData, centerIDExists, getCenterByCenterID, getAllCenters, storeCenter, updateCenter, removeCenter, isUserAdmin};
