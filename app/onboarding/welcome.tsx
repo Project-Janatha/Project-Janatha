@@ -1,4 +1,5 @@
+import { YStack } from "tamagui";
 
 export default function WelcomeScreen() {
-  return <></>;
+  return <YStack></YStack>;
 }

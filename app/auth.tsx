@@ -6,6 +6,15 @@ import { Code, Moon, Sun } from '@tamagui/lucide-icons';
 import { UserContext, PrimaryButton, AuthInput } from 'components'
 import { Platform } from 'react-native';
 
+const FieldError = ({ message }) => {
+  if (!message) return null;
+  return (
+    <Paragraph color="$red10" fontSize={12} mt="$1" ml="$1">
+      {message}
+    </Paragraph>
+  );
+};
+
 export default function AuthScreen(props) {
   const router = useRouter();
   const colorScheme = useColorScheme()
@@ -24,11 +33,11 @@ export default function AuthScreen(props) {
   // confirm password for signup
   const [confirmPassword, setConfrimPassword] = useState('');
   // state for error messages
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
 
   const handleContinue = async () => {
     if (!username) {
-      setError('Please enter a username.');
+      setErrors({username: 'Please enter a username.'});
       return;
     }
     try {
@@ -39,13 +48,13 @@ export default function AuthScreen(props) {
         setAuthStep('signup');
       };
     } catch (e) {
-      setError(e.message || 'Failed to connect to server.');
+      setErrors({form: e.message || 'Failed to connect to server.'});
     } 
   };
 
   const handleLogin = async (username, password) => {
-    if (!username || !password) {
-      setError('Please your username and password.');
+    if (!password) {
+      setErrors({password: 'Please your password.'});
       return;
     }
     try {
@@ -58,19 +67,21 @@ export default function AuthScreen(props) {
 
   // TODO: Add secure password criteria and email validation
   const handleSignup = async (username, password, confirmPassword) => {
-    if (!username || !password || !confirmPassword) {
-      if (!username) {
-        setError('Please enter a username.');
-      } else if (!password) {
-        setError('Please enter a password.');
-      } else if (password !== confirmPassword) {
-        setError('Passwords do not match.');
-      }
+    if (!username) {
+      setError('Please enter a username.');
+      return;
+    }
+    if (!password) {
+      setError('Please enter a password.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
     try {
       await signup(username, password);
-      router.replace('/(tabs)');
+      router.replace('/onboarding/welcome');
     } catch (error) {
       setError(error.message || 'Failed to sign up. Please try again.');
     }
@@ -96,7 +107,6 @@ export default function AuthScreen(props) {
           Log In or Sign Up
         </H3>
       </YStack>
-      {error && <Paragraph color="red">{error}</Paragraph>}
       <Form
         items="center"
         
@@ -114,6 +124,7 @@ export default function AuthScreen(props) {
         p="$8"
         mb="$8"
       >
+        {error && <Paragraph color="red" text="left">{error}</Paragraph>}
         <AuthInput 
           placeholder="Email" 
           onChangeText={setUsername}
