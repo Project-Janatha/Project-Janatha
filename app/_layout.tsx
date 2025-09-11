@@ -110,14 +110,12 @@ function RootLayoutNav() {
           name="auth"
           options={{
             headerShown: false,
-            title: 'Log In or Sign Up',
-            presentation: 'modal',
-            animation: 'slide_from_right',
-            gestureEnabled: true,
-            gestureDirection: 'horizontal',
-            contentStyle: {
-              backgroundColor: theme.background.val,
-            },
+            //title: 'Log In or Sign Up',
+            //presentation: 'modal',
+            //animation: 'slide_from_right',
+            //gestureEnabled: true,
+            //gestureDirection: 'horizontal',
+            
           }}
         />
       </Stack>

@@ -3,25 +3,42 @@ import { Appearance, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Anchor, H3, Paragraph, View, Button, XStack, Form, Input, YStack, Image} from 'tamagui'
 import { Moon, Sun } from '@tamagui/lucide-icons';
-import { UserContext } from 'components'
+import { UserContext, PrimaryButton, AuthInput } from 'components'
 
 export default function AuthScreen(props) {
   const router = useRouter();
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark';
-  const { login, signup, error, loading } = useContext(UserContext);
-  const [username, setUsername] = React.useState('');
-  const [password, setPassword] = React.useState('');
+  const { checkUserExists, login, signup, loading } = useContext(UserContext);
+  
+  //Possible auth steps
+  type AuthStep = 'initial' | 'login' | 'signup' | null;
+
+  // state for current state
+  const [authStep, setAuthStep] = useState<AuthStep>('initial'); // 'login' or 'signup'
+  // state for form inputs
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  // state for error messages
+  const [error, setError] = useState('');
 
   const handleUsername = ({ target }) => setUsername(target.value);
   const handlePassword = ({ target }) => setPassword(target.value);
   const handleContinue = async () => {
+    setError('');
+    if (!username) {
+      setError('Please enter a username.');
+      return;
+    }
     try {
-      await login(username, password);
-      router.replace('/(tabs)');
+      const exists = await checkUserExists(username);
+      if(exists) {
+        setAuthStep('login');
+      } else {
+        setAuthStep('signup');
+      };
     } catch (e) {
-      if (e.message.includes)
-      console.log("Login failed:", e.message);
+      setError(e.message || 'Failed to connect to server.');
     } 
   };
 
@@ -45,30 +62,43 @@ export default function AuthScreen(props) {
           Log In or Sign Up
         </H3>
       </YStack>
+      {error && <Paragraph color="red">{error}</Paragraph>}
       <Form
         items="center"
         
-        maxW={1200}
+        width="25%"
         gap="$2"
         onSubmit={handleContinue}
         
         p="$8"
         mb="$8"
       >
-        {error && <Paragraph color="red">{error}</Paragraph>}
-        <Input placeholder="Username" onChange={handleUsername}/>
-        <Input placeholder="Password" onChange={handlePassword} secureTextEntry />
-
-        <XStack gap="$4" width="100%">
+        <AuthInput 
+          placeholder="Email" 
+          onChange={handleUsername}
+          width = "100%"
+          />
           <Form.Trigger asChild>
-            <Button width={'100%'}>
+            <PrimaryButton width={'100%'}>
               Continue
-            </Button>
+            </PrimaryButton>
           </Form.Trigger>
+        {authStep === 'login' && (
+          <XStack gap="$4" width="100%">
+          <AuthInput placeholder="Password" onChange={handlePassword} secureTextEntry />
+          <Form.Trigger asChild>
+            <PrimaryButton width={'100%'}>
+              Sign In
+            </PrimaryButton>
+          </Form.Trigger>
+          </XStack>
+          )}
+
+        
+          
           {/* <Button onPress={() => signup(username, password)}>
             Sign Up
           </Button> */}
-        </XStack>
       </Form>
     </YStack>
   )

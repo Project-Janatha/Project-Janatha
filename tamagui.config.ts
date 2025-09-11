@@ -1,10 +1,11 @@
 import { defaultConfig } from '@tamagui/config/v4'
+import { BackHandler } from 'react-native'
 import { createFont, createTamagui, createTokens, isWeb } from 'tamagui'
 const tokens = createTokens({
   ...defaultConfig.tokens,
   color: {
-    primary: '#C2410C', // orange-800
-    primaryPress: '#9A3412', // orange-900
+    primary: '#9A3412', // orange-800
+    primaryPress: '#C2410C', // orange-900
   }
 })
 
@@ -63,10 +64,6 @@ const systemFont = createFont({
     800: { normal: 'AnekLatin-ExtraBold', }
   },
 })
-const buttonActiveState = {
-  backgroundColor: tokens.color.primaryPress,
-  scale: isWeb ? 0.95 : 0.97,
-}
 const config = createTamagui({
   ...defaultConfig,
   fonts: {
@@ -79,27 +76,13 @@ const config = createTamagui({
       ...defaultConfig.themes.light,
       background: 'white',
       color: 'black',
-      buttonBackground: tokens.color.primary,
-      buttonColor: 'white',
+      gray: '#F3F4F6'
     },
     dark: {
       ...defaultConfig.themes.dark,
       background: 'black',
       color: 'white',
-      buttonBackground: tokens.color.primary,
-      buttonColor: 'white',
-    },
-    light_Button: {
-      backgroundHover: tokens.color.primaryPress,
-      backgroundPress: tokens.color.primaryPress,
-      color: 'white',
-
-    },
-    dark_Button: {
-      background: tokens.color.primary,
-      backgroundHover: tokens.color.primaryPress,
-      backgroundPress: tokens.color.primaryPress,
-      color: 'white',
+      gray: '#171717'
     },
   },
   media: {
@@ -107,12 +90,6 @@ const config = createTamagui({
     // add your own media queries here, if wanted
   },
   tokens,
-  defaultProps: {
-    Button: {
-      pressStyle: buttonActiveState,
-      hoverStyle: buttonActiveState
-    },
-  },
 })
 
 type OurConfig = typeof config
