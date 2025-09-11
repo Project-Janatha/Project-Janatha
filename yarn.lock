@@ -11077,6 +11077,7 @@ __metadata:
     expo-linking: "npm:~7.1.7"
     expo-location: "npm:^18.1.6"
     expo-router: "npm:~5.1.6"
+    expo-secure-store: "npm:~15.0.6"
     expo-splash-screen: "npm:~0.30.10"
     expo-status-bar: "npm:~2.2.3"
     expo-system-ui: "npm:~5.0.11"
@@ -11104,6 +11105,15 @@ __metadata:
     yarn: "npm:^1.22.22"
   languageName: unknown
   linkType: soft
+
+"expo-secure-store@npm:~15.0.6":
+  version: 15.0.6
+  resolution: "expo-secure-store@npm:15.0.6"
+  peerDependencies:
+    expo: "*"
+  checksum: 10/740af2c017f67ccd610c4c6780881846e200abc7a427bf1254b0cf9d6916d76f26b7a882e7ee81ed03d956697d7567d6ee756d1528000704b06e841dadc61257
+  languageName: node
+  linkType: hard
 
 "expo-splash-screen@npm:~0.30.10":
   version: 0.30.10
