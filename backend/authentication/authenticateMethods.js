@@ -155,19 +155,17 @@ async function deauthenticate(req, res)
  */
 function checkUserExistence(username)
 {
-    usersBase.findOne({"username": username}, async (err, existing) =>
-        {
-            if(err)
+    return new Promise((resolve, reject) => {
+        usersBase.findOne({"username": username}, async (err, existing) =>
             {
-                console.log(err);
-                return res.status(500).json({"message": "Internal server error"});
-            }
-            if(existing)
-            {
-                return true; //existing is not a boolean, so if condition is used
-            }
-                return false; 
-            
+                if(err)
+                {
+                    console.log(err);
+                    return reject(res.status(500).json({"message": "Internal server error"}));
+                }
+                resolve(!!existing);
+            }); 
+                
         });
 }
 /**

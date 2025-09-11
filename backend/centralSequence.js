@@ -113,8 +113,8 @@ app.post("/deauthenticate", async (req, res) => {
  * Requires:
  * {'username': string}
  */
-app.post('/userExistence', (req, res) => {
-    return res.status(200).json({'existence': auth.checkUserExistence(req.username)});
+app.post('/userExistence', async (req, res) => {
+    return res.status(200).json({'existence': await auth.checkUserExistence(req.username)});
 });
 /**
  * Center addition pathway.
