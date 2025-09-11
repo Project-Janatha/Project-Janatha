@@ -19,11 +19,12 @@ export default function AuthScreen(props) {
   // state for form inputs
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  // confirm password for signup
+  const [confirmPassword, setConfrimPassword] = useState('');
   // state for error messages
   const [error, setError] = useState('');
 
   const handleContinue = async () => {
-    setError('');
     if (!username) {
       setError('Please enter a username.');
       return;
@@ -39,6 +40,39 @@ export default function AuthScreen(props) {
       setError(e.message || 'Failed to connect to server.');
     } 
   };
+
+  const handleLogin = async (username, password) => {
+    if (!username || !password) {
+      setError('Please your username and password.');
+      return;
+    }
+    try {
+      await login(username, password);
+      router.replace('/(tabs)');
+    } catch (e) {
+      setError(e.message || 'Username or password is incorrect.');
+    }
+  };
+
+  // TODO: Add secure password criteria and email validation
+  const handleSignup = async (username, password, confirmPassword) => {
+    if (!username || !password || !confirmPassword) {
+      if (!username) {
+        setError('Please enter a username.');
+      } else if (!password) {
+        setError('Please enter a password.');
+      } else if (password !== confirmPassword) {
+        setError('Passwords do not match.');
+      }
+      return;
+    try {
+      await signup(username, password);
+      router.replace('/(tabs)');
+    } catch (error) {
+      setError(error.message || 'Failed to sign up. Please try again.');
+    }
+  };
+}
 
   return (
     <YStack 
@@ -66,8 +100,15 @@ export default function AuthScreen(props) {
         
         width="25%"
         gap="$2"
-        onSubmit={handleContinue}
-        
+        onSubmit={() => {
+          if (authStep === "login") {
+            handleLogin(username, password);
+          } else if (authStep === "signup") {
+            handleSignup(username, password, confirmPassword);
+          } else {
+            handleContinue();
+          }
+        }}
         p="$8"
         mb="$8"
       >
@@ -93,13 +134,23 @@ export default function AuthScreen(props) {
             secureTextEntry />
           </XStack>
           )}
-
-        
-          
-          {/* <Button onPress={() => signup(username, password)}>
-            Sign Up
-          </Button> */}
+        {authStep === 'signup' && (
+          <XStack gap="$4" width="100%">
+            <AuthInput 
+              placeholder="Password" 
+              onChangeText={setPassword} 
+              value={password}
+              secureTextEntry 
+            />
+            <AuthInput 
+              placeholder="Confirm password" 
+              onChangeText={setConfrimPassword}  
+              value={confirmPassword}
+              secureTextEntry 
+            />
+          </XStack>
+          )}
       </Form>
     </YStack>
-  )
+  );
 }
