@@ -33,9 +33,10 @@ export default function AuthScreen(props) {
   // confirm password for signup
   const [confirmPassword, setConfrimPassword] = useState('');
   // state for error messages
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<{ [Key: string]: string }>({});
 
   const handleContinue = async () => {
+    setErrors({});
     if (!username) {
       setErrors({username: 'Please enter a username.'});
       return;
@@ -53,6 +54,11 @@ export default function AuthScreen(props) {
   };
 
   const handleLogin = async (username, password) => {
+    setErrors({});
+    if (!username) {
+      setErrors({username: 'Please enter a username.'});
+      return;
+    }
     if (!password) {
       setErrors({password: 'Please your password.'});
       return;
@@ -61,41 +67,42 @@ export default function AuthScreen(props) {
       await login(username, password);
       router.replace('/(tabs)');
     } catch (e) {
-      setError(e.message || 'Username or password is incorrect.');
+      setErrors({form: e.message || 'Username or password is incorrect.'});
     }
   };
 
   // TODO: Add secure password criteria and email validation
   const handleSignup = async (username, password, confirmPassword) => {
+    setErrors({});
     if (!username) {
-      setError('Please enter a username.');
+      setErrors({ username: 'Please enter a username.'});
       return;
     }
     if (!password) {
-      setError('Please enter a password.');
+      setErrors({password: 'Please enter a password.'});
       return;
     }
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setErrors({confirmPassword: 'Passwords do not match.'});
       return;
     }
     try {
       await signup(username, password);
       router.replace('/onboarding/welcome');
-    } catch (error) {
-      setError(error.message || 'Failed to sign up. Please try again.');
+    } catch (e) {
+      setErrors({ form: e.message || 'Failed to sign up. Please try again.'});
     }
   };
 
   return (
     <YStack 
-    flex={1} 
-    bg="$background" 
-    p="$4"
-    justify="center"
-    items={"center"}
-    gap="$16"
-    width={"100%"}>
+      flex={1} 
+      bg="$background" 
+      p="$4"
+      justify="center"
+      items={"center"}
+      gap="$16"
+      width={"100%"}>
       
       {/* Top Section */}
       <YStack items="center" pt="$8" gap='$4' width="100%">
@@ -124,13 +131,14 @@ export default function AuthScreen(props) {
         p="$8"
         mb="$8"
       >
-        {error && <Paragraph color="red" text="left">{error}</Paragraph>}
+        <FieldError message={errors.form} />
         <AuthInput 
           placeholder="Email" 
           onChangeText={setUsername}
           value={username}
           width = "100%"
           />
+        <FieldError message={errors.username} />
         {authStep === 'login' && (
           <AuthInput 
             placeholder="Password" 
@@ -139,6 +147,7 @@ export default function AuthScreen(props) {
             width={"100%"}
             secureTextEntry />
           )}
+          <FieldError message={errors.password} />
         {authStep === 'signup' && (
           <YStack gap="$2" width="100%">
             <AuthInput 
@@ -148,6 +157,7 @@ export default function AuthScreen(props) {
               width={"100%"}
               secureTextEntry 
             />
+            <FieldError message={errors.password} />
             <AuthInput 
               placeholder="Confirm password" 
               onChangeText={setConfrimPassword}  
@@ -155,6 +165,7 @@ export default function AuthScreen(props) {
               width={"100%"}
               secureTextEntry 
             />
+            <FieldError message={errors.confrimPassword} />
           </YStack>
           )}
         <Form.Trigger asChild>
