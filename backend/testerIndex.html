@@ -1,5 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Pathway Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background: #f7f7f7;
+        }
+
+        h1 {
+            color: #2c3e50;
+        }
+
+        .endpoint {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px #ccc;
+            margin-bottom: 2em;
+            padding: 1em;
+        }
+
+        .endpoint h2 {
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            margin: 0.5em 0 0.2em;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.5em;
+            margin-bottom: 0.5em;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background: #2980b9;
+            color: #fff;
+            border: none;
+            padding: 0.7em 1.5em;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #3498db;
+        }
+
+        .result {
+            background: #ecf0f1;
+            border-radius: 4px;
+            padding: 0.5em;
+            margin-top: 0.5em;
+            font-size: 0.95em;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Backend Pathway Tester</h1>
+    <div id="endpoints"></div>
+    <script>
+        // List of endpoints and their required fields
+        const endpoints = [
+            {
+                name: 'Register',
+                path: '/register',
+                method: 'POST',
+                fields: [
+                    { label: 'Username', name: 'username', type: 'text' },
+                    { label: 'Password', name: 'password', type: 'password' }
+                ]
+            },
+            {
+                name: 'Authenticate',
+                path: '/authenticate',
+                method: 'POST',
+                fields: [
+                    { label: 'Username', name: 'username', type: 'text' },
+                    { label: 'Password', name: 'password', type: 'password' }
+                ]
+            },
+            {
+                name: 'Deauthenticate',
+                path: '/deauthenticate',
+                method: 'POST',
+                fields: [
+                    { label: 'Username', name: 'username', type: 'text' }
+                ]
+            },
+            {
+                name: 'User Existence',
+                path: '/userExistence',
+                method: 'POST',
+                fields: [
+                    { label: 'Username', name: 'username', type: 'text' }
+                ]
+            },
+            {
+                name: 'Add Center',
+                path: '/addCenter',
+                method: 'POST',
+                fields: [
+                    { label: 'Latitude', name: 'latitude', type: 'number' },
+                    { label: 'Longitude', name: 'longitude', type: 'number' },
+                    { label: 'Center Name', name: 'centerName', type: 'text' }
+                ]
+            },
+            {
+                name: 'Verify User',
+                path: '/verifyUser',
+                method: 'POST',
+                fields: [
+                    { label: 'Username To Verify', name: 'usernameToVerify', type: 'text' },
+                    { label: 'Username Calling', name: 'usernameCalling', type: 'text' },
+                    { label: 'Verification Level', name: 'verificationLevel', type: 'number' }
+                ]
+            },
+            {
+                name: 'Verify Center',
+                path: '/verifyCenter',
+                method: 'POST',
+                fields: [
+                    { label: 'Center ID', name: 'centerID', type: 'number' }
+                ]
+            },
+            {
+                name: 'Remove Center',
+                path: '/removeCenter',
+                method: 'POST',
+                fields: [
+                    { label: 'Center ID', name: 'centerID', type: 'number' }
+                ]
+            },
+            {
+                name: 'User Update',
+                path: '/userUpdate',
+                method: 'POST',
+                fields: [
+                    { label: 'Username', name: 'username', type: 'text' },
+                    { label: 'User JSON', name: 'userJSON', type: 'textarea' }
+                ]
+            },
+            {
+                name: 'Brew Coffee',
+                path: '/brewCoffee',
+                method: 'POST',
+                fields: []
+            },
+            {
+                name: 'Fetch All Centers',
+                path: '/fetchAllCenters',
+                method: 'POST',
+                fields: []
+            },
+            {
+                name: 'Fetch Center',
+                path: '/fetchCenter',
+                method: 'POST',
+                fields: [
+                    { label: 'Center ID', name: 'centerID', type: 'number' }
+                ]
+            },
+            {
+                name: 'Remove Event',
+                path: '/removeEvent',
+                method: 'POST',
+                fields: [
+                    { label: 'Event ID', name: 'id', type: 'number' }
+                ]
+            },
+            {
+                name: 'Add Event',
+                path: '/addevent',
+                method: 'POST',
+                fields: [
+                    { label: 'Latitude', name: 'latitude', type: 'number' },
+                    { label: 'Longitude', name: 'longitude', type: 'number' },
+                    { label: 'Date', name: 'date', type: 'date' },
+                    { label: 'Center ID', name: 'centerID', type: 'text' },
+                    { label: 'Endorsers (comma separated)', name: 'endorsers', type: 'text' }
+                ]
+            }
+        ];
+
+        function createForm(endpoint) {
+            const div = document.createElement('div');
+            div.className = 'endpoint';
+            div.innerHTML = `<h2>${endpoint.name}</h2>`;
+            const form = document.createElement('form');
+            form.onsubmit = async function (e) {
+                e.preventDefault();
+                const data = {};
+                endpoint.fields.forEach(field => {
+                    if (field.type === 'textarea') {
+                        data[field.name] = form.elements[field.name].value;
+                    } else if (field.type === 'date') {
+                        data[field.name] = new Date(form.elements[field.name].value).toISOString();
+                    } else {
+                        data[field.name] = form.elements[field.name].value;
+                    }
+                });
+                if (endpoint.name === 'Add Event') {
+                    // Endorsers as array
+                    data.endorsers = data.endorsers.split(',').map(s => s.trim());
+                }
+                let resultDiv = div.querySelector('.result');
+                if (!resultDiv) {
+                    resultDiv = document.createElement('div');
+                    resultDiv.className = 'result';
+                    div.appendChild(resultDiv);
+                }
+                try {
+                    const res = await fetch(endpoint.path, {
+                        method: endpoint.method,
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: endpoint.method === 'POST' ? JSON.stringify(data) : undefined
+                    });
+                    const text = await res.text();
+                    let display;
+                    try { display = JSON.stringify(JSON.parse(text), null, 2); } catch { display = text; }
+                    resultDiv.innerHTML = `<span class="${res.ok ? 'success' : 'error'}">${res.status} ${res.statusText}</span><pre>${display}</pre>`;
+                } catch (err) {
+                    resultDiv.innerHTML = `<span class="error">Error: ${err.message}</span>`;
+                }
+            };
+            endpoint.fields.forEach(field => {
+                const label = document.createElement('label');
+                label.textContent = field.label;
+                label.htmlFor = field.name;
+                form.appendChild(label);
+                let input;
+                if (field.type === 'textarea') {
+                    input = document.createElement('textarea');
+                } else {
+                    input = document.createElement('input');
+                    input.type = field.type;
+                }
+                input.name = field.name;
+                input.id = field.name;
+                form.appendChild(input);
+            });
+            const submit = document.createElement('button');
+            submit.type = 'submit';
+            submit.textContent = `Test ${endpoint.name}`;
+            form.appendChild(submit);
+            div.appendChild(form);
+            return div;
+        }
+
+        const endpointsDiv = document.getElementById('endpoints');
+        endpoints.forEach(endpoint => {
+            endpointsDiv.appendChild(createForm(endpoint));
+        });
+    </script>
+</body>
+
+</html>
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +292,7 @@
         }
     </style>
 </head>
+
 <body class="bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center min-h-screen p-4">
     <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md space-y-8">
         <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">Authentication Tester</h1>
@@ -29,13 +308,18 @@
             <form id="registerForm" class="space-y-4">
                 <div>
                     <label for="regUsername" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                    <input type="text" id="regUsername" name="username" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    <input type="text" id="regUsername" name="username"
+                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        required>
                 </div>
                 <div>
                     <label for="regPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="regPassword" name="password" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    <input type="password" id="regPassword" name="password"
+                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        required>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-semibold transition duration-200">
+                <button type="submit"
+                    class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-semibold transition duration-200">
                     Register
                 </button>
             </form>
@@ -47,13 +331,18 @@
             <form id="loginForm" class="space-y-4">
                 <div>
                     <label for="loginUsername" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                    <input type="text" id="loginUsername" name="username" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    <input type="text" id="loginUsername" name="username"
+                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        required>
                 </div>
                 <div>
                     <label for="loginPassword" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="loginPassword" name="password" class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    <input type="password" id="loginPassword" name="password"
+                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        required>
                 </div>
-                <button type="submit" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-semibold transition duration-200">
+                <button type="submit"
+                    class="w-full bg-green-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-semibold transition duration-200">
                     Login
                 </button>
             </form>
@@ -64,7 +353,8 @@
             <h2 class="text-2xl font-semibold text-gray-700 mb-4 text-center">Logout</h2>
             <form id="logoutForm" class="space-y-4">
                 <p class="text-gray-600 text-center">Click the button below to deauthenticate your session.</p>
-                <button type="submit" class="w-full bg-red-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 font-semibold transition duration-200">
+                <button type="submit"
+                    class="w-full bg-red-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 font-semibold transition duration-200">
                     Logout
                 </button>
             </form>
@@ -169,4 +459,5 @@
         });
     </script>
 </body>
+
 </html>

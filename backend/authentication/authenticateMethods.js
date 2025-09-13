@@ -153,7 +153,7 @@ async function deauthenticate(req, res)
  * @param {string} username 
  * @returns {boolean} A boolean representing the state of the user's existence.
  */
-function checkUserExistence(username)
+async function checkUserExistence(username)
 {
     return new Promise((resolve, reject) => {
         usersBase.findOne({"username": username}, async (err, existing) =>
