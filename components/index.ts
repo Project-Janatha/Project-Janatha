@@ -18,12 +18,20 @@ export const PrimaryButton = styled(Button, {
 
   pressStyle: {
     bg: '$primaryPress',
-    scale: 0.97,
+    opacity: .6,
+    scale: 1,
   },
   hoverStyle: {
     bg: '$primaryPress',
     scale: 0.97,
   },
+  variants: {
+    disabled: {
+      true: {
+        opacity: .6
+      }
+    }
+  }
 });
 
 export const AuthInput = styled(Input, {
