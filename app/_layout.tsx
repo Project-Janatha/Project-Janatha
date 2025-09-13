@@ -89,7 +89,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
 function RootLayoutNav() {
   const colorScheme = useColorScheme()
   const theme = useTheme()
-  const { user, isAuthenticated } = useContext(UserContext);
+  const { isAuthenticated } = useContext(UserContext);
 
   const pathname = usePathname();
   if (!isAuthenticated && pathname !== '/auth') {

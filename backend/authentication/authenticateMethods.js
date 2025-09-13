@@ -155,21 +155,18 @@ async function deauthenticate(req, res)
  */
 async function checkUserExistence(username)
 {
-    return new Promise((resolve) => {
-        usersBase.findOne({"username": username}, (err, existing) =>
-        {
-            if(err)
+    return new Promise((resolve, reject) => {
+        usersBase.findOne({"username": username}, async (err, existing) =>
             {
-                console.log(err);
-                resolve(false);
-            }
-            if(existing)
-            {
-                resolve(true);
-            }
-            resolve(false);
+                if(err)
+                {
+                    console.log(err);
+                    return reject(res.status(500).json({"message": "Internal server error"}));
+                }
+                resolve(!!existing);
+            }); 
+                
         });
-    });
 }
 /**
  * Constructs a User object by username.

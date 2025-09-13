@@ -2,14 +2,25 @@ import React, { useState, useContext } from 'react'
 import { Appearance, useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Anchor, H3, Paragraph, View, Button, XStack, Form, Input, YStack, Image} from 'tamagui'
-import { Moon, Sun } from '@tamagui/lucide-icons';
+import { Code, Moon, Sun } from '@tamagui/lucide-icons';
 import { UserContext, PrimaryButton, AuthInput } from 'components'
+import { Platform } from 'react-native';
+
+const FieldError = ({ message }) => {
+  if (!message) return null;
+  return (
+    <Paragraph color="$red10" fontSize={12} mt="$1" ml="$1">
+      {message}
+    </Paragraph>
+  );
+};
 
 export default function AuthScreen(props) {
   const router = useRouter();
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark';
-  const { checkUserExists, login, signup, loading } = useContext(UserContext);
+  const { checkUserExists, login, signup, setUser, loading } = useContext(UserContext);
+  const isWeb = Platform.OS === 'web';
   
   //Possible auth steps
   type AuthStep = 'initial' | 'login' | 'signup' | null;
@@ -19,15 +30,15 @@ export default function AuthScreen(props) {
   // state for form inputs
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  // confirm password for signup
+  const [confirmPassword, setConfrimPassword] = useState('');
   // state for error messages
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<{ [Key: string]: string }>({});
 
-  const handleUsername = ({ target }) => setUsername(target.value);
-  const handlePassword = ({ target }) => setPassword(target.value);
   const handleContinue = async () => {
-    setError('');
+    setErrors({});
     if (!username) {
-      setError('Please enter a username.');
+      setErrors({username: 'Please enter a username.'});
       return;
     }
     try {
@@ -38,19 +49,60 @@ export default function AuthScreen(props) {
         setAuthStep('signup');
       };
     } catch (e) {
-      setError(e.message || 'Failed to connect to server.');
+      setErrors({form: e.message || 'Failed to connect to server.'});
     } 
+  };
+
+  const handleLogin = async (username, password) => {
+    setErrors({});
+    if (!username) {
+      setErrors({username: 'Please enter a username.'});
+      return;
+    }
+    if (!password) {
+      setErrors({password: 'Please your password.'});
+      return;
+    }
+    try {
+      await login(username, password);
+      router.replace('/(tabs)');
+    } catch (e) {
+      setErrors({form: e.message || 'Username or password is incorrect.'});
+    }
+  };
+
+  // TODO: Add secure password criteria and email validation
+  const handleSignup = async (username, password, confirmPassword) => {
+    setErrors({});
+    if (!username) {
+      setErrors({ username: 'Please enter a username.'});
+      return;
+    }
+    if (!password) {
+      setErrors({password: 'Please enter a password.'});
+      return;
+    }
+    if (password !== confirmPassword) {
+      setErrors({confirmPassword: 'Passwords do not match.'});
+      return;
+    }
+    try {
+      await signup(username, password);
+      router.replace('/onboarding/welcome');
+    } catch (e) {
+      setErrors({ form: e.message || 'Failed to sign up. Please try again.'});
+    }
   };
 
   return (
     <YStack 
-    flex={1} 
-    bg="$background" 
-    p="$4"
-    justify="center"
-    items={"center"}
-    gap="$16"
-    width={"100%"}>
+      flex={1} 
+      bg="$background" 
+      p="$4"
+      justify="center"
+      items={"center"}
+      gap="$16"
+      width={"100%"}>
       
       {/* Top Section */}
       <YStack items="center" pt="$8" gap='$4' width="100%">
@@ -62,44 +114,90 @@ export default function AuthScreen(props) {
           Log In or Sign Up
         </H3>
       </YStack>
-      {error && <Paragraph color="red">{error}</Paragraph>}
       <Form
         items="center"
         
-        width="25%"
+        width={isWeb? "40%" : "90%"}
         gap="$2"
-        onSubmit={handleContinue}
-        
+        onSubmit={() => {
+          if (authStep === "login") {
+            handleLogin(username, password);
+          } else if (authStep === "signup") {
+            handleSignup(username, password, confirmPassword);
+          } else {
+            handleContinue();
+          }
+        }}
         p="$8"
         mb="$8"
       >
+        <FieldError message={errors.form} />
         <AuthInput 
           placeholder="Email" 
-          onChange={handleUsername}
+          onChangeText={setUsername}
+          value={username}
           width = "100%"
           />
-          <Form.Trigger asChild>
-            <PrimaryButton width={'100%'}>
-              Continue
-            </PrimaryButton>
-          </Form.Trigger>
+        <FieldError message={errors.username} />
         {authStep === 'login' && (
-          <XStack gap="$4" width="100%">
-          <AuthInput placeholder="Password" onChange={handlePassword} secureTextEntry />
-          <Form.Trigger asChild>
-            <PrimaryButton width={'100%'}>
-              Sign In
-            </PrimaryButton>
-          </Form.Trigger>
-          </XStack>
+          <AuthInput 
+            placeholder="Password" 
+            onChangeText={setPassword} 
+            value={password}
+            width={"100%"}
+            secureTextEntry />
           )}
-
-        
-          
-          {/* <Button onPress={() => signup(username, password)}>
-            Sign Up
-          </Button> */}
+          <FieldError message={errors.password} />
+        {authStep === 'signup' && (
+          <YStack gap="$2" width="100%">
+            <AuthInput 
+              placeholder="Password" 
+              onChangeText={setPassword} 
+              value={password}
+              width={"100%"}
+              secureTextEntry 
+            />
+            <FieldError message={errors.password} />
+            <AuthInput 
+              placeholder="Confirm password" 
+              onChangeText={setConfrimPassword}  
+              value={confirmPassword}
+              width={"100%"}
+              secureTextEntry 
+            />
+            <FieldError message={errors.confrimPassword} />
+          </YStack>
+          )}
+        <Form.Trigger asChild>
+          <PrimaryButton 
+            width={'100%'} 
+            disabled={loading || (authStep !== 'initial' && !password)} >
+            {loading ? 'Please wait...' : authStep === 'login' ? 'Log In' : authStep === 'signup' ? 'Sign Up' : 'Continue'}
+          </PrimaryButton>
+      </Form.Trigger>
       </Form>
+      <Button 
+        icon={<Code color={isDark ? "white" : "black"} />} 
+        onPress={() => {
+          const devUser = {
+            username: 'dev_user',
+            id: 'dev_id',
+            center: -1,
+            points: 999,
+            isVerified: true,
+            verificationLevel: 99,
+            exists: true,
+            isActive: true,
+            events: [],
+          };
+          // Set the mock user in the context
+          setUser(devUser);
+          // Navigate to the main screen
+          router.push('/(tabs)');
+        }}
+      >
+        Dev Mode
+      </Button>
     </YStack>
-  )
+  );
 }
