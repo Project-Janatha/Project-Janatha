@@ -9,10 +9,11 @@ import { Home, Compass, User } from '@tamagui/lucide-icons'
 export default function TabLayout() {
   const theme = useTheme()
 
+  // TODO: Make UX better for web
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: theme.red10.val,
+        tabBarActiveTintColor: '$primary',
         tabBarStyle: {
           backgroundColor: theme.background.val,
           borderTopColor: theme.borderColor.val,

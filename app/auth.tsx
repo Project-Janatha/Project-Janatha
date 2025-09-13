@@ -31,7 +31,7 @@ export default function AuthScreen(props) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   // confirm password for signup
-  const [confirmPassword, setConfrimPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   // state for error messages
   const [errors, setErrors] = useState<{ [Key: string]: string }>({});
 
@@ -99,9 +99,8 @@ export default function AuthScreen(props) {
       flex={1} 
       bg="$background" 
       p="$4"
-      justify="center"
+      justify="space-around"
       items={"center"}
-      gap="$16"
       width={"100%"}>
       
       {/* Top Section */}
@@ -140,14 +139,17 @@ export default function AuthScreen(props) {
           />
         <FieldError message={errors.username} />
         {authStep === 'login' && (
-          <AuthInput 
-            placeholder="Password" 
-            onChangeText={setPassword} 
-            value={password}
-            width={"100%"}
-            secureTextEntry />
+          <YStack gap="$2" width="100%">
+            <AuthInput 
+              placeholder="Password" 
+              onChangeText={setPassword} 
+              value={password}
+              width={"100%"}
+              secureTextEntry />
+            <FieldError message={errors.password} />
+          </YStack>
           )}
-          <FieldError message={errors.password} />
+          
         {authStep === 'signup' && (
           <YStack gap="$2" width="100%">
             <AuthInput 
@@ -157,21 +159,24 @@ export default function AuthScreen(props) {
               width={"100%"}
               secureTextEntry 
             />
-            <FieldError message={errors.password} />
+            <FieldError message={errors.password}/>
             <AuthInput 
               placeholder="Confirm password" 
-              onChangeText={setConfrimPassword}  
+              onChangeText={setConfirmPassword}  
               value={confirmPassword}
               width={"100%"}
               secureTextEntry 
             />
-            <FieldError message={errors.confrimPassword} />
+            <FieldError message={errors.confirmPassword} />
           </YStack>
           )}
         <Form.Trigger asChild>
           <PrimaryButton 
             width={'100%'} 
-            disabled={loading || (authStep !== 'initial' && !password)} >
+            disabled={loading || (authStep === 'initial' && !username) // disable if loading or username empty
+              || (authStep !== 'initial' && !password) // disable if loading or password empty for login/signup
+              || (authStep === 'signup' && !confirmPassword)}  // disable if loading or confirm password empty for signup
+          >
             {loading ? 'Please wait...' : authStep === 'login' ? 'Log In' : authStep === 'signup' ? 'Sign Up' : 'Continue'}
           </PrimaryButton>
       </Form.Trigger>
