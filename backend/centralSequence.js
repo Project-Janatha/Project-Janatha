@@ -113,8 +113,8 @@ app.post("/deauthenticate", async (req, res) => {
  * Requires:
  * {'username': string}
  */
-app.post('/userExistence', (req, res) => {
-    return res.status(200).json({'existence': auth.checkUserExistence(req.username)});
+app.post('/userExistence', async (req, res) => {
+    (res.status(200).json({'existence': await auth.checkUserExistence(req.body.username)}));
 });
 /**
  * Center addition pathway.
@@ -128,7 +128,7 @@ app.post('/addCenter', async (req, res) => {
     let success = auth.storeCenter(id, c);
     if(!success)
     {
-        return res.status(503).json({'message': "Internal server error OR center ID not unique"});
+        return res.status(500).json({'message': "Internal server error OR center ID not unique"});
     }else{
         return res.status(200).json({'message': 'Operation successful', 'id': id});
     }
@@ -146,7 +146,7 @@ app.post('/verifyUser', async (req, res) =>
     {
         if(err)
         {
-            return res.status(503).send({'message': 'Internal Server Error'});
+            return res.status(500).send({'message': 'Internal Server Error'});
         }
         if(!user)
         {
@@ -170,7 +170,7 @@ app.post('/verifyUser', async (req, res) =>
  * Requires:
  * {'centerID': number}
  */
-app.post('/verifyCenter', (req, res) => {
+app.post('/verifyCenter', async (req, res) => {
     let c = auth.getCenterByCenterID((req.body.centerID instanceof number) ? req.body.centerID : parseInt(req.body.centerID));
 
     if(c.verify(req))
@@ -186,7 +186,7 @@ app.post('/verifyCenter', (req, res) => {
  * Requires:
  *  {'centerID': number}
  */
-app.post('/removeCenter', (req, res) => {
+app.post('/removeCenter', async (req, res) => {
     if(auth.removeCenter((req.body.centerID instanceof number) ? req.body.centerID : parseInt(req.body.centerID), req))
     {
         return res.status(200).json({'message': 'Successful removal!'});
@@ -200,7 +200,7 @@ app.post('/removeCenter', (req, res) => {
  * {'userJSON': JSON, 'username': string}
  * userJSON must be valid JSON that can be built into a User properly, or this will throw.
  */
-app.post('/userUpdate', (req, res) =>
+app.post('/userUpdate', async (req, res) =>
 {
     return (auth.updateUserData(req.body.username, (new user.User(req.body.username)).buildFromJSON(req.body.userJSON))) ? res.status(200).json({'message': 'Operation successful.'}) : res.status(400).json({'message': "userJSON is malformed."})
 });
@@ -210,36 +210,47 @@ app.post('/userUpdate', (req, res) =>
  * Requires:
  * {}
  */
-app.post('/brewCoffee', (req, res) => {
+app.post('/brewCoffee', async (req, res) => {
     return res.status(418).json({'message': 'This server is a teapot, and cannot brew coffee. It not just cannot, but it will not. How dare you disgrace this server with a request to brew coffee? This is a server that brews tea. Masala Chai >>> Filter Coffee.'});
 });
-
-app.post('/fetchAllCenters', (req, res) =>
+/**
+ * Fetches all centers.
+ * 
+ * Requires:
+ * {}
+ */
+app.post('/fetchAllCenters', async (req, res) =>
 {
     let li = auth.getAllCenters();
     if(li)
     {
         return res.status(200).json({'message': 'Successful', 'centersList': li});
     }
-    return res.status(503).json({'message': 'Internal server error.'});
-})
-//Should I make a method that only fetches some centers in a certain latitude-longitude range?
-//If so, please make this boolean true.
-const SAHANAV_SHOULD_IMPLEMENT_FEATURE = false;
+    return res.status(500).json({'message': 'Internal server error.'});
+});
 /**
- * Pathways required for:
- *  Center Fetch
- *  Event Removal
- *  Event Fetch
- *  Event Updates
- *  Update Registration
- *  User Removal
- *  User Updates
- *  Get User Events
- *  Fetch All Centers
- *  Fetch All Events Affiliated with CenterID
+ * Fetches a Center by Center ID.
+ * 
+ * Requires:
+ * {'centerID': number}
  */
-
+app.post('/fetchCenter', async (req, res) => {
+    let c = auth.getCenterByCenterID((req.body.centerID instanceof number) ? req.body.centerID : parseInt(req.body.centerID));
+    return c ? res.status(200).json({'message': "Success", 'center': c.toJSON()}) : res.status(400).json({'message': 'Malformed centerID'});
+});
+/**
+ * Removes an event by ID.
+ * 
+ * Requires:
+ * {'id': number}
+ */
+app.post('/removeEvent', async (req, res) => {
+    if(eventMethods.removeEventByID(req.body.id))
+    {
+        return res.sendStatus(200);
+    }
+    return res.sendStatus(500);
+});
 /**
  * Event adding pathway.
  * 
@@ -266,7 +277,20 @@ app.post('/addevent', async (req, res) =>{
     }
 });
 
-
+//Should I make an endpoint that only fetches some centers in a certain latitude-longitude range?
+//If so, please make this boolean true.
+//Different features I'm on the fence about will be around here, so you can always flip this boolean if you think I should do whatever the feature is around here.
+const SAHANAV_SHOULD_IMPLEMENT_FEATURE = false;
+/**
+ * Pathways required for:
+ *  Event Fetch
+ *  Event Updates
+ *  Update Registration
+ *  User Removal
+ *  User Updates
+ *  Get User Events
+ *  Fetch All Events Affiliated with CenterID
+ */
 console.log("Moving to listening area");
 app.listen(PORT, (err) => {
     if(err)

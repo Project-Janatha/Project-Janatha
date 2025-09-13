@@ -153,22 +153,23 @@ async function deauthenticate(req, res)
  * @param {string} username 
  * @returns {boolean} A boolean representing the state of the user's existence.
  */
-function checkUserExistence(username)
+async function checkUserExistence(username)
 {
-    usersBase.findOne({"username": username}, async (err, existing) =>
+    return new Promise((resolve) => {
+        usersBase.findOne({"username": username}, (err, existing) =>
         {
             if(err)
             {
                 console.log(err);
-                return res.status(500).json({"message": "Internal server error"});
+                resolve(false);
             }
             if(existing)
             {
-                return true; //existing is not a boolean, so if condition is used
+                resolve(true);
             }
-                return false; 
-            
+            resolve(false);
         });
+    });
 }
 /**
  * Constructs a User object by username.
