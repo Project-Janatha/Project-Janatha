@@ -1,4 +1,4 @@
-import { defaultConfig } from '@tamagui/config/v4'
+import { config as defaultConfig } from '@tamagui/config'
 import { BackHandler } from 'react-native'
 import { createFont, createTamagui, createTokens, isWeb } from 'tamagui'
 const tokens = createTokens({
@@ -90,13 +90,15 @@ const config = createTamagui({
     // add your own media queries here, if wanted
   },
   tokens,
-  settings: { ...defaultConfig.settings, onlyAllowShorthands: false, },
+  settings: {
+    ...defaultConfig.settings,
+  },
 })
 
-type OurConfig = typeof config
+export type AppConfig = typeof config
 
 declare module 'tamagui' {
-  interface TamaguiCustomConfig extends OurConfig {}
+  interface TamaguiCustomConfig extends AppConfig {}
 }
 
 export default config
