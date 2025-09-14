@@ -15,7 +15,7 @@
 // TODO: Improve upon this file and interface with backend auth system
 // TODO: Enable post calls from android and ios to backend server
 // TODO: Enable persistent login sessions using cookies or tokens
-import React, { createContext, useContext, useState, useEffect, use } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 

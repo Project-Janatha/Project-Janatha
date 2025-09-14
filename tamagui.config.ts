@@ -90,6 +90,7 @@ const config = createTamagui({
     // add your own media queries here, if wanted
   },
   tokens,
+  settings: { ...defaultConfig.settings, onlyAllowShorthands: false, },
 })
 
 type OurConfig = typeof config
