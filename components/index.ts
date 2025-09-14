@@ -13,22 +13,30 @@ import { styled, Button, Input } from 'tamagui';
 
 export const PrimaryButton = styled(Button, {
   name: 'PrimaryButton',
-  bg: '$primary',
+  backgroundColor: '$primary',
   color: 'white',
 
   pressStyle: {
-    bg: '$primaryPress',
-    scale: 0.97,
+    backgroundColor: '$primaryPress',
+    opacity: .6,
+    scale: 1,
   },
   hoverStyle: {
-    bg: '$primaryPress',
+    backgroundColor: '$primaryPress',
     scale: 0.97,
   },
+  variants: {
+    disabled: {
+      true: {
+        opacity: .6
+      }
+    }
+  }
 });
 
 export const AuthInput = styled(Input, {
   name: 'AuthInput',
-  background: '$gray', // Shaded background
+  backgroundColor: '$gray', // Shaded background
   color: '$color',
   borderWidth: 0, // Add borderWidth to the default state
   // borderColor: '$gray4',
