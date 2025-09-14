@@ -2,15 +2,12 @@
   "name": "expo-router",
   "main": "expo-router/entry",
   "version": "1.0.0",
-  "packageManager": "yarn@4.5.0",
   "private": true,
   "scripts": {
-    "upgrade:tamagui": "yarn up '*tamagui*'@latest '@tamagui/*'@latest",
-    "upgrade:tamagui:canary": "yarn up '*tamagui*'@canary '@tamagui/*'@canary",
     "check:tamagui": "tamagui check",
-    "start": "yarn add tamagui expo; yarn install; expo start -c",
-    "start:backend": "yarn add bcryptjs express express-session @seald-io/nedb; yarn install; node ./backend/centralSequence.js",
-    "start:all": "concurrently \"yarn start:backend\" \"yarn start\"",
+    "start": "npm install; expo start -c",
+    "start:backend": "npm install; node ./backend/centralSequence.js",
+    "start:all": "concurrently \"npm start:backend\" \"npm start\"",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
@@ -20,10 +17,12 @@
     "preset": "jest-expo"
   },
   "dependencies": {
-    "@seald-io/nedb": "^4.1.2",
-    "@tamagui/lucide-icons": "^1.94.3",
-    "bcryptjs": "^3.0.2",
+    "@seald-io/nedb": "^4.0.4",
+    "@tamagui/config": "~1.94.3",
+    "@tamagui/lucide-icons": "~1.94.3",
+    "bcryptjs": "^2.4.3",
     "expo": "~51.0.21",
+    "expo-build-properties": "~0.12.3",
     "expo-constants": "~16.0.2",
     "expo-font": "~12.0.9",
     "expo-linking": "~6.3.1",
@@ -32,9 +31,9 @@
     "expo-status-bar": "~1.12.1",
     "expo-system-ui": "~3.0.7",
     "expo-web-browser": "~13.0.3",
-    "express": "^5.1.0",
-    "express-session": "^1.18.2",
-    "react": "18.2.0",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "react": "^18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.74.3",
     "react-native-gesture-handler": "~2.16.1",
@@ -43,14 +42,16 @@
     "react-native-screens": "3.31.1",
     "react-native-svg": "15.2.0",
     "react-native-web": "~0.19.10",
-    "tamagui": "^1.94.3"
+    "tamagui": "~1.94.3"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
-    "@tamagui/babel-plugin": "^1.94.3",
-    "@types/express": "^5",
-    "@types/express-session": "^1",
+    "@tamagui/babel-plugin": "~1.94.3",
+    "@tamagui/metro-plugin": "~1.94.3",
+    "@types/express": "^4.17.21",
+    "@types/express-session": "^1.18.0",
     "@types/react": "~18.2.79",
+    "concurrently": "^8.2.2",
     "typescript": "~5.3.3"
   }
 }
