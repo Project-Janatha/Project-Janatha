@@ -254,6 +254,9 @@
                 } else {
                     input = document.createElement('input');
                     input.type = field.type;
+                    if (field.type === 'number') {
+                        input.step = 'any'; // Allow floating point numbers
+                    }
                 }
                 input.name = field.name;
                 input.id = field.name;

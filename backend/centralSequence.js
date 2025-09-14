@@ -124,8 +124,8 @@ app.post('/userExistence', async (req, res) => {
  */
 app.post('/addCenter', async (req, res) => {
     let c = new center.Center(new location.Location(req.body.latitude, req.body.longitude), req.body.centerName);
-    let id = c.assignCenterID();
-    let success = auth.storeCenter(id, c);
+    let id = await c.assignCenterID();
+    let success = await auth.storeCenter(id, c);
     if(!success)
     {
         return res.status(500).json({'message': "Internal server error OR center ID not unique"});
@@ -142,25 +142,21 @@ app.post('/addCenter', async (req, res) => {
  */
 app.post('/verifyUser', async (req, res) =>
 {
-    constants.usersBase.findOne({'username': req.body.usernameToVerify}, (err, us) =>
-    {
-        if(err)
-        {
-            return res.status(500).send({'message': 'Internal Server Error'});
+    constants.usersBase.findOne({'username': req.body.usernameToVerify}, (err, us) => {
+        if (err) {
+            return res.status(500).json({'message': 'Internal Server Error'});
         }
-        if(!user)
-        {
+        if (!us) {
             return res.status(404).json({'message': 'User not found.'});
         }
         let u = new user.User(req.body.usernameToVerify);
         u.buildFromJSON(us.userObject);
         let status = u.verify(req.body.verificationLevel, req);
         auth.updateUserData(req.body.username, u);
-        if(status)
-        {
+        if (status) {
             return res.status(200).json({'message': 'Verification successful.'});
-        }else{
-            return res.status(401).send({'message': 'Insufficient permission to authorize.'});
+        } else {
+            return res.status(401).json({'message': 'Insufficient permission to authorize.'});
         }
     });
 });
@@ -171,13 +167,12 @@ app.post('/verifyUser', async (req, res) =>
  * {'centerID': number}
  */
 app.post('/verifyCenter', async (req, res) => {
-    let c = auth.getCenterByCenterID((req.body.centerID instanceof number) ? req.body.centerID : parseInt(req.body.centerID));
-
-    if(c.verify(req))
-    {
-        return res.status(200).json({'message': 'Successful verification!'});
-    }else{
-        return res.status(401).json({'message': 'User is not authorized to verify or verification failed at another point.'});
+    let centerID = (req.body.centerID instanceof number) ? req.body.centerID : parseInt(req.body.centerID);
+    let c = await auth.getCenterByCenterID(centerID);
+    if (c && c.verify(req)) {
+        return res.status(200).json({ 'message': 'Successful verification!' });
+    } else {
+        return res.status(401).json({ 'message': 'User is not authorized to verify or verification failed at another point.' });
     }
 });
 /**
@@ -235,8 +230,9 @@ app.post('/fetchAllCenters', async (req, res) =>
  * {'centerID': number}
  */
 app.post('/fetchCenter', async (req, res) => {
-    let c = auth.getCenterByCenterID((req.body.centerID instanceof number) ? req.body.centerID : parseInt(req.body.centerID));
-    return c ? res.status(200).json({'message': "Success", 'center': c.toJSON()}) : res.status(400).json({'message': 'Malformed centerID'});
+    let centerID = (req.body.centerID instanceof number) ? req.body.centerID : parseInt(req.body.centerID);
+    let c = await auth.getCenterByCenterID(centerID);
+    return c ? res.status(200).json({ 'message': "Success", 'center': c.toJSON() }) : res.status(400).json({ 'message': 'Malformed centerID' });
 });
 /**
  * Removes an event by ID.
@@ -245,11 +241,131 @@ app.post('/fetchCenter', async (req, res) => {
  * {'id': number}
  */
 app.post('/removeEvent', async (req, res) => {
-    if(eventMethods.removeEventByID(req.body.id))
-    {
-        return res.sendStatus(200);
+    try {
+        const removed = await eventMethods.removeEventByID(req.body.id);
+        if (removed) {
+            return res.sendStatus(200);
+        }
+        return res.sendStatus(500);
+    } catch (err) {
+        return res.sendStatus(500);
     }
-    return res.sendStatus(500);
+});
+/**
+ * Fetch an event by ID.
+ * 
+ * Requires:
+ * {'id': number}
+ */
+app.post('/fetchEvent', async (req, res) => {
+    try {
+        const ev = await eventMethods.getEventByID(req.body.id);
+        if (!ev) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+        return res.status(200).json({ message: 'Success', event: ev });
+    } catch (err) {
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+/**
+ * Update an event.
+ * 
+ * Requires:
+ * {'eventJSON': JSON, 'id': number}
+ */
+app.post('/updateEvent', async (req, res) => {
+    try {
+        // Expect eventJSON to be a serializable event structure
+        const evt = new event.Event(new location.Location(0,0), new Date(), null);
+        evt.buildFromJSON(req.body.eventJSON);
+        const ok = await eventMethods.updateEvent(evt);
+        if (ok) {
+            return res.status(200).json({ message: 'Event updated' });
+        }
+        return res.status(400).json({ message: 'Update failed' });
+    } catch (err) {
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+/**
+ * Update registration (user profile update triggered by user).
+ * 
+ * Requires:
+ * {'username': string, 'userJSON': JSON}
+ */
+app.post('/updateRegistration', async (req, res) => {
+    try {
+        const u = new user.User(req.body.username);
+        u.buildFromJSON(req.body.userJSON);
+        const ok = auth.updateUserData(req.body.username, u);
+        if (ok) {
+            return res.status(200).json({ message: 'User updated' });
+        }
+        return res.status(400).json({ message: 'Update failed' });
+    } catch (err) {
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+/**
+ * Remove a user by username.
+ * 
+ * Requires:
+ * {'username': string}
+ */
+app.post('/removeUser', async (req, res) => {
+    try {
+        const u = new user.User(req.body.username);
+    const ok = u.removeUserByUsername(req.body.username);
+        if (ok) {
+            return res.status(200).json({ message: 'User removed' });
+        }
+        return res.status(400).json({ message: 'Removal failed' });
+    } catch (err) {
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+/**
+ * Get events associated with a user.
+ * 
+ * Requires:
+ * {'username': string}
+ */
+app.post('/getUserEvents', async (req, res) => {
+    try {
+        const u = await auth.getUserByUsername(req.body.username);
+        if (!u || !u.exists) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        return res.status(200).json({ message: 'Success', events: u.events });
+    } catch (err) {
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+/**
+ * Fetch all events affiliated with a center ID.
+ * 
+ * Requires:
+ * {'centerID': number}
+ */
+app.post('/fetchEventsByCenter', async (req, res) => {
+    try {
+        // eventMethods currently lacks a direct method for this; attempt to fetch all and filter.
+        const all = constants.eventsBase; // direct access to events DB
+        all.find({ 'eventObject.center.centerID': req.body.centerID }, (err, docs) => {
+            if (err) {
+                return res.status(500).json({ message: 'Internal server error' });
+            }
+            return res.status(200).json({ message: 'Success', events: docs });
+        });
+    } catch (err) {
+        return res.status(500).json({ message: 'Internal server error' });
+    }
 });
 /**
  * Event adding pathway.
@@ -257,23 +373,34 @@ app.post('/removeEvent', async (req, res) => {
  * Requires:
  * {'latitude': number, 'longitude': number, 'date': Date, 'centerID': string, 'endorsers': string[]}
  */
-app.post('/addevent', async (req, res) =>{
-    if(!auth.centerIDExists(req.data.centerID))
-    {
-        res.status(404).send({'message': "Center not found."});
-    }else{
-        let ev = event.Event(new location.Location(parseInt(req.data.latitude), parseInt(req.data.longitude)), new Date(req.data.date), auth.getCenterByCenterID(req.data.centerID));
+app.post('/addevent', async (req, res) => {
+    try {
+        const data = req.body;
+        const centerID = (data.centerID instanceof Number) ? data.centerID : parseInt(data.centerID);
+        const exists = await auth.centerIDExists(centerID);
+        if (!exists) {
+            return res.status(404).send({ 'message': 'Center not found.' });
+        }
+        const centerObj = await auth.getCenterByCenterID(centerID);
+        if (!centerObj) {
+            return res.status(404).send({ 'message': 'Center not found.' });
+        }
+        let ev = new event.Event(new location.Location(parseFloat(data.latitude), parseFloat(data.longitude)), new Date(data.date), centerObj);
         let id = ev.assignID();
-        for(let i in req.data.endorsers)
-        {
-            if(auth.checkUserExistence(req.data.endorsers[i]))
-            {
-                ev.addSelfToUserByUsername(req.data.endorsers[i]);
+        for (let i = 0; i < (data.endorsers || []).length; i++) {
+            const endorser = data.endorsers[i];
+            if (await auth.checkUserExistence(endorser)) {
+                await ev.addSelfToUserByUsername(endorser);
             }
         }
         let tier = ev.calculateTier();
-        eventMethods.storeEvent(ev);
-        res.status(200).send({'id': id, 'tier': tier});
+        const stored = await eventMethods.storeEvent(ev);
+        if (!stored) {
+            return res.status(500).send({ 'message': 'Failed to store event.' });
+        }
+        return res.status(200).send({ 'id': id, 'tier': tier });
+    } catch (err) {
+        return res.status(500).send({ 'message': 'Internal server error' });
     }
 });
 

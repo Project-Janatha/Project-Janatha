@@ -21,50 +21,44 @@ import center from '../profiles/center.js';
  * @param {event.Event} eventToStore The event to store in the database.
  * @returns {boolean} A boolean representing the success or failure of the operation.
  */
-function storeEvent(eventToStore)
-{
-  let db = constants.eventsBase;
-
-  let payload = {'eventID': eventToStore.id, 'eventObject': eventToStore.toJSON()};
-  if(!checkEventUniqueness(payload.eventID))
-  {
-    return false;
-  }
-  db.insert(payload, (err, ev) => {
-    if(err)
-    {
-      return false;
+function storeEvent(eventToStore) {
+  const db = constants.eventsBase;
+  const payload = { 'eventID': eventToStore.id, 'eventObject': eventToStore.toJSON() };
+  return new Promise(async (resolve) => {
+    const unique = await checkEventUniqueness(payload.eventID);
+    if (!unique) {
+      return resolve(false);
     }
-    if(ev)
-    {
-      return true;
-    }
+    db.insert(payload, (err, ev) => {
+      if (err || !ev) {
+        return resolve(false);
+      }
+      return resolve(true);
+    });
   });
-  return false;
 }
 /**
  * Updates an Event entry in the database.
  * @param {event.Event} eventObject The object to insert.
  * @returns {boolean | undefined} A boolean representing the success or failure of the operation, or undefined if an error occurred.
  */
-function updateEvent(eventObject)
-{
-  if(checkEventUniqueness(eventObject.id))
-  {
-    return false;
-  }
-  constants.eventsBase.update({'eventID': eventObject.id}, {'eventObject': eventObject.toJSON()}, {}, (err, num) =>
-  {
-    if(err)
-    {
-      return undefined;
+function updateEvent(eventObject) {
+  return new Promise(async (resolve) => {
+    const exists = await checkEventUniqueness(eventObject.id);
+    if (exists) {
+      // if uniqueness check says id is unique, it means event doesn't exist
+      return resolve(false);
     }
-    if(num)
-    {
-      return true;
-    }
+    constants.eventsBase.update({ 'eventID': eventObject.id }, { 'eventObject': eventObject.toJSON() }, {}, (err, num) => {
+      if (err) {
+        return resolve(false);
+      }
+      if (num) {
+        return resolve(true);
+      }
+      return resolve(false);
+    });
   });
-  return false;
 }
 
 /**
@@ -72,56 +66,44 @@ function updateEvent(eventObject)
  * @param {number} id The ID to check.
  * @returns {boolean | undefined} A boolean representing if the entry was unique, or undefined if an error occurred.
  */
-function checkEventUniqueness(id)
-{
-  constants.eventsBase.findOne({'eventID': id}, (err, ev) =>{
-    if(err)
-    {
-      return undefined;
-    }
-    if(ev)
-    {
-      return false;
-    }
+function checkEventUniqueness(id) {
+  return new Promise((resolve) => {
+    constants.eventsBase.findOne({ 'eventID': id }, (err, ev) => {
+      if (err) {
+        return resolve(false);
+      }
+      return resolve(!ev);
+    });
   });
-  return true;
 }
 /**
  * Gets an event by the event ID.
  * @param {string} id The ID of the event to get.
  * @returns {event.Event | null} The resulting event or null if no event was found.
  */
-function getEventByID(id)
-{
-  constants.eventsBase.findOne({'eventID': id}, (err, doc) => {
-    if(err)
-    {
-      return null;
-    }
-    if(doc){
-      return doc;
-    }
+function getEventByID(id) {
+  return new Promise((resolve) => {
+    constants.eventsBase.findOne({ 'eventID': id }, (err, doc) => {
+      if (err) {
+        return resolve(null);
+      }
+      return resolve(doc || null);
+    });
   });
-  return null;
 }
 /**
  * Removes an event by ID.
  * @param {number} id The ID of the event to remove.
  * @returns {boolean | undefined} A boolean representing the success of the operation, or undefined if an error occurred.
  */
-function removeEventByID(id)
-{
-  constants.eventsBase.remove({'eventID': id}, {}, (err, num) =>
-  {
-    if(err)
-    {
-      return undefined;
-    }
-    if(num)
-    {
-      return true;
-    }
+function removeEventByID(id) {
+  return new Promise((resolve) => {
+    constants.eventsBase.remove({ 'eventID': id }, {}, (err, num) => {
+      if (err) {
+        return resolve(false);
+      }
+      return resolve(!!num);
+    });
   });
-  return false;
 }
 export default {checkEventUniqueness, updateEvent, storeEvent, getEventByID, removeEventByID};

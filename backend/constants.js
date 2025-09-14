@@ -10,12 +10,27 @@
  * Backend constants.
  */
 //Imports
-import Datastore from 'nedb';
+import Datastore from '@seald-io/nedb';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const dbDir = path.join(__dirname, '..', 'db');
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir);
+}
+
+const usersBase = new Datastore({
+    "filename": path.join(dbDir, "users.db"), 
+    "autoload":true
+});
 
 //Start constants
 //Databases
-const usersBase = new Datastore({"filename": "users.db", "autoload":true});
-const eventsBase = new Datastore({'filename': 'events.db', 'autoload': true});
+const eventsBase = new Datastore({'filename': path.join(dbDir, "events.db"), 'autoload': true});
 
 //Admin constants
 const ADMIN_NAME = "Brahman";
