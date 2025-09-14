@@ -1,3 +1,4 @@
+
 /**
  * centralSequence.js
  * 
@@ -198,6 +199,46 @@ app.post('/removeCenter', async (req, res) => {
 app.post('/userUpdate', async (req, res) =>
 {
     return (auth.updateUserData(req.body.username, (new user.User(req.body.username)).buildFromJSON(req.body.userJSON))) ? res.status(200).json({'message': 'Operation successful.'}) : res.status(400).json({'message': "userJSON is malformed."})
+});
+/**
+ * Fetch users attending an event by event ID.
+ * 
+ * Requires:
+ * {'id': number}
+ */
+app.post('/getEventUsers', async function(req, res)
+{
+    const body = req.body;
+    if(!body || typeof body.id === 'undefined')
+    {
+        return res.status(400).json({message: 'Bad request - missing id'});
+    }
+
+    try {
+        const doc = await eventMethods.getEventByID(body.id);
+        if(!doc)
+        {
+            return res.status(404).json({message: 'Event not found'});
+        }
+
+        // build Event instance from stored object if necessary
+        let ev;
+        if(doc.eventObject && doc.eventObject.id)
+        {
+            ev = new event.Event();
+            ev.buildFromJSON(doc.eventObject);
+        } else if (doc.eventObject) {
+            ev = new event.Event();
+            ev.buildFromJSON(doc.eventObject);
+        } else {
+            return res.status(500).json({message: 'Malformed event document'});
+        }
+
+        const users = await ev.getAttendingUsers();
+        return res.status(200).json({message: 'Success', users});
+    } catch (err) {
+        return res.status(500).json({message: 'Server error', error: err.message});
+    }
 });
 /**
  * Attempts to force this server to brew Coffee.
@@ -408,16 +449,7 @@ app.post('/addevent', async (req, res) => {
 //If so, please make this boolean true.
 //Different features I'm on the fence about will be around here, so you can always flip this boolean if you think I should do whatever the feature is around here.
 const SAHANAV_SHOULD_IMPLEMENT_FEATURE = false;
-/**
- * Pathways required for:
- *  Event Fetch
- *  Event Updates
- *  Update Registration
- *  User Removal
- *  User Updates
- *  Get User Events
- *  Fetch All Events Affiliated with CenterID
- */
+
 console.log("Moving to listening area");
 app.listen(PORT, (err) => {
     if(err)
