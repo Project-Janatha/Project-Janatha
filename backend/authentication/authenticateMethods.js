@@ -7,7 +7,7 @@
  * Last Date Modified: August 30, 2025
  * Methods for authentication.
  */
-import Datastore from '@seald-io/nedb';
+// import Datastore from '@seald-io/nedb';
 import { hash, compareSync } from 'bcryptjs';
 import constants from '../constants.js';
 import user from '../profiles/user.js';
@@ -23,15 +23,8 @@ const SALT_ROUNDS = 10;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const dbDir = path.join(__dirname, '..', 'db');
-if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir);
-}
-
-const usersBase = new Datastore({
-    "filename": path.join(dbDir, "users.db"), 
-    "autoload":true
-});
+// Use usersBase from constants.js
+const usersBase = constants.usersBase;
 //const constantFile = require('../constants');
 
 
@@ -173,22 +166,21 @@ async function checkUserExistence(username)
  * @param {string} username The user's username.
  * @returns {user.User | null} If the user exists, returns a user constructed with their data. Else, returns null.
  */
-function getUserByUsername(username)
-{
-    if(checkUserExistence(username))
-    {
-        let constructedUser = user.User(username);
-        usersBase.findOne({'username': username}, async (err, existing) => {
-            if(err)
-            {
-                return null;
-            }else{
-                constructedUser.buildFromJSON(existing.userObject);
-            }
-        });
-        return constructedUser;
+async function getUserByUsername(username) {
+    const exists = await checkUserExistence(username);
+    if (!exists) {
+        return null;
     }
-    return null;
+    return new Promise((resolve) => {
+        usersBase.findOne({ 'username': username }, (err, existing) => {
+            if (err || !existing) {
+                return resolve(null);
+            }
+            let constructedUser = new user.User(username);
+            constructedUser.buildFromJSON(existing.userObject);
+            return resolve(constructedUser);
+        });
+    });
 }
 /**
  * Updates a user's data in the database.
@@ -209,43 +201,39 @@ function updateUserData(username, user)
  * @param {number} centerID The Center ID to check.
  * @returns {boolean | null} A boolean representing if the centerID exists, or null for any errors.
  */
-function centerIDExists(centerID)
-{
-    usersBase.findOne({'centerID': centerID}, async (err, center) => {
-        if(isNaN(centerID) || err)
-        {
-            return null;
+async function centerIDExists(centerID) {
+    return new Promise((resolve) => {
+        if (isNaN(centerID)) {
+            return resolve(false);
         }
-        if(center)
-        {
-            return true;
-        }
-        
+        usersBase.findOne({'centerID': centerID}, (err, center) => {
+            if (err) {
+                return resolve(false);
+            }
+            resolve(!!center);
+        });
     });
-    return false;
 }
 /**
  * Gets a Center by centerID.
  * @param {number} centerID The ID of the center to get
  * @returns {center.Center | null} A constructed Center object, or null if an error occurred/the center does not exist.
  */
-function getCenterByCenterID(centerID)
-{
-    if(centerIDExists(centerID))
-    {
-        usersBase.findOne({'centerID': centerID}, async (err, centered) => {
-            if(err)
-            {
-                return null;
-            }
-            if(center)
-            {
-                let c = new center.Center(new location.Location(0,0), 'Hello World!');
-                return c.buildFromJSON(centered.centerObject);
-            }
-        })
+async function getCenterByCenterID(centerID) {
+    const exists = await centerIDExists(centerID);
+    if (!exists) {
+        return null;
     }
-    return null;
+    return new Promise((resolve) => {
+        usersBase.findOne({'centerID': centerID}, (err, centered) => {
+            if (err || !centered) {
+                return resolve(null);
+            }
+            let c = new center.Center(new location.Location(0,0), 'Hello World!');
+            c.buildFromJSON(centered.centerObject);
+            resolve(c);
+        });
+    });
 }
 /**
  * Stores a Center by centerID.
@@ -253,25 +241,26 @@ function getCenterByCenterID(centerID)
  * @param {center.Center} centerObject The object representing the center.
  * @returns {boolean} A boolean representing the success or failure of the operation.
  */
-function storeCenter(centerID, centerObject)
-{
-    if(centerObject.centerID != centerID || centerIDExists(centerID) || isNaN(centerID) || centerID == null)
-    {
+async function storeCenter(centerID, centerObject) {
+    if (centerObject.centerID != centerID || isNaN(centerID) || centerID == null) {
         return false;
     }
-    let center = {'centerID': centerID, 'centerObject': centerObject.toJSON()};
-    usersBase.insert(center, async (err, c) => {
-        if(err)
-        {
-            return false;
-        }
-        if(c)
-        {
-            return true;
-        }
+    const exists = await centerIDExists(centerID);
+    if (exists) {
+        return false;
+    }
+    let center = { 'centerID': centerID, 'centerObject': centerObject.toJSON() };
+    return new Promise((resolve) => {
+        usersBase.insert(center, (err, c) => {
+            if (err || !c) {
+                resolve(false);
+            } else {
+                resolve(true);
+            }
+        });
     });
-    return false;
 }
+
 /**
  * Updates a center in the database.
  * @param {number} centerID The center ID to update.

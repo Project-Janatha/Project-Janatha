@@ -148,15 +148,16 @@ class Event{
    */
   addSelfToUserByUsername(uname)
   {
-    let u = auth.getUserByUsername(uname);
-    if(u && !(this.id in u.events))
-    {
+    return (async () => {
+      let u = await auth.getUserByUsername(uname);
+      if (u && !(this.id in u.events)) {
         u.events.push(this.id);
         this.peopleAttending++;
         this.calculateTier();
         return u;
-    }
-    return null;
+      }
+      return null;
+    })();
   }
     /**
    * Adds an event to the user.

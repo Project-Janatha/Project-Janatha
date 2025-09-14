@@ -9,6 +9,7 @@
  */
 import location from '../location/location.js';
 import auth from '../authentication/authenticateMethods.js';
+import constants from '../constants.js';
 /**
  * Represents a center on the app.
  */
@@ -76,12 +77,16 @@ class Center{
    */
   assignCenterID()
   {
-    let proposed = Math.round(Math.random()*constants.CENTER_ID_VARIABILITY);
-    while(auth.centerIDExists(proposed) || auth.centerIDExists(proposed) == null)
-    {
-      proposed = Math.round(Math.random()*constants.CENTER_ID_VARIABILITY);
-    }
-    this.centerID = proposed;
+    // generate until a unique centerID is found
+    const generate = async () => {
+      let proposed = Math.round(Math.random() * constants.CENTER_ID_VARIABILITY);
+      while (await auth.centerIDExists(proposed) || (await auth.centerIDExists(proposed)) == null) {
+        proposed = Math.round(Math.random() * constants.CENTER_ID_VARIABILITY);
+      }
+      this.centerID = proposed;
+      return proposed;
+    };
+    return generate();
   }
 
 
