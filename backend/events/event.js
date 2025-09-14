@@ -153,6 +153,10 @@ class Event{
       if (u && !(this.id in u.events)) {
         u.events.push(this.id);
         this.peopleAttending++;
+        // record username in attendees list if not already present
+        if (!this.usersAttending.includes(uname)) {
+          this.usersAttending.push(uname);
+        }
         this.calculateTier();
         return u;
       }
@@ -170,9 +174,35 @@ class Event{
     {
       u.events.push(this.id);
       this.peopleAttending++;
+      // ensure we record username in this event's attendee list
+      if (u.username && !this.usersAttending.includes(u.username)) {
+        this.usersAttending.push(u.username);
+      }
+      this.calculateTier();
       return u;
     }
     return null;
+  }
+
+  /**
+   * Retrieves all User objects attending this event.
+   * @returns {Promise<user.User[]>} Promise resolving to an array of User objects (or empty array).
+   */
+  async getAttendingUsers() {
+    const users = [];
+    for (let i = 0; i < this.usersAttending.length; i++) {
+      try {
+        const uname = this.usersAttending[i];
+        const u = await auth.getUserByUsername(uname);
+        if (u) {
+          users.push(u);
+        }
+      } catch (err) {
+        // skip problematic entries
+        continue;
+      }
+    }
+    return users;
   }
 }
 export default {Event};
