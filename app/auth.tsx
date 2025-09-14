@@ -9,7 +9,7 @@ import { Platform } from 'react-native';
 const FieldError = ({ message }) => {
   if (!message) return null;
   return (
-    <Paragraph color="$red10" fontSize={12} mt="$1" ml="$1">
+    <Paragraph color="$red10" fontSize={12} marginTop="$1" marginLeft="$1">
       {message}
     </Paragraph>
   );
@@ -97,14 +97,14 @@ export default function AuthScreen(props) {
   return (
     <YStack 
       flex={1} 
-      bg="$background" 
-      p="$4"
-      justify="space-around"
-      items={"center"}
+      backgroundColor="$background" 
+      padding="$4"
+      justifyContent="space-around"
+      alignItems={"center"}
       width={"100%"}>
       
       {/* Top Section */}
-      <YStack items="center" pt="$8" gap='$4' width="100%">
+      <YStack alignItems="center" paddingTop="$8" gap='$4' width="100%">
         <Image 
           source={isDark ? (require("../assets/images/chinmaya_logo_dark.svg")) : (require("../assets/images/chinmaya_logo_light.svg"))}
           style={{ width: 80, height: 80 }}
@@ -114,7 +114,7 @@ export default function AuthScreen(props) {
         </H3>
       </YStack>
       <Form
-        items="center"
+        alignItems="center"
         
         width={isWeb? "40%" : "90%"}
         gap="$2"
