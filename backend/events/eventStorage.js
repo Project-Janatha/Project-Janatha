@@ -21,20 +21,18 @@ import center from '../profiles/center.js';
  * @param {event.Event} eventToStore The event to store in the database.
  * @returns {boolean} A boolean representing the success or failure of the operation.
  */
-function storeEvent(eventToStore) {
+async function storeEvent(eventToStore) {
   const db = constants.eventsBase;
   const payload = { 'eventID': eventToStore.id, 'eventObject': eventToStore.toJSON() };
-  return new Promise(async (resolve) => {
-    const unique = await checkEventUniqueness(payload.eventID);
-    if (!unique) {
-      return resolve(false);
+  const unique = await checkEventUniqueness(payload.eventID);
+  if (!unique) {
+    return false;
+  }
+  db.insert(payload, (err, ev) => {
+    if (err || !ev) {
+      return false;
     }
-    db.insert(payload, (err, ev) => {
-      if (err || !ev) {
-        return resolve(false);
-      }
-      return resolve(true);
-    });
+    return true;
   });
 }
 /**
@@ -66,7 +64,7 @@ function updateEvent(eventObject) {
  * @param {number} id The ID to check.
  * @returns {boolean | undefined} A boolean representing if the entry was unique, or undefined if an error occurred.
  */
-function checkEventUniqueness(id) {
+async function checkEventUniqueness(id) {
   return new Promise((resolve) => {
     constants.eventsBase.findOne({ 'eventID': id }, (err, ev) => {
       if (err) {
