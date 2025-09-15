@@ -5,13 +5,12 @@ May Gurudev's and Lord Krishna's grace be with us.
 
 Authors: Abhiram Ramachandran, Sahanav Sai Ramesh
 
-## React
-
-# Welcome to your Expo app 👋
-
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
-
-## Get started
+## How to run:
+Requirements: 
+- Ubuntu development environment (or WSL2) Install here([link])
+- NodeJS version [19.0.0]
+- Expo SDK 52
+   - Expo Go for native
 
 1. Install dependencies
 
@@ -19,11 +18,16 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Start the backend
 
    ```bash
-   npx expo start
+   npm run start:backend
    ```
+
+3. Start the frontend
+```bash
+npm run start
+```
 
 In the output, you'll find options to open the app in a
 
@@ -32,15 +36,6 @@ In the output, you'll find options to open the app in a
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
