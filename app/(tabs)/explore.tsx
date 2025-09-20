@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Input, XStack, YStack, ZStack } from 'tamagui';
+import { Button, Input, XStack, YStack } from 'tamagui';
 import { Map } from 'components';
 import { Search, SlidersHorizontal } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
@@ -78,18 +78,15 @@ export default function ExploreScreen() {
   };
 
   return (
-    <ZStack flex={1}>
-      {/* Enhanced Map with markers */}
-      <Map points={filteredPoints} onPointPress={handlePointPress} />
-      
-      {/* Search and Filter Overlay */}
+    <YStack flex={1}>
+      {/* Search and Filter Controls - Fixed at top */}
       <YStack 
-        position="absolute" 
-        top="$4" 
-        left="$4" 
-        right="$4"
+        padding="$4" 
         gap="$3"
-        zIndex={10}
+        backgroundColor="rgba(255, 255, 255, 0.95)"
+        backdropFilter="blur(10px)"
+        borderBottomWidth={1}
+        borderBottomColor="$borderColor"
       >
         {/* Search Bar */}
         <XStack 
@@ -153,6 +150,9 @@ export default function ExploreScreen() {
           ))}
         </XStack>
       </YStack>
-    </ZStack>
+
+      {/* Map - Takes remaining space */}
+      <Map points={filteredPoints} onPointPress={handlePointPress} />
+    </YStack>
   );
 }
