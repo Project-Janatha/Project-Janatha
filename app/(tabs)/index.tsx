@@ -144,7 +144,18 @@ export default function HomeScreen() {
           </Card.Header>
           
           <Card.Footer p="$3">
-            <XStack justifyContent="space-between" alignItems="center" width="100%">
+            <XStack 
+              justifyContent="space-between" 
+              alignItems="center" 
+              width="100%"
+              pressStyle={{ opacity: 0.7 }}
+              hoverStyle={{ bg: "$gray2" }}
+              onPress={() => router.push('/explore')}
+              cursor="pointer"
+              borderRadius="$3"
+              padding="$2"
+              marginHorizontal="-$2"
+            >
               <XStack alignItems="center" gap="$2">
                 <MapPin size={20} color="$primary" />
                 <Paragraph fontSize="$4" fontWeight="500">
