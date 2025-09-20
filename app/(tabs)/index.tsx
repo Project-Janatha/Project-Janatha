@@ -122,18 +122,6 @@ export default function HomeScreen() {
     <ScrollView flex={1} bg="$background">
       <YStack flex={1} gap="$4" px="$4" pt="$4" pb="$8">
         
-        {/* Header with Welcome and Profile */}
-        <XStack justifyContent="space-between" alignItems="center" mb="$2">
-          <H1 fontSize="$8" fontWeight="bold" color="$color">
-            Welcome {userName}
-          </H1>
-          <Avatar size="$4" circular>
-            <Avatar.Image 
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face" 
-            />
-            <Avatar.Fallback bg="$primary" />
-          </Avatar>
-        </XStack>
 
         {/* Interactive Map Section */}
         <Card elevate size="$4" mb="$4">

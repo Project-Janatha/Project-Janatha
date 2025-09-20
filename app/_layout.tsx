@@ -9,6 +9,8 @@ import { SplashScreen, Stack, Redirect, usePathname } from 'expo-router'
 import { Provider } from 'components';
 import { useTheme } from 'tamagui';
 import { UserProvider, UserContext } from 'components';
+import { Share } from '@tamagui/lucide-icons';
+import { Button } from 'tamagui';
 
 
 export {
@@ -126,6 +128,50 @@ function RootLayoutNav() {
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
+        />
+
+        <Stack.Screen
+          name="events/[id]"
+          options={({ route }) => ({
+            headerShown: true,
+            title: 'Event Details',
+            headerBackTitleVisible: false,
+            headerRight: () => (
+              <Button
+                size="$3"
+                circular
+                icon={<Share size={20} />}
+                variant="outlined"
+                mr="$3"
+                onPress={() => {
+                  // TODO: Implement share functionality
+                  console.log('Share event');
+                }}
+              />
+            ),
+          })}
+        />
+
+        <Stack.Screen
+          name="center/[id]"
+          options={({ route }) => ({
+            headerShown: true,
+            title: 'Center Details',
+            headerBackTitleVisible: false,
+            headerRight: () => (
+              <Button
+                size="$3"
+                circular
+                icon={<Share size={20} />}
+                variant="outlined"
+                mr="$3"
+                onPress={() => {
+                  // TODO: Implement share functionality
+                  console.log('Share center');
+                }}
+              />
+            ),
+          })}
         />
       </Stack>
     </ThemeProvider>
