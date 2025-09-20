@@ -15,7 +15,7 @@ import {
   YStack 
 } from 'tamagui'
 import { ToastControl } from 'components/CurrentToast'
-import { UserContext } from 'components';
+import { UserContext, Map } from 'components';
 import { useRouter } from 'expo-router';
 
 type User = {
@@ -37,25 +37,57 @@ export default function HomeScreen() {
   const currentDay = currentDate.getDate();
   const userName = user?.username || "Pranav";
 
-  // Map pin locations data
-  const mapPins = [
-    { id: "1", name: "Chinmaya Mission San Jose", x: "65%", y: "45%", type: "center" },
-    { id: "2", name: "Chinmaya Mission West", x: "25%", y: "25%", type: "center" },
-    { id: "3", name: "Chinmaya Mission San Francisco", x: "35%", y: "35%", type: "center" },
+  // Map points data - centers and events with proper coordinates
+  const mapPoints = [
+    {
+      id: "1",
+      type: "center" as const,
+      name: "Chinmaya Mission San Jose",
+      latitude: 37.2431,
+      longitude: -121.7831,
+    },
+    {
+      id: "2", 
+      type: "center" as const,
+      name: "Chinmaya Mission West",
+      latitude: 37.8599,
+      longitude: -122.4856,
+    },
+    {
+      id: "3",
+      type: "center" as const, 
+      name: "Chinmaya Mission San Francisco",
+      latitude: 37.7749,
+      longitude: -122.4194,
+    },
+    {
+      id: "1",
+      type: "event" as const,
+      name: "Bhagavad Gita Study Circle",
+      latitude: 37.2631,
+      longitude: -121.8031,
+    },
+    {
+      id: "2",
+      type: "event" as const,
+      name: "Hanuman Chalisa Chanting",
+      latitude: 37.8699,
+      longitude: -122.4756,
+    },
+    {
+      id: "3",
+      type: "event" as const,
+      name: "Yoga and Meditation Session",
+      latitude: 37.7849,
+      longitude: -122.4094,
+    },
   ];
 
-  // Event pin locations data
-  const eventPins = [
-    { id: "1", name: "Bhagavad Gita Study Circle", x: "70%", y: "50%", type: "event" },
-    { id: "2", name: "Hanuman Chalisa Chanting", x: "30%", y: "30%", type: "event" },
-    { id: "3", name: "Yoga and Meditation Session", x: "40%", y: "40%", type: "event" },
-  ];
-
-  const handlePinClick = (pinId: string, type: string) => {
-    if (type === "center") {
-      router.push(`/center/${pinId}`);
-    } else if (type === "event") {
-      router.push(`/events/${pinId}`);
+  const handlePointPress = (point: any) => {
+    if (point.type === 'center') {
+      router.push(`/center/${point.id}`);
+    } else if (point.type === 'event') {
+      router.push(`/events/${point.id}`);
     }
   };
 
@@ -103,108 +135,11 @@ export default function HomeScreen() {
           </Avatar>
         </XStack>
 
-        {/* Map Placeholder Section */}
+        {/* Interactive Map Section */}
         <Card elevate size="$4" mb="$4">
           <Card.Header p="$0">
-            <YStack 
-              height={200} 
-              bg="$gray5" 
-              borderRadius="$4" 
-              justifyContent="center" 
-              alignItems="center"
-              position="relative"
-            >
-              {/* Map background elements */}
-              <YStack 
-                position="absolute" 
-                bg="$blue4" 
-                width={120} 
-                height={80} 
-                borderRadius="$2" 
-                opacity={0.2}
-                top="$6"
-                right="$4"
-              />
-              
-              <YStack 
-                position="absolute" 
-                bg="$green4" 
-                width={90} 
-                height={60} 
-                borderRadius="$2" 
-                opacity={0.2}
-                top="$2"
-                left="$6"
-              />
-
-              {/* Clickable Map Pins - Centers */}
-              {mapPins.map((pin) => (
-                <Button
-                  key={`center-${pin.id}`}
-                  position="absolute"
-                  top={pin.y}
-                  left={pin.x}
-                  size="$2.5"
-                  circular
-                  bg="$red9"
-                  borderWidth={3}
-                  borderColor="white"
-                  pressStyle={{ 
-                    scale: 1.1, 
-                    bg: "$red10" 
-                  }}
-                  hoverStyle={{ 
-                    scale: 1.05,
-                    bg: "$red8" 
-                  }}
-                  onPress={() => handlePinClick(pin.id, pin.type)}
-                  shadowColor="$shadowColor"
-                  shadowOffset={{ width: 0, height: 2 }}
-                  shadowOpacity={0.3}
-                  shadowRadius={4}
-                  elevation={3}
-                >
-                  <MapPin size={16} color="white" />
-                </Button>
-              ))}
-
-              {/* Clickable Map Pins - Events */}
-              {eventPins.map((pin) => (
-                <Button
-                  key={`event-${pin.id}`}
-                  position="absolute"
-                  top={pin.y}
-                  left={pin.x}
-                  size="$2.5"
-                  circular
-                  bg="$blue9"
-                  borderWidth={3}
-                  borderColor="white"
-                  pressStyle={{ 
-                    scale: 1.1, 
-                    bg: "$blue10" 
-                  }}
-                  hoverStyle={{ 
-                    scale: 1.05,
-                    bg: "$blue8" 
-                  }}
-                  onPress={() => handlePinClick(pin.id, pin.type)}
-                  shadowColor="$shadowColor"
-                  shadowOffset={{ width: 0, height: 2 }}
-                  shadowOpacity={0.3}
-                  shadowRadius={4}
-                  elevation={3}
-                >
-                  <Calendar size={16} color="white" />
-                </Button>
-              ))}
-              
-              <Paragraph fontSize="$6" color="$gray8" textAlign="center" opacity={0.7}>
-                🗺️ Interactive Map
-              </Paragraph>
-              <Paragraph fontSize="$3" color="$gray7" textAlign="center" mt="$2" opacity={0.7}>
-                Tap pins to explore centers and events
-              </Paragraph>
+            <YStack height={200} borderRadius="$4" overflow="hidden">
+              <Map points={mapPoints} onPointPress={handlePointPress} />
             </YStack>
           </Card.Header>
           
