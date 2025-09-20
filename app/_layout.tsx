@@ -118,6 +118,15 @@ function RootLayoutNav() {
             
           }}
         />
+
+        <Stack.Screen
+          name="profile"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
       </Stack>
     </ThemeProvider>
   )

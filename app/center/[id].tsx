@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { 
   Avatar,
@@ -22,7 +22,10 @@ import {
   Phone, 
   Calendar,
   User,
-  ChevronRight
+  ChevronRight,
+  ChevronLeft,
+  ThumbsUp,
+  MessageCircle
 } from '@tamagui/lucide-icons';
 
 // Hardcoded center data
@@ -62,9 +65,47 @@ const centerData = {
   }
 };
 
+// Sample events data for the calendar
+const sampleEvents = [
+  {
+    id: 1,
+    date: 26,
+    time: "TODAY • 10:30 AM - 11:30 AM",
+    location: "Young Museum",
+    title: "Bhagavad Gita Study Circle - Chapter 12",
+    attendees: 14,
+    likes: 0,
+    comments: 0,
+    color: "red"
+  },
+  {
+    id: 2,
+    date: 29,
+    time: "SUN, 8 PM - 11:49 PM", 
+    location: "Meditation Hall",
+    title: "Hanuman Chalisa Chanting Marathon",
+    attendees: 14,
+    likes: 0,
+    comments: 0,
+    color: "blue"
+  },
+  {
+    id: 3,
+    date: 31,
+    time: "TUE, 7 PM - 8:30 PM",
+    location: "Main Hall",
+    title: "Yoga and Meditation Session",
+    attendees: 8,
+    likes: 2,
+    comments: 1,
+    color: "green"
+  }
+];
+
 export default function CenterDetailPage() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState('Details');
   
   const center = centerData[id as string];
   
@@ -78,6 +119,171 @@ export default function CenterDetailPage() {
       </YStack>
     );
   }
+
+  // Calendar component
+  const CalendarView = () => {
+    const daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const dates = [
+      [null, null, null, null, 1, 2, 3],
+      [4, 5, 6, 7, 8, 9, 10],
+      [11, 12, 13, 14, 15, 16, 17],
+      [18, 19, 20, 21, 22, 23, 24],
+      [25, 26, 27, 28, 29, 30, 31]
+    ];
+
+    const getEventForDate = (date: number) => {
+      return sampleEvents.find(event => event.date === date);
+    };
+
+    const getDateColor = (date: number) => {
+      const event = getEventForDate(date);
+      if (!event) return 'transparent';
+      return event.color === 'red' ? '$red5' : event.color === 'blue' ? '$blue5' : '$green5';
+    };
+
+    return (
+      <YStack gap="$4">
+        {/* Calendar Header */}
+        <XStack justifyContent="space-between" alignItems="center" px="$2">
+          <Button size="$2" circular icon={<ChevronLeft size={16} />} variant="outlined" />
+          <H2 fontSize="$5" fontWeight="600">August 2025</H2>
+          <Button size="$2" circular icon={<ChevronRight size={16} />} variant="outlined" />
+        </XStack>
+
+        {/* Days of week header */}
+        <XStack justifyContent="space-between" px="$2">
+          {daysOfWeek.map((day, index) => (
+            <YStack key={index} width={40} alignItems="center">
+              <Paragraph fontSize="$3" color="$gray8" fontWeight="500">
+                {day}
+              </Paragraph>
+            </YStack>
+          ))}
+        </XStack>
+
+        {/* Calendar grid */}
+        <YStack gap="$1">
+          {dates.map((week, weekIndex) => (
+            <XStack key={weekIndex} justifyContent="space-between" px="$2">
+              {week.map((date, dayIndex) => (
+                <YStack key={dayIndex} width={40} alignItems="center">
+                  {date && (
+                    <YStack 
+                      width={36} 
+                      height={36} 
+                      borderRadius="$3" 
+                      justifyContent="center" 
+                      alignItems="center"
+                      bg={date === 26 ? "$gray12" : getDateColor(date)}
+                      position="relative"
+                    >
+                      <Paragraph 
+                        fontSize="$3" 
+                        fontWeight={date === 26 ? "600" : "400"}
+                        color={date === 26 ? "white" : "$color"}
+                      >
+                        {date}
+                      </Paragraph>
+                      {getEventForDate(date) && date !== 26 && (
+                        <YStack 
+                          position="absolute" 
+                          bottom={2} 
+                          width={4} 
+                          height={4} 
+                          borderRadius={2}
+                          bg={getEventForDate(date)?.color === 'red' ? '$red9' : 
+                              getEventForDate(date)?.color === 'blue' ? '$blue9' : '$green9'}
+                        />
+                      )}
+                    </YStack>
+                  )}
+                </YStack>
+              ))}
+            </XStack>
+          ))}
+        </YStack>
+
+        {/* Today's events */}
+        <YStack gap="$3" mt="$2">
+          {sampleEvents.filter(event => event.date === 26).map((event) => (
+            <Card key={event.id} elevate size="$4">
+              <Card.Header p="$4">
+                <YStack gap="$2">
+                  <Paragraph fontSize="$3" color="$primary" fontWeight="500">
+                    {event.time}
+                  </Paragraph>
+                  <Paragraph fontSize="$3" color="$gray8">
+                    {event.location}
+                  </Paragraph>
+                  <H3 fontSize="$4" fontWeight="600" lineHeight="$1">
+                    {event.title}
+                  </H3>
+                  <Paragraph fontSize="$3" color="$gray8" mt="$1">
+                    {event.attendees} people
+                  </Paragraph>
+                </YStack>
+              </Card.Header>
+
+              <Card.Footer p="$4" pt="$0">
+                <XStack justifyContent="flex-end" gap="$4" width="100%">
+                  <XStack alignItems="center" gap="$1">
+                    <ThumbsUp size={16} color="$gray8" />
+                    <Paragraph fontSize="$3" color="$gray8">
+                      {event.likes}
+                    </Paragraph>
+                  </XStack>
+                  <XStack alignItems="center" gap="$1">
+                    <MessageCircle size={16} color="$gray8" />
+                    <Paragraph fontSize="$3" color="$gray8">
+                      {event.comments}
+                    </Paragraph>
+                  </XStack>
+                </XStack>
+              </Card.Footer>
+            </Card>
+          ))}
+
+          {sampleEvents.filter(event => event.date !== 26).map((event) => (
+            <Card key={event.id} elevate size="$4" opacity={0.8}>
+              <Card.Header p="$4">
+                <YStack gap="$2">
+                  <Paragraph fontSize="$3" color="$primary" fontWeight="500">
+                    {event.time}
+                  </Paragraph>
+                  <Paragraph fontSize="$3" color="$gray8">
+                    {event.location}
+                  </Paragraph>
+                  <H3 fontSize="$4" fontWeight="600" lineHeight="$1">
+                    {event.title}
+                  </H3>
+                  <Paragraph fontSize="$3" color="$gray8" mt="$1">
+                    {event.attendees} people
+                  </Paragraph>
+                </YStack>
+              </Card.Header>
+
+              <Card.Footer p="$4" pt="$0">
+                <XStack justifyContent="flex-end" gap="$4" width="100%">
+                  <XStack alignItems="center" gap="$1">
+                    <ThumbsUp size={16} color="$gray8" />
+                    <Paragraph fontSize="$3" color="$gray8">
+                      {event.likes}
+                    </Paragraph>
+                  </XStack>
+                  <XStack alignItems="center" gap="$1">
+                    <MessageCircle size={16} color="$gray8" />
+                    <Paragraph fontSize="$3" color="$gray8">
+                      {event.comments}
+                    </Paragraph>
+                  </XStack>
+                </XStack>
+              </Card.Footer>
+            </Card>
+          ))}
+        </YStack>
+      </YStack>
+    );
+  };
 
   return (
     <ScrollView flex={1} bg="$background">
@@ -113,114 +319,133 @@ export default function CenterDetailPage() {
         {/* Tab Navigation */}
         <XStack bg="$background" px="$4" py="$2">
           <XStack flex={1} bg="$gray3" borderRadius="$3" p="$1">
-            <Button flex={1} bg="$orange5" color="$orange11" size="$3" borderRadius="$2">
+            <Button 
+              flex={1} 
+              bg={activeTab === 'Details' ? "$orange5" : "transparent"} 
+              color={activeTab === 'Details' ? "$orange11" : "$gray10"} 
+              size="$3" 
+              borderRadius="$2"
+              onPress={() => setActiveTab('Details')}
+            >
               Details
             </Button>
-            <Button flex={1} bg="transparent" color="$gray10" size="$3">
+            <Button 
+              flex={1} 
+              bg={activeTab === 'Event' ? "$orange5" : "transparent"} 
+              color={activeTab === 'Event' ? "$orange11" : "$gray10"} 
+              size="$3"
+              onPress={() => setActiveTab('Event')}
+            >
               Event
             </Button>
           </XStack>
         </XStack>
 
         <YStack px="$4" gap="$4" pb="$8">
-          {/* Center Image */}
-          <Card elevate size="$4">
-            <Card.Header p="$0">
-              <Image
-                source={{ uri: center.image }}
-                width="100%"
-                height={200}
-                borderRadius="$4"
-                borderBottomLeftRadius={0}
-                borderBottomRightRadius={0}
-              />
-            </Card.Header>
-          </Card>
+          {activeTab === 'Details' ? (
+            <>
+              {/* Center Image */}
+              <Card elevate size="$4">
+                <Card.Header p="$0">
+                  <Image
+                    source={{ uri: center.image }}
+                    width="100%"
+                    height={200}
+                    borderRadius="$4"
+                    borderBottomLeftRadius={0}
+                    borderBottomRightRadius={0}
+                  />
+                </Card.Header>
+              </Card>
 
-          {/* Address */}
-          <XStack alignItems="center" gap="$3">
-            <MapPin size={20} color="$primary" />
-            <YStack flex={1}>
-              <Paragraph fontSize="$4" fontWeight="500" color="$color">
-                {center.address}
-              </Paragraph>
-            </YStack>
-          </XStack>
+              {/* Address */}
+              <XStack alignItems="center" gap="$3">
+                <MapPin size={20} color="$primary" />
+                <YStack flex={1}>
+                  <Paragraph fontSize="$4" fontWeight="500" color="$color">
+                    {center.address}
+                  </Paragraph>
+                </YStack>
+              </XStack>
 
-          {/* Website */}
-          <XStack alignItems="center" gap="$3">
-            <Globe size={20} color="$primary" />
-            <YStack flex={1}>
-              <Paragraph fontSize="$4" color="$blue10" textDecorationLine="underline">
-                {center.website}
-              </Paragraph>
-            </YStack>
-          </XStack>
+              {/* Website */}
+              <XStack alignItems="center" gap="$3">
+                <Globe size={20} color="$primary" />
+                <YStack flex={1}>
+                  <Paragraph fontSize="$4" color="$blue10" textDecorationLine="underline">
+                    {center.website}
+                  </Paragraph>
+                </YStack>
+              </XStack>
 
-          {/* Phone */}
-          <XStack alignItems="center" gap="$3">
-            <Phone size={20} color="$primary" />
-            <YStack flex={1}>
-              <Paragraph fontSize="$4" color="$blue10">
-                {center.phone}
-              </Paragraph>
-            </YStack>
-          </XStack>
+              {/* Phone */}
+              <XStack alignItems="center" gap="$3">
+                <Phone size={20} color="$primary" />
+                <YStack flex={1}>
+                  <Paragraph fontSize="$4" color="$blue10">
+                    {center.phone}
+                  </Paragraph>
+                </YStack>
+              </XStack>
 
-          <Separator my="$2" />
+              <Separator my="$2" />
 
-          {/* Upcoming Events */}
-          <XStack justifyContent="space-between" alignItems="center">
-            <XStack alignItems="center" gap="$3">
-              <Calendar size={20} color="$primary" />
-              <Paragraph fontSize="$4" fontWeight="500">
-                {center.upcomingEvents} upcoming events
-              </Paragraph>
-            </XStack>
-            <Button size="$2" variant="outlined" color="$primary">
-              See All
-            </Button>
-          </XStack>
+              {/* Upcoming Events */}
+              <XStack justifyContent="space-between" alignItems="center">
+                <XStack alignItems="center" gap="$3">
+                  <Calendar size={20} color="$primary" />
+                  <Paragraph fontSize="$4" fontWeight="500">
+                    {center.upcomingEvents} upcoming events
+                  </Paragraph>
+                </XStack>
+                <Button size="$2" variant="outlined" color="$primary">
+                  See All
+                </Button>
+              </XStack>
 
-          <Separator my="$2" />
+              <Separator my="$2" />
 
-          {/* Point of Contact */}
-          <XStack alignItems="center" gap="$3">
-            <User size={20} color="$primary" />
-            <YStack flex={1}>
-              <Paragraph fontSize="$3" color="$gray10">
-                Point of Contact: 
-              </Paragraph>
-              <Paragraph fontSize="$4" fontWeight="500">
-                {center.pointOfContact}
-              </Paragraph>
-            </YStack>
-          </XStack>
+              {/* Point of Contact */}
+              <XStack alignItems="center" gap="$3">
+                <User size={20} color="$primary" />
+                <YStack flex={1}>
+                  <Paragraph fontSize="$3" color="$gray10">
+                    Point of Contact: 
+                  </Paragraph>
+                  <Paragraph fontSize="$4" fontWeight="500">
+                    {center.pointOfContact}
+                  </Paragraph>
+                </YStack>
+              </XStack>
 
-          {/* Acharya */}
-          <XStack alignItems="center" gap="$3">
-            <User size={20} color="$primary" />
-            <YStack flex={1}>
-              <Paragraph fontSize="$3" color="$gray10">
-                Acharya: 
-              </Paragraph>
-              <Paragraph fontSize="$4" fontWeight="500">
-                {center.acharya}
-              </Paragraph>
-            </YStack>
-          </XStack>
+              {/* Acharya */}
+              <XStack alignItems="center" gap="$3">
+                <User size={20} color="$primary" />
+                <YStack flex={1}>
+                  <Paragraph fontSize="$3" color="$gray10">
+                    Acharya: 
+                  </Paragraph>
+                  <Paragraph fontSize="$4" fontWeight="500">
+                    {center.acharya}
+                  </Paragraph>
+                </YStack>
+              </XStack>
 
-          {/* Make this my center button */}
-          <Button 
-            size="$4" 
-            bg="$orange8" 
-            color="white" 
-            fontWeight="600"
-            mt="$4"
-            pressStyle={{ bg: "$orange9" }}
-          >
-            Make this my center
-          </Button>
+              {/* Make this my center button */}
+              <Button 
+                size="$4" 
+                bg="$orange8" 
+                color="white" 
+                fontWeight="600"
+                mt="$4"
+                pressStyle={{ bg: "$orange9" }}
+              >
+                Make this my center
+              </Button>
+            </>
+          ) : (
+            <CalendarView />
+          )}
         </YStack>
       </YStack>
     </ScrollView>
