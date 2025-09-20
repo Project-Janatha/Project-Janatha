@@ -65,8 +65,8 @@ export default function TabLayout() {
             >
               <Paragraph>{user.username}</Paragraph>
               <Separator />
-              {/* TODO: Implement settings page */}
-              <Button icon={<Settings size={16} />} onPress={() => router.push('/settings')} size="$3" >
+              {/* Profile page navigation */}
+              <Button icon={<Settings size={16} />} onPress={() => router.push('/profile')} size="$3" >
                 Settings
               </Button>
               <Button icon={<LogOut size={16} />} bg="red" onPress={handleLogout} size="$3" >

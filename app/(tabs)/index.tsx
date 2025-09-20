@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { MapPin, ChevronRight, Users, ThumbsUp, MessageCircle } from '@tamagui/lucide-icons'
+import { MapPin, ChevronRight, Users, ThumbsUp, MessageCircle, Calendar } from '@tamagui/lucide-icons'
 import { 
   Anchor, 
   Avatar, 
@@ -39,13 +39,24 @@ export default function HomeScreen() {
 
   // Map pin locations data
   const mapPins = [
-    { id: "1", name: "Chinmaya Mission San Jose", x: "65%", y: "45%" },
-    { id: "2", name: "Chinmaya Mission West", x: "25%", y: "25%" },
-    { id: "3", name: "Chinmaya Mission San Francisco", x: "35%", y: "35%" },
+    { id: "1", name: "Chinmaya Mission San Jose", x: "65%", y: "45%", type: "center" },
+    { id: "2", name: "Chinmaya Mission West", x: "25%", y: "25%", type: "center" },
+    { id: "3", name: "Chinmaya Mission San Francisco", x: "35%", y: "35%", type: "center" },
   ];
 
-  const handlePinClick = (pinId: string) => {
-    router.push(`/center/${pinId}`);
+  // Event pin locations data
+  const eventPins = [
+    { id: "1", name: "Bhagavad Gita Study Circle", x: "70%", y: "50%", type: "event" },
+    { id: "2", name: "Hanuman Chalisa Chanting", x: "30%", y: "30%", type: "event" },
+    { id: "3", name: "Yoga and Meditation Session", x: "40%", y: "40%", type: "event" },
+  ];
+
+  const handlePinClick = (pinId: string, type: string) => {
+    if (type === "center") {
+      router.push(`/center/${pinId}`);
+    } else if (type === "event") {
+      router.push(`/events/${pinId}`);
+    }
   };
 
   // Calendar data - showing current week
@@ -126,10 +137,10 @@ export default function HomeScreen() {
                 left="$6"
               />
 
-              {/* Clickable Map Pins */}
+              {/* Clickable Map Pins - Centers */}
               {mapPins.map((pin) => (
                 <Button
-                  key={pin.id}
+                  key={`center-${pin.id}`}
                   position="absolute"
                   top={pin.y}
                   left={pin.x}
@@ -146,7 +157,7 @@ export default function HomeScreen() {
                     scale: 1.05,
                     bg: "$red8" 
                   }}
-                  onPress={() => handlePinClick(pin.id)}
+                  onPress={() => handlePinClick(pin.id, pin.type)}
                   shadowColor="$shadowColor"
                   shadowOffset={{ width: 0, height: 2 }}
                   shadowOpacity={0.3}
@@ -156,12 +167,43 @@ export default function HomeScreen() {
                   <MapPin size={16} color="white" />
                 </Button>
               ))}
+
+              {/* Clickable Map Pins - Events */}
+              {eventPins.map((pin) => (
+                <Button
+                  key={`event-${pin.id}`}
+                  position="absolute"
+                  top={pin.y}
+                  left={pin.x}
+                  size="$2.5"
+                  circular
+                  bg="$blue9"
+                  borderWidth={3}
+                  borderColor="white"
+                  pressStyle={{ 
+                    scale: 1.1, 
+                    bg: "$blue10" 
+                  }}
+                  hoverStyle={{ 
+                    scale: 1.05,
+                    bg: "$blue8" 
+                  }}
+                  onPress={() => handlePinClick(pin.id, pin.type)}
+                  shadowColor="$shadowColor"
+                  shadowOffset={{ width: 0, height: 2 }}
+                  shadowOpacity={0.3}
+                  shadowRadius={4}
+                  elevation={3}
+                >
+                  <Calendar size={16} color="white" />
+                </Button>
+              ))}
               
               <Paragraph fontSize="$6" color="$gray8" textAlign="center" opacity={0.7}>
                 🗺️ Interactive Map
               </Paragraph>
               <Paragraph fontSize="$3" color="$gray7" textAlign="center" mt="$2" opacity={0.7}>
-                Tap pins to explore centers
+                Tap pins to explore centers and events
               </Paragraph>
             </YStack>
           </Card.Header>
@@ -171,7 +213,7 @@ export default function HomeScreen() {
               <XStack alignItems="center" gap="$2">
                 <MapPin size={20} color="$primary" />
                 <Paragraph fontSize="$4" fontWeight="500">
-                  Find events near you
+                  Find centers and events near you
                 </Paragraph>
               </XStack>
               <ChevronRight size={20} color="$gray8" />
