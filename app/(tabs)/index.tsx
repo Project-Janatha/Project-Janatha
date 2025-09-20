@@ -207,7 +207,13 @@ export default function HomeScreen() {
         {/* Events List */}
         <YStack gap="$3" mt="$4">
           {events.map((event, index) => (
-            <Card key={event.id} elevate size="$4" pressStyle={{ scale: 0.98 }}>
+            <Card 
+              key={event.id} 
+              elevate size="$4" 
+              pressStyle={{ scale: 0.98 }}
+              onPress={() => router.push(`/events/${event.id}`)}
+              cursor="pointer"
+            >
               <Card.Header p="$4">
                 <YStack gap="$2">
                   <Paragraph fontSize="$3" color="$primary" fontWeight="500">
