@@ -288,33 +288,12 @@ export default function CenterDetailPage() {
   return (
     <ScrollView flex={1} bg="$background">
       <YStack flex={1}>
-        {/* Header */}
-        <XStack 
-          justifyContent="space-between" 
-          alignItems="center" 
-          px="$4" 
-          py="$3"
-          bg="$background"
-          borderBottomWidth={1}
-          borderBottomColor="$borderColor"
-        >
-          <Button
-            size="$3"
-            circular
-            icon={<ArrowLeft size={20} />}
-            onPress={() => router.back()}
-            variant="outlined"
-          />
-          <H1 fontSize="$5" fontWeight="600" flex={1} textAlign="center" mx="$3">
+        {/* Center Title */}
+        <YStack px="$4" py="$3" bg="$background" borderBottomWidth={1} borderBottomColor="$borderColor">
+          <H1 fontSize="$6" fontWeight="600" textAlign="center">
             {center.name}
           </H1>
-          <Button
-            size="$3"
-            circular
-            icon={<Share size={20} />}
-            variant="outlined"
-          />
-        </XStack>
+        </YStack>
 
         {/* Tab Navigation */}
         <XStack bg="$background" px="$4" py="$2">
