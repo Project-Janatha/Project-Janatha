@@ -12,18 +12,12 @@ import {
   Input, 
   TextArea,
   Card,
-  Separator,
   useTheme
 } from 'tamagui';
 import { 
   X, 
-  Check, 
   Camera, 
-  User, 
-  Calendar, 
-  MapPin, 
-  Heart,
-  Settings
+  Settings,
 } from '@tamagui/lucide-icons';
 import { UserContext } from 'components';
 import { useRouter } from 'expo-router';
@@ -167,10 +161,7 @@ export default function ProfilePage() {
           <Button 
             size="$3" 
             variant="outlined" 
-            icon={<Check size={20} />}
             onPress={isEditing ? handleSave : handleEdit}
-            bg={isEditing ? "$primary" : "transparent"}
-            color={isEditing ? "white" : "$color"}
           >
             {isEditing ? 'Done' : 'Edit'}
           </Button>
@@ -331,6 +322,11 @@ export default function ProfilePage() {
               flex={1} 
               size="$4" 
               bg="$primary"
+              color={"white"}
+              hoverStyle={{
+                backgroundColor: "$primaryPress",
+                color: "$white"
+              }}
               onPress={handleSave}
               disabled={isSaving}
               opacity={isSaving ? 0.7 : 1}
