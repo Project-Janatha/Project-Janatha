@@ -39,21 +39,21 @@ export default function ExploreScreen() {
       longitude: -122.4194,
     },
     {
-      id: "4",
+      id: "3",
       type: "event" as const,
       name: "Bhagavad Gita Study Circle",
       latitude: 37.2631,
       longitude: -121.8031,
     },
     {
-      id: "5",
+      id: "1",
       type: "event" as const,
       name: "Hanuman Chalisa Marathon", 
       latitude: 37.8699,
       longitude: -122.4756,
     },
     {
-      id: "6",
+      id: "2",
       type: "event" as const,
       name: "Yoga Session",
       latitude: 37.7849,
@@ -72,9 +72,9 @@ export default function ExploreScreen() {
   const handlePointPress = (point: any) => {
     if (point.type === 'center') {
       router.push(`/center/${point.id}`);
+    } else if (point.type === 'event') {
+      router.push(`/events/${point.id}`);
     }
-    // For events, we could navigate to an event detail page
-    // router.push(`/event/${point.id}`);
   };
 
   return (
