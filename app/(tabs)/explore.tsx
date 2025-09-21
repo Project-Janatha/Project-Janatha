@@ -83,14 +83,14 @@ export default function ExploreScreen() {
       <YStack 
         padding="$4" 
         gap="$3"
-        backgroundColor="rgba(255, 255, 255, 0.95)"
+        backgroundColor="$overlayBackground"
         backdropFilter="blur(10px)"
         borderBottomWidth={1}
         borderBottomColor="$borderColor"
       >
         {/* Search Bar */}
         <XStack 
-          bg="white" 
+          bg="$cardBackground" 
           borderRadius="$4" 
           padding="$2"
           alignItems="center"
@@ -121,7 +121,7 @@ export default function ExploreScreen() {
 
         {/* Filter Buttons */}
         <XStack 
-          bg="white" 
+          bg="$cardBackground" 
           borderRadius="$4" 
           padding="$1"
           gap="$1"
@@ -138,7 +138,7 @@ export default function ExploreScreen() {
               flex={1}
               onPress={() => setActiveFilter(filter)}
               bg={activeFilter === filter ? "$primary" : "transparent"}
-              color={activeFilter === filter ? "white" : "$gray10"}
+              color={activeFilter === filter ? "$backgroundStrong" : "$gray10"}
               fontWeight={activeFilter === filter ? "600" : "400"}
               borderRadius="$3"
               pressStyle={{ 

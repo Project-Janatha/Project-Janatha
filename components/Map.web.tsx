@@ -87,7 +87,7 @@ export default function Map({ points = [], onPointPress }: MapProps) {
       markerElement.style.width = '20px';
       markerElement.style.height = '20px';
       markerElement.style.borderRadius = '50%';
-      markerElement.style.border = '2px solid white';
+      markerElement.style.border = '2px solid #FFFFFF';
       markerElement.style.cursor = 'pointer';
       markerElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
       

@@ -85,7 +85,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '$primary',
+        tabBarActiveTintColor: '#9A3412', // primary color - orange-800
+        tabBarInactiveTintColor: theme.gray8.val,
         tabBarStyle: {
           backgroundColor: theme.background.val,
           borderTopColor: theme.borderColor.val,
