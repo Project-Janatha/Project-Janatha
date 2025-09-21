@@ -180,7 +180,7 @@ export default function CenterDetailPage() {
                       <Paragraph 
                         fontSize="$3" 
                         fontWeight={date === 26 ? "600" : "400"}
-                        color={date === 26 ? "white" : "$color"}
+                        color={date === 26 ? "$gray2" : "$color"}
                       >
                         {date}
                       </Paragraph>
@@ -414,7 +414,7 @@ export default function CenterDetailPage() {
               <Button 
                 size="$4" 
                 bg="$orange8" 
-                color="white" 
+                color="$backgroundStrong" 
                 fontWeight="600"
                 mt="$4"
                 pressStyle={{ bg: "$orange9" }}

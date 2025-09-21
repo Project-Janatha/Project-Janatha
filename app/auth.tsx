@@ -109,7 +109,7 @@ export default function AuthScreen(props) {
           source={isDark ? (require("../assets/images/chinmaya_logo_dark.svg")) : (require("../assets/images/chinmaya_logo_light.svg"))}
           style={{ width: 80, height: 80 }}
         />
-        <H3 fontWeight="$4" color="white">
+        <H3 fontWeight="$4" color="$color">
           Log In or Sign Up
         </H3>
       </YStack>
@@ -182,7 +182,7 @@ export default function AuthScreen(props) {
       </Form.Trigger>
       </Form>
       <Button 
-        icon={<Code color={isDark ? "white" : "black"} />} 
+        icon={<Code color="$color" />} 
         onPress={() => {
           const devUser = {
             username: 'dev_user',
