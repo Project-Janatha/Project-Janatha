@@ -24,6 +24,7 @@ import {
   MessageCircle,
   Calendar
 } from '@tamagui/lucide-icons';
+import { TabSegment, SecondaryButton, PrimaryButton } from 'components';
 
 // Hardcoded event data
 const eventData = {
@@ -128,9 +129,9 @@ export default function EventDetailPage() {
     return (
       <YStack flex={1} justifyContent="center" alignItems="center" px="$4">
         <H2>Event not found</H2>
-        <Button onPress={() => router.back()} mt="$4">
+        <SecondaryButton onPress={() => router.back()} mt="$4">
           Go Back
-        </Button>
+        </SecondaryButton>
       </YStack>
     );
   }
@@ -212,26 +213,19 @@ export default function EventDetailPage() {
           <Paragraph fontSize="$4" color="$green10" fontWeight="500">
             You are registered for this event!
           </Paragraph>
-          <Button 
+          <SecondaryButton 
             size="$4" 
-            variant="outlined" 
-            color="$gray10"
-            borderColor="$gray8"
           >
-            Cancel
-          </Button>
+            Cancel Registration
+          </SecondaryButton>
         </YStack>
       ) : (
-        <Button 
+        <PrimaryButton 
           size="$4" 
-          bg="$orange8" 
-          color="white" 
-          fontWeight="600"
           mt="$4"
-          pressStyle={{ bg: "$orange9" }}
         >
-          Attend
-        </Button>
+          Attend Event
+        </PrimaryButton>
       )}
     </YStack>
   );
@@ -332,36 +326,17 @@ export default function EventDetailPage() {
         {/* Tab Navigation - Only show if registered */}
         {event.isRegistered && (
           <XStack bg="$background" px="$4" py="$2">
-            <XStack flex={1} bg="$gray3" borderRadius="$3" p="$1">
-              <Button 
-                flex={1} 
-                bg={activeTab === 'Details' ? "$orange5" : "transparent"} 
-                color={activeTab === 'Details' ? "$orange11" : "$gray10"} 
-                size="$3" 
-                borderRadius="$2"
-                onPress={() => setActiveTab('Details')}
-              >
-                Details
-              </Button>
-              <Button 
-                flex={1} 
-                bg={activeTab === 'People' ? "$orange5" : "transparent"} 
-                color={activeTab === 'People' ? "$orange11" : "$gray10"} 
-                size="$3"
-                onPress={() => setActiveTab('People')}
-              >
-                People
-              </Button>
-              <Button 
-                flex={1} 
-                bg={activeTab === 'Messages' ? "$orange5" : "transparent"} 
-                color={activeTab === 'Messages' ? "$orange11" : "$gray10"} 
-                size="$3"
-                onPress={() => setActiveTab('Messages')}
-              >
-                Messages
-              </Button>
-            </XStack>
+            <TabSegment
+              options={[
+                { value: 'Details', label: 'Details' },
+                { value: 'People', label: 'People' },
+                { value: 'Messages', label: 'Messages' }
+              ]}
+              value={activeTab}
+              onValueChange={setActiveTab}
+              variant="subtle"
+              size="$3"
+            />
           </XStack>
         )}
 

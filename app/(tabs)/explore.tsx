@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Input, XStack, YStack } from 'tamagui';
-import { Map } from 'components';
+import { Map, TabSegment, IconButton } from 'components';
 import { Search, SlidersHorizontal } from '@tamagui/lucide-icons';
 import { useRouter } from 'expo-router';
 
@@ -13,7 +13,11 @@ export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
-  const filters = ['All', 'Centers', 'Events'];
+  const filterOptions = [
+    { value: 'All', label: 'All' },
+    { value: 'Centers', label: 'Centers' },
+    { value: 'Events', label: 'Events' }
+  ];
 
   // Map points data - centers and events
   const mapPoints = [
@@ -110,7 +114,7 @@ export default function ExploreScreen() {
             backgroundColor="transparent"
             fontSize="$4"
           />
-          <Button 
+          <IconButton 
             size="$3" 
             circular 
             icon={<SlidersHorizontal size={16} />}
@@ -119,36 +123,14 @@ export default function ExploreScreen() {
           />
         </XStack>
 
-        {/* Filter Buttons */}
-        <XStack 
-          bg="$cardBackground" 
-          borderRadius="$4" 
-          padding="$1"
-          gap="$1"
-          shadowColor="$shadowColor"
-          shadowOffset={{ width: 0, height: 2 }}
-          shadowOpacity={0.1}
-          shadowRadius={8}
-          elevation={3}
-        >
-          {filters.map((filter) => (
-            <Button
-              key={filter}
-              size="$3"
-              flex={1}
-              onPress={() => setActiveFilter(filter)}
-              bg={activeFilter === filter ? "$primary" : "transparent"}
-              color={activeFilter === filter ? "$backgroundStrong" : "$gray10"}
-              fontWeight={activeFilter === filter ? "600" : "400"}
-              borderRadius="$3"
-              pressStyle={{ 
-                bg: activeFilter === filter ? "$primaryPress" : "$gray4" 
-              }}
-            >
-              {filter}
-            </Button>
-          ))}
-        </XStack>
+        {/* Filter Tabs */}
+        <TabSegment
+          options={filterOptions}
+          value={activeFilter}
+          onValueChange={setActiveFilter}
+          variant="primary"
+          size="$3"
+        />
       </YStack>
 
       {/* Map - Takes remaining space */}
