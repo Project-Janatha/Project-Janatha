@@ -27,6 +27,7 @@ import {
   ThumbsUp,
   MessageCircle
 } from '@tamagui/lucide-icons';
+import { TabSegment, IconButton, SecondaryButton, PrimaryButton } from 'components';
 
 // Hardcoded center data
 const centerData = {
@@ -145,9 +146,9 @@ export default function CenterDetailPage() {
       <YStack gap="$4">
         {/* Calendar Header */}
         <XStack justifyContent="space-between" alignItems="center" px="$2">
-          <Button size="$2" circular icon={<ChevronLeft size={16} />} variant="outlined" />
+          <IconButton size="$2" circular icon={<ChevronLeft size={16} />} variant="outlined" />
           <H2 fontSize="$5" fontWeight="600">August 2025</H2>
-          <Button size="$2" circular icon={<ChevronRight size={16} />} variant="outlined" />
+          <IconButton size="$2" circular icon={<ChevronRight size={16} />} variant="outlined" />
         </XStack>
 
         {/* Days of week header */}
@@ -297,27 +298,16 @@ export default function CenterDetailPage() {
 
         {/* Tab Navigation */}
         <XStack bg="$background" px="$4" py="$2">
-          <XStack flex={1} bg="$gray3" borderRadius="$3" p="$1">
-            <Button 
-              flex={1} 
-              bg={activeTab === 'Details' ? "$orange5" : "transparent"} 
-              color={activeTab === 'Details' ? "$orange11" : "$gray10"} 
-              size="$3" 
-              borderRadius="$2"
-              onPress={() => setActiveTab('Details')}
-            >
-              Details
-            </Button>
-            <Button 
-              flex={1} 
-              bg={activeTab === 'Event' ? "$orange5" : "transparent"} 
-              color={activeTab === 'Event' ? "$orange11" : "$gray10"} 
-              size="$3"
-              onPress={() => setActiveTab('Event')}
-            >
-              Event
-            </Button>
-          </XStack>
+          <TabSegment
+            options={[
+              { value: 'Details', label: 'Details' },
+              { value: 'Event', label: 'Event' }
+            ]}
+            value={activeTab}
+            onValueChange={setActiveTab}
+            variant="subtle"
+            size="$3"
+          />
         </XStack>
 
         <YStack px="$4" gap="$4" pb="$8">
@@ -377,9 +367,9 @@ export default function CenterDetailPage() {
                     {center.upcomingEvents} upcoming events
                   </Paragraph>
                 </XStack>
-                <Button size="$2" variant="outlined" color="$primary">
+                <SecondaryButton size="$2">
                   See All
-                </Button>
+                </SecondaryButton>
               </XStack>
 
               <Separator my="$2" />
@@ -411,16 +401,12 @@ export default function CenterDetailPage() {
               </XStack>
 
               {/* Make this my center button */}
-              <Button 
+              <PrimaryButton 
                 size="$4" 
-                bg="$orange8" 
-                color="$backgroundStrong" 
-                fontWeight="600"
                 mt="$4"
-                pressStyle={{ bg: "$orange9" }}
               >
                 Make this my center
-              </Button>
+              </PrimaryButton>
             </>
           ) : (
             <CalendarView />

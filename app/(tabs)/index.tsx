@@ -15,7 +15,7 @@ import {
   YStack 
 } from 'tamagui'
 import { ToastControl } from 'components/CurrentToast'
-import { UserContext, Map } from 'components';
+import { UserContext, Map, SecondaryButton } from 'components';
 import { useRouter } from 'expo-router';
 
 type User = {
@@ -159,9 +159,9 @@ export default function HomeScreen() {
         <YStack gap="$3">
           <XStack justifyContent="space-between" alignItems="center">
             <H2 fontSize="$6" fontWeight="600">Your week</H2>
-            <Button size="$2" variant="outlined" color="$primary">
+            <SecondaryButton size="$2">
               See All
-            </Button>
+            </SecondaryButton>
           </XStack>
 
           {/* Calendar Week View */}

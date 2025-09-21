@@ -3,7 +3,7 @@ import { Adapt, Button, Paragraph, Popover, Separator, useTheme, YStack } from '
 import { Home, Compass, User, Settings, LogOut } from '@tamagui/lucide-icons'
 import { Platform } from 'react-native'
 import { useContext } from 'react'
-import { UserContext } from 'components'
+import { UserContext, GhostButton, DestructiveButton } from 'components'
 
 /**
  * TabLayout Component - The main layout for the tab-based navigation.
@@ -59,19 +59,19 @@ export default function TabLayout() {
           >
             <YStack 
               gap='$3' 
-              p='$4' 
+              p='$1' 
               alignItems='flex-start' 
-              minWidth={200}
+              minWidth={120}
             >
               <Paragraph>{user.username}</Paragraph>
               <Separator />
               {/* Profile page navigation */}
-              <Button icon={<Settings size={16} />} onPress={() => router.push('/profile')} size="$3" >
+              <GhostButton icon={<Settings size={16} />} onPress={() => router.push('/profile')} size="$3" >
                 Settings
-              </Button>
-              <Button icon={<LogOut size={16} />} bg="red" onPress={handleLogout} size="$3" >
+              </GhostButton>
+              <DestructiveButton icon={<LogOut size={16} />} onPress={handleLogout} size="$3" >
                 Log Out
-              </Button>
+              </DestructiveButton>
             </YStack>
             </Popover.Content>
 

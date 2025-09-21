@@ -19,7 +19,7 @@ import {
   Camera, 
   Settings,
 } from '@tamagui/lucide-icons';
-import { UserContext } from 'components';
+import { UserContext, SecondaryButton, PrimaryButton } from 'components';
 import { useRouter } from 'expo-router';
 
 type User = {
@@ -57,7 +57,7 @@ export default function ProfilePage() {
   const theme = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [errors, setErrors] = useState<Partial<ProfileData>>({});
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [profileData, setProfileData] = useState<ProfileData>({
     name: user?.username || 'Pranav Vaish',
     bio: 'I am a CHYK from San Jose.',
@@ -67,7 +67,7 @@ export default function ProfilePage() {
   });
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<ProfileData> = {};
+    const newErrors: {[key: string]: string} = {};
     
     if (!profileData.name.trim()) {
       newErrors.name = 'Name is required';
@@ -310,29 +310,21 @@ export default function ProfilePage() {
         {/* Action Buttons */}
         {isEditing && (
           <XStack gap="$3" mt="$4">
-            <Button 
+            <SecondaryButton 
               flex={1} 
               size="$4" 
-              variant="outlined"
               onPress={handleCancel}
             >
               Cancel
-            </Button>
-            <Button 
+            </SecondaryButton>
+            <PrimaryButton 
               flex={1} 
               size="$4" 
-              bg="$primary"
-              color={"white"}
-              hoverStyle={{
-                backgroundColor: "$primaryPress",
-                color: "$white"
-              }}
               onPress={handleSave}
               disabled={isSaving}
-              opacity={isSaving ? 0.7 : 1}
             >
               {isSaving ? 'Saving...' : 'Save profile'}
-            </Button>
+            </PrimaryButton>
           </XStack>
         )}
 
@@ -345,9 +337,9 @@ export default function ProfilePage() {
                 <Paragraph fontSize="$4" fontWeight="500" flex={1}>
                   Account Settings
                 </Paragraph>
-                <Button size="$2" variant="outlined">
+                <SecondaryButton size="$2">
                   Manage
-                </Button>
+                </SecondaryButton>
               </XStack>
             </Card.Header>
           </Card>
