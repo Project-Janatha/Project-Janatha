@@ -8,16 +8,23 @@
  * Frontend geolocation methods in Expo.
  */
 
-import * as Location from 'expo-location'
 import { Platform } from 'react-native';
 
 const defaultLocation: [number, number] = [32.17654435811957, 76.3594513732331]; // Default loc - Saandeepany
+
 /**
  * Gets location access.
  * @return {boolean} A boolean representing if location access is present or not.
  */
 async function getLocationAccess()
 {
+    if (Platform.OS === 'web') {
+        // For web, we'll assume permission is granted since we use browser geolocation
+        return true;
+    }
+    
+    // Only import expo-location on native platforms
+    const Location = await import('expo-location');
     let {status} = await Location.requestForegroundPermissionsAsync();
     return status == 'granted';
 }
@@ -42,6 +49,8 @@ async function getCurrentPosition()
         });
     } else {
         if(await getLocationAccess()){
+            // Only import expo-location on native platforms
+            const Location = await import('expo-location');
             let loc = await Location.getCurrentPositionAsync();
             return [loc.coords.latitude, loc.coords.longitude];
         }else{
