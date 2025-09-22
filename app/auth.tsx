@@ -98,38 +98,49 @@ export default function AuthScreen(props) {
     <YStack 
       flex={1} 
       backgroundColor="$background" 
-      padding="$4"
-      justifyContent="space-around"
+      padding={isWeb ? "$6" : "$2"}
+      justifyContent="space-between"
       alignItems={"center"}
-      width={"100%"}>
+      width={"100%"}
+      minHeight="100vh"
+      maxWidth="100vw"
+      className="auth-container">
       
       {/* Top Section */}
-      <YStack alignItems="center" paddingTop="$8" gap='$4' width="100%">
+      <YStack alignItems="center" paddingTop={isWeb ? "$8" : "$6"} gap='$4' width="100%" flex={1} justifyContent="center">
         <Image 
           source={isDark ? (require("../assets/images/chinmaya_logo_dark.svg")) : (require("../assets/images/chinmaya_logo_light.svg"))}
-          style={{ width: 80, height: 80 }}
+          style={{ width: isWeb ? 80 : 60, height: isWeb ? 80 : 60 }}
         />
-        <H3 fontWeight="$4" color="$color">
+        <H3 fontWeight="$4" color="$color" textAlign="center">
           Log In or Sign Up
         </H3>
       </YStack>
-      <Form
-        alignItems="center"
-        
-        width={isWeb? "40%" : "90%"}
-        gap="$2"
-        onSubmit={() => {
-          if (authStep === "login") {
-            handleLogin(username, password);
-          } else if (authStep === "signup") {
-            handleSignup(username, password, confirmPassword);
-          } else {
-            handleContinue();
-          }
-        }}
-        p="$8"
-        mb="$8"
-      >
+      
+      {/* Form Section */}
+      <YStack width="100%" alignItems="center" flex={1} justifyContent="center" paddingBottom={isWeb ? "$8" : "$6"} paddingHorizontal="$4">
+        <Form
+          alignItems="center"
+          width="100%"
+          maxWidth={isWeb ? 400 : 320}
+          minWidth={280}
+          gap="$3"
+          className="auth-form"
+          style={{
+            boxSizing: 'border-box',
+            overflow: 'hidden'
+          }}
+          onSubmit={() => {
+            if (authStep === "login") {
+              handleLogin(username, password);
+            } else if (authStep === "signup") {
+              handleSignup(username, password, confirmPassword);
+            } else {
+              handleContinue();
+            }
+          }}
+          padding={isWeb ? "$6" : "$3"}
+        >
         <FieldError message={errors.form} />
         <AuthInput 
           placeholder="Email" 
@@ -170,39 +181,45 @@ export default function AuthScreen(props) {
             <FieldError message={errors.confirmPassword} />
           </YStack>
           )}
-        <Form.Trigger asChild>
-          <PrimaryButton 
-            width={'100%'} 
-            disabled={loading || (authStep === 'initial' && !username) // disable if loading or username empty
-              || (authStep !== 'initial' && !password) // disable if loading or password empty for login/signup
-              || (authStep === 'signup' && !confirmPassword)}  // disable if loading or confirm password empty for signup
+          <Form.Trigger asChild>
+            <PrimaryButton 
+              width={'100%'} 
+              disabled={loading || (authStep === 'initial' && !username) // disable if loading or username empty
+                || (authStep !== 'initial' && !password) // disable if loading or password empty for login/signup
+                || (authStep === 'signup' && !confirmPassword)}  // disable if loading or confirm password empty for signup
+            >
+              {loading ? 'Please wait...' : authStep === 'login' ? 'Log In' : authStep === 'signup' ? 'Sign Up' : 'Continue'}
+            </PrimaryButton>
+          </Form.Trigger>
+        </Form>
+        
+        {/* Dev Mode Button - only show on web */}
+        {isWeb && (
+          <Button 
+            icon={<Code color="$color" />} 
+            marginTop="$4"
+            onPress={() => {
+              const devUser = {
+                username: 'dev_user',
+                id: 'dev_id',
+                center: -1,
+                points: 999,
+                isVerified: true,
+                verificationLevel: 99,
+                exists: true,
+                isActive: true,
+                events: [],
+              };
+              // Set the mock user in the context
+              setUser(devUser);
+              // Navigate to the main screen
+              router.push('/(tabs)');
+            }}
           >
-            {loading ? 'Please wait...' : authStep === 'login' ? 'Log In' : authStep === 'signup' ? 'Sign Up' : 'Continue'}
-          </PrimaryButton>
-      </Form.Trigger>
-      </Form>
-      <Button 
-        icon={<Code color="$color" />} 
-        onPress={() => {
-          const devUser = {
-            username: 'dev_user',
-            id: 'dev_id',
-            center: -1,
-            points: 999,
-            isVerified: true,
-            verificationLevel: 99,
-            exists: true,
-            isActive: true,
-            events: [],
-          };
-          // Set the mock user in the context
-          setUser(devUser);
-          // Navigate to the main screen
-          router.push('/(tabs)');
-        }}
-      >
-        Dev Mode
-      </Button>
+            Dev Mode
+          </Button>
+        )}
+      </YStack>
     </YStack>
   );
 }
