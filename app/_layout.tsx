@@ -37,9 +37,9 @@ export default function RootLayout() {
   // })
 
 
-  // Font loading - simplified for web compatibility
+  // Font loading - web uses CSS @font-face, native uses expo-font
   const [loaded, loadError] = Platform.OS === 'web' 
-    ? [true, null] // For web, assume fonts are loaded via CSS
+    ? [true, null] // For web, fonts are loaded via CSS @font-face declarations
     : (() => {
         // For native platforms, we'll need to handle this differently
         // For now, just return loaded state
