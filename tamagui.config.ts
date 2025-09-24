@@ -11,7 +11,7 @@ const tokens = createTokens({
 
 
 const systemFont = createFont({
-  family: 'AnekLatin-Regular',
+  family: isWeb ? 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' : 'AnekLatin-Regular',
   size: {
     1: 12,
     2: 14,
