@@ -38,6 +38,11 @@ export const PrimaryButton = styled(BaseButton, {
   backgroundColor: '$primary',
   color: '$backgroundStrong',
   fontWeight: '600',
+  borderRadius: '$4',
+  paddingHorizontal: '$4',
+  paddingVertical: '$3',
+  fontSize: '$4',
+  minHeight: 48, // Better touch target for mobile
 
   hoverStyle: {
     backgroundColor: '$primaryPress',
@@ -114,7 +119,6 @@ export const IconButton = styled(BaseButton, {
 
   hoverStyle: {
     backgroundColor: '$gray2',
-    color: '$color',
     opacity: 1,
   },
   pressStyle: {
@@ -150,7 +154,22 @@ export const AuthInput = styled(Input, {
   backgroundColor: '$gray', // Shaded background
   color: '$color',
   borderWidth: 0, // Add borderWidth to the default state
+  borderRadius: '$4',
+  paddingHorizontal: '$4',
+  paddingVertical: '$3',
+  fontSize: '$4',
+  minHeight: 48, // Better touch target for mobile
   // borderColor: '$gray4',
+  
+  focusStyle: {
+    backgroundColor: '$gray2',
+    borderWidth: 1,
+    borderColor: '$primary',
+  },
+  
+  hoverStyle: {
+    backgroundColor: '$gray2',
+  },
 });
   
 export { default as Provider } from './providers/Provider';
