@@ -15,7 +15,7 @@ import React, { useRef, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { StyleSheet } from "react-native";
-import {getCurrentPosition} from 'frontend/location/locationServices';
+import {getCurrentPosition} from 'frontend/utilities/locationServices';
 
 mapboxgl.accessToken = "pk.eyJ1IjoicHJvamVjdC1qYW5hdGhhIiwiYSI6ImNtZjNkencybzBkYmgya3E0YXM0cmx6cHYifQ.81rjpzlsaDzLcz5P-GUXQw";
 

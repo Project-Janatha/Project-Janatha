@@ -1,43 +1,72 @@
+import { Lasso } from '@tamagui/lucide-icons';
+import { router } from 'expo-router';
 import React, { createContext, useContext, useState } from 'react';
 
 interface OnboardingContextType {
-  branch: 'chyk' | 'admin' | null;
+  currentStep: number;
+  totalSteps: number;
+  firstName: string;
+  lastName: string;
   birthdate: Date | null;
-  avatarUrl: string | null;
-  name: string;
-  bio: string;
+  location: [number, number] | null; // [latitude, longitude]
+  phoneNumber: string;
   interests: string[];
-  setBranch: (branch: 'chyk' | 'admin') => void;
+  setCurrentStep: (step: number) => void;
+  goToNextStep: () => void;
+  goToPreviousStep: () => void;
   setBirthdate: (date: Date) => void;
-  setAvatarUrl: (url: string) => void;
-  setName: (name: string) => void;
-  setBio: (bio: string) => void;
+  setLocation: (location: [number, number] | null) => void;
+  setPhoneNumber: (phoneNumber: string) => void;
   setInterests: (interests: string[]) => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
-  const [branch, setBranch] = useState<'chyk' | 'admin' | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const totalSteps = 5; // Adjust based on actual number of steps
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [birthdate, setBirthdate] = useState<Date | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null); // include default avatar URL if needed
-  const [name, setName] = useState('');
-  const [bio, setBio] = useState('');
+  const [location, setLocation] = useState<[number, number] | null>(null); // [latitude, longitude]
+  const [phoneNumber, setPhoneNumber] = useState(''); // Implement phone number OTP verification later
   const [interests, setInterests] = useState<string[]>([]);
 
-  // package all state and setters into a single value
+  const goToNextStep = () => {
+    const nextStep = currentStep + 1;
+    if (nextStep < totalSteps) {
+      setCurrentStep(nextStep);
+      router.push(`/onboarding/step${nextStep}` as any);
+    } else {
+      router.replace('/');
+    }
+  };
+
+  const goToPreviousStep = () => {
+    const prevStep = currentStep - 1;
+    if (prevStep >= 0) {
+      setCurrentStep(prevStep);
+      router.push(`/onboarding/step${prevStep}` as any);
+    }
+  };
+
   const value = {
-    branch,
+    currentStep,
+    totalSteps,
+    firstName,
+    lastName,
     birthdate,
-    avatarUrl,
-    name,
-    bio,
+    location,
+    phoneNumber,
     interests,
-    setBranch,
+    setCurrentStep,
+    goToNextStep,
+    goToPreviousStep,
+    setFirstName,
+    setLastName,
     setBirthdate,
-    setAvatarUrl,
-    setName,
-    setBio,
+    setLocation,
+    setPhoneNumber,
     setInterests,
   };
 

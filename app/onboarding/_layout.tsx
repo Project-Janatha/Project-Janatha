@@ -1,14 +1,12 @@
 import { Stack } from 'expo-router';
 import { useContext } from 'react';
 import { UserContext } from 'components';
+import { OnboardingProvider } from 'components/providers/OnboardingProvider';
 
 export default function OnboardingLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="welcome" />
-      <Stack.Screen name="center-selection" />
-      <Stack.Screen name="profile-setup" />
-      <Stack.Screen name="complete" />
-    </Stack>
+    <OnboardingProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </OnboardingProvider>
   );
 }
