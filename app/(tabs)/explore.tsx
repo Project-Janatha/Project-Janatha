@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Button, Input, XStack, YStack } from 'tamagui';
+import { View, TextInput } from 'react-native';
 import { Map, TabSegment, IconButton } from 'components';
-import { Search, SlidersHorizontal } from '@tamagui/lucide-icons';
+import { Search, SlidersHorizontal } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
 /**
@@ -82,46 +82,26 @@ export default function ExploreScreen() {
   };
 
   return (
-    <YStack flex={1}>
+    <View className="flex-1">
       {/* Search and Filter Controls - Fixed at top */}
-      <YStack 
-        padding="$4" 
-        gap="$3"
-        backgroundColor="$overlayBackground"
-        backdropFilter="blur(10px)"
-        borderBottomWidth={1}
-        borderBottomColor="$borderColor"
-      >
+      <View className="p-4 gap-3 bg-white/95 border-b border-gray-200">
         {/* Search Bar */}
-        <XStack 
-          bg="$cardBackground" 
-          borderRadius="$4" 
-          padding="$2"
-          alignItems="center"
-          shadowColor="$shadowColor"
-          shadowOffset={{ width: 0, height: 2 }}
-          shadowOpacity={0.1}
-          shadowRadius={8}
-          elevation={3}
-        >
-          <Search size={20} color="$gray8" marginLeft="$2" />
-          <Input 
-            flex={1}
+        <View className="flex-row items-center bg-white rounded-lg p-2 shadow-md">
+          <Search size={20} color="#9CA3AF" style={{ marginLeft: 8 }} />
+          <TextInput
+            className="flex-1 bg-transparent text-base px-2"
             placeholder="Search for centers or events..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            borderWidth={0}
-            backgroundColor="transparent"
-            fontSize="$4"
           />
-          <IconButton 
-            size="$3" 
-            circular 
-            icon={<SlidersHorizontal size={16} />}
+          <IconButton
+            size={3}
+            circular
+            icon={<SlidersHorizontal size={16} color="#9CA3AF" />}
             variant="outlined"
-            marginRight="$1"
+            style={{ marginRight: 4 }}
           />
-        </XStack>
+        </View>
 
         {/* Filter Tabs */}
         <TabSegment
@@ -129,12 +109,12 @@ export default function ExploreScreen() {
           value={activeFilter}
           onValueChange={setActiveFilter}
           variant="primary"
-          size="$3"
+          size={3}
         />
-      </YStack>
+      </View>
 
       {/* Map - Takes remaining space */}
       <Map points={filteredPoints} onPointPress={handlePointPress} />
-    </YStack>
+    </View>
   );
 }
