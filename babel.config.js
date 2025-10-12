@@ -1,18 +1,11 @@
-module.exports = (api) => {
-  api.cache(true)
+module.exports = function (api) {
+  api.cache(true);
   return {
-    presets: [['babel-preset-expo', { jsxRuntime: 'automatic' }]],
+    presets: ['babel-preset-expo'],
     plugins: [
-      // NativeWind Babel plugin for className support
-      [
-        "nativewind/babel",
-        {
-          "mode": "native"
-        }
-      ],
-      // NOTE: this is only necessary if you are using reanimated for animations
-      'react-native-worklets/plugin', 
+      ['nativewind/babel', { mode: 'native' }],
+      'react-native-worklets/plugin',
       'react-native-worklets-core/plugin',
     ],
-  }
-}
+  };
+};
