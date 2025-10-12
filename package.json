@@ -22,9 +22,6 @@
     "@react-navigation/native": "^7.1.6",
     "@rnmapbox/maps": "^10.1.42",
     "@seald-io/nedb": "^4.1.2",
-    "@tamagui/config": "^1.132.23",
-    "@tamagui/lucide-icons": "^1.132.23",
-    "@tamagui/toast": "^1.132.23",
     "@teovilla/react-native-web-maps": "^0.9.5",
     "babel-preset-expo": "~13.0.0",
     "bcryptjs": "^3.0.2",
@@ -46,6 +43,7 @@
     "express": "^5.1.0",
     "express-session": "^1.18.2",
     "fs": "^0.0.1-security",
+    "lucide-react-native": "^0.545.0",
     "mapbox-gl": "^2.15.0",
     "metro": "^0.82.0",
     "nativewind": "^4.2.1",
@@ -64,20 +62,13 @@
     "react-native-web-maps": "^0.1.0",
     "react-native-worklets": "^0.5.1",
     "react-native-worklets-core": "^1.6.2",
-    "tamagui": "^1.132.23",
     "yarn": "^1.22.22"
   },
   "devDependencies": {
     "@babel/core": "^7.24.6",
     "@expo/metro-config": "~0.20.0",
     "@expo/metro-runtime": "~5.0.4",
-    "@tamagui/babel-plugin": "^1.132.23",
-    "@tamagui/cli": "^1.132.23",
-    "@tamagui/metro-plugin": "^1.132.23",
     "@types/cors": "^2",
-    "@types/react": "~19.0.10",
-    "@types/react-native": "^0.73.0",
-    "tailwindcss": "^3.4.18",
-    "typescript": "~5.8.3"
+    "typescript": "~5.9.2"
   }
 }

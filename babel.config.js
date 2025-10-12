@@ -3,16 +3,13 @@ module.exports = (api) => {
   return {
     presets: [['babel-preset-expo', { jsxRuntime: 'automatic' }]],
     plugins: [
+      // NativeWind Babel plugin for className support
       [
-        '@tamagui/babel-plugin',
+        "nativewind/babel",
         {
-          components: ['tamagui'],
-          config: './tamagui.config.ts',
-          logTimings: true,
-          disableExtraction: process.env.NODE_ENV === 'development',
-        },
+          "mode": "native"
+        }
       ],
-
       // NOTE: this is only necessary if you are using reanimated for animations
       'react-native-worklets/plugin', 
       'react-native-worklets-core/plugin',
