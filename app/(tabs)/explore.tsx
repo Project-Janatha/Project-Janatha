@@ -94,13 +94,9 @@ export default function ExploreScreen() {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-          <IconButton
-            size={3}
-            circular
-            icon={<SlidersHorizontal size={16} color="#9CA3AF" />}
-            variant="outlined"
-            style={{ marginRight: 4 }}
-          />
+          <IconButton>
+            <SlidersHorizontal size={16} color="#9CA3AF" />
+          </IconButton>
         </View>
 
         {/* Filter Tabs */}
