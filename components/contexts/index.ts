@@ -1,4 +1,4 @@
-import OnboardingProvider from './OnboardingProvider'
-import UserProvider from './UserProvider'
+import OnboardingProvider, { useOnboarding } from './OnboardingProvider'
+import UserProvider, { UserContext } from './UserProvider'
 
-export { OnboardingProvider, UserProvider }
+export { OnboardingProvider, UserProvider, useOnboarding, UserContext }

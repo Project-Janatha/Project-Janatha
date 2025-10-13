@@ -1,13 +1,12 @@
-import '../tamagui-web.css'
-
 import { useEffect, useContext } from 'react'
-import { useColorScheme } from 'react-native'
-// Remove Tamagui web CSS import since Tamagui is not used
+import { useColorScheme, ActivityIndicator } from 'react-native'
 import { useFonts } from 'expo-font'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
 import { Platform } from 'react-native'
 import { SplashScreen, Stack, Redirect, usePathname } from 'expo-router'
-import { UserProvider, UserContext } from 'components'
+import { UserProvider, UserContext } from 'components/contexts'
+import { IconButton } from 'components/ui'
+import { Share } from 'lucide-react-native'
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
@@ -48,7 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   }, [loaded, loadError])
 
   if (!loaded && !loadError) {
-    return null
+    return <ActivityIndicator className="text-primary text-lg" /> // Use your primary color
   }
 
   return <UserProvider>{children}</UserProvider>
@@ -100,17 +99,15 @@ function RootLayoutNav() {
             title: 'Event Details',
             headerBackTitleVisible: false,
             headerRight: () => (
-              <Button
-                size="$3"
-                circular
-                icon={<Share size={20} />}
-                variant="outlined"
-                mr="$3"
+              <IconButton
+                className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
                 onPress={() => {
                   // TODO: Implement share functionality
                   console.log('Share event')
                 }}
-              />
+              >
+                <Share size={20} />
+              </IconButton>
             ),
           })}
         />
@@ -122,17 +119,15 @@ function RootLayoutNav() {
             title: 'Center Details',
             headerBackTitleVisible: false,
             headerRight: () => (
-              <Button
-                size="$3"
-                circular
-                icon={<Share size={20} />}
-                variant="outlined"
-                mr="$3"
+              <IconButton
+                className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
                 onPress={() => {
                   // TODO: Implement share functionality
-                  console.log('Share center')
+                  console.log('Share event')
                 }}
-              />
+              >
+                <Share size={20} />
+              </IconButton>
             ),
           })}
         />
