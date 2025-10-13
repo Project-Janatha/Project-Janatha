@@ -28,6 +28,7 @@
     "expo": "^54.0.13",
     "expo-build-properties": "^1.0.9",
     "expo-router": "^6.0.12",
+    "expo-secure-store": "^15.0.7",
     "lucide-react-native": "^0.545.0",
     "nativewind": "^4.2.1",
     "react": "^19.2.0",
