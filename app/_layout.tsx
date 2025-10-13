@@ -3,15 +3,12 @@ import '../tamagui-web.css'
 import { useEffect, useContext } from 'react'
 import { useColorScheme } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
+import { useFonts } from 'expo-font'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
 import { Platform } from 'react-native'
 import { SplashScreen, Stack, Redirect, usePathname } from 'expo-router'
-import { Provider } from 'components';
-import { useTheme } from 'tamagui';
-import { UserProvider, UserContext } from 'components';
-import { Share } from '@tamagui/lucide-icons';
-import { Button } from 'tamagui';
-
+import { Provider } from 'components'
+import { UserProvider, UserContext } from 'components'
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -36,15 +33,23 @@ export default function RootLayout() {
   //   InterBold: require('@tamagui/font-inter/otf/Inter-Bold.otf'),
   // })
 
+  const [fontsLoaded, fontsError] = useFonts({
+    'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
+    'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
+    'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.ttf'),
+    'Inter-Medium': require('../assets/fonts/Inter-Medium.ttf'),
+    'Inter-Light': require('../assets/fonts/Inter-Light.ttf'),
+  })
 
   // Font loading - web uses CSS @font-face, native uses expo-font
-  const [loaded, loadError] = Platform.OS === 'web' 
-    ? [true, null] // For web, fonts are loaded via CSS @font-face declarations
-    : (() => {
-        // For native platforms, we'll need to handle this differently
-        // For now, just return loaded state
-        return [true, null];
-      })();
+  const [loaded, loadError] =
+    Platform.OS === 'web'
+      ? [true, null] // For web, fonts are loaded via CSS @font-face declarations
+      : (() => {
+          // For native platforms, we'll need to handle this differently
+          // For now, just return loaded state
+          return [true, null]
+        })()
 
   useEffect(() => {
     if (loaded || loadError) {
@@ -75,9 +80,9 @@ const Providers = ({ children }: { children: React.ReactNode }) => {
 function RootLayoutNav() {
   const colorScheme = useColorScheme()
   const theme = useTheme()
-  const { isAuthenticated } = useContext(UserContext);
+  const { isAuthenticated } = useContext(UserContext)
 
-  const pathname = usePathname();
+  const pathname = usePathname()
   if (!isAuthenticated && pathname !== '/auth') {
     return <Redirect href="/auth" />
   }
@@ -101,7 +106,6 @@ function RootLayoutNav() {
             //animation: 'slide_from_right',
             //gestureEnabled: true,
             //gestureDirection: 'horizontal',
-            
           }}
         />
 
@@ -129,7 +133,7 @@ function RootLayoutNav() {
                 mr="$3"
                 onPress={() => {
                   // TODO: Implement share functionality
-                  console.log('Share event');
+                  console.log('Share event')
                 }}
               />
             ),
@@ -151,7 +155,7 @@ function RootLayoutNav() {
                 mr="$3"
                 onPress={() => {
                   // TODO: Implement share functionality
-                  console.log('Share center');
+                  console.log('Share center')
                 }}
               />
             ),
