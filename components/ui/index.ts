@@ -7,10 +7,10 @@
  * @description This file exports the PrimaryButton component.
  *
  */
-import PrimaryButton from './PrimaryButton'
+import PrimaryButton from './buttons/PrimaryButton'
 import AuthInput from './AuthInput'
-import SecondaryButton from './SecondaryButton'
-import GhostButton from './GhostButton'
-import IconButton from './IconButton'
+import SecondaryButton from './buttons/SecondaryButton'
+import GhostButton from './buttons/GhostButton'
+import IconButton from './buttons/IconButton'
 
 export { PrimaryButton, AuthInput, SecondaryButton, GhostButton, IconButton }

@@ -11,4 +11,4 @@
  */
 export { default as Map } from './Map'
 export { default as SearchBar } from './SearchBar'
-export { default as TabSegment } from './TabSegment'
+export { default as TabSegment } from './ui/TabSegment'
