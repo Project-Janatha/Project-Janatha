@@ -57,7 +57,7 @@ type User = {
 
 const url = 'http://localhost:8008'
 
-export const UserContext = createContext<{
+const UserContext = createContext<{
   user: User | null
   setUser: (user: User | null) => void
   isAuthenticated: boolean
@@ -79,7 +79,9 @@ export const UserContext = createContext<{
   signup: async () => {},
 })
 
-export default function UserProvider({ children }) {
+export default UserContext
+
+export function UserProvider({ children }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
