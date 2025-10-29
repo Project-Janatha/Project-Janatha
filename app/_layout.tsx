@@ -1,8 +1,7 @@
 import { useEffect, useContext } from 'react'
-import { useColorScheme, ActivityIndicator } from 'react-native'
+import { useColorScheme, ActivityIndicator, View, Text } from 'react-native'
 import { useFonts } from 'expo-font'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
-import { Platform } from 'react-native'
 import { SplashScreen, Stack, Redirect, usePathname } from 'expo-router'
 import { UserProvider, UserContext } from 'components/contexts'
 import { IconButton } from 'components/ui'
@@ -10,18 +9,13 @@ import { Share } from 'lucide-react-native'
 import '../globals.css'
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(tabs)',
 }
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync()
 
-/**
- * RootLayout Component
- * @return {JSX.Element} A Map component that displays a map using mapboxgl.
- */
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout() {
+  console.log('=== RootLayout Rendering ===')
   const [fontsLoaded, fontsError] = useFonts({
     'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
     'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
@@ -30,14 +24,37 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     'Inter-Light': require('../assets/fonts/Inter-Light.ttf'),
   })
 
+  console.log('Fonts loaded:', fontsLoaded, 'Fonts error:', fontsError)
+
   useEffect(() => {
+    if (fontsError) {
+      console.error('Font loading error:', fontsError)
+    }
     if (fontsLoaded || fontsError) {
       SplashScreen.hideAsync()
     }
   }, [fontsLoaded, fontsError])
 
+  // Show loading with inline styles (no NativeWind dependency)
   if (!fontsLoaded && !fontsError) {
-    return <ActivityIndicator className="text-primary text-lg" /> // Use your primary color
+    return (
+      <View
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}
+      >
+        <ActivityIndicator size="large" color="#ea580c" />
+        <Text style={{ marginTop: 10 }}>Loading fonts...</Text>
+      </View>
+    )
+  }
+
+  // If fonts failed to load, show error
+  if (fontsError) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+        <Text style={{ fontSize: 18, color: 'red' }}>Font loading failed</Text>
+        <Text style={{ marginTop: 10 }}>Continuing anyway...</Text>
+      </View>
+    )
   }
 
   return (
@@ -49,12 +66,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme()
-  const { isAuthenticated } = useContext(UserContext)
-
+  const { isAuthenticated, loading } = useContext(UserContext)
   const pathname = usePathname()
+
+  console.log(
+    'RootLayoutNav - isAuthenticated:',
+    isAuthenticated,
+    'pathname:',
+    pathname,
+    'loading:',
+    loading
+  )
+
+  // Show loading screen while checking auth
+  if (loading) {
+    console.log('SHOWING LOADING SCREEN')
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#ea580c" />
+        <Text style={{ marginTop: 10 }}>Loading...</Text>
+      </View>
+    )
+  }
   if (!isAuthenticated && pathname !== '/auth') {
+    console.log('REDIRECTING TO AUTH')
     return <Redirect href="/auth" />
   }
+
+  console.log('RENDERING STACK')
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
@@ -64,19 +103,12 @@ function RootLayoutNav() {
             headerShown: false,
           }}
         />
-
         <Stack.Screen
           name="auth"
           options={{
             headerShown: false,
-            //title: 'Log In or Sign Up',
-            //presentation: 'modal',
-            //animation: 'slide_from_right',
-            //gestureEnabled: true,
-            //gestureDirection: 'horizontal',
           }}
         />
-
         <Stack.Screen
           name="profile"
           options={{
@@ -85,7 +117,6 @@ function RootLayoutNav() {
             animation: 'slide_from_bottom',
           }}
         />
-
         <Stack.Screen
           name="events/[id]"
           options={({ route }) => ({
@@ -96,7 +127,6 @@ function RootLayoutNav() {
               <IconButton
                 className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
                 onPress={() => {
-                  // TODO: Implement share functionality
                   console.log('Share event')
                 }}
               >
@@ -105,7 +135,6 @@ function RootLayoutNav() {
             ),
           })}
         />
-
         <Stack.Screen
           name="center/[id]"
           options={({ route }) => ({
@@ -116,8 +145,7 @@ function RootLayoutNav() {
               <IconButton
                 className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
                 onPress={() => {
-                  // TODO: Implement share functionality
-                  console.log('Share event')
+                  console.log('Share center')
                 }}
               >
                 <Share size={20} />

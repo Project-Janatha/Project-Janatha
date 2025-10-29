@@ -83,11 +83,10 @@ export default UserContext
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    setLoading(true)
     const loadSession = async () => {
       try {
         const session = await storage.getItemAsync(SESSION_KEY)
@@ -97,7 +96,7 @@ export function UserProvider({ children }) {
       } catch (error) {
         console.error('Failed to load session:', error)
       } finally {
-        setLoading(false)
+        setLoading(false) // Only set to false after loading completes
       }
     }
     loadSession()
