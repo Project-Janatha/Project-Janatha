@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router'
 import { useContext } from 'react'
-import { UserContext } from 'components'
-import { OnboardingProvider } from 'components/contexts/OnboardingProvider'
+import { UserContext } from 'components/contexts'
+import { OnboardingProvider } from 'components/contexts'
 
 export default function OnboardingLayout() {
   return (

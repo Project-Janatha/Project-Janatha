@@ -22,6 +22,7 @@ const FieldError = ({ message }: { message?: string }) => {
 type AuthStep = 'initial' | 'login' | 'signup'
 
 export default function AuthScreen() {
+  console.log('=== AUTH SCREEN RENDERING ===')
   const router = useRouter()
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'

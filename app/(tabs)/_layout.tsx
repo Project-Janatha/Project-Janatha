@@ -1,7 +1,8 @@
 import { Link, Tabs, useRouter } from 'expo-router'
 import { Platform, View, Text, Pressable } from 'react-native'
 import { useContext } from 'react'
-import { UserContext, GhostButton, DestructiveButton } from 'components'
+import { UserContext } from 'components/contexts'
+import { GhostButton, DestructiveButton } from 'components/ui'
 import { Home, Compass, User, Settings, LogOut } from 'lucide-react-native'
 
 /**
@@ -11,11 +12,11 @@ import { Home, Compass, User, Settings, LogOut } from 'lucide-react-native'
 export default function TabLayout() {
   const router = useRouter()
   // Get user and logout from UserContext
-  const { user, logout } = useContext(UserContext);
+  const { user, logout } = useContext(UserContext)
 
-  const handleLogout= async () => {
-    await logout();
-    router.replace('/auth');
+  const handleLogout = async () => {
+    await logout()
+    router.replace('/auth')
   }
 
   // Change header right button based on platform and user state
@@ -23,7 +24,10 @@ export default function TabLayout() {
     if (!user) {
       return (
         <Link href="/auth" asChild>
-          <Pressable className="mr-4 px-3 py-2 bg-primary rounded-lg" onPress={() => router.push('/auth')}>
+          <Pressable
+            className="mr-4 px-3 py-2 bg-primary rounded-lg"
+            onPress={() => router.push('/auth')}
+          >
             <Text className="text-white text-base">Log In</Text>
           </Pressable>
         </Link>
@@ -33,14 +37,25 @@ export default function TabLayout() {
     if (Platform.OS === 'web') {
       return (
         <View className="mr-4 flex flex-col items-start">
-          <Pressable className="p-2 rounded-full bg-gray-200" onPress={() => router.push('/profile')}>
+          <Pressable
+            className="p-2 rounded-full bg-gray-200"
+            onPress={() => router.push('/profile')}
+          >
             <User size={20} color="#9A3412" />
           </Pressable>
           <Text className="mt-2 text-base">{user.username}</Text>
-          <GhostButton icon={<Settings size={16} color="#9A3412" />} onPress={() => router.push('/profile')} size={3}>
+          <GhostButton
+            icon={<Settings size={16} color="#9A3412" />}
+            onPress={() => router.push('/profile')}
+            size={3}
+          >
             Settings
           </GhostButton>
-          <DestructiveButton icon={<LogOut size={16} color="#9A3412" />} onPress={handleLogout} size={3}>
+          <DestructiveButton
+            icon={<LogOut size={16} color="#9A3412" />}
+            onPress={handleLogout}
+            size={3}
+          >
             Log Out
           </DestructiveButton>
         </View>
