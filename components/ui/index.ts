@@ -12,5 +12,6 @@ import AuthInput from './AuthInput'
 import SecondaryButton from './buttons/SecondaryButton'
 import GhostButton from './buttons/GhostButton'
 import IconButton from './buttons/IconButton'
+import TabSegment from './TabSegment'
 
-export { PrimaryButton, AuthInput, SecondaryButton, GhostButton, IconButton }
+export { PrimaryButton, AuthInput, SecondaryButton, GhostButton, IconButton, TabSegment }
