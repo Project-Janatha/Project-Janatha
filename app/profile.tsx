@@ -1,350 +1,278 @@
-import React, { useState, useContext } from 'react';
-import { 
-  ScrollView, 
-  YStack, 
-  XStack, 
-  Button, 
-  Avatar, 
-  H1, 
-  H2, 
-  H3, 
-  Paragraph, 
-  Input, 
-  TextArea,
-  Card,
-  useTheme
-} from 'tamagui';
-import { 
-  X, 
-  Camera, 
-  Settings,
-} from '@tamagui/lucide-icons';
-import { UserContext, SecondaryButton, PrimaryButton } from 'components';
-import { useRouter } from 'expo-router';
+import React, { useState, useContext } from 'react'
+import {
+  ScrollView,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+} from 'react-native'
+import { X, Camera, Settings } from 'lucide-react-native'
+import { SecondaryButton, PrimaryButton } from 'components/ui'
+import { UserContext } from 'components/contexts'
+import { useRouter } from 'expo-router'
 
 type User = {
-  username: string;
-  center: number;
-  points: number;
-  isVerified: boolean;
-  verificationLevel: number;
-  exists: boolean;
-  isActive: boolean;
-  id: string;
-  events: any[];
-};
+  username: string
+  center: number
+  points: number
+  isVerified: boolean
+  verificationLevel: number
+  exists: boolean
+  isActive: boolean
+  id: string
+  events: any[]
+}
 
 type ProfileData = {
-  name: string;
-  bio: string;
-  birthday: string;
-  preferences: string[];
-  profileImage?: string;
-};
+  name: string
+  bio: string
+  birthday: string
+  preferences: string[]
+  profileImage?: string
+}
 
 const PREFERENCE_OPTIONS = [
   'Satsangs',
-  'Bhiksha', 
+  'Bhiksha',
   'Global events',
   'Local events',
   'Casual',
-  'Formal'
-];
+  'Formal',
+]
 
 export default function ProfilePage() {
-  const { user } = useContext(UserContext);
-  const router = useRouter();
-  const theme = useTheme();
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const { user } = useContext(UserContext)
+  const router = useRouter()
+  const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [profileData, setProfileData] = useState<ProfileData>({
     name: user?.username || 'Pranav Vaish',
     bio: 'I am a CHYK from San Jose.',
     birthday: 'October 1, 2000',
     preferences: ['Global events', 'Casual'],
-    profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-  });
+    profileImage:
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+  })
 
   const validateForm = (): boolean => {
-    const newErrors: {[key: string]: string} = {};
-    
+    const newErrors: { [key: string]: string } = {}
+
     if (!profileData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = 'Name is required'
     }
-    
+
     if (!profileData.bio.trim()) {
-      newErrors.bio = 'Bio is required';
+      newErrors.bio = 'Bio is required'
     }
-    
+
     if (!profileData.birthday.trim()) {
-      newErrors.birthday = 'Birthday is required';
+      newErrors.birthday = 'Birthday is required'
     }
-    
+
     if (profileData.preferences.length === 0) {
-      newErrors.preferences = 'At least one preference must be selected';
+      newErrors.preferences = 'At least one preference must be selected'
     }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleEdit = () => {
-    setIsEditing(true);
-  };
+    setIsEditing(true)
+  }
 
   const handleCancel = () => {
-    setErrors({});
-    setIsEditing(false);
-  };
+    setErrors({})
+    setIsEditing(false)
+  }
 
   const handleSave = async () => {
     if (!validateForm()) {
-      return;
+      return
     }
-    
-    setIsSaving(true);
+
+    setIsSaving(true)
     try {
       // TODO: Implement save functionality with backend
-      // await saveProfile(profileData);
-      console.log('Saving profile:', profileData);
-      
+      console.log('Saving profile:', profileData)
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setIsEditing(false);
-      setErrors({});
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      setIsEditing(false)
+      setErrors({})
     } catch (error) {
-      console.error('Error saving profile:', error);
+      console.error('Error saving profile:', error)
       // TODO: Show error toast
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handlePreferenceToggle = (preference: string) => {
     if (isEditing) {
-      setProfileData(prev => ({
+      setProfileData((prev) => ({
         ...prev,
         preferences: prev.preferences.includes(preference)
-          ? prev.preferences.filter(p => p !== preference)
-          : [...prev.preferences, preference]
-      }));
+          ? prev.preferences.filter((p) => p !== preference)
+          : [...prev.preferences, preference],
+      }))
     }
-  };
+  }
 
   const handleInputChange = (field: keyof ProfileData, value: string) => {
     if (isEditing) {
-      setProfileData(prev => ({
+      setProfileData((prev) => ({
         ...prev,
-        [field]: value
-      }));
+        [field]: value,
+      }))
     }
-  };
+  }
 
   return (
-    <ScrollView flex={1} bg="$background">
-      <YStack flex={1} px="$4" pt="$4" pb="$8">
+    <ScrollView className="flex-1 bg-background">
+      <View className="flex-1 px-4 pt-4 pb-8">
         {/* Header */}
-        <XStack justifyContent="space-between" alignItems="center" mb="$4">
-          <Button 
-            size="$3" 
-            variant="outlined" 
-            icon={<X size={20} />}
+        <View className="flex-row justify-between items-center mb-4">
+          <TouchableOpacity
+            className="border border-primary rounded-full p-2 bg-white"
             onPress={() => router.back()}
           >
-            Close
-          </Button>
-          <H1 fontSize="$6" fontWeight="600">
-            Profile
-          </H1>
-          <Button 
-            size="$3" 
-            variant="outlined" 
+            <X size={20} color="#FF9800" />
+          </TouchableOpacity>
+          <Text className="text-2xl font-semibold">Profile</Text>
+          <TouchableOpacity
+            className="border border-primary rounded-full px-4 py-2 bg-white"
             onPress={isEditing ? handleSave : handleEdit}
           >
-            {isEditing ? 'Done' : 'Edit'}
-          </Button>
-        </XStack>
+            <Text className="text-primary font-semibold">{isEditing ? 'Done' : 'Edit'}</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Profile Header */}
-        <XStack alignItems="center" gap="$4" mb="$6">
-          <Avatar size="$6" circular>
-            <Avatar.Image src={profileData.profileImage} />
-            <Avatar.Fallback bg="$primary" />
-          </Avatar>
-          <YStack flex={1}>
+        <View className="flex-row items-center gap-4 mb-6">
+          <View className="w-16 h-16 rounded-full overflow-hidden bg-primary justify-center items-center">
+            <Image source={{ uri: profileData.profileImage }} className="w-full h-full" />
+          </View>
+          <View className="flex-1">
             {isEditing ? (
-              <YStack flex={1}>
-                <Input
+              <View>
+                <TextInput
                   value={profileData.name}
                   onChangeText={(value) => handleInputChange('name', value)}
-                  fontSize="$5"
-                  fontWeight="600"
-                  borderWidth={1}
-                  borderColor={errors.name ? "$red8" : "$borderColor"}
-                  bg="$background"
-                  mb="$1"
+                  className={`text-lg font-semibold border ${
+                    errors.name ? 'border-red-500' : 'border-gray-300'
+                  } bg-background mb-1 px-2 py-1 rounded`}
                 />
-                {errors.name && (
-                  <Paragraph fontSize="$2" color="$red10" mb="$2">
-                    {errors.name}
-                  </Paragraph>
-                )}
-              </YStack>
+                {errors.name && <Text className="text-xs text-red-600 mb-2">{errors.name}</Text>}
+              </View>
             ) : (
-              <H2 fontSize="$5" fontWeight="600" mb="$1">
-                {profileData.name}
-              </H2>
+              <Text className="text-lg font-semibold mb-1">{profileData.name}</Text>
             )}
-            <Paragraph fontSize="$3" color="$gray10" fontWeight="500">
-              CHYK
-            </Paragraph>
+            <Text className="text-sm text-gray-500 font-medium">CHYK</Text>
             {isEditing && (
-              <Button 
-                size="$2" 
-                variant="outlined" 
-                icon={<Camera size={16} />}
-                mt="$2"
-                alignSelf="flex-start"
-              >
-                Replace Photo
-              </Button>
+              <TouchableOpacity className="border border-primary rounded-full px-3 py-1 mt-2 flex-row items-center self-start">
+                <Camera size={16} color="#FF9800" />
+                <Text className="ml-2 text-primary">Replace Photo</Text>
+              </TouchableOpacity>
             )}
-          </YStack>
-        </XStack>
+          </View>
+        </View>
 
         {/* Bio Section */}
-        <YStack gap="$3" mb="$6">
-          <H3 fontSize="$4" fontWeight="600" color="$color">
-            Bio
-          </H3>
+        <View className="gap-3 mb-6">
+          <Text className="text-base font-semibold text-primary">Bio</Text>
           {isEditing ? (
-            <YStack>
-              <TextArea
+            <View>
+              <TextInput
                 value={profileData.bio}
                 onChangeText={(value) => handleInputChange('bio', value)}
                 placeholder="Tell us about yourself..."
-                borderWidth={1}
-                borderColor={errors.bio ? "$red8" : "$borderColor"}
-                bg="$background"
-                minHeight={80}
+                className={`border ${
+                  errors.bio ? 'border-red-500' : 'border-gray-300'
+                } bg-background min-h-[80px] px-2 py-1 rounded`}
+                multiline
                 textAlignVertical="top"
               />
-              {errors.bio && (
-                <Paragraph fontSize="$2" color="$red10" mt="$2">
-                  {errors.bio}
-                </Paragraph>
-              )}
-            </YStack>
+              {errors.bio && <Text className="text-xs text-red-600 mt-2">{errors.bio}</Text>}
+            </View>
           ) : (
-            <Paragraph fontSize="$4" color="$color" lineHeight="$1">
-              {profileData.bio}
-            </Paragraph>
+            <Text className="text-base text-primary leading-5">{profileData.bio}</Text>
           )}
-        </YStack>
+        </View>
 
         {/* Birthday Section */}
-        <YStack gap="$3" mb="$6">
-          <H3 fontSize="$4" fontWeight="600" color="$color">
-            Birthday
-          </H3>
+        <View className="gap-3 mb-6">
+          <Text className="text-base font-semibold text-primary">Birthday</Text>
           {isEditing ? (
-            <YStack>
-              <Input
+            <View>
+              <TextInput
                 value={profileData.birthday}
                 onChangeText={(value) => handleInputChange('birthday', value)}
-                borderWidth={1}
-                borderColor={errors.birthday ? "$red8" : "$borderColor"}
-                bg="$background"
+                className={`border ${
+                  errors.birthday ? 'border-red-500' : 'border-gray-300'
+                } bg-background px-2 py-1 rounded`}
               />
               {errors.birthday && (
-                <Paragraph fontSize="$2" color="$red10" mt="$2">
-                  {errors.birthday}
-                </Paragraph>
+                <Text className="text-xs text-red-600 mt-2">{errors.birthday}</Text>
               )}
-            </YStack>
+            </View>
           ) : (
-            <Paragraph fontSize="$4" color="$color">
-              {profileData.birthday}
-            </Paragraph>
+            <Text className="text-base text-primary">{profileData.birthday}</Text>
           )}
-        </YStack>
+        </View>
 
         {/* Preferences Section */}
-        <YStack gap="$3" mb="$6">
-          <H3 fontSize="$4" fontWeight="600" color="$color">
-            Preferences
-          </H3>
-          <XStack flexWrap="wrap" gap="$2">
+        <View className="gap-3 mb-6">
+          <Text className="text-base font-semibold text-primary">Preferences</Text>
+          <View className="flex-row flex-wrap gap-2">
             {PREFERENCE_OPTIONS.map((preference) => {
-              const isSelected = profileData.preferences.includes(preference);
+              const isSelected = profileData.preferences.includes(preference)
               return (
-                <Button
+                <TouchableOpacity
                   key={preference}
-                  size="$3"
-                  variant="outlined"
+                  className={`border rounded-full px-4 py-2 ${
+                    isSelected ? 'bg-primary border-primary' : 'bg-transparent border-gray-300'
+                  } ${isEditing ? '' : isSelected ? '' : 'opacity-60'}`}
                   onPress={() => handlePreferenceToggle(preference)}
-                  bg={isSelected ? "$primary" : "transparent"}
-                  borderColor={isSelected ? "$primary" : "$borderColor"}
-                  color={isSelected ? "white" : "$color"}
-                  opacity={isEditing ? 1 : (isSelected ? 1 : 0.6)}
-                  pressStyle={{
-                    scale: isEditing ? 0.95 : 1,
-                    opacity: isEditing ? 0.8 : 1
-                  }}
                   disabled={!isEditing}
                 >
-                  {preference}
-                </Button>
-              );
+                  <Text className={`${isSelected ? 'text-white' : 'text-primary'} font-medium`}>
+                    {preference}
+                  </Text>
+                </TouchableOpacity>
+              )
             })}
-          </XStack>
-          {errors.preferences && (
-            <Paragraph fontSize="$2" color="$red10">
-              {errors.preferences}
-            </Paragraph>
-          )}
-        </YStack>
+          </View>
+          {errors.preferences && <Text className="text-xs text-red-600">{errors.preferences}</Text>}
+        </View>
 
         {/* Action Buttons */}
         {isEditing && (
-          <XStack gap="$3" mt="$4">
-            <SecondaryButton 
-              flex={1} 
-              size="$4" 
-              onPress={handleCancel}
-            >
+          <View className="flex-row gap-3 mt-4">
+            <SecondaryButton style={{ flex: 1 }} onPress={handleCancel}>
               Cancel
             </SecondaryButton>
-            <PrimaryButton 
-              flex={1} 
-              size="$4" 
-              onPress={handleSave}
-              disabled={isSaving}
-            >
-              {isSaving ? 'Saving...' : 'Save profile'}
+            <PrimaryButton style={{ flex: 1 }} onPress={handleSave} disabled={isSaving}>
+              {isSaving ? <ActivityIndicator color="#FF9800" /> : 'Save profile'}
             </PrimaryButton>
-          </XStack>
+          </View>
         )}
 
         {/* Settings Button (when not editing) */}
         {!isEditing && (
-          <Card elevate size="$4" mt="$4">
-            <Card.Header p="$4">
-              <XStack alignItems="center" gap="$3">
-                <Settings size={20} color="$primary" />
-                <Paragraph fontSize="$4" fontWeight="500" flex={1}>
-                  Account Settings
-                </Paragraph>
-                <SecondaryButton size="$2">
-                  Manage
-                </SecondaryButton>
-              </XStack>
-            </Card.Header>
-          </Card>
+          <View className="bg-white rounded-xl shadow-md mt-4">
+            <View className="flex-row items-center gap-3 p-4">
+              <Settings size={20} color="#FF9800" />
+              <Text className="text-base font-medium flex-1">Account Settings</Text>
+              <SecondaryButton>Manage</SecondaryButton>
+            </View>
+          </View>
         )}
-      </YStack>
+      </View>
     </ScrollView>
-  );
+  )
 }

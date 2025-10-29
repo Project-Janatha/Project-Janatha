@@ -7,6 +7,7 @@ import { SplashScreen, Stack, Redirect, usePathname } from 'expo-router'
 import { UserProvider, UserContext } from 'components/contexts'
 import { IconButton } from 'components/ui'
 import { Share } from 'lucide-react-native'
+import '../globals.css'
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
@@ -29,28 +30,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     'Inter-Light': require('../assets/fonts/Inter-Light.ttf'),
   })
 
-  // Font loading - web uses CSS @font-face, native uses expo-font
-  const [loaded, loadError] =
-    Platform.OS === 'web'
-      ? [true, null] // For web, fonts are loaded via CSS @font-face declarations
-      : (() => {
-          // For native platforms, we'll need to handle this differently
-          // For now, just return loaded state
-          return [true, null]
-        })()
-
   useEffect(() => {
-    if (loaded || loadError) {
-      // Hide the splash screen after the fonts have loaded (or an error was returned) and the UI is ready.
+    if (fontsLoaded || fontsError) {
       SplashScreen.hideAsync()
     }
-  }, [loaded, loadError])
+  }, [fontsLoaded, fontsError])
 
-  if (!loaded && !loadError) {
+  if (!fontsLoaded && !fontsError) {
     return <ActivityIndicator className="text-primary text-lg" /> // Use your primary color
   }
 
-  return <UserProvider>{children}</UserProvider>
+  return (
+    <UserProvider>
+      <RootLayoutNav />
+    </UserProvider>
+  )
 }
 
 function RootLayoutNav() {

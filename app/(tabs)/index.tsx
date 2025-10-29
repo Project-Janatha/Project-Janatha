@@ -2,7 +2,9 @@ import React, { useContext } from 'react'
 import { View, Text, ScrollView, Pressable } from 'react-native'
 import { MapPin, ChevronRight, ThumbsUp, MessageCircle } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
-import { UserContext, Map, SecondaryButton } from 'components'
+import { UserContext } from 'components/contexts'
+import { SecondaryButton } from 'components/ui'
+import { Map } from 'components'
 import { useRouter } from 'expo-router'
 
 type MapPoint = {
@@ -160,7 +162,7 @@ export default function HomeScreen() {
             <Text className="text-xl font-semibold text-foreground">Your week</Text>
             <SecondaryButton
               onPress={() => {
-                router.push('/events')
+                router.push('/events' as any)
                 Toast.show({
                   type: 'info',
                   text1: 'All Events',
