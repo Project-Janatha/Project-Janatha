@@ -1,4 +1,4 @@
-import { useEffect, useContext } from 'react'
+import { useEffect, useContext, useState } from 'react'
 import { useColorScheme, ActivityIndicator, View, Text } from 'react-native'
 import { useFonts } from 'expo-font'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
@@ -16,46 +16,59 @@ SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
   console.log('=== RootLayout Rendering ===')
-  const [fontsLoaded, fontsError] = useFonts({
-    'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
-    'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
-    'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.ttf'),
-    'Inter-Medium': require('../assets/fonts/Inter-Medium.ttf'),
-    'Inter-Light': require('../assets/fonts/Inter-Light.ttf'),
-  })
 
-  console.log('Fonts loaded:', fontsLoaded, 'Fonts error:', fontsError)
+  // const [fontsLoaded, fontsError] = useFonts({
+  //   'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
+  //   'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
+  //   'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.ttf'),
+  //   'Inter-Medium': require('../assets/fonts/Inter-Medium.ttf'),
+  //   'Inter-Light': require('../assets/fonts/Inter-Light.ttf'),
+  // })
 
-  useEffect(() => {
-    if (fontsError) {
-      console.error('Font loading error:', fontsError)
-    }
-    if (fontsLoaded || fontsError) {
-      SplashScreen.hideAsync()
-    }
-  }, [fontsLoaded, fontsError])
+  // useEffect(() => {
+  //   SplashScreen.hideAsync()
+  // }, [])
+  // const [fontTimeout, setFontTimeout] = useState(false)
 
-  // Show loading with inline styles (no NativeWind dependency)
-  if (!fontsLoaded && !fontsError) {
-    return (
-      <View
-        style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}
-      >
-        <ActivityIndicator size="large" color="#ea580c" />
-        <Text style={{ marginTop: 10 }}>Loading fonts...</Text>
-      </View>
-    )
-  }
+  // // Add a timeout in case fonts don't load
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     if (!fontsLoaded && !fontsError) {
+  //       console.log('Font loading timeout - continuing anyway')
+  //       setFontTimeout(true)
+  //     }
+  //   }, 3000) // 3 second timeout
 
-  // If fonts failed to load, show error
-  if (fontsError) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <Text style={{ fontSize: 18, color: 'red' }}>Font loading failed</Text>
-        <Text style={{ marginTop: 10 }}>Continuing anyway...</Text>
-      </View>
-    )
-  }
+  //   return () => clearTimeout(timer)
+  // }, [fontsLoaded, fontsError])
+
+  // console.log('Fonts loaded:', fontsLoaded, 'Fonts error:', fontsError)
+
+  // useEffect(() => {
+  //   if (fontsLoaded || fontsError || fontTimeout) {
+  //     SplashScreen.hideAsync()
+  //   }
+  // }, [fontsLoaded, fontsError, fontTimeout])
+
+  // if (!fontsLoaded && !fontsError && !fontTimeout) {
+  //   return (
+  //     <View
+  //       style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}
+  //     >
+  //       <ActivityIndicator size="large" color="#ea580c" />
+  //       <Text style={{ marginTop: 10 }}>Loading fonts...</Text>
+  //     </View>
+  //   )
+  // }
+  // // If fonts failed to load, show error
+  // if (fontsError) {
+  //   return (
+  //     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+  //       <Text style={{ fontSize: 18, color: 'red' }}>Font loading failed</Text>
+  //       <Text style={{ marginTop: 10 }}>Continuing anyway...</Text>
+  //     </View>
+  //   )
+  // }
 
   return (
     <UserProvider>

@@ -2,7 +2,7 @@
   "name": "project-janatha",
   "version": "1.0.0",
   "description": "The official project to connect the CHYKs of Chinmaya Mission West!",
-  "main": "babel.config.js",
+  "main": "expo-router/entry",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npm ci && expo start -c",
@@ -28,6 +28,7 @@
     "expo": "54.0.21",
     "expo-build-properties": "^1.0.9",
     "expo-constants": "~18.0.10",
+    "expo-font": "~14.0.9",
     "expo-linking": "~8.0.8",
     "expo-location": "^19.0.7",
     "expo-router": "~6.0.14",

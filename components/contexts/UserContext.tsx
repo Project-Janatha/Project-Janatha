@@ -82,21 +82,25 @@ const UserContext = createContext<{
 export default UserContext
 
 export function UserProvider({ children }) {
+  console.log('=== UserProvider component rendering ===')
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     const loadSession = async () => {
+      console.log('=== Starting session load ===')
       try {
         const session = await storage.getItemAsync(SESSION_KEY)
+        console.log('Session retrieved:', session ? 'exists' : 'null')
         if (session) {
           setUser(JSON.parse(session))
         }
       } catch (error) {
         console.error('Failed to load session:', error)
       } finally {
-        setLoading(false) // Only set to false after loading completes
+        console.log('=== Session load complete, setting loading to false ===')
+        setLoading(false)
       }
     }
     loadSession()
