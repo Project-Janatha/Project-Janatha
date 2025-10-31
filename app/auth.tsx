@@ -8,6 +8,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Pressable,
+  Button,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Code } from 'lucide-react-native'
@@ -34,6 +35,7 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [isDarkMode, setIsDarkMode] = useState(false)
 
   const handleContinue = async () => {
     setErrors({})
@@ -144,7 +146,7 @@ export default function AuthScreen() {
               }
               style={{ width: isWeb ? 80 : 60, height: isWeb ? 80 : 60 }}
             />
-            <Text className="text-2xl font-normal text-foreground text-center">
+            <Text className="text-2xl font-inter text-content dark:text-content-dark text-center">
               Log In or Sign Up
             </Text>
           </View>
@@ -218,6 +220,12 @@ export default function AuthScreen() {
           </View>
         </View>
       </ScrollView>
+      <View className="absolute top-0 right-0 p-4">
+        <Button
+          title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          onPress={() => setIsDarkMode((prev) => !prev)}
+        />
+      </View>
     </KeyboardAvoidingView>
   )
 }

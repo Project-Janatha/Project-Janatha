@@ -1,3 +1,4 @@
+import '@expo/metro-runtime'
 import { useEffect, useContext, useState } from 'react'
 import { useColorScheme, ActivityIndicator, View, Text } from 'react-native'
 import { useFonts } from 'expo-font'
@@ -17,58 +18,57 @@ SplashScreen.preventAutoHideAsync()
 export default function RootLayout() {
   console.log('=== RootLayout Rendering ===')
 
-  // const [fontsLoaded, fontsError] = useFonts({
-  //   'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
-  //   'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
-  //   'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.ttf'),
-  //   'Inter-Medium': require('../assets/fonts/Inter-Medium.ttf'),
-  //   'Inter-Light': require('../assets/fonts/Inter-Light.ttf'),
-  // })
+  const [fontsLoaded, fontsError] = useFonts({
+    'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
+    'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
+    'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.ttf'),
+    'Inter-Medium': require('../assets/fonts/Inter-Medium.ttf'),
+    'Inter-Light': require('../assets/fonts/Inter-Light.ttf'),
+  })
 
-  // useEffect(() => {
-  //   SplashScreen.hideAsync()
-  // }, [])
-  // const [fontTimeout, setFontTimeout] = useState(false)
+  const [fontTimeout, setFontTimeout] = useState(false)
 
-  // // Add a timeout in case fonts don't load
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     if (!fontsLoaded && !fontsError) {
-  //       console.log('Font loading timeout - continuing anyway')
-  //       setFontTimeout(true)
-  //     }
-  //   }, 3000) // 3 second timeout
+  // Add a timeout in case fonts don't load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!fontsLoaded && !fontsError) {
+        console.log('Font loading timeout - continuing anyway')
+        setFontTimeout(true)
+      }
+    }, 3000) // 3 second timeout
 
-  //   return () => clearTimeout(timer)
-  // }, [fontsLoaded, fontsError])
+    return () => clearTimeout(timer)
+  }, [fontsLoaded, fontsError])
 
-  // console.log('Fonts loaded:', fontsLoaded, 'Fonts error:', fontsError)
+  console.log('Fonts loaded:', fontsLoaded, 'Fonts error:', fontsError)
 
-  // useEffect(() => {
-  //   if (fontsLoaded || fontsError || fontTimeout) {
-  //     SplashScreen.hideAsync()
-  //   }
-  // }, [fontsLoaded, fontsError, fontTimeout])
+  useEffect(() => {
+    if (fontsLoaded || fontsError || fontTimeout) {
+      SplashScreen.hideAsync()
+    }
+  }, [fontsLoaded, fontsError, fontTimeout])
 
-  // if (!fontsLoaded && !fontsError && !fontTimeout) {
-  //   return (
-  //     <View
-  //       style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}
-  //     >
-  //       <ActivityIndicator size="large" color="#ea580c" />
-  //       <Text style={{ marginTop: 10 }}>Loading fonts...</Text>
-  //     </View>
-  //   )
-  // }
-  // // If fonts failed to load, show error
-  // if (fontsError) {
-  //   return (
-  //     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-  //       <Text style={{ fontSize: 18, color: 'red' }}>Font loading failed</Text>
-  //       <Text style={{ marginTop: 10 }}>Continuing anyway...</Text>
-  //     </View>
-  //   )
-  // }
+  if (!fontsLoaded && !fontsError && !fontTimeout) {
+    return (
+      <View
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}
+      >
+        <ActivityIndicator size="large" color="#ea580c" />
+        <Text className="font-inter dark:text-content-dark" style={{ marginTop: 10 }}>
+          Loading fonts...
+        </Text>
+      </View>
+    )
+  }
+  // If fonts failed to load, show error
+  if (fontsError) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+        <Text style={{ fontSize: 18, color: 'red' }}>Font loading failed</Text>
+        <Text style={{ marginTop: 10 }}>Continuing anyway...</Text>
+      </View>
+    )
+  }
 
   return (
     <UserProvider>

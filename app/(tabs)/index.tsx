@@ -136,6 +136,7 @@ export default function HomeScreen() {
           </View>
 
           <Pressable
+            className="absolute inset-0 font-inter dark:text-content-dark flex-row justify-between items-center p-3 active:opacity-70"
             onPress={() => {
               router.push('/explore')
               Toast.show({
@@ -144,11 +145,10 @@ export default function HomeScreen() {
                 text2: 'Finding centers and events near you',
               })
             }}
-            className="flex-row justify-between items-center p-3 active:opacity-70"
           >
             <View className="flex-row items-center gap-2">
               <MapPin size={20} color="#0ea5e9" className="text-primary" />
-              <Text className="text-base font-medium text-foreground">
+              <Text className="text-content dark:text-content-dark font-inter text-foreground">
                 Find centers and events near you
               </Text>
             </View>
@@ -159,7 +159,9 @@ export default function HomeScreen() {
         {/* Your Week Section */}
         <View className="gap-3">
           <View className="flex-row justify-between items-center">
-            <Text className="text-xl font-semibold text-foreground">Your week</Text>
+            <Text className="text-content dark:text-content-dark font-intertext-xl font-semibold text-foreground">
+              Your week
+            </Text>
             <SecondaryButton
               onPress={() => {
                 router.push('/events' as any)
@@ -178,17 +180,19 @@ export default function HomeScreen() {
           <View className="flex-row justify-between px-2">
             {weekDays.map((day, index) => (
               <View key={index} className="items-center gap-2 min-w-[40px]">
-                <Text className="text-sm text-muted-foreground font-medium">{day}</Text>
+                <Text className="text-content dark:text-content-dark font-inter text-sm text-muted-foreground font-medium">
+                  {day}
+                </Text>
                 <View
-                  className={`w-9 h-9 rounded-lg justify-center items-center ${
-                    weekDates[index] === today ? 'bg-yellow-200' : ''
+                  className={`w-9 h-9 rounded-full justify-center items-center ${
+                    weekDates[index] === today ? 'bg-primary' : ''
                   }`}
                 >
                   <Text
-                    className={`text-base ${
+                    className={`font-inter text-base ${
                       weekDates[index] === today
-                        ? 'font-semibold text-yellow-700'
-                        : 'font-normal text-foreground'
+                        ? 'font-semibold text-content dark:text-content-dark'
+                        : 'font-normal text-foreground dark:text-content-dark'
                     }`}
                   >
                     {weekDates[index]}
@@ -208,22 +212,30 @@ export default function HomeScreen() {
               className="bg-card rounded-2xl shadow-sm overflow-hidden active:scale-[0.98]"
             >
               <View className="p-4 gap-2">
-                <Text className="text-sm text-primary font-medium">{event.time}</Text>
-                <Text className="text-sm text-muted-foreground">{event.location}</Text>
-                <Text className="text-lg font-semibold text-foreground leading-tight">
+                <Text className="font-inter text-sm text-primary font-medium">{event.time}</Text>
+                <Text className="text-content dark:text-content-dark font-inter text-sm text-muted-foreground">
+                  {event.location}
+                </Text>
+                <Text className="text-content dark:text-content-dark font-inter text-lg font-semibold text-foreground leading-tight">
                   {event.title}
                 </Text>
-                <Text className="text-sm text-muted-foreground mt-1">{event.attendees} people</Text>
+                <Text className="text-content dark:text-content-dark text-sm text-muted-foreground mt-1">
+                  {event.attendees} people
+                </Text>
               </View>
 
               <View className="px-4 pb-4 flex-row justify-end gap-4">
                 <View className="flex-row items-center gap-1">
                   <ThumbsUp size={16} color="#a1a1aa" className="text-muted-foreground" />
-                  <Text className="text-sm text-muted-foreground">{event.likes}</Text>
+                  <Text className="text-content dark:text-content-dark font-inter text-sm text-muted-foreground">
+                    {event.likes}
+                  </Text>
                 </View>
                 <View className="flex-row items-center gap-1">
                   <MessageCircle size={16} color="#a1a1aa" className="text-muted-foreground" />
-                  <Text className="text-sm text-muted-foreground">{event.comments}</Text>
+                  <Text className="text-content dark:text-content-dark font-inter text-sm text-muted-foreground">
+                    {event.comments}
+                  </Text>
                 </View>
               </View>
             </Pressable>

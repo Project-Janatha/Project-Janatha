@@ -18,7 +18,7 @@ import { Pressable, Text } from 'react-native'
 export default function PrimaryButton({ children, ...props }) {
   return (
     <Pressable className="bg-primary px-4 py-3 rounded-lg active:bg-primary-press" {...props}>
-      <Text className="text-backgroundStrong font-semibold text-base text-center">{children}</Text>
+      <Text className="text-backgroundStrong font-inter text-base text-center">{children}</Text>
     </Pressable>
   )
 }
