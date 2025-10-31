@@ -18,8 +18,10 @@ import { Pressable, Text } from 'react-native'
  */
 export default function DestructiveButton({ children, ...props }) {
   return (
-    <Pressable className="bg-red-600 px-4 py-3 rounded-lg active:bg-red-700" {...props}>
-      <Text className="text-backgroundStrong font-semibold text-base text-center">{children}</Text>
+    <Pressable className="bg-red-600 px-4 py-3 rounded-full active:bg-red-700" {...props}>
+      <Text className="text-backgroundStrong font-inter text-bold text-gray-100 text-center">
+        {children}
+      </Text>
     </Pressable>
   )
 }

@@ -27,6 +27,7 @@ export default function RootLayout() {
   })
 
   const [fontTimeout, setFontTimeout] = useState(false)
+  const colorScheme = useColorScheme()
 
   // Add a timeout in case fonts don't load
   useEffect(() => {
@@ -71,9 +72,11 @@ export default function RootLayout() {
   }
 
   return (
-    <UserProvider>
-      <RootLayoutNav />
-    </UserProvider>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <UserProvider>
+        <RootLayoutNav />
+      </UserProvider>
+    </ThemeProvider>
   )
 }
 
