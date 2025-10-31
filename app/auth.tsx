@@ -1,19 +1,18 @@
-import React, { useState, useContext } from 'react'
+import React, { useState, useContext, useEffect } from 'react'
 import {
   View,
   Text,
-  Image,
   Platform,
-  useColorScheme,
   ScrollView,
   KeyboardAvoidingView,
   Pressable,
-  Button,
+  Image,
 } from 'react-native'
 import { useRouter } from 'expo-router'
-import { Code } from 'lucide-react-native'
+import { Code, Moon, Sun } from 'lucide-react-native'
 import { PrimaryButton, AuthInput } from 'components/ui'
-import { UserContext } from 'components/contexts'
+import { UserContext, useThemeContext } from 'components/contexts'
+import { useColorScheme } from 'nativewind'
 
 const FieldError = ({ message }: { message?: string }) => {
   if (!message) return null
@@ -23,19 +22,39 @@ const FieldError = ({ message }: { message?: string }) => {
 type AuthStep = 'initial' | 'login' | 'signup'
 
 export default function AuthScreen() {
-  console.log('=== AUTH SCREEN RENDERING ===')
+  // ALL HOOKS MUST BE AT THE TOP - DO NOT CONDITIONALLY CALL HOOKS
   const router = useRouter()
-  const colorScheme = useColorScheme()
-  const isDark = colorScheme === 'dark'
+  const { theme, toggleTheme, isDark } = useThemeContext()
+  const { setColorScheme } = useColorScheme()
   const { checkUserExists, login, signup, setUser, loading } = useContext(UserContext)
-  const isWeb = Platform.OS === 'web'
 
   const [authStep, setAuthStep] = useState<AuthStep>('initial')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
-  const [isDarkMode, setIsDarkMode] = useState(false)
+
+  const isWeb = Platform.OS === 'web'
+
+  // Set color scheme effect
+  useEffect(() => {
+    if (theme === 'light' || theme === 'dark' || theme === 'system') {
+      setColorScheme(theme as 'light' | 'dark' | 'system')
+    }
+  }, [theme, setColorScheme])
+
+  useEffect(() => {
+    console.log('=== AuthScreen Render ===')
+    console.log('theme:', theme)
+    console.log('isDark:', isDark)
+  }, [theme, isDark])
+
+  const handleToggle = () => {
+    console.log('🔘 Button PRESSED')
+    console.log('Before toggle - theme:', theme, 'isDark:', isDark)
+    toggleTheme()
+    console.log('Toggle function called')
+  }
 
   const handleContinue = async () => {
     setErrors({})
@@ -127,6 +146,8 @@ export default function AuthScreen() {
     (authStep !== 'initial' && !password) ||
     (authStep === 'signup' && !confirmPassword)
 
+  const logoSize = isWeb ? 80 : 60
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -138,14 +159,18 @@ export default function AuthScreen() {
           <View
             className={`items-center ${isWeb ? 'pt-8' : 'pt-6'} gap-4 w-full flex-1 justify-center`}
           >
-            <Image
-              source={
-                isDark
-                  ? require('../assets/images/chinmaya_logo_dark.svg')
-                  : require('../assets/images/chinmaya_logo_light.svg')
-              }
-              style={{ width: isWeb ? 80 : 60, height: isWeb ? 80 : 60 }}
-            />
+            {isDark ? (
+              <Image
+                source={require('assets/images/chinmaya_logo_dark.svg')}
+                style={{ width: logoSize, height: logoSize }}
+              />
+            ) : (
+              <Image
+                source={require('assets/images/chinmaya_logo_light.svg')}
+                style={{ width: logoSize, height: logoSize }}
+              />
+            )}
+
             <Text className="text-2xl font-inter text-content dark:text-content-dark text-center">
               Log In or Sign Up
             </Text>
@@ -162,7 +187,14 @@ export default function AuthScreen() {
             >
               <FieldError message={errors.form} />
 
-              <AuthInput placeholder="Email" onChangeText={setUsername} value={username} />
+              <AuthInput
+                placeholder="Email"
+                onChangeText={setUsername}
+                value={username}
+                autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+              />
               <FieldError message={errors.username} />
 
               {authStep === 'login' && (
@@ -172,6 +204,7 @@ export default function AuthScreen() {
                     onChangeText={setPassword}
                     value={password}
                     secureTextEntry
+                    autoComplete="password"
                   />
                   <FieldError message={errors.password} />
                 </View>
@@ -184,6 +217,7 @@ export default function AuthScreen() {
                     onChangeText={setPassword}
                     value={password}
                     secureTextEntry
+                    autoComplete="password-new"
                   />
                   <FieldError message={errors.password} />
                   <AuthInput
@@ -191,6 +225,7 @@ export default function AuthScreen() {
                     onChangeText={setConfirmPassword}
                     value={confirmPassword}
                     secureTextEntry
+                    autoComplete="password-new"
                   />
                   <FieldError message={errors.confirmPassword} />
                 </View>
@@ -207,25 +242,29 @@ export default function AuthScreen() {
               </PrimaryButton>
             </View>
 
-            {/* Dev Mode Button - only show on web */}
             {isWeb && (
               <Pressable
                 onPress={handleDevMode}
                 className="flex-row items-center gap-2 mt-4 px-4 py-2 bg-secondary rounded-lg active:opacity-80"
               >
-                <Code size={18} color="currentColor" className="text-foreground" />
+                <Code size={18} className="text-foreground" />
                 <Text className="text-foreground">Dev Mode</Text>
               </Pressable>
             )}
           </View>
         </View>
       </ScrollView>
-      <View className="absolute top-0 right-0 p-4">
-        <Button
-          title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          onPress={() => setIsDarkMode((prev) => !prev)}
-        />
-      </View>
+
+      <Pressable
+        onPress={handleToggle}
+        className="absolute top-4 right-4 p-3 bg-gray-200 dark:bg-gray-800 rounded-full active:opacity-70"
+      >
+        {isDark ? (
+          <Sun size={20} className="text-foreground" />
+        ) : (
+          <Moon size={20} className="text-foreground" />
+        )}
+      </Pressable>
     </KeyboardAvoidingView>
   )
 }

@@ -18,7 +18,7 @@ import { Pressable, Text } from 'react-native'
 export default function SecondaryButton({ children, ...props }) {
   return (
     <Pressable
-      className="border border-borderColor bg-transparent text-color px-4 py-3 rounded-lg active:bg-gray-4"
+      className="border border-borderColor bg-transparent text-color px-4 py-3 rounded-full active:bg-gray-4"
       {...props}
     >
       <Text className="font-inter text-color text-base text-center">{children}</Text>

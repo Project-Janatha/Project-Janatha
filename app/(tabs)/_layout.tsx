@@ -1,9 +1,10 @@
 import { Link, Tabs, useRouter } from 'expo-router'
 import { Platform, View, Text, Pressable, useColorScheme } from 'react-native'
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { UserContext } from 'components/contexts'
 import { GhostButton, DestructiveButton } from 'components/ui'
 import { Home, Compass, User, Settings, LogOut } from 'lucide-react-native'
+import SettingsPanel from 'components/SettingsPanel'
 
 /**
  * TabLayout Component - The main layout for the tab-based navigation.
@@ -14,6 +15,7 @@ export default function TabLayout() {
   // Get user and logout from UserContext
   const { user, logout } = useContext(UserContext)
   const colorScheme = useColorScheme()
+  const [settingsVisible, setSettingsVisible] = useState(false)
 
   const handleLogout = async () => {
     await logout()
@@ -26,7 +28,7 @@ export default function TabLayout() {
       return (
         <Link href="/auth" asChild>
           <Pressable
-            className="mr-4 px-3 py-2 bg-primary rounded-lg"
+            className="mr-4 px-3 py-2 bg-primary rounded-full"
             onPress={() => router.push('/auth')}
           >
             <Text className="text-white text-base">Log In</Text>
@@ -34,32 +36,21 @@ export default function TabLayout() {
         </Link>
       )
     }
-    // TODO: Add implementation for native layout (not priority for demo)
     if (Platform.OS === 'web') {
       return (
-        <View className="mr-4 flex flex-col items-start">
+        <>
           <Pressable
-            className="p-2 rounded-full bg-gray-200"
-            onPress={() => router.push('/profile')}
+            className="mr-4 p-2 rounded-full bg-gray-200"
+            onPress={() => setSettingsVisible(true)}
           >
             <User size={20} color="#9A3412" />
           </Pressable>
-          <Text className="mt-2 text-base">{user.username}</Text>
-          <GhostButton
-            icon={<Settings size={16} color="#9A3412" />}
-            onPress={() => router.push('/profile')}
-            size={3}
-          >
-            Settings
-          </GhostButton>
-          <DestructiveButton
-            icon={<LogOut size={16} color="#9A3412" />}
-            onPress={handleLogout}
-            size={3}
-          >
-            Log Out
-          </DestructiveButton>
-        </View>
+          <SettingsPanel
+            visible={settingsVisible}
+            onClose={() => setSettingsVisible(false)}
+            onLogout={handleLogout}
+          />
+        </>
       )
     }
   }
