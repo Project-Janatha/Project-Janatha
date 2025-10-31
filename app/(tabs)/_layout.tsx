@@ -1,5 +1,5 @@
 import { Link, Tabs, useRouter } from 'expo-router'
-import { Platform, View, Text, Pressable } from 'react-native'
+import { Platform, View, Text, Pressable, useColorScheme } from 'react-native'
 import { useContext } from 'react'
 import { UserContext } from 'components/contexts'
 import { GhostButton, DestructiveButton } from 'components/ui'
@@ -13,6 +13,7 @@ export default function TabLayout() {
   const router = useRouter()
   // Get user and logout from UserContext
   const { user, logout } = useContext(UserContext)
+  const colorScheme = useColorScheme()
 
   const handleLogout = async () => {
     await logout()
@@ -70,14 +71,14 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#9A3412', // primary color - orange-800
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: {
-          backgroundColor: '#fff',
-          borderTopColor: '#E5E7EB',
+          backgroundColor: colorScheme === 'dark' ? '#111827' : '#fff', // dark:bg-background-dark
+          borderTopColor: colorScheme === 'dark' ? '#1f2937' : '#E5E7EB',
         },
         headerStyle: {
-          backgroundColor: '#fff',
-          borderBottomColor: '#E5E7EB',
+          backgroundColor: colorScheme === 'dark' ? '#111827' : '#fff', // dark mode
+          borderBottomColor: colorScheme === 'dark' ? '#1f2937' : '#E5E7EB',
         },
-        headerTintColor: '#000',
+        headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
       }}
     >
       <Tabs.Screen

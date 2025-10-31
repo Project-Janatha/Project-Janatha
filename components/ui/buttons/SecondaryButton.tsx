@@ -21,7 +21,7 @@ export default function SecondaryButton({ children, ...props }) {
       className="border border-borderColor bg-transparent text-color px-4 py-3 rounded-lg active:bg-gray-4"
       {...props}
     >
-      <Text className="text-color text-base text-center">{children}</Text>
+      <Text className="font-inter text-color text-base text-center">{children}</Text>
     </Pressable>
   )
 }
