@@ -1,10 +1,10 @@
 import '@expo/metro-runtime'
 import { useEffect, useContext, useState } from 'react'
-import { useColorScheme, ActivityIndicator, View, Text } from 'react-native'
+import { ActivityIndicator, View, Text } from 'react-native'
 import { useFonts } from 'expo-font'
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
-import { SplashScreen, Stack, Redirect, usePathname } from 'expo-router'
-import { UserProvider, UserContext } from 'components/contexts'
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native'
+import { SplashScreen, Stack, usePathname, useRouter } from 'expo-router'
+import { UserProvider, UserContext, ThemeProvider as CustomThemeProvider, useThemeContext } from 'components/contexts'
 import { IconButton } from 'components/ui'
 import { Share } from 'lucide-react-native'
 import '../globals.css'
@@ -27,7 +27,6 @@ export default function RootLayout() {
   })
 
   const [fontTimeout, setFontTimeout] = useState(false)
-  const colorScheme = useColorScheme()
 
   // Add a timeout in case fonts don't load
   useEffect(() => {
@@ -55,9 +54,7 @@ export default function RootLayout() {
         style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}
       >
         <ActivityIndicator size="large" color="#ea580c" />
-        <Text className="font-inter dark:text-content-dark" style={{ marginTop: 10 }}>
-          Loading fonts...
-        </Text>
+        <Text style={{ marginTop: 10 }}>Loading fonts...</Text>
       </View>
     )
   }
@@ -72,59 +69,56 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <CustomThemeProvider>
       <UserProvider>
         <RootLayoutNav />
       </UserProvider>
-    </ThemeProvider>
+    </CustomThemeProvider>
   )
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme()
-  const { isAuthenticated, loading } = useContext(UserContext)
+  const { user, loading } = useContext(UserContext)
+  const { isDark } = useThemeContext()
   const pathname = usePathname()
+  const router = useRouter()
+  const isAuthenticated = !!user
 
-  console.log(
-    'RootLayoutNav - isAuthenticated:',
-    isAuthenticated,
-    'pathname:',
-    pathname,
-    'loading:',
-    loading
-  )
+  console.log('RootLayoutNav - isAuthenticated:', isAuthenticated, 'pathname:', pathname, 'loading:', loading, 'isDark:', isDark)
 
-  // Show loading screen while checking auth
-  if (loading) {
+  useEffect(() => {
+    if (pathname === '/auth') {
+      console.log('On auth page, skipping redirect logic')
+      return
+    }
+
+    if (!loading) {
+      if (!isAuthenticated) {
+        console.log('Not authenticated, redirecting to /auth')
+        router.replace('/auth')
+      } else if (pathname === '/auth') {
+        console.log('Authenticated on auth page, redirecting to /(tabs)')
+        router.replace('/(tabs)')
+      }
+    }
+  }, [isAuthenticated, loading, pathname])
+
+  if (loading && pathname !== '/auth') {
     console.log('SHOWING LOADING SCREEN')
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#ea580c" />
-        <Text style={{ marginTop: 10 }}>Loading...</Text>
+        <Text>Loading...</Text>
       </View>
     )
   }
-  if (!isAuthenticated && pathname !== '/auth') {
-    console.log('REDIRECTING TO AUTH')
-    return <Redirect href="/auth" />
-  }
 
-  console.log('RENDERING STACK')
+  const navTheme = isDark ? DarkTheme : DefaultTheme
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen
-          name="(tabs)"
-          options={{
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="auth"
-          options={{
-            headerShown: false,
-          }}
-        />
+    <NavigationThemeProvider value={navTheme}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
         <Stack.Screen
           name="profile"
           options={{
@@ -135,41 +129,37 @@ function RootLayoutNav() {
         />
         <Stack.Screen
           name="events/[id]"
-          options={({ route }) => ({
+          options={{
             headerShown: true,
             title: 'Event Details',
-            headerBackTitleVisible: false,
+            headerBackTitle: '', // Use empty string instead of headerBackTitleVisible
             headerRight: () => (
               <IconButton
                 className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
-                onPress={() => {
-                  console.log('Share event')
-                }}
+                onPress={() => console.log('Share event')}
               >
                 <Share size={20} />
               </IconButton>
             ),
-          })}
+          }}
         />
         <Stack.Screen
           name="center/[id]"
-          options={({ route }) => ({
+          options={{
             headerShown: true,
             title: 'Center Details',
-            headerBackTitleVisible: false,
+            headerBackTitle: '', // Use empty string instead of headerBackTitleVisible
             headerRight: () => (
               <IconButton
                 className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
-                onPress={() => {
-                  console.log('Share center')
-                }}
+                onPress={() => console.log('Share center')}
               >
                 <Share size={20} />
               </IconButton>
             ),
-          })}
+          }}
         />
       </Stack>
-    </ThemeProvider>
+    </NavigationThemeProvider>
   )
 }

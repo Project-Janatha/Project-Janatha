@@ -1,66 +1,33 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { useColorScheme as useDeviceColorScheme } from 'react-native'
-import { useColorScheme } from 'nativewind'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useColorScheme as useNativeWindColorScheme } from 'nativewind'
+import { useColorScheme as useSystemColorScheme } from 'react-native'
+import { useEffect } from 'react'
 
-type Theme = 'light' | 'dark' | 'system'
+// Provider that initializes theme from system
+export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+  const systemScheme = useSystemColorScheme()
+  const { colorScheme, setColorScheme } = useNativeWindColorScheme()
 
-type ThemeContextType = {
-  theme: Theme
-  toggleTheme: () => void
-  isDark: boolean
-}
-
-const ThemeContext = createContext<ThemeContextType>({
-  theme: 'system',
-  toggleTheme: () => {},
-  isDark: false,
-})
-
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const deviceColorScheme = useDeviceColorScheme()
-  const { setColorScheme } = useColorScheme()
-  const [theme, setTheme] = useState<Theme>('system')
-  const [mounted, setMounted] = useState(false)
-
-  // Calculate actual dark mode state
-  const isDark = theme === 'system' ? deviceColorScheme === 'dark' : theme === 'dark'
-
-  // Load saved theme on mount
+  // Initialize NativeWind theme from system on app start
   useEffect(() => {
-    AsyncStorage.getItem('theme').then((saved) => {
-      if (saved === 'light' || saved === 'dark' || saved === 'system') {
-        setTheme(saved as Theme)
-      }
-      setMounted(true)
-    })
-  }, [])
-
-  // Save theme when it changes (but don't save 'system')
-  useEffect(() => {
-    if (mounted && theme !== 'system') {
-      AsyncStorage.setItem('theme', theme)
+    console.log('🟣 ThemeProvider initialized - systemScheme:', systemScheme, 'colorScheme:', colorScheme)
+    if (!colorScheme && systemScheme) {
+      console.log('🟣 Setting initial theme to:', systemScheme)
+      setColorScheme(systemScheme as 'light' | 'dark')
     }
-  }, [theme, mounted])
+  }, [systemScheme])
 
-  // Sync with NativeWind - this is the critical part
-  useEffect(() => {
-    const colorScheme = isDark ? 'dark' : 'light'
-    console.log('🎨 Setting NativeWind color scheme to:', colorScheme)
-    setColorScheme(colorScheme)
-  }, [isDark, setColorScheme])
-
-  const toggleTheme = () => {
-    const newTheme =
-      theme === 'dark' || (theme === 'system' && deviceColorScheme === 'dark') ? 'light' : 'dark'
-
-    console.log('🔄 Toggling theme from', theme, 'to', newTheme)
-    setTheme(newTheme)
-  }
-
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, isDark }}>{children}</ThemeContext.Provider>
-  )
+  return <>{children}</>
 }
 
-export const useThemeContext = () => useContext(ThemeContext)
+// Re-export NativeWind's hook with a custom name to match your existing code
+export const useThemeContext = () => {
+  const systemScheme = useSystemColorScheme()
+  const { colorScheme, setColorScheme, toggleColorScheme } = useNativeWindColorScheme()
+  
+  return {
+    theme: colorScheme || systemScheme || 'light',
+    isDark: (colorScheme || systemScheme) === 'dark',
+    toggleTheme: toggleColorScheme,
+    setTheme: setColorScheme,
+  }
+}
