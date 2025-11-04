@@ -2,9 +2,18 @@ import '@expo/metro-runtime'
 import { useEffect, useContext, useState } from 'react'
 import { ActivityIndicator, View, Text } from 'react-native'
 import { useFonts } from 'expo-font'
-import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native'
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider as NavigationThemeProvider,
+} from '@react-navigation/native'
 import { SplashScreen, Stack, usePathname, useRouter } from 'expo-router'
-import { UserProvider, UserContext, ThemeProvider as CustomThemeProvider, useThemeContext } from 'components/contexts'
+import {
+  UserProvider,
+  UserContext,
+  ThemeProvider as CustomThemeProvider,
+  useThemeContext,
+} from 'components/contexts'
 import { IconButton } from 'components/ui'
 import { Share } from 'lucide-react-native'
 import '../globals.css'
@@ -84,7 +93,16 @@ function RootLayoutNav() {
   const router = useRouter()
   const isAuthenticated = !!user
 
-  console.log('RootLayoutNav - isAuthenticated:', isAuthenticated, 'pathname:', pathname, 'loading:', loading, 'isDark:', isDark)
+  console.log(
+    'RootLayoutNav - isAuthenticated:',
+    isAuthenticated,
+    'pathname:',
+    pathname,
+    'loading:',
+    loading,
+    'isDark:',
+    isDark
+  )
 
   useEffect(() => {
     if (pathname === '/auth') {
