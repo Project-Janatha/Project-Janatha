@@ -12,7 +12,6 @@ import { useRouter } from 'expo-router'
 import { Code, Moon, Sun } from 'lucide-react-native'
 import { PrimaryButton, AuthInput } from 'components/ui'
 import { UserContext, useThemeContext } from 'components/contexts'
-import { useColorScheme } from 'nativewind'
 
 const FieldError = ({ message }: { message?: string }) => {
   if (!message) return null
@@ -22,10 +21,10 @@ const FieldError = ({ message }: { message?: string }) => {
 type AuthStep = 'initial' | 'login' | 'signup'
 
 export default function AuthScreen() {
-  // ALL HOOKS MUST BE AT THE TOP - DO NOT CONDITIONALLY CALL HOOKS
+  console.log('🟢 AuthScreen component executing')
+
   const router = useRouter()
   const { theme, toggleTheme, isDark } = useThemeContext()
-  const { setColorScheme } = useColorScheme()
   const { checkUserExists, login, signup, setUser, loading } = useContext(UserContext)
 
   const [authStep, setAuthStep] = useState<AuthStep>('initial')
@@ -36,40 +35,32 @@ export default function AuthScreen() {
 
   const isWeb = Platform.OS === 'web'
 
-  // Set color scheme effect
-  useEffect(() => {
-    if (theme === 'light' || theme === 'dark' || theme === 'system') {
-      setColorScheme(theme as 'light' | 'dark' | 'system')
-    }
-  }, [theme, setColorScheme])
-
   useEffect(() => {
     console.log('=== AuthScreen Render ===')
     console.log('theme:', theme)
     console.log('isDark:', isDark)
   }, [theme, isDark])
 
-  const handleToggle = () => {
-    console.log('🔘 Button PRESSED')
-    console.log('Before toggle - theme:', theme, 'isDark:', isDark)
-    toggleTheme()
-    console.log('Toggle function called')
-  }
-
   const handleContinue = async () => {
+    console.log('🔴 === handleContinue called ===')
+    console.log('🔴 Username:', username)
     setErrors({})
     if (!username) {
+      console.log('🔴 No username provided')
       setErrors({ username: 'Please enter a username.' })
       return
     }
     try {
+      console.log('🔴 About to call checkUserExists')
       const exists = await checkUserExists(username)
+      console.log('🔴 checkUserExists returned:', exists)
       if (exists) {
         setAuthStep('login')
       } else {
         setAuthStep('signup')
       }
     } catch (e: any) {
+      console.error('🔴 Error in handleContinue:', e)
       setErrors({ form: e.message || 'Failed to connect to server.' })
     }
   }
@@ -114,7 +105,13 @@ export default function AuthScreen() {
     }
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = (e?: any) => {
+    console.log('🔴 handleSubmit called')
+    if (Platform.OS === 'web' && e) {
+      e.preventDefault?.()
+      e.stopPropagation?.()
+    }
+
     if (authStep === 'login') {
       handleLogin()
     } else if (authStep === 'signup') {
@@ -177,6 +174,7 @@ export default function AuthScreen() {
           </View>
 
           {/* Form Section */}
+          {/* Make sure this is NOT wrapped in a <form> tag */}
           <View
             className={`w-full items-center flex-1 justify-center ${isWeb ? 'pb-8' : 'pb-6'} px-4`}
           >
@@ -187,14 +185,7 @@ export default function AuthScreen() {
             >
               <FieldError message={errors.form} />
 
-              <AuthInput
-                placeholder="Email"
-                onChangeText={setUsername}
-                value={username}
-                autoCapitalize="none"
-                autoComplete="email"
-                keyboardType="email-address"
-              />
+              <AuthInput placeholder="Email" onChangeText={setUsername} value={username} />
               <FieldError message={errors.username} />
 
               {authStep === 'login' && (
@@ -241,30 +232,9 @@ export default function AuthScreen() {
                   : 'Continue'}
               </PrimaryButton>
             </View>
-
-            {isWeb && (
-              <Pressable
-                onPress={handleDevMode}
-                className="flex-row items-center gap-2 mt-4 px-4 py-2 bg-secondary rounded-lg active:opacity-80"
-              >
-                <Code size={18} className="text-foreground" />
-                <Text className="text-foreground">Dev Mode</Text>
-              </Pressable>
-            )}
           </View>
         </View>
       </ScrollView>
-
-      <Pressable
-        onPress={handleToggle}
-        className="absolute top-4 right-4 p-3 bg-gray-200 dark:bg-gray-800 rounded-full active:opacity-70"
-      >
-        {isDark ? (
-          <Sun size={20} className="text-foreground" />
-        ) : (
-          <Moon size={20} className="text-foreground" />
-        )}
-      </Pressable>
     </KeyboardAvoidingView>
   )
 }

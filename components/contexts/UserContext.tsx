@@ -108,30 +108,35 @@ export function UserProvider({ children }) {
 
   const checkUserExists = async (username: string) => {
     setLoading(true)
-    console.log('Checking existence for username:', username)
+    console.log('🟡 checkUserExists called for:', username)
     const endpoint = `${url}/userExistence`
     try {
+      console.log('🟡 Sending request to:', endpoint)
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ username: username }),
       })
+      console.log('🟡 Response received:', response.status)
       const data = await response.json()
+      console.log('🟡 Response data:', data)
       if (response.ok) {
         console.log('User existence response data:', data)
+        setLoading(false) // Add this
         return data.existence
       } else {
         const errorMessage = data.message || `Request failed with status ${response.status}`
         console.log('Error checking user existence: ', errorMessage)
         setError(errorMessage)
+        setLoading(false) // Add this
         throw new Error(errorMessage)
       }
     } catch (error) {
       console.error("Couldn't fetch from server: ", error)
       setError(error.message)
-    } finally {
-      setLoading(false)
+      setLoading(false) // Add this
+      throw error // Add this to propagate error
     }
   }
 
