@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Code, Moon, Sun } from 'lucide-react-native'
-import { PrimaryButton, AuthInput } from 'components/ui'
+import { PrimaryButton, IconButton, AuthInput } from 'components/ui'
 import { UserContext, useThemeContext } from 'components/contexts'
 
 const FieldError = ({ message }: { message?: string }) => {
@@ -150,7 +150,10 @@ export default function AuthScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="flex-1 bg-background">
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        className="flex-1 bg-background dark:bg-background-dark"
+      >
         <View className={`flex-1 justify-between items-center w-full ${isWeb ? 'p-6' : 'p-2'}`}>
           {/* Top Section */}
           <View
@@ -231,6 +234,14 @@ export default function AuthScreen() {
                   ? 'Sign Up'
                   : 'Continue'}
               </PrimaryButton>
+
+              <Pressable
+                onPress={handleDevMode}
+                className="flex-row items-center bg-slate-600/50 text-content dark:text-content-dark px-3 py-2 rounded-full justify-center mt-4 self-center"
+              >
+                <Code size={16} />
+                <Text className="ml-2 text-content dark:text-content-dark">Dev Mode</Text>
+              </Pressable>
             </View>
           </View>
         </View>

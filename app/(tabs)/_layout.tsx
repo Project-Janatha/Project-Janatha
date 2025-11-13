@@ -1,9 +1,10 @@
-import { Link, Tabs, useRouter } from 'expo-router'
-import { Platform, View, Text, Pressable, useColorScheme } from 'react-native'
+import { Link, Tabs, useRouter, usePathname } from 'expo-router'
+import { Platform, View, Text, Pressable } from 'react-native'
 import { useContext, useState } from 'react'
-import { UserContext } from 'components/contexts'
+import { UserContext, useThemeContext } from 'components/contexts'
 import { GhostButton, DestructiveButton } from 'components/ui'
-import { Home, Compass, User, Settings, LogOut } from 'lucide-react-native'
+import { Compass, User, Settings, LogOut } from 'lucide-react-native'
+import { Ionicons } from '@expo/vector-icons'
 import SettingsPanel from 'components/SettingsPanel'
 
 /**
@@ -12,9 +13,9 @@ import SettingsPanel from 'components/SettingsPanel'
  */
 export default function TabLayout() {
   const router = useRouter()
-  // Get user and logout from UserContext
+  const pathname = usePathname()
   const { user, logout } = useContext(UserContext)
-  const colorScheme = useColorScheme()
+  const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
 
   const handleLogout = async () => {
@@ -22,7 +23,71 @@ export default function TabLayout() {
     router.replace('/auth')
   }
 
-  // Change header right button based on platform and user state
+  // Custom header with tabs for web
+  const HeaderTitle = () => {
+    if (Platform.OS !== 'web') {
+      return null // Use default title on mobile
+    }
+
+    const isActive = (path: string) => pathname === path
+
+    return (
+      <View className="flex-row items-center gap-8">
+        <Text className="text-xl font-inter-bold text-content dark:text-content-dark">
+          Project Janatha
+        </Text>
+        <View className="flex-row gap-6">
+          <Pressable
+            onPress={() => router.push('/')}
+            className="flex-row items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
+          >
+            {isActive('/') ? (
+              <Ionicons name="home" size={20} className=" text-primary" />
+            ) : (
+              <Ionicons
+                name="home-outline"
+                size={20}
+                className=" text-contentStrong dark:text-contentStrong-dark"
+              />
+            )}
+            <Text
+              className={`font-inter ${
+                isActive('/')
+                  ? 'text-primary font-inter-semibold transition-colors duration-300'
+                  : 'text-contentStrong dark:text-contentStrong-dark transition-colors duration-300'
+              }`}
+            >
+              Home
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/explore')}
+            className="flex-row items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
+          >
+            {isActive('/explore') ? (
+              <Ionicons name="compass" size={20} className=" text-primary" />
+            ) : (
+              <Ionicons
+                name="compass-outline"
+                size={20}
+                className=" text-contentStrong dark:text-contentStrong-dark"
+              />
+            )}
+            <Text
+              className={`font-inter ${
+                isActive('/explore')
+                  ? 'text-primary font-inter-semibold'
+                  : 'text-contentStrong dark:text-contentStrong-dark'
+              }`}
+            >
+              Explore
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    )
+  }
+
   const HeaderRight = () => {
     if (!user) {
       return (
@@ -31,7 +96,7 @@ export default function TabLayout() {
             className="mr-4 px-3 py-2 bg-primary rounded-full"
             onPress={() => router.push('/auth')}
           >
-            <Text className="text-white text-base">Log In</Text>
+            <Text className="text-white text-base font-inter">Log In</Text>
           </Pressable>
         </Link>
       )
@@ -40,10 +105,10 @@ export default function TabLayout() {
       return (
         <>
           <Pressable
-            className="mr-4 p-2 rounded-full bg-gray-200"
+            className="mr-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700"
             onPress={() => setSettingsVisible(true)}
           >
-            <User size={20} color="#9A3412" />
+            <User size={20} color={isDark ? '#fff' : '#9A3412'} />
           </Pressable>
           <SettingsPanel
             visible={settingsVisible}
@@ -55,28 +120,37 @@ export default function TabLayout() {
     }
   }
 
-  // TODO: Make UX better for web
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#9A3412', // primary color - orange-800
+        tabBarActiveTintColor: '#9A3412',
         tabBarInactiveTintColor: '#9CA3AF',
-        tabBarStyle: {
-          backgroundColor: colorScheme === 'dark' ? '#111827' : '#fff', // dark:bg-background-dark
-          borderTopColor: colorScheme === 'dark' ? '#1f2937' : '#E5E7EB',
-        },
+        tabBarStyle:
+          Platform.OS === 'web'
+            ? { display: 'none' }
+            : {
+                backgroundColor: isDark ? '#171717' : '#fff',
+                borderTopColor: isDark ? '#262626' : '#E5E7EB',
+              },
         headerStyle: {
-          backgroundColor: colorScheme === 'dark' ? '#111827' : '#fff', // dark mode
-          borderBottomColor: colorScheme === 'dark' ? '#1f2937' : '#E5E7EB',
+          backgroundColor: isDark ? '#171717' : '#fff',
+          borderBottomColor: isDark ? '#262626' : '#E5E7EB',
         },
-        headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+        headerTitleStyle: {
+          fontFamily: 'Inter-Bold',
+        },
+        headerTintColor: isDark ? '#fff' : '#000',
+        tabBarLabelStyle: {
+          fontFamily: 'Inter-Regular',
+        },
+        headerTitle: Platform.OS === 'web' ? () => <HeaderTitle /> : undefined,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <Home color={color as any} size={20} />,
+          tabBarIcon: ({ color }) => <Ionicons name="home" color={color as any} size={20} />,
           headerRight: () => <HeaderRight />,
         }}
       />
@@ -84,7 +158,7 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: 'Explore',
-          tabBarIcon: ({ color }) => <Compass color={color as any} size={20} />,
+          tabBarIcon: ({ color }) => <Ionicons name="compass" color={color as any} size={24} />,
         }}
       />
     </Tabs>
