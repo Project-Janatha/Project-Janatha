@@ -34,7 +34,7 @@ export default function TabLayout() {
     return (
       <View className="flex-row items-center gap-8">
         <Text className="text-xl font-inter-bold text-content dark:text-content-dark">
-          Project Janatha
+          Chinmaya Janata
         </Text>
         <View className="flex-row gap-6">
           <Pressable
