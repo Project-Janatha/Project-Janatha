@@ -37,6 +37,10 @@ module.exports = {
           light: colors.gray[400],
           dark: colors.gray[600],
         },
+        borderColor: {
+          DEFAULT: colors.gray[700],
+          dark: colors.gray[300],
+        },
       },
       fontFamily: {
         inter: ['Inter-Regular'],
