@@ -127,7 +127,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-background">
+    <ScrollView className="flex-1 bg-background dark:bg-background-dark px-4 pt-4">
       <View className="flex-1 gap-4 px-4 pt-4 pb-8">
         {/* Interactive Map Section */}
         <View className="bg-card rounded-2xl shadow-sm mb-4 overflow-hidden">
@@ -136,7 +136,7 @@ export default function HomeScreen() {
           </View>
 
           <Pressable
-            className="absolute inset-0 font-inter dark:text-content-dark flex-row justify-between items-center p-3 active:opacity-70"
+            className="flex-row justify-between items-center p-4 active:opacity-70"
             onPress={() => {
               router.push('/explore')
               Toast.show({
@@ -147,12 +147,12 @@ export default function HomeScreen() {
             }}
           >
             <View className="flex-row items-center gap-2">
-              <MapPin size={20} color="#0ea5e9" className="text-primary" />
-              <Text className="text-content dark:text-content-dark font-inter text-foreground">
+              <MapPin size={20} color="#0ea5e9" />
+              <Text className="text-content dark:text-content-dark font-inter">
                 Find centers and events near you
               </Text>
             </View>
-            <ChevronRight size={20} color="#a1a1aa" className="text-muted-foreground" />
+            <ChevronRight size={20} color="#a1a1aa" />
           </Pressable>
         </View>
 
@@ -180,7 +180,7 @@ export default function HomeScreen() {
           <View className="flex-row justify-between px-2">
             {weekDays.map((day, index) => (
               <View key={index} className="items-center gap-2 min-w-[40px]">
-                <Text className="text-content dark:text-content-dark font-inter text-sm text-muted-foreground font-medium">
+                <Text className="text-contentStrong dark:text-contentStrong-dark font-inter text-sm text-muted-foreground font-medium">
                   {day}
                 </Text>
                 <View
@@ -191,7 +191,7 @@ export default function HomeScreen() {
                   <Text
                     className={`font-inter text-base ${
                       weekDates[index] === today
-                        ? 'font-semibold text-content dark:text-content-dark'
+                        ? 'font-semibold text-content-dark'
                         : 'font-normal text-foreground dark:text-content-dark'
                     }`}
                   >

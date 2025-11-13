@@ -1,36 +1,51 @@
 const colors = require('tailwindcss/colors')
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ['./app/**/*.{js,ts,jsx,tsx}', './components/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class', // Keep class for manual toggling
+  content: ['./app/**/*.{js,jsx,ts,tsx}', './components/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],
-  darkMode: 'class',
   theme: {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#fb8c00', // orange[600]
-          press: '#c25e00', // orange[800]
-        },
-        content: {
-          DEFAULT: '#1f2937', // gray[800]
-          light: '#4b5563', // gray[600]
-          lighter: '#9ca3af', // gray[400]
-          dark: '#f9fafb', // gray[50]
+          DEFAULT: colors.orange[600],
+          press: colors.orange[700],
         },
         background: {
-          light: '#ffffff', // white
-          dark: '#111827', // custom dark
-          hover: '#1f2937', // gray[800]
-          press: '#374151', // gray[700]
-          strong: '#ffffff', // white
-          transparent: 'transparent',
+          DEFAULT: colors.white,
+          light: colors.neutral[300],
+          dark: colors.neutral[900],
+        },
+        backgroundStrong: {
+          DEFAULT: colors.gray[900],
+          light: colors.gray[100],
+          dark: colors.gray[800],
+        },
+        content: {
+          DEFAULT: colors.gray[900],
+          light: colors.gray[700],
+          dark: colors.gray[100],
+        },
+        contentStrong: {
+          DEFAULT: colors.gray[600],
+          light: colors.gray[500],
+          dark: colors.gray[400],
+        },
+        muted: {
+          DEFAULT: colors.gray[500],
+          light: colors.gray[400],
+          dark: colors.gray[600],
         },
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        inter: ['Inter', 'sans-serif'],
+        inter: ['Inter-Regular'],
+        'inter-bold': ['Inter-Bold'],
+        'inter-semibold': ['Inter-SemiBold'],
+        'inter-medium': ['Inter-Medium'],
+        'inter-light': ['Inter-Light'],
       },
     },
-    plugins: [],
   },
+  plugins: [],
 }
