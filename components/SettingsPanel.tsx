@@ -68,7 +68,7 @@ function SettingsPanel({ visible, onClose, onLogout }) {
       {/* Backdrop */}
       <Pressable
         style={{
-          position: 'absolute',
+          position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
@@ -81,7 +81,7 @@ function SettingsPanel({ visible, onClose, onLogout }) {
       {/* Settings Panel */}
       <Animated.View
         style={{
-          position: 'absolute',
+          position: 'fixed',
           top: 56,
           right: 16,
           zIndex: 100,

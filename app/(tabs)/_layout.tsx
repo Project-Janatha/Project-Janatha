@@ -159,6 +159,7 @@ export default function TabLayout() {
         options={{
           title: 'Explore',
           tabBarIcon: ({ color }) => <Ionicons name="compass" color={color as any} size={24} />,
+          headerRight: () => <HeaderRight />,
         }}
       />
     </Tabs>

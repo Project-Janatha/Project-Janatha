@@ -157,7 +157,7 @@ export default function ExploreScreen() {
               onPress={() => setActiveFilter(filter)}
               className={`flex-row items-center gap-1 px-2.5 py-2 rounded-full shadow active:opacity-70 ${
                 activeFilter === filter
-                  ? 'bg-primary'
+                  ? 'bg-primary border-primary'
                   : 'bg-background dark:bg-background-dark border-borderColor dark:border-borderColor-dark'
               } border`}
             >
