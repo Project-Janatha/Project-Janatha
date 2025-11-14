@@ -25,8 +25,6 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
-  console.log('=== RootLayout Rendering ===')
-
   const [fontsLoaded, fontsError] = useFonts({
     'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
     'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),

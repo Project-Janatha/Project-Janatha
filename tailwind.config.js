@@ -2,7 +2,7 @@ const colors = require('tailwindcss/colors')
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: 'class', // Keep class for manual toggling
+  darkMode: 'class',
   content: ['./app/**/*.{js,jsx,ts,tsx}', './components/**/*.{js,jsx,ts,tsx}'],
   presets: [require('nativewind/preset')],
   theme: {
@@ -19,8 +19,8 @@ module.exports = {
         },
         backgroundStrong: {
           DEFAULT: colors.gray[900],
-          light: colors.gray[100],
-          dark: colors.gray[800],
+          light: colors.neutral[100],
+          dark: colors.neutral[800],
         },
         content: {
           DEFAULT: colors.gray[900],
@@ -37,12 +37,17 @@ module.exports = {
           light: colors.gray[400],
           dark: colors.gray[600],
         },
-        borderColor: {
+        outlineColor: {
           DEFAULT: colors.gray[700],
           dark: colors.gray[300],
         },
+        borderColor: {
+          DEFAULT: colors.gray[200],
+          dark: colors.neutral[700],
+        },
       },
       fontFamily: {
+        sans: ['Inter-Regular'],
         inter: ['Inter-Regular'],
         'inter-bold': ['Inter-Bold'],
         'inter-semibold': ['Inter-SemiBold'],

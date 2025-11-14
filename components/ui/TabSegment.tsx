@@ -19,7 +19,6 @@ export interface TabSegmentProps {
   options: TabOption[]
   value: string
   onValueChange: (value: string) => void
-  size?: '$2' | '$3' | '$4'
   variant?: 'primary' | 'subtle'
 }
 
@@ -32,25 +31,25 @@ export function TabSegment({
   // Tailwind classes for variants
   const containerClass =
     variant === 'primary'
-      ? 'flex-row bg-background-light rounded-xl p-1 shadow'
+      ? 'flex-row bg-background rounded-xl p-1 shadow'
       : 'flex-row bg-background-dark rounded-xl p-1'
 
   return (
-    <View className={containerClass}>
+    <View className="flex-row p-1 font-inter">
       {options.map((option) => {
         const isActive = value === option.value
         return (
           <TouchableOpacity
             key={option.value}
-            className={`flex-1 rounded-lg px-3 py-2 mx-0.5 ${
-              isActive ? 'bg-primary' : 'bg-transparent border border-gray-300'
+            className={`flex rounded-full px-3 py-2 ${
+              isActive ? 'bg-primary' : 'bg-backgroundStrong dark:bg-backgroundStrong-dark'
             }`}
             activeOpacity={0.8}
             onPress={() => onValueChange(option.value)}
           >
             <Text
-              className={`text-center ${
-                isActive ? 'text-background-strong font-semibold' : 'text-gray-500 font-normal'
+              className={`text-center font-inter ${
+                isActive ? 'text-background-strong' : 'text-gray-500'
               }`}
             >
               {option.label}
