@@ -1,9 +1,17 @@
-import React, { useState } from 'react'
-import { View, TextInput } from 'react-native'
-import { TabSegment, IconButton } from 'components/ui'
-import Map from 'components/Map'
-import { Search, SlidersHorizontal } from 'lucide-react-native'
+import React, { useState, useRef } from 'react'
+import { View, TextInput, Pressable, Text } from 'react-native'
+import { IconButton } from 'components/ui'
+import {
+  Search,
+  SlidersHorizontal,
+  Locate,
+  MapPin,
+  Calendar,
+  LayoutGrid,
+} from 'lucide-react-native'
 import { useRouter } from 'expo-router'
+import { useThemeContext } from 'components/contexts'
+import Map, { MapRef } from 'components/Map.web'
 
 /**
  * ExploreScreen Component
@@ -13,12 +21,8 @@ export default function ExploreScreen() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
-
-  const filterOptions = [
-    { value: 'All', label: 'All' },
-    { value: 'Centers', label: 'Centers' },
-    { value: 'Events', label: 'Events' },
-  ]
+  const { isDark } = useThemeContext()
+  const mapRef = useRef<MapRef>(null)
 
   // Map points data - centers and events
   const mapPoints = [
@@ -44,21 +48,21 @@ export default function ExploreScreen() {
       longitude: -122.4194,
     },
     {
-      id: '3',
+      id: '4',
       type: 'event' as const,
       name: 'Bhagavad Gita Study Circle',
       latitude: 37.2631,
       longitude: -121.8031,
     },
     {
-      id: '1',
+      id: '5',
       type: 'event' as const,
       name: 'Hanuman Chalisa Marathon',
       latitude: 37.8699,
       longitude: -122.4756,
     },
     {
-      id: '2',
+      id: '6',
       type: 'event' as const,
       name: 'Yoga Session',
       latitude: 37.7849,
@@ -82,36 +86,104 @@ export default function ExploreScreen() {
     }
   }
 
+  const handleLocateUser = () => {
+    // This will be handled by the Map component
+    if (mapRef.current?.centerOnUser) {
+      mapRef.current.centerOnUser()
+    }
+  }
+
+  const getFilterIcon = (filter: string) => {
+    switch (filter) {
+      case 'All':
+        return (
+          <LayoutGrid
+            size={14}
+            className={`${
+              activeFilter === filter ? 'text-background' : 'text-content dark:text-content-dark'
+            }`}
+          />
+        )
+      case 'Centers':
+        return (
+          <MapPin
+            size={14}
+            className={`${
+              activeFilter === filter ? 'text-background' : 'text-content dark:text-content-dark'
+            }`}
+          />
+        )
+      case 'Events':
+        return (
+          <Calendar
+            size={14}
+            className={`${
+              activeFilter === filter ? 'text-background' : 'text-content dark:text-content-dark'
+            }`}
+          />
+        )
+      default:
+        return null
+    }
+  }
+
   return (
     <View className="flex-1">
-      {/* Search and Filter Controls - Fixed at top */}
-      <View className="p-4 gap-3 bg-white/95 border-b border-gray-200">
-        {/* Search Bar */}
-        <View className="flex-row items-center bg-white rounded-lg p-2 shadow-md">
-          <Search size={20} color="#9CA3AF" style={{ marginLeft: 8 }} />
+      {/* Map - Full screen */}
+      <Map ref={mapRef} points={filteredPoints} onPointPress={handlePointPress} />
+
+      {/* Search and Filter Controls - Overlay on top */}
+      <View className="absolute top-4 left-4 right-4 z-10 flex-row gap-2 items-center">
+        {/* Search Bar - 60% of available width */}
+        <View className="flex-[6] flex-row items-center px-3 py-2 mr-4 rounded-full shadow-lg bg-white dark:bg-neutral-900 border border-borderColor dark:border-borderColor-dark">
+          <Search size={18} color="#9CA3AF" />
           <TextInput
-            className="flex-1 bg-transparent text-base px-2"
-            placeholder="Search for centers or events..."
+            className="flex-1 bg-transparent text-sm px-2 font-inter outline-none focus:outline-none text-content dark:text-content-dark"
+            placeholder="Search..."
+            placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-          <IconButton>
+          {/* <IconButton>
             <SlidersHorizontal size={16} color="#9CA3AF" />
-          </IconButton>
+          </IconButton> */}
         </View>
 
-        {/* Filter Tabs */}
-        <TabSegment
-          options={filterOptions}
-          value={activeFilter}
-          onValueChange={setActiveFilter}
-          variant="primary"
-          size="$3"
-        />
+        {/* Filter Chips - 40% of available width */}
+        <View className="flex-[4] flex-row gap-2">
+          {['All', 'Centers', 'Events'].map((filter) => (
+            <Pressable
+              key={filter}
+              onPress={() => setActiveFilter(filter)}
+              className={`flex-row items-center gap-1 px-2.5 py-2 rounded-full shadow active:opacity-70 ${
+                activeFilter === filter
+                  ? 'bg-primary'
+                  : 'bg-background dark:bg-background-dark border-borderColor dark:border-borderColor-dark'
+              } border`}
+            >
+              {getFilterIcon(filter)}
+              <Text
+                style={{ fontFamily: activeFilter === filter ? 'Inter-SemiBold' : 'Inter-Regular' }}
+                className={`text-xs ${
+                  activeFilter === filter
+                    ? 'text-background'
+                    : 'text-content dark:text-content-dark'
+                }`}
+              >
+                {filter}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
-      {/* Map - Takes remaining space */}
-      <Map points={filteredPoints} onPointPress={handlePointPress} />
+      {/* Custom Current Location Button - Bottom right */}
+      <Pressable
+        onPress={handleLocateUser}
+        className="absolute bottom-6 right-6 z-10 rounded-full p-3 shadow-lg active:opacity-70 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700"
+      >
+        <Locate size={20} color="#ea580c" />
+      </Pressable>
     </View>
   )
 }

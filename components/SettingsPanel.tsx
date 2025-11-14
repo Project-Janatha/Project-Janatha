@@ -59,9 +59,7 @@ function SettingsPanel({ visible, onClose, onLogout }) {
   if (!visible) return null
 
   const displayName =
-    user?.firstName && user?.lastName
-      ? `${user.firstName} ${user.lastName}`
-      : user?.username || 'Guest User'
+    user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Pranav Vaish'
 
   const profileImage = user?.profileImage || 'https://via.placeholder.com/150'
 
@@ -104,11 +102,15 @@ function SettingsPanel({ visible, onClose, onLogout }) {
         {/* Profile Info */}
         <View className="flex-row items-center mb-3">
           <Image source={{ uri: profileImage }} className="w-8 h-8 rounded-full mr-3 bg-gray-300" />
-          <View className="flex-col">
+          <View className="flex-col flex-1">
             <Text className="text-lg font-inter-semibold text-content dark:text-content-dark -mb-0.5">
               {displayName}
             </Text>
-            <Text className="text-sm font-inter text-contentStrong dark:text-contentStrong-dark">
+            <Text
+              className="text-sm font-inter text-contentStrong dark:text-contentStrong-dark"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {user?.username}
             </Text>
           </View>
