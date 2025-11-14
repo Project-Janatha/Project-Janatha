@@ -1,7 +1,7 @@
 // This is the web desktop layout
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext } from 'react'
 import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native'
-import { MapPin, ChevronRight, ThumbsUp, MessageCircle } from 'lucide-react-native'
+import { ThumbsUp, MessageCircle, MapPin, ChevronRight } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
 import { UserContext } from 'components/contexts'
 import { SecondaryButton } from 'components/ui'
@@ -30,8 +30,6 @@ export default function HomeScreenWeb() {
 
   const { user } = useContext(UserContext)
   const router = useRouter()
-
-  const userName = user?.username || 'Pranav'
 
   const mapPoints: MapPoint[] = [
     {
@@ -130,37 +128,94 @@ export default function HomeScreenWeb() {
     })
   }
 
-  // Desktop layout with sidebar
+  // Desktop layout: Fixed map on left, scrollable content on right
   return (
     <View className="flex-1 flex-row bg-background dark:bg-background-dark">
-      {/* Main Content - 70% */}
-      <ScrollView className="flex-[7] px-8 pt-6">
-        <View className="max-w-4xl">
-          {/* Interactive Map Section */}
-          <View className="bg-card rounded-2xl shadow-sm mb-6 overflow-hidden">
-            <View className="h-[300px] rounded-t-2xl overflow-hidden">
-              <Map points={mapPoints} onPointPress={handlePointPress} />
-            </View>
+      {/* Left Side - Fixed Map (90% height) */}
+      <View className="flex-[6] p-6 flex items-center justify-center">
+        <View className="w-full h-[80vh] mt-16 mb-16 bg-card rounded-2xl shadow-sm overflow-hidden flex flex-col">
+          <View className="flex-1 overflow-hidden">
+            <Map points={mapPoints} onPointPress={handlePointPress} />
+          </View>
 
-            <Pressable
-              className="flex-row justify-between items-center p-5 active:opacity-70"
-              onPress={() => {
-                router.push('/explore')
-                Toast.show({
-                  type: 'info',
-                  text1: 'Explore',
-                  text2: 'Finding centers and events near you',
-                })
-              }}
-            >
-              <View className="flex-row items-center gap-2">
-                <MapPin size={20} color="#0ea5e9" />
-                <Text className="text-content dark:text-content-dark font-inter text-base">
-                  Find centers and events near you
-                </Text>
+          <Pressable
+            className="flex-row justify-between items-center p-5 active:opacity-70 border-t border-gray-200 dark:border-neutral-800"
+            onPress={() => {
+              router.push('/explore')
+              Toast.show({
+                type: 'info',
+                text1: 'Explore',
+                text2: 'Finding centers and events near you',
+              })
+            }}
+          >
+            <View className="flex-row items-center gap-2">
+              <MapPin size={20} color="#0ea5e9" />
+              <Text className="text-content dark:text-content-dark font-inter text-base">
+                Find centers and events near you
+              </Text>
+            </View>
+            <ChevronRight size={20} color="#a1a1aa" />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Right Side - Scrollable Calendar & Events */}
+      <ScrollView className="flex-[6]">
+        <View className="p-6 gap-6 mt-8">
+          {/* Your Week Section */}
+          <View className="gap-4">
+            <Text className="text-content dark:text-content-dark font-inter text-xl font-semibold">
+              Your Week
+            </Text>
+
+            {/* Calendar Week View */}
+            <View className="bg-card rounded-xl p-4 shadow-sm">
+              <View className="flex-row justify-between">
+                {weekDays.map((day, index) => (
+                  <View key={index} className="items-center gap-3">
+                    <Text className="text-contentStrong dark:text-contentStrong-dark font-inter text-sm font-medium">
+                      {day}
+                    </Text>
+                    <View
+                      className={`w-10 h-10 rounded-full justify-center items-center ${
+                        weekDates[index] === today
+                          ? 'bg-primary'
+                          : 'bg-gray-100 dark:bg-neutral-800'
+                      }`}
+                    >
+                      <Text
+                        className={`font-inter text-base ${
+                          weekDates[index] === today
+                            ? 'font-semibold text-white'
+                            : 'font-normal text-content dark:text-content-dark'
+                        }`}
+                      >
+                        {weekDates[index]}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
               </View>
-              <ChevronRight size={20} color="#a1a1aa" />
-            </Pressable>
+            </View>
+          </View>
+
+          {/* Quick Stats */}
+          <View className="bg-card rounded-xl p-4 shadow-sm gap-3">
+            <Text className="text-content dark:text-content-dark font-inter text-lg font-semibold">
+              Quick Stats
+            </Text>
+            <View className="gap-2">
+              <Text className="text-content dark:text-content-dark font-inter text-sm">
+                📅 2 events this week
+              </Text>
+              <Text className="text-content dark:text-content-dark font-inter text-sm">
+                🏛️ 3 centers nearby
+              </Text>
+              <Text className="text-content dark:text-content-dark font-inter text-sm">
+                👥 28 total attendees
+              </Text>
+            </View>
           </View>
 
           {/* Events List */}
@@ -187,14 +242,14 @@ export default function HomeScreenWeb() {
               <Pressable
                 key={event.id}
                 onPress={() => handleEventPress(event)}
-                className="bg-card rounded-2xl shadow-sm overflow-hidden active:scale-[0.99] transition-transform"
+                className="bg-card rounded-2xl shadow-sm overflow-hidden active:scale-[0.99]"
               >
-                <View className="p-5 gap-3">
+                <View className="p-5 gap-2">
                   <Text className="font-inter text-sm text-primary font-medium">{event.time}</Text>
                   <Text className="text-content dark:text-content-dark font-inter text-sm">
                     {event.location}
                   </Text>
-                  <Text className="text-content dark:text-content-dark font-inter text-xl font-semibold leading-tight">
+                  <Text className="text-content dark:text-content-dark font-inter text-lg font-semibold leading-tight">
                     {event.title}
                   </Text>
                   <Text className="text-content dark:text-content-dark text-sm mt-1">
@@ -204,13 +259,13 @@ export default function HomeScreenWeb() {
 
                 <View className="px-5 pb-5 flex-row justify-end gap-6">
                   <View className="flex-row items-center gap-2">
-                    <ThumbsUp size={18} color="#a1a1aa" />
+                    <ThumbsUp size={16} color="#a1a1aa" />
                     <Text className="text-content dark:text-content-dark font-inter text-sm">
                       {event.likes}
                     </Text>
                   </View>
                   <View className="flex-row items-center gap-2">
-                    <MessageCircle size={18} color="#a1a1aa" />
+                    <MessageCircle size={16} color="#a1a1aa" />
                     <Text className="text-content dark:text-content-dark font-inter text-sm">
                       {event.comments}
                     </Text>
@@ -221,61 +276,6 @@ export default function HomeScreenWeb() {
           </View>
         </View>
       </ScrollView>
-
-      {/* Sidebar - 30% */}
-      <View className="flex-[3] border-l border-gray-200 dark:border-neutral-800 p-6">
-        <View className="gap-4">
-          <Text className="text-content dark:text-content-dark font-inter text-xl font-semibold">
-            Your Week
-          </Text>
-
-          {/* Calendar Week View */}
-          <View className="bg-card rounded-xl p-4 shadow-sm">
-            <View className="flex-row justify-between">
-              {weekDays.map((day, index) => (
-                <View key={index} className="items-center gap-3">
-                  <Text className="text-contentStrong dark:text-contentStrong-dark font-inter text-sm font-medium">
-                    {day}
-                  </Text>
-                  <View
-                    className={`w-10 h-10 rounded-full justify-center items-center ${
-                      weekDates[index] === today ? 'bg-primary' : 'bg-gray-100 dark:bg-neutral-800'
-                    }`}
-                  >
-                    <Text
-                      className={`font-inter text-base ${
-                        weekDates[index] === today
-                          ? 'font-semibold text-white'
-                          : 'font-normal text-content dark:text-content-dark'
-                      }`}
-                    >
-                      {weekDates[index]}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* Quick Stats */}
-          <View className="bg-card rounded-xl p-4 shadow-sm gap-3">
-            <Text className="text-content dark:text-content-dark font-inter text-lg font-semibold">
-              Quick Stats
-            </Text>
-            <View className="gap-2">
-              <Text className="text-content dark:text-content-dark font-inter text-sm">
-                📅 2 events this week
-              </Text>
-              <Text className="text-content dark:text-content-dark font-inter text-sm">
-                🏛️ 3 centers nearby
-              </Text>
-              <Text className="text-content dark:text-content-dark font-inter text-sm">
-                👥 28 total attendees
-              </Text>
-            </View>
-          </View>
-        </View>
-      </View>
     </View>
   )
 }
