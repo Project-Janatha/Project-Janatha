@@ -1,3 +1,4 @@
+// This is the mobile/native layout
 import React, { useContext } from 'react'
 import { View, Text, ScrollView, Pressable } from 'react-native'
 import { MapPin, ChevronRight, ThumbsUp, MessageCircle } from 'lucide-react-native'
@@ -127,7 +128,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-background dark:bg-background-dark px-4 pt-4">
+    <ScrollView className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-1 gap-4 px-4 pt-4 pb-8">
         {/* Interactive Map Section */}
         <View className="bg-card rounded-2xl shadow-sm mb-4 overflow-hidden">
@@ -159,7 +160,7 @@ export default function HomeScreen() {
         {/* Your Week Section */}
         <View className="gap-3">
           <View className="flex-row justify-between items-center">
-            <Text className="text-content dark:text-content-dark font-intertext-xl font-semibold text-foreground">
+            <Text className="text-content dark:text-content-dark font-inter text-xl font-semibold">
               Your week
             </Text>
             <SecondaryButton
@@ -180,7 +181,7 @@ export default function HomeScreen() {
           <View className="flex-row justify-between px-2">
             {weekDays.map((day, index) => (
               <View key={index} className="items-center gap-2 min-w-[40px]">
-                <Text className="text-contentStrong dark:text-contentStrong-dark font-inter text-sm text-muted-foreground font-medium">
+                <Text className="text-contentStrong dark:text-contentStrong-dark font-inter text-sm font-medium">
                   {day}
                 </Text>
                 <View
@@ -213,27 +214,27 @@ export default function HomeScreen() {
             >
               <View className="p-4 gap-2">
                 <Text className="font-inter text-sm text-primary font-medium">{event.time}</Text>
-                <Text className="text-content dark:text-content-dark font-inter text-sm text-muted-foreground">
+                <Text className="text-content dark:text-content-dark font-inter text-sm">
                   {event.location}
                 </Text>
-                <Text className="text-content dark:text-content-dark font-inter text-lg font-semibold text-foreground leading-tight">
+                <Text className="text-content dark:text-content-dark font-inter text-lg font-semibold leading-tight">
                   {event.title}
                 </Text>
-                <Text className="text-content dark:text-content-dark text-sm text-muted-foreground mt-1">
+                <Text className="text-content dark:text-content-dark text-sm mt-1">
                   {event.attendees} people
                 </Text>
               </View>
 
               <View className="px-4 pb-4 flex-row justify-end gap-4">
                 <View className="flex-row items-center gap-1">
-                  <ThumbsUp size={16} color="#a1a1aa" className="text-muted-foreground" />
-                  <Text className="text-content dark:text-content-dark font-inter text-sm text-muted-foreground">
+                  <ThumbsUp size={16} color="#a1a1aa" />
+                  <Text className="text-content dark:text-content-dark font-inter text-sm">
                     {event.likes}
                   </Text>
                 </View>
                 <View className="flex-row items-center gap-1">
-                  <MessageCircle size={16} color="#a1a1aa" className="text-muted-foreground" />
-                  <Text className="text-content dark:text-content-dark font-inter text-sm text-muted-foreground">
+                  <MessageCircle size={16} color="#a1a1aa" />
+                  <Text className="text-content dark:text-content-dark font-inter text-sm">
                     {event.comments}
                   </Text>
                 </View>
@@ -241,20 +242,6 @@ export default function HomeScreen() {
             </Pressable>
           ))}
         </View>
-
-        {/* Demo Toast Button (remove in production) */}
-        <Pressable
-          onPress={() => {
-            Toast.show({
-              type: 'success',
-              text1: 'Welcome back, ' + userName + '!',
-              text2: 'You have 2 upcoming events this week',
-            })
-          }}
-          className="bg-primary rounded-xl p-4 items-center mt-4"
-        >
-          <Text className="text-primary-foreground font-semibold">Show Welcome Toast</Text>
-        </Pressable>
       </View>
     </ScrollView>
   )
