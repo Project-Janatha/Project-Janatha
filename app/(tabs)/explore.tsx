@@ -176,14 +176,6 @@ export default function ExploreScreen() {
           ))}
         </View>
       </View>
-
-      {/* Custom Current Location Button - Bottom right */}
-      <Pressable
-        onPress={handleLocateUser}
-        className="absolute bottom-6 right-6 z-10 rounded-full p-3 shadow-lg active:opacity-70 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700"
-      >
-        <Locate size={20} color="#ea580c" />
-      </Pressable>
     </View>
   )
 }

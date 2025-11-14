@@ -12,6 +12,7 @@
  * - mapboxgl: For rendering maps and handling map-related functionalities.
  */
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react'
+import { useRouter, usePathname } from 'expo-router'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { getCurrentPosition } from 'frontend/utilities/locationServices'
@@ -42,7 +43,10 @@ const Map = forwardRef<MapRef, MapProps>(({ points = [], onPointPress }, ref) =>
   const map = useRef<mapboxgl.Map | null>(null)
   const markers = useRef<mapboxgl.Marker[]>([])
   const geolocateControl = useRef<mapboxgl.GeolocateControl | null>(null)
+  const navigation = useRef<mapboxgl.NavigationControl | null>(null)
   const { isDark } = useThemeContext()
+  const router = useRouter()
+  const pathname = usePathname()
 
   // Expose centerOnUser method to parent
   useImperativeHandle(ref, () => ({
@@ -66,24 +70,34 @@ const Map = forwardRef<MapRef, MapProps>(({ points = [], onPointPress }, ref) =>
       center: defaultCenter,
       zoom: 10, // Starting zoom
     })
-
     // Create GeolocateControl but hide it
-    geolocateControl.current = new mapboxgl.GeolocateControl({
-      positionOptions: {
-        enableHighAccuracy: true,
-      },
-      trackUserLocation: true,
-      showUserLocation: true,
-      showUserHeading: true,
-    })
+    if (pathname.includes('explore')) {
+      geolocateControl.current = new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true,
+        },
+        trackUserLocation: true,
+        showUserLocation: true,
+        showUserHeading: true,
+      })
 
-    map.current.addControl(geolocateControl.current)
+      map.current.addControl(geolocateControl.current, 'bottom-right')
 
-    // Hide the built-in button with CSS
-    const geolocateButton = document.querySelector('.mapboxgl-ctrl-geolocate') as HTMLElement
-    if (geolocateButton) {
-      geolocateButton.style.display = 'none'
+      navigation.current = new mapboxgl.NavigationControl({
+        visualizePitch: true,
+      })
+      map.current.addControl(navigation.current, 'bottom-right')
     }
+
+    // REMOVE THIS ENTIRE BLOCK - it's hiding the button after map loads
+    // map.current.on('load', () => {
+    //   setTimeout(() => {
+    //     const geolocateButton = document.querySelector('.mapboxgl-ctrl-geolocate') as HTMLElement
+    //     if (geolocateButton) {
+    //       geolocateButton.style.display = 'none'
+    //     }
+    //   }, 100)
+    // })
 
     // Update center with user loc, but keep a reasonable zoom to see markers
     getCurrentPosition().then((center) => {
