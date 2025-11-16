@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react'
+import React, { useState, useContext, useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Pressable,
   Image,
   Animated,
+  Easing,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
@@ -36,32 +37,43 @@ export default function AuthScreen() {
 
   const isWeb = Platform.OS === 'web'
 
+  const themeOptions = ['light', 'dark', 'system']
+  const optionWidth = 70
+  const indicatorPadding = 8 // Extra padding on the right side
+  const [selectedIndex, setSelectedIndex] = useState(themeOptions.indexOf(themePreference))
+  const slideAnim = useRef(new Animated.Value(selectedIndex * optionWidth)).current
+
   useEffect(() => {
-    console.log('=== AuthScreen Render ===')
-    console.log('theme:', theme)
-    console.log('isDark:', isDark)
-  }, [theme, isDark])
+    const idx = themeOptions.indexOf(themePreference)
+    setSelectedIndex(idx)
+    Animated.timing(slideAnim, {
+      toValue: idx * optionWidth,
+      duration: 100,
+      useNativeDriver: true,
+      easing: Easing.inOut(Easing.ease),
+    }).start()
+  }, [themePreference])
+
+  // useEffect(() => {
+  //   console.log('=== AuthScreen Render ===')
+  //   console.log('theme:', theme)
+  //   console.log('isDark:', isDark)
+  // }, [theme, isDark])
 
   const handleContinue = async () => {
-    console.log('🔴 === handleContinue called ===')
-    console.log('🔴 Username:', username)
     setErrors({})
     if (!username) {
-      console.log('🔴 No username provided')
       setErrors({ username: 'Please enter a username.' })
       return
     }
     try {
-      console.log('🔴 About to call checkUserExists')
       const exists = await checkUserExists(username)
-      console.log('🔴 checkUserExists returned:', exists)
       if (exists) {
         setAuthStep('login')
       } else {
         setAuthStep('signup')
       }
     } catch (e: any) {
-      console.error('🔴 Error in handleContinue:', e)
       setErrors({ form: e.message || 'Failed to connect to server.' })
     }
   }
@@ -107,7 +119,6 @@ export default function AuthScreen() {
   }
 
   const handleSubmit = (e?: any) => {
-    console.log('🔴 handleSubmit called')
     if (Platform.OS === 'web' && e) {
       e.preventDefault?.()
       e.stopPropagation?.()
@@ -163,69 +174,60 @@ export default function AuthScreen() {
         className="flex-1 bg-background dark:bg-background-dark"
         keyboardShouldPersistTaps="handled"
       >
-        {/* Theme Toggle - Top Left */}
-        <View className="absolute top-6 left-1/2 -translate-x-1/2 z-10 w-[220px]">
-          <View className="flex-row bg-gray-100 dark:bg-neutral-800 rounded-lg p-1">
-            <Pressable
-              onPress={() => setThemePreference('light')}
-              className={`flex-1 flex-row items-center justify-center gap-1 py-2 rounded-md ${
-                themePreference === 'light' ? 'bg-white dark:bg-neutral-700' : ''
-              }`}
-            >
-              <Sun
-                size={14}
-                color={themePreference === 'light' ? '#9A3412' : isDark ? '#9CA3AF' : '#6B7280'}
-              />
-              <Text
-                className={`text-xs font-inter ${
-                  themePreference === 'light'
-                    ? 'text-primary font-inter-semibold'
-                    : 'text-contentStrong dark:text-contentStrong-dark'
-                }`}
+        {/* Theme Toggle - Top Center, with sliding animation */}
+        <View className="absolute top-6 left-0 right-0 z-10 flex items-center">
+          <View className="relative flex-row bg-gray-100 dark:bg-neutral-800 rounded-lg p-1">
+            {/* Sliding indicator */}
+            <Animated.View
+              style={{
+                position: 'absolute',
+                top: 4,
+                left: 4,
+                width: optionWidth - 8 + indicatorPadding,
+                height: 32,
+                borderRadius: 6,
+                backgroundColor: isDark ? '#3f3f46' : '#e5e7eb', // zinc-700 : gray-200
+                transform: [{ translateX: slideAnim }],
+              }}
+            />
+
+            {/* Theme options */}
+            {themeOptions.map((option, idx) => (
+              <Pressable
+                key={option}
+                onPress={() => setThemePreference(option)}
+                className="flex-row items-center justify-center gap-1 py-2 px-3 rounded-md z-10"
+                style={{ width: optionWidth }}
               >
-                Light
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setThemePreference('dark')}
-              className={`flex-1 flex-row items-center justify-center gap-1 py-2 rounded-md ${
-                themePreference === 'dark' ? 'bg-white dark:bg-neutral-700' : ''
-              }`}
-            >
-              <Moon
-                size={14}
-                color={themePreference === 'dark' ? '#9A3412' : isDark ? '#9CA3AF' : '#6B7280'}
-              />
-              <Text
-                className={`text-xs font-inter ${
-                  themePreference === 'dark'
-                    ? 'text-primary font-inter-semibold'
-                    : 'text-contentStrong dark:text-contentStrong-dark'
-                }`}
-              >
-                Dark
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setThemePreference('system')}
-              className={`flex-1 flex-row items-center justify-center gap-1 py-2 rounded-md ${
-                themePreference === 'system' ? 'bg-white dark:bg-neutral-700' : ''
-              }`}
-            >
-              <Monitor
-                size={14}
-                color={themePreference === 'system' ? '#9A3412' : isDark ? '#9CA3AF' : '#6B7280'}
-              />
-              <Text
-                className={`text-xs font-inter ${
-                  themePreference === 'system'
-                    ? 'text-primary font-inter-semibold'
-                    : 'text-contentStrong dark:text-contentStrong-dark'
-                }`}
-              >
-                Auto
-              </Text>
-            </Pressable>
+                {option === 'light' && (
+                  <Sun
+                    size={14}
+                    color={themePreference === option ? '#f97316' : isDark ? '#fff' : '#000'}
+                  />
+                )}
+                {option === 'dark' && (
+                  <Moon
+                    size={14}
+                    color={themePreference === option ? '#f97316' : isDark ? '#fff' : '#000'}
+                  />
+                )}
+                {option === 'system' && (
+                  <Monitor
+                    size={14}
+                    color={themePreference === option ? '#f97316' : isDark ? '#fff' : '#000'}
+                  />
+                )}
+                <Text
+                  className={`text-xs font-inter ${
+                    themePreference === option
+                      ? 'text-primary font-inter-semibold'
+                      : 'text-gray-700 dark:text-white'
+                  }`}
+                >
+                  {option === 'system' ? 'Auto' : option.charAt(0).toUpperCase() + option.slice(1)}
+                </Text>
+              </Pressable>
+            ))}
           </View>
         </View>
 
