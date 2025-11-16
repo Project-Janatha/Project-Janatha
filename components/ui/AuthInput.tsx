@@ -18,7 +18,7 @@ import { TextInput } from 'react-native'
 export default function AuthInput(props) {
   return (
     <TextInput
-      className="bg-gray text-color font-inter rounded-lg px-4 py-3 text-base min-h-[48px] bg-muted/50 dark:bg-muted-dark/10 focus:border-primary focus:outline-none"
+      className="bg-gray text-content dark:text-content-dark font-inter rounded-lg px-4 py-3 text-base min-h-[48px] bg-muted/50 dark:bg-muted-dark/10 focus:border-primary focus:outline-none"
       {...props}
     />
   )
