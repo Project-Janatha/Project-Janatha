@@ -7,15 +7,16 @@ import {
   KeyboardAvoidingView,
   Pressable,
   Image,
+  Animated,
 } from 'react-native'
 import { useRouter } from 'expo-router'
-import { Code, Moon, Sun } from 'lucide-react-native'
+import { Code, Moon, Sun, ArrowLeft } from 'lucide-react-native'
 import { PrimaryButton, IconButton, AuthInput } from 'components/ui'
 import { UserContext, useThemeContext } from 'components/contexts'
 
 const FieldError = ({ message }: { message?: string }) => {
   if (!message) return null
-  return <Text className="text-red-500 text-xs mt-1 ml-1">{message}</Text>
+  return <Text className="text-red-500 text-sm mt-1 ml-1 font-medium">{message}</Text>
 }
 
 type AuthStep = 'initial' | 'login' | 'signup'
@@ -137,13 +138,20 @@ export default function AuthScreen() {
     router.push('/(tabs)')
   }
 
+  const handleBack = () => {
+    setAuthStep('initial')
+    setPassword('')
+    setConfirmPassword('')
+    setErrors({})
+  }
+
   const isButtonDisabled =
     loading ||
     (authStep === 'initial' && !username) ||
     (authStep !== 'initial' && !password) ||
     (authStep === 'signup' && !confirmPassword)
 
-  const logoSize = isWeb ? 80 : 60
+  const logoSize = isWeb ? 100 : 80
 
   return (
     <KeyboardAvoidingView
@@ -153,46 +161,89 @@ export default function AuthScreen() {
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         className="flex-1 bg-background dark:bg-background-dark"
+        keyboardShouldPersistTaps="handled"
       >
-        <View className={`flex-1 justify-between items-center w-full ${isWeb ? 'p-6' : 'p-2'}`}>
-          {/* Top Section */}
-          <View
-            className={`items-center ${isWeb ? 'pt-8' : 'pt-6'} gap-4 w-full flex-1 justify-center`}
+        {/* Theme Toggle - Top Right */}
+        <View className="absolute top-8 right-8 z-10">
+          <Pressable
+            onPress={toggleTheme}
+            className="w-12 h-12 rounded-full bg-card dark:bg-card-dark items-center justify-center shadow-md active:scale-95"
           >
-            {isDark ? (
-              <Image
-                source={require('assets/images/chinmaya_logo_dark.svg')}
-                style={{ width: logoSize, height: logoSize }}
-              />
-            ) : (
-              <Image
-                source={require('assets/images/chinmaya_logo_light.svg')}
-                style={{ width: logoSize, height: logoSize }}
-              />
+            {isDark ? <Sun size={20} color="#fff" /> : <Moon size={20} color="#000" />}
+          </Pressable>
+        </View>
+
+        <View className="flex-1 justify-center items-center w-full px-6 py-12">
+          {/* Card Container */}
+          <View
+            className={`w-full ${
+              isWeb ? 'max-w-[480px]' : 'max-w-[380px]'
+            } bg-card dark:bg-card-dark rounded-3xl shadow-2xl p-8 ${isWeb ? 'py-12' : 'py-10'}`}
+          >
+            {/* Back Button */}
+            {authStep !== 'initial' && (
+              <Pressable
+                onPress={handleBack}
+                className="flex-row items-center gap-2 mb-6 active:opacity-70"
+              >
+                <ArrowLeft size={20} color={isDark ? '#fff' : '#000'} />
+                <Text className="text-content dark:text-content-dark font-inter font-medium">
+                  Back
+                </Text>
+              </Pressable>
             )}
 
-            <Text className="text-2xl font-inter text-content dark:text-content-dark text-center">
-              Log In or Sign Up
-            </Text>
-          </View>
+            {/* Logo & Title */}
+            <View className="items-center mb-8">
+              {isDark ? (
+                <Image
+                  source={require('assets/images/chinmaya_logo_dark.svg')}
+                  style={{ width: logoSize, height: logoSize }}
+                />
+              ) : (
+                <Image
+                  source={require('assets/images/chinmaya_logo_light.svg')}
+                  style={{ width: logoSize, height: logoSize }}
+                />
+              )}
 
-          {/* Form Section */}
-          {/* Make sure this is NOT wrapped in a <form> tag */}
-          <View
-            className={`w-full items-center flex-1 justify-center ${isWeb ? 'pb-8' : 'pb-6'} px-4`}
-          >
-            <View
-              className={`w-full gap-3 ${
-                isWeb ? 'max-w-[400px] p-6' : 'max-w-[320px] min-w-[280px] p-3'
-              }`}
-            >
-              <FieldError message={errors.form} />
+              <Text className="text-3xl font-inter font-bold text-content dark:text-content-dark text-center mt-6">
+                {authStep === 'login'
+                  ? 'Welcome Back'
+                  : authStep === 'signup'
+                  ? 'Create Account'
+                  : 'Get Started'}
+              </Text>
 
-              <AuthInput placeholder="Email" onChangeText={setUsername} value={username} />
-              <FieldError message={errors.username} />
+              <Text className="text-base font-inter text-content dark:text-content-dark opacity-70 text-center mt-2">
+                {authStep === 'login'
+                  ? 'Enter your password to continue'
+                  : authStep === 'signup'
+                  ? 'Set up your new account'
+                  : 'Enter your email to continue'}
+              </Text>
+            </View>
+
+            {/* Form */}
+            <View className="gap-4">
+              {errors.form && (
+                <View className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                  <FieldError message={errors.form} />
+                </View>
+              )}
+
+              <View>
+                <AuthInput
+                  placeholder="Email"
+                  onChangeText={setUsername}
+                  value={username}
+                  editable={authStep === 'initial'}
+                />
+                <FieldError message={errors.username} />
+              </View>
 
               {authStep === 'login' && (
-                <View className="gap-2 w-full">
+                <View>
                   <AuthInput
                     placeholder="Password"
                     onChangeText={setPassword}
@@ -205,45 +256,78 @@ export default function AuthScreen() {
               )}
 
               {authStep === 'signup' && (
-                <View className="gap-2 w-full">
-                  <AuthInput
-                    placeholder="Password"
-                    onChangeText={setPassword}
-                    value={password}
-                    secureTextEntry
-                    autoComplete="password-new"
-                  />
-                  <FieldError message={errors.password} />
-                  <AuthInput
-                    placeholder="Confirm password"
-                    onChangeText={setConfirmPassword}
-                    value={confirmPassword}
-                    secureTextEntry
-                    autoComplete="password-new"
-                  />
-                  <FieldError message={errors.confirmPassword} />
-                </View>
+                <>
+                  <View>
+                    <AuthInput
+                      placeholder="Password"
+                      onChangeText={setPassword}
+                      value={password}
+                      secureTextEntry
+                      autoComplete="password-new"
+                    />
+                    <FieldError message={errors.password} />
+                  </View>
+                  <View>
+                    <AuthInput
+                      placeholder="Confirm password"
+                      onChangeText={setConfirmPassword}
+                      value={confirmPassword}
+                      secureTextEntry
+                      autoComplete="password-new"
+                      placeholderTextColor={isDark ? '#9ca3af' : '#6b7280'}
+                    />
+                    <FieldError message={errors.confirmPassword} />
+                  </View>
+                </>
               )}
 
-              <PrimaryButton onPress={handleSubmit} disabled={isButtonDisabled}>
-                {loading
-                  ? 'Please wait...'
-                  : authStep === 'login'
-                  ? 'Log In'
-                  : authStep === 'signup'
-                  ? 'Sign Up'
-                  : 'Continue'}
-              </PrimaryButton>
+              {/* Submit Button */}
+              <Pressable
+                onPress={handleSubmit}
+                disabled={isButtonDisabled}
+                className={`items-center justify-center mt-2 rounded-2xl ${
+                  isButtonDisabled
+                    ? 'bg-primary/40 dark:bg-primary/30'
+                    : 'bg-primary active:bg-primary-press hover:scale-105 hovershadow-md transition-transform duration-150'
+                } py-4 px-8`}
+              >
+                <Text className="text-white font-inter font-bold text-md">
+                  {loading
+                    ? 'Please wait...'
+                    : authStep === 'login'
+                    ? 'Log In'
+                    : authStep === 'signup'
+                    ? 'Sign Up'
+                    : 'Continue'}
+                </Text>
+              </Pressable>
 
+              {/* Forgot Password (only on login) */}
+              {authStep === 'login' && (
+                <Pressable className="items-center mt-2">
+                  <Text className="text-primary font-inter font-medium">Forgot password?</Text>
+                </Pressable>
+              )}
+            </View>
+
+            {/* Dev Mode Button */}
+            <View className="mt-8 pt-6 border-t border-border dark:border-border-dark">
               <Pressable
                 onPress={handleDevMode}
-                className="flex-row items-center bg-slate-600/50 text-content dark:text-content-dark px-3 py-2 rounded-full justify-center mt-4 self-center"
+                className="flex-row items-center justify-center bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-xl active:opacity-70"
               >
-                <Code size={16} />
-                <Text className="ml-2 text-content dark:text-content-dark">Dev Mode</Text>
+                <Code size={18} color={isDark ? '#fff' : '#000'} />
+                <Text className="ml-2 text-content dark:text-content-dark font-inter font-semibold">
+                  Developer Mode
+                </Text>
               </Pressable>
             </View>
           </View>
+
+          {/* Footer Text */}
+          <Text className="text-content dark:text-content-dark opacity-50 text-sm font-inter mt-8 text-center px-4">
+            By continuing, you agree to our Terms of Service and Privacy Policy
+          </Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
