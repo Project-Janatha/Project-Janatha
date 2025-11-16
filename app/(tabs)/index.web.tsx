@@ -1,6 +1,6 @@
 // This is the web desktop layout
 import React, { useContext } from 'react'
-import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native'
+import { View, Text, Pressable, useWindowDimensions, ScrollView } from 'react-native'
 import { ThumbsUp, MessageCircle, MapPin, ChevronRight } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
 import { UserContext } from 'components/contexts'
@@ -128,18 +128,14 @@ export default function HomeScreenWeb() {
     })
   }
 
-  // Desktop layout: Fixed map on left, scrollable content on right
+  // Desktop layout: Cleaner structure with proper spacing
   return (
-    <View className="flex-1 flex-row bg-background dark:bg-background-dark">
-      {/* Left Side - Fixed Map (90% height) */}
-      <View className="flex-[6] p-6 flex items-center justify-center">
-        <View className="w-full h-[80vh] mt-16 mb-16 bg-card rounded-2xl shadow-sm overflow-hidden flex flex-col">
-          <View className="flex-1 overflow-hidden">
-            <Map points={mapPoints} onPointPress={handlePointPress} />
-          </View>
-
+    <View className="flex-1 bg-background dark:bg-background-dark">
+      <View className="flex-row h-full px-12 py-8 gap-8">
+        {/* Left Side - Map Preview (40%) */}
+        <View className="flex-[4] bg-card rounded-3xl shadow-md">
           <Pressable
-            className="flex-row justify-between items-center p-5 active:opacity-70 border-t border-gray-200 dark:border-neutral-800"
+            className="flex-1 rounded-2xl overflow-hidden hover:scale-[1.02] active:scale-[0.98] transition-transform"
             onPress={() => {
               router.push('/explore')
               Toast.show({
@@ -149,133 +145,137 @@ export default function HomeScreenWeb() {
               })
             }}
           >
-            <View className="flex-row items-center gap-2">
-              <MapPin size={20} color="#0ea5e9" />
-              <Text className="text-content dark:text-content-dark font-inter text-base">
-                Find centers and events near you
-              </Text>
-            </View>
-            <ChevronRight size={20} color="#a1a1aa" />
+            <Map points={mapPoints} onPointPress={handlePointPress} />
           </Pressable>
         </View>
-      </View>
+        {/* Right Side - Scrollable Calendar & Events (60%) */}
+        <View className="flex-[6]">
+          <ScrollView
+            className="flex-1 px-2"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 24 }}
+          >
+            {/* Your Week Section */}
+            <View className="mb-6">
+              <Text className="text-content dark:text-content-dark font-inter text-2xl font-bold mb-4">
+                Your Week
+              </Text>
 
-      {/* Right Side - Scrollable Calendar & Events */}
-      <ScrollView className="flex-[6]">
-        <View className="p-6 gap-6 mt-8">
-          {/* Your Week Section */}
-          <View className="gap-4">
-            <Text className="text-content dark:text-content-dark font-inter text-xl font-semibold">
-              Your Week
-            </Text>
-
-            {/* Calendar Week View */}
-            <View className="bg-card rounded-xl p-4 shadow-sm">
-              <View className="flex-row justify-between">
-                {weekDays.map((day, index) => (
-                  <View key={index} className="items-center gap-3">
-                    <Text className="text-contentStrong dark:text-contentStrong-dark font-inter text-sm font-medium">
-                      {day}
-                    </Text>
-                    <View
-                      className={`w-10 h-10 rounded-full justify-center items-center ${
-                        weekDates[index] === today
-                          ? 'bg-primary'
-                          : 'bg-gray-100 dark:bg-neutral-800'
-                      }`}
-                    >
-                      <Text
-                        className={`font-inter text-base ${
+              {/* Calendar Week View */}
+              <View className="bg-card rounded-2xl p-6 shadow-md">
+                <View className="flex-row justify-between">
+                  {weekDays.map((day, index) => (
+                    <View key={index} className="items-center gap-3">
+                      <Text className="text-contentStrong dark:text-contentStrong-dark font-inter text-sm font-semibold">
+                        {day}
+                      </Text>
+                      <View
+                        className={`w-12 h-12 rounded-full justify-center items-center ${
                           weekDates[index] === today
-                            ? 'font-semibold text-white'
-                            : 'font-normal text-content dark:text-content-dark'
+                            ? 'bg-primary'
+                            : 'bg-background dark:bg-background-dark'
                         }`}
                       >
-                        {weekDates[index]}
+                        <Text
+                          className={`font-inter text-base ${
+                            weekDates[index] === today
+                              ? 'font-bold text-white'
+                              : 'font-medium text-content dark:text-content-dark'
+                          }`}
+                        >
+                          {weekDates[index]}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+
+            {/* Quick Stats */}
+            <View className="bg-card rounded-2xl p-6 shadow-md mb-6">
+              <Text className="text-content dark:text-content-dark font-inter text-xl font-bold mb-4">
+                Quick Stats
+              </Text>
+              <View className="gap-3">
+                <Text className="text-content dark:text-content-dark font-inter text-base">
+                  📅 2 events this week
+                </Text>
+                <Text className="text-content dark:text-content-dark font-inter text-base">
+                  🏛️ 3 centers nearby
+                </Text>
+                <Text className="text-content dark:text-content-dark font-inter text-base">
+                  👥 28 total attendees
+                </Text>
+              </View>
+            </View>
+
+            {/* Events List */}
+            <View>
+              <View className="flex-row justify-between items-center mb-4">
+                <Text className="text-content dark:text-content-dark font-inter text-2xl font-bold">
+                  Upcoming Events
+                </Text>
+                <SecondaryButton
+                  onPress={() => {
+                    router.push('/events' as any)
+                    Toast.show({
+                      type: 'info',
+                      text1: 'All Events',
+                      text2: 'Viewing all upcoming events',
+                    })
+                  }}
+                >
+                  See All
+                </SecondaryButton>
+              </View>
+
+              <View className="gap-4">
+                {events.map((event) => (
+                  <Pressable
+                    key={event.id}
+                    onPress={() => handleEventPress(event)}
+                    className="bg-card rounded-2xl hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                  >
+                    <View className="p-6 gap-3">
+                      <Text className="font-inter text-sm text-primary font-bold uppercase tracking-wide">
+                        {event.time}
+                      </Text>
+                      <View className="flex-row items-center gap-2">
+                        <MapPin size={16} color="#a1a1aa" />
+                        <Text className="text-content dark:text-content-dark font-inter text-sm">
+                          {event.location}
+                        </Text>
+                      </View>
+                      <Text className="text-content dark:text-content-dark font-inter text-xl font-bold leading-tight mt-1">
+                        {event.title}
+                      </Text>
+                      <Text className="text-content dark:text-content-dark text-base font-medium mt-2">
+                        {event.attendees} people attending
                       </Text>
                     </View>
-                  </View>
+
+                    <View className="px-6 pb-5 flex-row items-center gap-8 pt-4">
+                      <View className="flex-row items-center gap-2">
+                        <ThumbsUp size={18} color="#a1a1aa" />
+                        <Text className="text-content dark:text-content-dark font-inter text-sm font-medium">
+                          {event.likes}
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center gap-2">
+                        <MessageCircle size={18} color="#a1a1aa" />
+                        <Text className="text-content dark:text-content-dark font-inter text-sm font-medium">
+                          {event.comments}
+                        </Text>
+                      </View>
+                    </View>
+                  </Pressable>
                 ))}
               </View>
             </View>
-          </View>
-
-          {/* Quick Stats */}
-          <View className="bg-card rounded-xl p-4 shadow-sm gap-3">
-            <Text className="text-content dark:text-content-dark font-inter text-lg font-semibold">
-              Quick Stats
-            </Text>
-            <View className="gap-2">
-              <Text className="text-content dark:text-content-dark font-inter text-sm">
-                📅 2 events this week
-              </Text>
-              <Text className="text-content dark:text-content-dark font-inter text-sm">
-                🏛️ 3 centers nearby
-              </Text>
-              <Text className="text-content dark:text-content-dark font-inter text-sm">
-                👥 28 total attendees
-              </Text>
-            </View>
-          </View>
-
-          {/* Events List */}
-          <View className="gap-4">
-            <View className="flex-row justify-between items-center">
-              <Text className="text-content dark:text-content-dark font-inter text-2xl font-semibold">
-                Upcoming Events
-              </Text>
-              <SecondaryButton
-                onPress={() => {
-                  router.push('/events' as any)
-                  Toast.show({
-                    type: 'info',
-                    text1: 'All Events',
-                    text2: 'Viewing all upcoming events',
-                  })
-                }}
-              >
-                See All
-              </SecondaryButton>
-            </View>
-
-            {events.map((event) => (
-              <Pressable
-                key={event.id}
-                onPress={() => handleEventPress(event)}
-                className="bg-card rounded-2xl shadow-sm overflow-hidden active:scale-[0.99]"
-              >
-                <View className="p-5 gap-2">
-                  <Text className="font-inter text-sm text-primary font-medium">{event.time}</Text>
-                  <Text className="text-content dark:text-content-dark font-inter text-sm">
-                    {event.location}
-                  </Text>
-                  <Text className="text-content dark:text-content-dark font-inter text-lg font-semibold leading-tight">
-                    {event.title}
-                  </Text>
-                  <Text className="text-content dark:text-content-dark text-sm mt-1">
-                    {event.attendees} people attending
-                  </Text>
-                </View>
-
-                <View className="px-5 pb-5 flex-row justify-end gap-6">
-                  <View className="flex-row items-center gap-2">
-                    <ThumbsUp size={16} color="#a1a1aa" />
-                    <Text className="text-content dark:text-content-dark font-inter text-sm">
-                      {event.likes}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center gap-2">
-                    <MessageCircle size={16} color="#a1a1aa" />
-                    <Text className="text-content dark:text-content-dark font-inter text-sm">
-                      {event.comments}
-                    </Text>
-                  </View>
-                </View>
-              </Pressable>
-            ))}
-          </View>
+          </ScrollView>
         </View>
-      </ScrollView>
+      </View>
     </View>
   )
 }
