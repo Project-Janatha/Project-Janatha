@@ -9,15 +9,17 @@ import {
   Image,
   Animated,
   Easing,
+  TouchableOpacity,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
 import { PrimaryButton, IconButton, AuthInput } from 'components/ui'
 import { UserContext, useThemeContext } from 'components/contexts'
+import { validateEmail, validatePassword } from 'frontend/utilities'
 
 const FieldError = ({ message }: { message?: string }) => {
   if (!message) return null
-  return <Text className="text-red-500 text-sm mt-1 ml-1 font-medium">{message}</Text>
+  return <Text className="text-red-500 text-sm mt-1 ml-1 font-inter">{message}</Text>
 }
 
 type AuthStep = 'initial' | 'login' | 'signup'
@@ -35,11 +37,14 @@ export default function AuthScreen() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
+  const [backHover, setBackHover] = useState(false)
+
   const isWeb = Platform.OS === 'web'
 
+  // Theme selector logic (copied from SettingsPanel)
   const themeOptions = ['light', 'dark', 'system']
   const optionWidth = 70
-  const indicatorPadding = 8 // Extra padding on the right side
+  const indicatorPadding = 8
   const [selectedIndex, setSelectedIndex] = useState(themeOptions.indexOf(themePreference))
   const slideAnim = useRef(new Animated.Value(selectedIndex * optionWidth)).current
 
@@ -54,16 +59,14 @@ export default function AuthScreen() {
     }).start()
   }, [themePreference])
 
-  // useEffect(() => {
-  //   console.log('=== AuthScreen Render ===')
-  //   console.log('theme:', theme)
-  //   console.log('isDark:', isDark)
-  // }, [theme, isDark])
-
   const handleContinue = async () => {
     setErrors({})
     if (!username) {
       setErrors({ username: 'Please enter a username.' })
+      return
+    }
+    if (!validateEmail(username)) {
+      setErrors({ username: 'You must enter a valid email address.' })
       return
     }
     try {
@@ -84,6 +87,7 @@ export default function AuthScreen() {
       setErrors({ username: 'Please enter a username.' })
       return
     }
+
     if (!password) {
       setErrors({ password: 'Please enter your password.' })
       return
@@ -92,7 +96,7 @@ export default function AuthScreen() {
       await login(username, password)
       router.replace('/(tabs)')
     } catch (e: any) {
-      setErrors({ form: e.message || 'Username or password is incorrect.' })
+      setErrors({ form: 'Username or password is incorrect.' })
     }
   }
 
@@ -154,6 +158,7 @@ export default function AuthScreen() {
     setPassword('')
     setConfirmPassword('')
     setErrors({})
+    setBackHover(false)
   }
 
   const isButtonDisabled =
@@ -163,6 +168,27 @@ export default function AuthScreen() {
     (authStep === 'signup' && !confirmPassword)
 
   const logoSize = isWeb ? 100 : 80
+
+  // Collect error messages to display
+  const errorMessages = Object.values(errors).filter(Boolean)
+
+  // Email input
+  const handleUsernameChange = (text: string) => {
+    setUsername(text)
+    setErrors((prev) => ({ ...prev, username: '' }))
+  }
+
+  // Password input
+  const handlePasswordChange = (text: string) => {
+    setPassword(text)
+    setErrors((prev) => ({ ...prev, password: '' }))
+  }
+
+  // Confirm password input
+  const handleConfirmPasswordChange = (text: string) => {
+    setConfirmPassword(text)
+    setErrors((prev) => ({ ...prev, confirmPassword: '' }))
+  }
 
   return (
     <KeyboardAvoidingView
@@ -174,9 +200,22 @@ export default function AuthScreen() {
         className="flex-1 bg-background dark:bg-background-dark"
         keyboardShouldPersistTaps="handled"
       >
-        {/* Theme Toggle - Top Center, with sliding animation */}
-        <View className="absolute top-6 left-0 right-0 z-10 flex items-center">
-          <View className="relative flex-row bg-gray-100 dark:bg-neutral-800 rounded-lg p-1">
+        {/* Theme Toggle - Fixed at top center */}
+        <View
+          className="fixed left-1/2 -translate-x-1/2 top-6 z-10 w-[226px]"
+          style={{
+            position: 'fixed',
+            left: '50%',
+            transform: [{ translateX: -113 }], // half of 226px
+            top: 24,
+            zIndex: 10,
+            width: 226,
+          }}
+        >
+          <View
+            className="relative flex-row bg-gray-100 dark:bg-neutral-800 rounded-lg p-1"
+            style={{ width: optionWidth * themeOptions.length + indicatorPadding }}
+          >
             {/* Sliding indicator */}
             <Animated.View
               style={{
@@ -186,11 +225,10 @@ export default function AuthScreen() {
                 width: optionWidth - 8 + indicatorPadding,
                 height: 32,
                 borderRadius: 6,
-                backgroundColor: isDark ? '#3f3f46' : '#e5e7eb', // zinc-700 : gray-200
+                backgroundColor: isDark ? '#3f3f46' : '#e5e7eb',
                 transform: [{ translateX: slideAnim }],
               }}
             />
-
             {/* Theme options */}
             {themeOptions.map((option, idx) => (
               <Pressable
@@ -231,25 +269,46 @@ export default function AuthScreen() {
           </View>
         </View>
 
-        {/* Main content ... */}
-        <View className="flex-1 justify-center items-center w-full px-6 py-12">
+        {/* Main content - card expands downward, always below the fixed controls */}
+        <View
+          className="flex-1 justify-center items-center w-full px-6"
+          style={{
+            marginTop: 80, // ensures card starts below the fixed controls
+            paddingBottom: 48,
+          }}
+        >
           {/* Card Container */}
           <View
             className={`w-full ${
-              isWeb ? 'max-w-[480px]' : 'max-w-[380px]'
-            } bg-card dark:bg-card-dark rounded-3xl shadow-2xl p-8 ${isWeb ? 'py-12' : 'py-10'}`}
+              isWeb ? 'max-w-[380px]' : 'max-w-[380px]'
+            } bg-card dark:bg-card-dark rounded-3xl shadow-md p-8 ${isWeb ? 'py-12' : 'py-10'}`}
           >
             {/* Back Button */}
             {authStep !== 'initial' && (
-              <Pressable
+              <TouchableOpacity
                 onPress={handleBack}
-                className="flex-row items-center gap-2 mb-6 active:opacity-70"
+                activeOpacity={0.7}
+                {...(isWeb && {
+                  onMouseEnter: () => setBackHover(true),
+                  onMouseLeave: () => setBackHover(false),
+                })}
+                className={`flex-row items-center gap-2 mb-6 rounded-xl px-3 py-2 transition-colors duration-150 self-start ${
+                  backHover ? 'bg-gray-100 dark:bg-neutral-800' : ''
+                }`}
+                style={{ alignSelf: 'flex-start' }}
               >
-                <ArrowLeft size={20} color={isDark ? '#fff' : '#000'} />
-                <Text className="text-content dark:text-content-dark font-inter font-medium">
+                <ArrowLeft
+                  size={20}
+                  className={backHover ? 'text-primary' : isDark ? 'text-white' : 'text-content'}
+                />
+                <Text
+                  className={`font-inter font-medium ${
+                    backHover ? 'text-primary' : 'text-content dark:text-content-dark'
+                  }`}
+                >
                   Back
                 </Text>
-              </Pressable>
+              </TouchableOpacity>
             )}
 
             {/* Logo & Title */}
@@ -284,33 +343,35 @@ export default function AuthScreen() {
             </View>
 
             {/* Form */}
-            <View className="gap-4">
-              {errors.form && (
-                <View className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-                  <FieldError message={errors.form} />
-                </View>
-              )}
+            {errorMessages.length > 0 && (
+              <View className="w-full font-inter bg-red-50 dark:bg-red-900/20 rounded-xl px-4 py-3 mb-4">
+                {errorMessages.map((msg, idx) => (
+                  <Text key={idx} className="text-red-500 text-sm font-inter">
+                    {msg}
+                  </Text>
+                ))}
+              </View>
+            )}
 
+            <View className="gap-4">
               <View>
                 <AuthInput
                   placeholder="Email"
-                  onChangeText={setUsername}
+                  onChangeText={handleUsernameChange}
                   value={username}
                   editable={authStep === 'initial'}
                 />
-                <FieldError message={errors.username} />
               </View>
 
               {authStep === 'login' && (
                 <View>
                   <AuthInput
                     placeholder="Password"
-                    onChangeText={setPassword}
+                    onChangeText={handlePasswordChange}
                     value={password}
                     secureTextEntry
                     autoComplete="password"
                   />
-                  <FieldError message={errors.password} />
                 </View>
               )}
 
@@ -319,23 +380,20 @@ export default function AuthScreen() {
                   <View>
                     <AuthInput
                       placeholder="Password"
-                      onChangeText={setPassword}
+                      onChangeText={handlePasswordChange}
                       value={password}
                       secureTextEntry
                       autoComplete="password-new"
                     />
-                    <FieldError message={errors.password} />
                   </View>
                   <View>
                     <AuthInput
                       placeholder="Confirm password"
-                      onChangeText={setConfirmPassword}
+                      onChangeText={handleConfirmPasswordChange}
                       value={confirmPassword}
                       secureTextEntry
                       autoComplete="password-new"
-                      placeholderTextColor={isDark ? '#9ca3af' : '#6b7280'}
                     />
-                    <FieldError message={errors.confirmPassword} />
                   </View>
                 </>
               )}
@@ -375,7 +433,7 @@ export default function AuthScreen() {
                 onPress={handleDevMode}
                 className="flex-row items-center justify-center bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-xl active:opacity-70"
               >
-                <Code size={18} color={isDark ? '#fff' : '#000'} />
+                <Code size={18} className={isDark ? 'text-white' : 'text-black'} />
                 <Text className="ml-2 text-content dark:text-content-dark font-inter font-semibold">
                   Developer Mode
                 </Text>
