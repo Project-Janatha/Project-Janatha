@@ -10,7 +10,7 @@ import {
   Animated,
 } from 'react-native'
 import { useRouter } from 'expo-router'
-import { Code, Moon, Sun, ArrowLeft } from 'lucide-react-native'
+import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
 import { PrimaryButton, IconButton, AuthInput } from 'components/ui'
 import { UserContext, useThemeContext } from 'components/contexts'
 
@@ -25,7 +25,7 @@ export default function AuthScreen() {
   console.log('🟢 AuthScreen component executing')
 
   const router = useRouter()
-  const { theme, toggleTheme, isDark } = useThemeContext()
+  const { theme, toggleTheme, themePreference, setThemePreference, isDark } = useThemeContext()
   const { checkUserExists, login, signup, setUser, loading } = useContext(UserContext)
 
   const [authStep, setAuthStep] = useState<AuthStep>('initial')
@@ -163,16 +163,73 @@ export default function AuthScreen() {
         className="flex-1 bg-background dark:bg-background-dark"
         keyboardShouldPersistTaps="handled"
       >
-        {/* Theme Toggle - Top Right */}
-        <View className="absolute top-8 right-8 z-10">
-          <Pressable
-            onPress={toggleTheme}
-            className="w-12 h-12 rounded-full bg-card dark:bg-card-dark items-center justify-center shadow-md active:scale-95"
-          >
-            {isDark ? <Sun size={20} color="#fff" /> : <Moon size={20} color="#000" />}
-          </Pressable>
+        {/* Theme Toggle - Top Left */}
+        <View className="absolute top-6 left-1/2 -translate-x-1/2 z-10 w-[220px]">
+          <View className="flex-row bg-gray-100 dark:bg-neutral-800 rounded-lg p-1">
+            <Pressable
+              onPress={() => setThemePreference('light')}
+              className={`flex-1 flex-row items-center justify-center gap-1 py-2 rounded-md ${
+                themePreference === 'light' ? 'bg-white dark:bg-neutral-700' : ''
+              }`}
+            >
+              <Sun
+                size={14}
+                color={themePreference === 'light' ? '#9A3412' : isDark ? '#9CA3AF' : '#6B7280'}
+              />
+              <Text
+                className={`text-xs font-inter ${
+                  themePreference === 'light'
+                    ? 'text-primary font-inter-semibold'
+                    : 'text-contentStrong dark:text-contentStrong-dark'
+                }`}
+              >
+                Light
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setThemePreference('dark')}
+              className={`flex-1 flex-row items-center justify-center gap-1 py-2 rounded-md ${
+                themePreference === 'dark' ? 'bg-white dark:bg-neutral-700' : ''
+              }`}
+            >
+              <Moon
+                size={14}
+                color={themePreference === 'dark' ? '#9A3412' : isDark ? '#9CA3AF' : '#6B7280'}
+              />
+              <Text
+                className={`text-xs font-inter ${
+                  themePreference === 'dark'
+                    ? 'text-primary font-inter-semibold'
+                    : 'text-contentStrong dark:text-contentStrong-dark'
+                }`}
+              >
+                Dark
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setThemePreference('system')}
+              className={`flex-1 flex-row items-center justify-center gap-1 py-2 rounded-md ${
+                themePreference === 'system' ? 'bg-white dark:bg-neutral-700' : ''
+              }`}
+            >
+              <Monitor
+                size={14}
+                color={themePreference === 'system' ? '#9A3412' : isDark ? '#9CA3AF' : '#6B7280'}
+              />
+              <Text
+                className={`text-xs font-inter ${
+                  themePreference === 'system'
+                    ? 'text-primary font-inter-semibold'
+                    : 'text-contentStrong dark:text-contentStrong-dark'
+                }`}
+              >
+                Auto
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
+        {/* Main content ... */}
         <View className="flex-1 justify-center items-center w-full px-6 py-12">
           {/* Card Container */}
           <View
@@ -311,7 +368,7 @@ export default function AuthScreen() {
             </View>
 
             {/* Dev Mode Button */}
-            <View className="mt-8 pt-6 border-t border-border dark:border-border-dark">
+            <View className="mt-8 pt-6 border-t border-borderColor dark:border-borderColor-dark">
               <Pressable
                 onPress={handleDevMode}
                 className="flex-row items-center justify-center bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-xl active:opacity-70"
