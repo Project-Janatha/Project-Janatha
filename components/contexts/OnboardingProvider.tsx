@@ -1,5 +1,13 @@
-import { router } from 'expo-router'
+import { router, usePathname } from 'expo-router'
 import React, { createContext, useContext, useState } from 'react'
+
+const STEP_ROUTES = [
+  '/onboarding/step1',
+  '/onboarding/step2',
+  '/onboarding/step3',
+  '/onboarding/step4',
+  '/onboarding/step5',
+]
 
 interface OnboardingContextType {
   currentStep: number
@@ -10,7 +18,6 @@ interface OnboardingContextType {
   location: [number, number] | null // [latitude, longitude]
   phoneNumber: string
   interests: string[]
-  setCurrentStep: (step: number) => void
   goToNextStep: () => void
   goToPreviousStep: () => void
   setBirthdate: (date: Date) => void
@@ -22,8 +29,12 @@ interface OnboardingContextType {
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined)
 
 export default function OnboardingProvider({ children }: { children: React.ReactNode }) {
-  const [currentStep, setCurrentStep] = useState(0)
-  const totalSteps = 5 // Adjust based on actual number of steps
+  const pathname = usePathname()
+
+  const totalSteps = STEP_ROUTES.length
+  const currStepIdx = STEP_ROUTES.indexOf(pathname)
+  const currentStep = currStepIdx === -1 ? 1 : currStepIdx + 1
+
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [birthdate, setBirthdate] = useState<Date | null>(null)
@@ -32,20 +43,16 @@ export default function OnboardingProvider({ children }: { children: React.React
   const [interests, setInterests] = useState<string[]>([])
 
   const goToNextStep = () => {
-    const nextStep = currentStep + 1
-    if (nextStep < totalSteps) {
-      setCurrentStep(nextStep)
-      router.push(`/onboarding/step${nextStep}` as any)
+    if (currentStep < totalSteps) {
+      router.push(STEP_ROUTES[currStepIdx + 1] as any)
     } else {
       router.replace('/')
     }
   }
 
   const goToPreviousStep = () => {
-    const prevStep = currentStep - 1
-    if (prevStep >= 0) {
-      setCurrentStep(prevStep)
-      router.push(`/onboarding/step${prevStep}` as any)
+    if (currentStep > 1) {
+      router.back()
     }
   }
 
@@ -58,7 +65,6 @@ export default function OnboardingProvider({ children }: { children: React.React
     location,
     phoneNumber,
     interests,
-    setCurrentStep,
     goToNextStep,
     goToPreviousStep,
     setFirstName,
