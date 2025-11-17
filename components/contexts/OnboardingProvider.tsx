@@ -1,5 +1,5 @@
 import { router, usePathname } from 'expo-router'
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
 
 const STEP_ROUTES = [
   '/onboarding/step1',
@@ -15,11 +15,13 @@ interface OnboardingContextType {
   firstName: string
   lastName: string
   birthdate: Date | null
-  location: [number, number] | null // [latitude, longitude]
+  location: [number, number] | null
   phoneNumber: string
   interests: string[]
   goToNextStep: () => void
   goToPreviousStep: () => void
+  setFirstName: (name: string) => void
+  setLastName: (name: string) => void
   setBirthdate: (date: Date) => void
   setLocation: (location: [number, number] | null) => void
   setPhoneNumber: (phoneNumber: string) => void
@@ -30,7 +32,6 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 
 export default function OnboardingProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-
   const totalSteps = STEP_ROUTES.length
   const currStepIdx = STEP_ROUTES.indexOf(pathname)
   const currentStep = currStepIdx === -1 ? 1 : currStepIdx + 1
@@ -38,22 +39,33 @@ export default function OnboardingProvider({ children }: { children: React.React
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [birthdate, setBirthdate] = useState<Date | null>(null)
-  const [location, setLocation] = useState<[number, number] | null>(null) // [latitude, longitude]
-  const [phoneNumber, setPhoneNumber] = useState('') // Implement phone number OTP verification later
+  const [location, setLocation] = useState<[number, number] | null>(null)
+  const [phoneNumber, setPhoneNumber] = useState('')
   const [interests, setInterests] = useState<string[]>([])
+
+  // Track if navigation is in progress
+  const isNavigating = useRef(false)
 
   const goToNextStep = () => {
     if (currentStep < totalSteps) {
-      router.push(STEP_ROUTES[currStepIdx + 1] as any)
+      router.push(STEP_ROUTES[currentStep] as any) // Use currentStep as index (already 0-indexed for next route)
     } else {
       router.replace('/')
     }
   }
 
   const goToPreviousStep = () => {
+    if (isNavigating.current) return
+
+    isNavigating.current = true
+
     if (currentStep > 1) {
       router.back()
     }
+
+    setTimeout(() => {
+      isNavigating.current = false
+    }, 500)
   }
 
   const value = {
@@ -78,7 +90,6 @@ export default function OnboardingProvider({ children }: { children: React.React
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>
 }
 
-// custom hook for accessing onboarding context values
 export function useOnboarding() {
   const context = useContext(OnboardingContext)
   if (!context) {

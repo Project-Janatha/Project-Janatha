@@ -1,45 +1,74 @@
 import { View, Text, Pressable, TextInput } from 'react-native'
 import { useOnboarding } from 'components/contexts'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useState } from 'react'
 
 export default function StepOne() {
-  const { goToNextStep } = useOnboarding()
+  const { goToNextStep, firstName, setFirstName, lastName, setLastName } = useOnboarding()
+  const [focusedField, setFocusedField] = useState<'first' | 'last' | null>(null)
+
+  const handleContinue = () => {
+    setFirstName(firstName.trim())
+    setLastName(lastName.trim())
+    goToNextStep()
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
-      {/* Main Content: 
-        Takes up all space, pushing the button to the bottom.
-        Text styles match app/auth.tsx
-      */}
-      <View className="max-w-[720px] w-full flex-1 self-center">
-        <View className="flex-1 justify-center items-center p-8">
-          <Text className="text-3xl font-inter font-bold text-content dark:text-content-dark text-center">
-            Welcome to Janata!
-          </Text>
-          <Text className="text-base font-inter text-content dark:text-content-dark opacity-70 text-center mt-3">
-            Enter your name to get started with your journey.
-          </Text>
-          <View className="w-full mt-6">
-            <TextInput
-              className="bg-gray text-content dark:text-content-dark font-inter rounded-lg px-4 py-3 text-base min-h-[48px] bg-muted/50 dark:bg-muted-dark/10 focus:border-primary focus:outline-none"
-              placeholder="Your Name"
-            />
-            )
+      <View className="max-w-[720px] w-full flex-1 self-center px-6">
+        {/* Content Area */}
+        <View className="flex-1 justify-center items-center">
+          <View className="gap-4 w-full">
+            <View className="gap-2">
+              <Text className="text-4xl font-inter font-bold text-content dark:text-content-dark text-center">
+                Welcome to Janata!
+              </Text>
+              <Text className="text-lg font-inter text-content/70 dark:text-content-dark/70 text-center">
+                Enter your name to get started with your journey.
+              </Text>
+            </View>
+
+            {/* Input Fields */}
+            <View className="gap-3 mt-8 w-full items-center">
+              <TextInput
+                className={`text-content dark:text-content-dark w-full max-w-md font-inter rounded-xl px-4 py-4 text-base bg-muted/50 dark:bg-muted-dark/10 border-2 outline-none ${
+                  focusedField === 'first' ? 'border-primary' : 'border-transparent'
+                } placeholder:text-gray-400 dark:placeholder:text-gray-500`}
+                placeholder="First Name"
+                value={firstName}
+                onChangeText={setFirstName}
+                onFocus={() => setFocusedField('first')}
+                onBlur={() => setFocusedField(null)}
+                placeholderTextColor="#9ca3af"
+                autoCapitalize="words"
+                autoComplete="given-name"
+                autoCorrect={false}
+              />
+              <TextInput
+                className={`text-content dark:text-content-dark w-full max-w-md font-inter rounded-xl px-4 py-4 text-base bg-muted/50 dark:bg-muted-dark/10 border-2 outline-none ${
+                  focusedField === 'last' ? 'border-primary' : 'border-transparent'
+                } placeholder:text-gray-400 dark:placeholder:text-gray-500`}
+                placeholder="Last Name"
+                value={lastName}
+                onChangeText={setLastName}
+                onFocus={() => setFocusedField('last')}
+                onBlur={() => setFocusedField(null)}
+                placeholderTextColor="#9ca3af"
+                autoCapitalize="words"
+                autoComplete="family-name"
+                autoCorrect={false}
+              />
+            </View>
           </View>
         </View>
 
-        {/* Button Area: 
-        Anchored to the bottom.
-      */}
-        <View className="p-6 max-w-[720px] w-full self-center">
-          {/* This Pressable component and its Text child have classNames
-          copied directly from your app/auth.tsx file for consistency.
-        */}
+        {/* Button Area */}
+        <View className="pb-6">
           <Pressable
-            onPress={goToNextStep}
-            className="items-center justify-center mt-2 rounded-2xl bg-primary active:bg-primary-press py-4 px-8"
+            onPress={handleContinue}
+            className="w-full max-w-md self-center items-center justify-center rounded-xl bg-primary active:bg-primary-press py-4 px-8"
           >
-            <Text className="text-white font-inter font-bold text-md">Get Started</Text>
+            <Text className="text-white font-inter font-semibold text-base">Continue</Text>
           </Pressable>
         </View>
       </View>
