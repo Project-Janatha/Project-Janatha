@@ -1,44 +1,50 @@
 import { Stack } from 'expo-router'
-import { OnboardingProvider, useOnboarding } from 'components/contexts' // Assuming useOnboarding is exported here
+import { OnboardingProvider, useOnboarding } from 'components/contexts'
 import { View, Animated } from 'react-native'
-import ThemeSelector from 'components/ThemeSelector'
+import { useEffect, useRef } from 'react'
 
 const OnboardingHeader = () => {
-  // Get state from the context
   const { currentStep, totalSteps } = useOnboarding()
-  const progress = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0
+  const progress = ((currentStep - 1) / totalSteps) * 100
+
+  const animatedWidth = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    Animated.timing(animatedWidth, {
+      toValue: progress,
+      duration: 300,
+      useNativeDriver: false,
+    }).start()
+  }, [progress])
 
   return (
     <View className="p-6 bg-white dark:bg-neutral-900">
-      {/* Progress Bar */}
-      <View className="max-w-[720px] w-full h-1 rounded bg-gray-200 dark:bg-neutral-800 self-center justify-center mt-6">
+      <View className="max-w-[720px] w-full h-1 rounded bg-gray-200 dark:bg-neutral-800 self-center overflow-hidden">
         <Animated.View
           style={{
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: '#f97316',
-            width: `${progress}%`, // Use the calculated progress
+            width: animatedWidth.interpolate({
+              inputRange: [0, 100],
+              outputRange: ['0%', '100%'],
+            }),
+            height: '100%',
+            backgroundColor: '#f97316', // Your primary color
           }}
-          className="bg-primary"
         />
       </View>
     </View>
   )
 }
 
-// 2. Wrap the Stack in the Provider so the header can access the context
 export default function OnboardingLayout() {
   return (
     <OnboardingProvider>
-      <View className="flex-1 bg-white dark:bg-neutral-900">
-        <Stack
-          screenOptions={{
-            animation: 'slide_from_right',
-            gestureEnabled: false,
-            header: () => <OnboardingHeader />,
-          }}
-        />
-      </View>
+      <Stack
+        screenOptions={{
+          animation: 'slide_from_right',
+          gestureEnabled: false,
+          header: () => <OnboardingHeader />,
+        }}
+      />
     </OnboardingProvider>
   )
 }
