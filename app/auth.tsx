@@ -16,6 +16,8 @@ import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
 import { PrimaryButton, IconButton, AuthInput } from 'components/ui'
 import { UserContext, useThemeContext } from 'components/contexts'
 import { validateEmail, validatePassword } from 'frontend/utilities'
+import DevPanel from 'components/DevPanel'
+import ThemeSelector from 'components/ThemeSelector'
 
 const FieldError = ({ message }: { message?: string }) => {
   if (!message) return null
@@ -38,6 +40,7 @@ export default function AuthScreen() {
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
   const [backHover, setBackHover] = useState(false)
+  const [showDevPanel, setShowDevPanel] = useState(false)
 
   const isWeb = Platform.OS === 'web'
 
@@ -138,19 +141,7 @@ export default function AuthScreen() {
   }
 
   const handleDevMode = () => {
-    const devUser = {
-      username: 'dev_user',
-      id: 'dev_id',
-      center: -1,
-      points: 999,
-      isVerified: true,
-      verificationLevel: 99,
-      exists: true,
-      isActive: true,
-      events: [],
-    }
-    setUser(devUser)
-    router.push('/(tabs)')
+    setShowDevPanel(true)
   }
 
   const handleBack = () => {
@@ -200,7 +191,7 @@ export default function AuthScreen() {
         className="flex-1 bg-background dark:bg-background-dark"
         keyboardShouldPersistTaps="handled"
       >
-        {/* Theme Toggle - Fixed at top center */}
+        {/* Theme Selector - Fixed at top center */}
         <View
           className="fixed left-1/2 -translate-x-1/2 top-6 z-10 w-[226px]"
           style={{
@@ -212,61 +203,10 @@ export default function AuthScreen() {
             width: 226,
           }}
         >
-          <View
+          <ThemeSelector
             className="relative flex-row bg-gray-100 dark:bg-neutral-800 rounded-lg p-1"
-            style={{ width: optionWidth * themeOptions.length + indicatorPadding }}
-          >
-            {/* Sliding indicator */}
-            <Animated.View
-              style={{
-                position: 'absolute',
-                top: 4,
-                left: 4,
-                width: optionWidth - 8 + indicatorPadding,
-                height: 32,
-                borderRadius: 6,
-                backgroundColor: isDark ? '#3f3f46' : '#e5e7eb',
-                transform: [{ translateX: slideAnim }],
-              }}
-            />
-            {/* Theme options */}
-            {themeOptions.map((option, idx) => (
-              <Pressable
-                key={option}
-                onPress={() => setThemePreference(option)}
-                className="flex-row items-center justify-center gap-1 py-2 px-3 rounded-md z-10"
-                style={{ width: optionWidth }}
-              >
-                {option === 'light' && (
-                  <Sun
-                    size={14}
-                    color={themePreference === option ? '#f97316' : isDark ? '#fff' : '#000'}
-                  />
-                )}
-                {option === 'dark' && (
-                  <Moon
-                    size={14}
-                    color={themePreference === option ? '#f97316' : isDark ? '#fff' : '#000'}
-                  />
-                )}
-                {option === 'system' && (
-                  <Monitor
-                    size={14}
-                    color={themePreference === option ? '#f97316' : isDark ? '#fff' : '#000'}
-                  />
-                )}
-                <Text
-                  className={`text-xs font-inter ${
-                    themePreference === option
-                      ? 'text-primary font-inter-semibold'
-                      : 'text-gray-700 dark:text-white'
-                  }`}
-                >
-                  {option === 'system' ? 'Auto' : option.charAt(0).toUpperCase() + option.slice(1)}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+            style={{ width: 218 }}
+          />
         </View>
 
         {/* Main content - card expands downward, always below the fixed controls */}
@@ -430,7 +370,7 @@ export default function AuthScreen() {
             {/* Dev Mode Button */}
             <View className="mt-8 pt-6 border-t border-borderColor dark:border-borderColor-dark">
               <Pressable
-                onPress={handleDevMode}
+                onPress={() => setShowDevPanel(true)}
                 className="flex-row items-center justify-center bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-xl active:opacity-70"
               >
                 <Code size={18} className={isDark ? 'text-white' : 'text-black'} />
@@ -439,6 +379,11 @@ export default function AuthScreen() {
                 </Text>
               </Pressable>
             </View>
+
+            {/* Show DevPanel when Developer Mode is clicked */}
+            {showDevPanel && (
+              <DevPanel visible={showDevPanel} onClose={() => setShowDevPanel(false)} />
+            )}
           </View>
 
           {/* Footer Text */}

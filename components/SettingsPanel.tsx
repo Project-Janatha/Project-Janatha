@@ -3,6 +3,7 @@ import { Animated, Text, Pressable, View, Image, Easing } from 'react-native'
 import { UserContext, useThemeContext } from './contexts'
 import { Settings, LogOut, Sun, Moon, User, Monitor } from 'lucide-react-native'
 import { router } from 'expo-router'
+import ThemeSelector from './ThemeSelector'
 
 function SettingsPanel({ visible, onClose, onLogout }) {
   const opacityAnim = useRef(new Animated.Value(0)).current
@@ -165,61 +166,10 @@ function SettingsPanel({ visible, onClose, onLogout }) {
           <Text className="text-sm font-inter-medium text-content dark:text-content-dark mb-2">
             Appearance
           </Text>
-          <View
+          <ThemeSelector
             className="relative flex-row bg-gray-100 dark:bg-neutral-800 rounded-lg p-1"
-            style={{ width: optionWidth * themeOptions.length + indicatorPadding }}
-          >
-            {/* Sliding indicator */}
-            <Animated.View
-              style={{
-                position: 'absolute',
-                top: 4,
-                left: 4,
-                width: optionWidth - 8 + indicatorPadding,
-                height: 32,
-                borderRadius: 6,
-                backgroundColor: isDark ? '#3f3f46' : '#e5e7eb',
-                transform: [{ translateX: slideAnim }],
-              }}
-            />
-            {/* Theme options */}
-            {themeOptions.map((option, idx) => (
-              <Pressable
-                key={option}
-                onPress={() => setThemePreference(option)}
-                className="flex-row items-center justify-center gap-1 py-2 px-3 rounded-md z-10"
-                style={{ width: optionWidth }}
-              >
-                {option === 'light' && (
-                  <Sun
-                    size={14}
-                    color={themePreference === option ? '#f97316' : isDark ? '#fff' : '#000'}
-                  />
-                )}
-                {option === 'dark' && (
-                  <Moon
-                    size={14}
-                    color={themePreference === option ? '#f97316' : isDark ? '#fff' : '#000'}
-                  />
-                )}
-                {option === 'system' && (
-                  <Monitor
-                    size={14}
-                    color={themePreference === option ? '#f97316' : isDark ? '#fff' : '#000'}
-                  />
-                )}
-                <Text
-                  className={`text-xs font-inter ${
-                    themePreference === option
-                      ? 'text-primary font-inter-semibold'
-                      : 'text-gray-700 dark:text-white'
-                  }`}
-                >
-                  {option === 'system' ? 'Auto' : option.charAt(0).toUpperCase() + option.slice(1)}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+            style={{ width: 218 }}
+          />
         </View>
 
         {/* Separator Line */}
