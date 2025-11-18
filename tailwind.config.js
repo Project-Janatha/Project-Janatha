@@ -33,9 +33,9 @@ module.exports = {
           dark: colors.gray[400],
         },
         muted: {
-          DEFAULT: colors.gray[200],
-          light: colors.gray[200],
-          dark: colors.gray[600],
+          DEFAULT: colors.neutral[200],
+          light: colors.neutral[200],
+          dark: colors.neutral[600],
         },
         outlineColor: {
           DEFAULT: colors.gray[700],
