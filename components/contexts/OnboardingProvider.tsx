@@ -12,6 +12,7 @@ interface OnboardingContextType {
   interests: string[]
   goToNextStep: () => void
   goToPreviousStep: () => void
+  completeOnboarding: () => void
   setFirstName: (name: string) => void
   setLastName: (name: string) => void
   setBirthdate: (date: Date) => void
@@ -24,7 +25,7 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 
 export default function OnboardingProvider({ children }: { children: React.ReactNode }) {
   const [currentStep, setCurrentStep] = useState(1)
-  const totalSteps = 5 // Update to match your total steps
+  const totalSteps = 5 // Total form steps (not including Complete screen)
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -34,18 +35,19 @@ export default function OnboardingProvider({ children }: { children: React.React
   const [interests, setInterests] = useState<string[]>([])
 
   const goToNextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1)
-    } else {
-      // Onboarding complete, navigate to main app
-      router.replace('/')
-    }
+    // Allow incrementing past totalSteps to show Complete screen
+    setCurrentStep(currentStep + 1)
   }
 
   const goToPreviousStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     }
+  }
+
+  const completeOnboarding = () => {
+    // Logic to mark onboarding as complete (e.g., update user profile, local storage, etc.)
+    router.replace('/')
   }
 
   const value = {
@@ -59,6 +61,7 @@ export default function OnboardingProvider({ children }: { children: React.React
     interests,
     goToNextStep,
     goToPreviousStep,
+    completeOnboarding,
     setFirstName,
     setLastName,
     setBirthdate,
