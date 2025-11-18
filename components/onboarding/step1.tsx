@@ -106,7 +106,7 @@ export default function StepOne() {
               ${
                 !firstName.trim() || !lastName.trim()
                   ? 'bg-primary/50'
-                  : 'bg-primary active:bg-primary-press hover:scale-105 active:scale-95 transition-transform duration-150'
+                  : 'bg-primary active:bg-primary-press hover:scale-105 active:scale-95 transition-all duration-150'
               }
             `}
           >
