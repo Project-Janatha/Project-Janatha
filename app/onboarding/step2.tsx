@@ -1,20 +1,14 @@
-import { View, Text, Pressable, Animated, Platform } from 'react-native'
+import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { View, Text, Pressable } from 'react-native'
 import { useOnboarding } from 'components/contexts'
-import { useState, useEffect, useRef } from 'react'
-import { useThemeContext } from 'components/contexts'
-
-// --- NEW: Import the universal BirthdatePicker component ---
-// React Native will automatically choose .native.js or .web.js
-import BirthdatePicker from 'components/BirthdatePicker.web'
-import { set } from 'react-datepicker/dist/date_utils'
+import BirthdatePicker from 'components/BirthdatePicker'
 
 export default function Step2() {
   const { goToNextStep, birthdate, setBirthdate } = useOnboarding()
 
-  const handleContinue = () => {
-    goToNextStep()
-  }
+  // Only true if birthdate is not null
+  const isDateSelected = !!birthdate
 
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
@@ -31,7 +25,7 @@ export default function Step2() {
               </Text>
             </View>
             <View className="mt-8 w-full flex items-center justify-center">
-              <BirthdatePicker value={birthdate || new Date(2000, 0, 1)} onChange={setBirthdate} />
+              <BirthdatePicker value={birthdate} onChange={setBirthdate} />
             </View>
           </View>
         </View>
@@ -39,8 +33,15 @@ export default function Step2() {
         {/* --- Continue Button --- */}
         <View className="pb-6">
           <Pressable
-            onPress={handleContinue}
-            className="w-full max-w-md self-center items-center justify-center rounded-xl bg-primary active:bg-primary-press py-4 px-8"
+            disabled={!isDateSelected}
+            onPress={goToNextStep}
+            className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8
+              ${
+                !isDateSelected
+                  ? 'bg-primary/50'
+                  : 'bg-primary active:bg-primary-press hover:scale-105 active:scale-95 transition-transform duration-150'
+              }
+            `}
           >
             <Text className="text-white font-inter font-semibold text-base">Continue</Text>
           </Pressable>

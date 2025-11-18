@@ -38,20 +38,21 @@ function Select({ label, value, options, onChange, className }) {
           leaveTo="opacity-0"
         >
           <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-background dark:bg-background-dark py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-            {options.map((option) => (
-              <Listbox.Option
-                key={option.value}
-                value={option.value}
-                className={({ active }) =>
-                  // Apply all your styles! `font-inter` will work here.
-                  `relative select-none py-2 px-4 font-inter ${
-                    active ? 'bg-primary/10 text-primary' : 'text-content dark:text-content-dark'
-                  }`
-                }
-              >
-                {option.label}
-              </Listbox.Option>
-            ))}
+            {options
+              .filter((option) => option.value !== null) // <-- filter out placeholder
+              .map((option) => (
+                <Listbox.Option
+                  key={option.value}
+                  value={option.value}
+                  className={({ active }) =>
+                    `relative select-none py-2 px-4 font-inter ${
+                      active ? 'bg-primary/10 text-primary' : 'text-content dark:text-content-dark'
+                    }`
+                  }
+                >
+                  {option.label}
+                </Listbox.Option>
+              ))}
           </Listbox.Options>
         </Transition>
       </div>
@@ -68,47 +69,61 @@ export default function BirthdatePicker({ value, onChange }) {
   }, [value])
 
   const currentYear = new Date().getFullYear()
-  const years = range(currentYear - 100, currentYear)
-    .reverse()
-    .map((y) => ({ label: y, value: y }))
-
-  const months = Array.from({ length: 12 }, (_, i) => ({
-    label: new Date(2000, i).toLocaleString('en-US', { month: 'long' }),
-    value: i, // 0 = Jan, 1 = Feb...
-  }))
-
+  // Add placeholder options
+  const years = [
+    { label: 'Year', value: null },
+    ...range(currentYear - 100, currentYear)
+      .reverse()
+      .map((y) => ({ label: y, value: y })),
+  ]
+  const months = [
+    { label: 'Month', value: null },
+    ...Array.from({ length: 12 }, (_, i) => ({
+      label: new Date(2000, i).toLocaleString('en-US', { month: 'long' }),
+      value: i,
+    })),
+  ]
   const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-  const days = range(1, daysInMonth).map((d) => ({ label: d, value: d }))
+  const days = [
+    { label: 'Day', value: null },
+    ...range(1, daysInMonth).map((d) => ({ label: d, value: d })),
+  ]
+
+  // Set initial state to null for placeholders
+  const [dateParts, setDateParts] = useState({
+    year: null,
+    month: null,
+    day: null,
+  })
 
   const handlePartChange = (part, newValue) => {
-    const newDate = new Date(date)
-    const numValue = parseInt(newValue, 10)
-
-    if (part === 'year') {
-      newDate.setFullYear(numValue)
-    } else if (part === 'month') {
-      const currentDay = newDate.getDate()
-      const daysInNewMonth = new Date(newDate.getFullYear(), numValue + 1, 0).getDate()
-      if (currentDay > daysInNewMonth) {
-        newDate.setDate(daysInNewMonth)
-      }
-      newDate.setMonth(numValue)
-    } else if (part === 'day') {
-      newDate.setDate(numValue)
+    setDateParts((prev) => ({ ...prev, [part]: newValue }))
+    // Only call onChange if all parts are selected
+    if (
+      part === 'year' &&
+      dateParts.month !== null &&
+      dateParts.day !== null &&
+      newValue !== null
+    ) {
+      onChange(new Date(newValue, dateParts.month, dateParts.day))
     }
-
-    setDate(newDate)
-    // This is a NEW, important change:
-    // We only call the parent `onChange` when the date is fully formed.
-    // The Listbox `onChange` will trigger this.
-    // To make it instant, we call it here.
-    onChange(newDate)
+    if (
+      part === 'month' &&
+      dateParts.year !== null &&
+      dateParts.day !== null &&
+      newValue !== null
+    ) {
+      onChange(new Date(dateParts.year, newValue, dateParts.day))
+    }
+    if (
+      part === 'day' &&
+      dateParts.year !== null &&
+      dateParts.month !== null &&
+      newValue !== null
+    ) {
+      onChange(new Date(dateParts.year, dateParts.month, newValue))
+    }
   }
-
-  // Helper to pass to the Listbox's `onChange`
-  const handleYearChange = (val) => handlePartChange('year', val)
-  const handleMonthChange = (val) => handlePartChange('month', val)
-  const handleDayChange = (val) => handlePartChange('day', val)
 
   return (
     <View className="p-4 w-[480px]">
@@ -116,25 +131,25 @@ export default function BirthdatePicker({ value, onChange }) {
         {/* Month */}
         <Select
           label="Month"
-          value={date.getMonth()}
+          value={dateParts.month}
           options={months}
-          onChange={handleMonthChange}
-          className="flex-[5]"
+          onChange={(val) => handlePartChange('month', val)}
+          className="flex-[4]"
         />
         {/* Day */}
         <Select
           label="Day"
-          value={date.getDate()}
+          value={dateParts.day}
           options={days}
-          onChange={handleDayChange}
-          className="flex-[2]"
+          onChange={(val) => handlePartChange('day', val)}
+          className="flex-[3]"
         />
         {/* Year */}
         <Select
           label="Year"
-          value={date.getFullYear()}
+          value={dateParts.year}
           options={years}
-          onChange={handleYearChange}
+          onChange={(val) => handlePartChange('year', val)}
           className="flex-[3]"
         />
       </View>

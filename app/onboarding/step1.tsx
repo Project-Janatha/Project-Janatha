@@ -101,7 +101,14 @@ export default function StepOne() {
         <View className="pb-6">
           <Pressable
             onPress={handleContinue}
-            className="w-full max-w-md self-center items-center justify-center rounded-xl bg-primary active:bg-primary-press py-4 px-8"
+            disabled={!firstName.trim() || !lastName.trim()}
+            className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8
+              ${
+                !firstName.trim() || !lastName.trim()
+                  ? 'bg-primary/50'
+                  : 'bg-primary active:bg-primary-press hover:scale-105 active:scale-95 transition-transform duration-150'
+              }
+            `}
           >
             <Text className="text-white font-inter font-semibold text-base">Continue</Text>
           </Pressable>

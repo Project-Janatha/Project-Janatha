@@ -15,7 +15,7 @@ interface OnboardingContextType {
   firstName: string
   lastName: string
   birthdate: Date | null
-  location: [number, number] | null
+  centerID?: number
   phoneNumber: string
   interests: string[]
   goToNextStep: () => void
@@ -23,7 +23,7 @@ interface OnboardingContextType {
   setFirstName: (name: string) => void
   setLastName: (name: string) => void
   setBirthdate: (date: Date) => void
-  setLocation: (location: [number, number] | null) => void
+  setCenterID: (centerID: number) => void
   setPhoneNumber: (phoneNumber: string) => void
   setInterests: (interests: string[]) => void
 }
@@ -39,7 +39,7 @@ export default function OnboardingProvider({ children }: { children: React.React
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [birthdate, setBirthdate] = useState<Date | null>(null)
-  const [location, setLocation] = useState<[number, number] | null>(null)
+  const [centerID, setCenterID] = useState<number | undefined>(undefined)
   const [phoneNumber, setPhoneNumber] = useState('')
   const [interests, setInterests] = useState<string[]>([])
 
@@ -74,7 +74,7 @@ export default function OnboardingProvider({ children }: { children: React.React
     firstName,
     lastName,
     birthdate,
-    location,
+    centerID,
     phoneNumber,
     interests,
     goToNextStep,
@@ -82,7 +82,7 @@ export default function OnboardingProvider({ children }: { children: React.React
     setFirstName,
     setLastName,
     setBirthdate,
-    setLocation,
+    setCenterID,
     setPhoneNumber,
     setInterests,
   }
