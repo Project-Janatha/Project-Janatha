@@ -119,7 +119,7 @@ export default function AuthScreen() {
     }
     try {
       await signup(username, password)
-      router.replace('/onboarding/step1')
+      router.replace('/onboarding')
     } catch (e: any) {
       setErrors({ form: e.message || 'Failed to sign up. Please try again.' })
     }
