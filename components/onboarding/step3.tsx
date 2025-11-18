@@ -148,7 +148,7 @@ export default function Step3() {
             {/* Header */}
             <View className="mb-8">
               <Text className="text-4xl font-inter font-bold text-content dark:text-content-dark text-center mb-3">
-                Find your nearest center
+                Choose your center
               </Text>
               <Text className="text-lg font-inter text-content/70 dark:text-content-dark/70 text-center">
                 Enter your zip code or city to see nearby centers.
