@@ -1,13 +1,5 @@
-import { router, usePathname } from 'expo-router'
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
-
-const STEP_ROUTES = [
-  '/onboarding/step1',
-  '/onboarding/step2',
-  '/onboarding/step3',
-  '/onboarding/step4',
-  '/onboarding/step5',
-]
+import { createContext, useContext, useState } from 'react'
+import { router } from 'expo-router'
 
 interface OnboardingContextType {
   currentStep: number
@@ -15,7 +7,7 @@ interface OnboardingContextType {
   firstName: string
   lastName: string
   birthdate: Date | null
-  centerID?: number
+  centerID: string
   phoneNumber: string
   interests: string[]
   goToNextStep: () => void
@@ -23,7 +15,7 @@ interface OnboardingContextType {
   setFirstName: (name: string) => void
   setLastName: (name: string) => void
   setBirthdate: (date: Date) => void
-  setCenterID: (centerID: number) => void
+  setCenterID: (id: string) => void
   setPhoneNumber: (phoneNumber: string) => void
   setInterests: (interests: string[]) => void
 }
@@ -31,41 +23,29 @@ interface OnboardingContextType {
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined)
 
 export default function OnboardingProvider({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname()
-  const totalSteps = STEP_ROUTES.length
-  const currStepIdx = STEP_ROUTES.indexOf(pathname)
-  const currentStep = currStepIdx === -1 ? 1 : currStepIdx + 1
+  const [currentStep, setCurrentStep] = useState(1)
+  const totalSteps = 5 // Update to match your total steps
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [birthdate, setBirthdate] = useState<Date | null>(null)
-  const [centerID, setCenterID] = useState<number | undefined>(undefined)
+  const [centerID, setCenterID] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [interests, setInterests] = useState<string[]>([])
 
-  // Track if navigation is in progress
-  const isNavigating = useRef(false)
-
   const goToNextStep = () => {
     if (currentStep < totalSteps) {
-      router.push(STEP_ROUTES[currentStep] as any) // Use currentStep as index (already 0-indexed for next route)
+      setCurrentStep(currentStep + 1)
     } else {
+      // Onboarding complete, navigate to main app
       router.replace('/')
     }
   }
 
   const goToPreviousStep = () => {
-    if (isNavigating.current) return
-
-    isNavigating.current = true
-
     if (currentStep > 1) {
-      router.back()
+      setCurrentStep(currentStep - 1)
     }
-
-    setTimeout(() => {
-      isNavigating.current = false
-    }, 500)
   }
 
   const value = {
