@@ -144,6 +144,10 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen
+          name="settings"
+          options={{ headerShown: true }} // Explicitly show for settings
+        />
+        <Stack.Screen
           name="events/[id]"
           options={{
             headerShown: true,
