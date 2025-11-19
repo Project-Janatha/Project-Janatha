@@ -141,7 +141,7 @@ function SettingsPanel({ visible, onClose, onLogout }) {
           className="flex-row items-center mb-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
           onPress={() => {
             onClose()
-            router.push('/profile')
+            router.push('/settings')
           }}
         >
           <User size={16} color={isDark ? '#fff' : '#374151'} className="mr-3" />
@@ -151,7 +151,7 @@ function SettingsPanel({ visible, onClose, onLogout }) {
           className="flex-row items-center mb-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
           onPress={() => {
             onClose()
-            router.push('/profile')
+            router.push('/settings/settings')
           }}
         >
           <Settings size={16} color={isDark ? '#fff' : '#374151'} className="mr-3" />
