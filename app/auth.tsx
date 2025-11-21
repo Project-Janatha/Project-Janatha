@@ -16,8 +16,8 @@ import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
 import { PrimaryButton, IconButton, AuthInput } from 'components/ui'
 import { UserContext, useThemeContext } from 'components/contexts'
 import { validateEmail, validatePassword } from 'frontend/utilities'
+import { ThemeSelector, PasswordStrength } from 'components'
 import DevPanel from 'components/DevPanel'
-import ThemeSelector from 'components/ThemeSelector'
 
 const FieldError = ({ message }: { message?: string }) => {
   if (!message) return null
@@ -27,8 +27,6 @@ const FieldError = ({ message }: { message?: string }) => {
 type AuthStep = 'initial' | 'login' | 'signup'
 
 export default function AuthScreen() {
-  console.log('🟢 AuthScreen component executing')
-
   const router = useRouter()
   const { theme, toggleTheme, themePreference, setThemePreference, isDark } = useThemeContext()
   const { checkUserExists, login, signup, setUser, loading } = useContext(UserContext)
@@ -111,6 +109,10 @@ export default function AuthScreen() {
     }
     if (!password) {
       setErrors({ password: 'Please enter a password.' })
+      return
+    }
+    if (!validatePassword(password).isValid) {
+      setErrors({ password: 'Password does not meet complexity requirements.' })
       return
     }
     if (password !== confirmPassword) {
@@ -318,6 +320,7 @@ export default function AuthScreen() {
               {authStep === 'signup' && (
                 <>
                   <View>
+                    <PasswordStrength password={password} show={password.length > 0} />
                     <AuthInput
                       placeholder="Password"
                       onChangeText={handlePasswordChange}
