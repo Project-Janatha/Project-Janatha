@@ -1,25 +1,23 @@
-/**
- * AuthInput.tsx
- *
- * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
- * @author Abhiram Ramachandran
- * @date October 13, 2025
- * @description A TextInput component styled for authentication forms.
- * @requires react-native
- *
- */
 import { TextInput } from 'react-native'
+import { useState } from 'react'
 
-/**
- * Renders AuthInput component.
- * @param props
- * @returns TSX.Element
- */
-export default function AuthInput(props) {
+export default function AuthInput({ secureTextEntry, style, ...props }) {
+  const [changed, setChanged] = useState(false)
+
   return (
     <TextInput
-      className="text-content dark:text-content-dark w-full font-inter rounded-lg px-4 py-3 text-base min-h-[48px] bg-muted/50 dark:bg-muted-dark/10 focus:border-primary focus:outline-none placeholder:text-gray-400 dark:placeholder:text-gray-400"
-      placeholderTextColor="#9CA3AF"
+      className="w-full font-inter rounded-lg px-4 py-3 min-h-[48px] bg-muted/50 dark:bg-muted-dark/10 focus:border-primary focus:outline-none placeholder:text-gray-400 dark:placeholder:text-gray-400"
+      placeholderTextColor="#9ca3af"
+      secureTextEntry={secureTextEntry}
+      onChangeText={() => setChanged(true)}
+      style={[
+        {
+          fontSize: 16, // Industry standard - prevents mobile zoom
+          fontFamily: secureTextEntry && changed ? 'Verdana' : 'Inter', // Better dots
+          letterSpacing: secureTextEntry ? 0.125 : 0, // Space out dots
+        },
+        style,
+      ]}
       {...props}
     />
   )
