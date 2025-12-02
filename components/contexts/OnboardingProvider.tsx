@@ -1,0 +1,82 @@
+import { createContext, useContext, useState } from 'react'
+import { router } from 'expo-router'
+
+interface OnboardingContextType {
+  currentStep: number
+  totalSteps: number
+  firstName: string
+  lastName: string
+  birthdate: Date | null
+  centerID: string
+  phoneNumber: string
+  interests: string[]
+  goToNextStep: () => void
+  goToPreviousStep: () => void
+  completeOnboarding: () => void
+  setFirstName: (name: string) => void
+  setLastName: (name: string) => void
+  setBirthdate: (date: Date) => void
+  setCenterID: (id: string) => void
+  setPhoneNumber: (phoneNumber: string) => void
+  setInterests: (interests: string[]) => void
+}
+
+const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined)
+
+export default function OnboardingProvider({ children }: { children: React.ReactNode }) {
+  const [currentStep, setCurrentStep] = useState(1)
+  const totalSteps = 5 // Total form steps (not including Complete screen)
+
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [birthdate, setBirthdate] = useState<Date | null>(null)
+  const [centerID, setCenterID] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [interests, setInterests] = useState<string[]>([])
+
+  const goToNextStep = () => {
+    // Allow incrementing past totalSteps to show Complete screen
+    setCurrentStep(currentStep + 1)
+  }
+
+  const goToPreviousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
+    }
+  }
+
+  const completeOnboarding = () => {
+    // Logic to mark onboarding as complete (e.g., update user profile, local storage, etc.)
+    router.replace('/')
+  }
+
+  const value = {
+    currentStep,
+    totalSteps,
+    firstName,
+    lastName,
+    birthdate,
+    centerID,
+    phoneNumber,
+    interests,
+    goToNextStep,
+    goToPreviousStep,
+    completeOnboarding,
+    setFirstName,
+    setLastName,
+    setBirthdate,
+    setCenterID,
+    setPhoneNumber,
+    setInterests,
+  }
+
+  return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>
+}
+
+export function useOnboarding() {
+  const context = useContext(OnboardingContext)
+  if (!context) {
+    throw new Error('useOnboarding must be used within an OnboardingProvider')
+  }
+  return context
+}

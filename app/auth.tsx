@@ -1,225 +1,400 @@
-import React, { useState, useContext } from 'react'
-import { Appearance, useColorScheme } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Anchor, H3, Paragraph, View, Button, XStack, Form, Input, YStack, Image} from 'tamagui'
-import { Code, Moon, Sun } from '@tamagui/lucide-icons';
-import { UserContext, PrimaryButton, AuthInput } from 'components'
-import { Platform } from 'react-native';
+import React, { useState, useContext, useEffect, useRef } from 'react'
+import {
+  View,
+  Text,
+  Platform,
+  ScrollView,
+  KeyboardAvoidingView,
+  Pressable,
+  Image,
+  Animated,
+  Easing,
+  TouchableOpacity,
+} from 'react-native'
+import { useRouter } from 'expo-router'
+import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
+import { PrimaryButton, IconButton, AuthInput } from 'components/ui'
+import { UserContext, useThemeContext } from 'components/contexts'
+import { validateEmail, validatePassword } from 'frontend/utilities'
+import { ThemeSelector, PasswordStrength } from 'components'
+import DevPanel from 'components/DevPanel'
 
-const FieldError = ({ message }) => {
-  if (!message) return null;
-  return (
-    <Paragraph color="$red10" fontSize={12} marginTop="$1" marginLeft="$1">
-      {message}
-    </Paragraph>
-  );
-};
+const FieldError = ({ message }: { message?: string }) => {
+  if (!message) return null
+  return <Text className="text-red-500 text-sm mt-1 ml-1 font-inter">{message}</Text>
+}
 
-export default function AuthScreen(props) {
-  const router = useRouter();
-  const colorScheme = useColorScheme()
-  const isDark = colorScheme === 'dark';
-  const { checkUserExists, login, signup, setUser, loading } = useContext(UserContext);
-  const isWeb = Platform.OS === 'web';
-  
-  //Possible auth steps
-  type AuthStep = 'initial' | 'login' | 'signup' | null;
+type AuthStep = 'initial' | 'login' | 'signup'
 
-  // state for current state
-  const [authStep, setAuthStep] = useState<AuthStep>('initial'); // 'login' or 'signup'
-  // state for form inputs
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  // confirm password for signup
-  const [confirmPassword, setConfirmPassword] = useState('');
-  // state for error messages
-  const [errors, setErrors] = useState<{ [Key: string]: string }>({});
+export default function AuthScreen() {
+  const router = useRouter()
+  const { theme, toggleTheme, themePreference, setThemePreference, isDark } = useThemeContext()
+  const { checkUserExists, login, signup, setUser, loading } = useContext(UserContext)
+
+  const [authStep, setAuthStep] = useState<AuthStep>('initial')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [errors, setErrors] = useState<{ [key: string]: string }>({})
+
+  const [backHover, setBackHover] = useState(false)
+  const [showDevPanel, setShowDevPanel] = useState(false)
+
+  const isWeb = Platform.OS === 'web'
+
+  // Theme selector logic (copied from SettingsPanel)
+  const themeOptions = ['light', 'dark', 'system']
+  const optionWidth = 70
+  const indicatorPadding = 8
+  const [selectedIndex, setSelectedIndex] = useState(themeOptions.indexOf(themePreference))
+  const slideAnim = useRef(new Animated.Value(selectedIndex * optionWidth)).current
+
+  useEffect(() => {
+    const idx = themeOptions.indexOf(themePreference)
+    setSelectedIndex(idx)
+    Animated.timing(slideAnim, {
+      toValue: idx * optionWidth,
+      duration: 100,
+      useNativeDriver: true,
+      easing: Easing.inOut(Easing.ease),
+    }).start()
+  }, [themePreference])
 
   const handleContinue = async () => {
-    setErrors({});
+    setErrors({})
     if (!username) {
-      setErrors({username: 'Please enter a username.'});
-      return;
+      setErrors({ username: 'Please enter a username.' })
+      return
+    }
+    if (!validateEmail(username)) {
+      setErrors({ username: 'You must enter a valid email address.' })
+      return
     }
     try {
-      const exists = await checkUserExists(username);
-      if(exists) {
-        setAuthStep('login');
+      const exists = await checkUserExists(username)
+      if (exists) {
+        setAuthStep('login')
       } else {
-        setAuthStep('signup');
-      };
-    } catch (e) {
-      setErrors({form: e.message || 'Failed to connect to server.'});
-    } 
-  };
-
-  const handleLogin = async (username, password) => {
-    setErrors({});
-    if (!username) {
-      setErrors({username: 'Please enter a username.'});
-      return;
+        setAuthStep('signup')
+      }
+    } catch (e: any) {
+      setErrors({ form: e.message || 'Failed to connect to server.' })
     }
+  }
+
+  const handleLogin = async () => {
+    setErrors({})
+    if (!username) {
+      setErrors({ username: 'Please enter a username.' })
+      return
+    }
+
     if (!password) {
-      setErrors({password: 'Please your password.'});
-      return;
+      setErrors({ password: 'Please enter your password.' })
+      return
     }
     try {
-      await login(username, password);
-      router.replace('/(tabs)');
-    } catch (e) {
-      setErrors({form: e.message || 'Username or password is incorrect.'});
+      await login(username, password)
+      router.replace('/(tabs)')
+    } catch (e: any) {
+      setErrors({ form: 'Username or password is incorrect.' })
     }
-  };
+  }
 
-  // TODO: Add secure password criteria and email validation
-  const handleSignup = async (username, password, confirmPassword) => {
-    setErrors({});
+  const handleSignup = async () => {
+    setErrors({})
     if (!username) {
-      setErrors({ username: 'Please enter a username.'});
-      return;
+      setErrors({ username: 'Please enter a username.' })
+      return
     }
     if (!password) {
-      setErrors({password: 'Please enter a password.'});
-      return;
+      setErrors({ password: 'Please enter a password.' })
+      return
+    }
+    if (!validatePassword(password).isValid) {
+      setErrors({ password: 'Password does not meet complexity requirements.' })
+      return
     }
     if (password !== confirmPassword) {
-      setErrors({confirmPassword: 'Passwords do not match.'});
-      return;
+      setErrors({ confirmPassword: 'Passwords do not match.' })
+      return
     }
     try {
-      await signup(username, password);
-      router.replace('/onboarding/welcome');
-    } catch (e) {
-      setErrors({ form: e.message || 'Failed to sign up. Please try again.'});
+      await signup(username, password)
+      router.replace('/onboarding')
+    } catch (e: any) {
+      setErrors({ form: e.message || 'Failed to sign up. Please try again.' })
     }
-  };
+  }
+
+  const handleSubmit = (e?: any) => {
+    if (Platform.OS === 'web' && e) {
+      e.preventDefault?.()
+      e.stopPropagation?.()
+    }
+
+    if (authStep === 'login') {
+      handleLogin()
+    } else if (authStep === 'signup') {
+      handleSignup()
+    } else {
+      handleContinue()
+    }
+  }
+
+  const handleDevMode = () => {
+    setShowDevPanel(true)
+  }
+
+  const handleBack = () => {
+    setAuthStep('initial')
+    setPassword('')
+    setConfirmPassword('')
+    setErrors({})
+    setBackHover(false)
+  }
+
+  const isButtonDisabled =
+    loading ||
+    (authStep === 'initial' && !username) ||
+    (authStep !== 'initial' && !password) ||
+    (authStep === 'signup' && !confirmPassword)
+
+  const logoSize = isWeb ? 100 : 80
+
+  // Collect error messages to display
+  const errorMessages = Object.values(errors).filter(Boolean)
+
+  // Email input
+  const handleUsernameChange = (text: string) => {
+    setUsername(text)
+    setErrors((prev) => ({ ...prev, username: '' }))
+  }
+
+  // Password input
+  const handlePasswordChange = (text: string) => {
+    setPassword(text)
+    setErrors((prev) => ({ ...prev, password: '' }))
+  }
+
+  // Confirm password input
+  const handleConfirmPasswordChange = (text: string) => {
+    setConfirmPassword(text)
+    setErrors((prev) => ({ ...prev, confirmPassword: '' }))
+  }
 
   return (
-    <YStack 
-      flex={1} 
-      backgroundColor="$background" 
-      padding={isWeb ? "$6" : "$2"}
-      justifyContent="space-between"
-      alignItems={"center"}
-      width={"100%"}
-      minHeight="100vh"
-      maxWidth="100vw"
-      className="auth-container">
-      
-      {/* Top Section */}
-      <YStack alignItems="center" paddingTop={isWeb ? "$8" : "$6"} gap='$4' width="100%" flex={1} justifyContent="center">
-        <Image 
-          source={isDark ? (require("../assets/images/chinmaya_logo_dark.svg")) : (require("../assets/images/chinmaya_logo_light.svg"))}
-          style={{ width: isWeb ? 80 : 60, height: isWeb ? 80 : 60 }}
-        />
-        <H3 fontWeight="$4" color="$color" textAlign="center">
-          Log In or Sign Up
-        </H3>
-      </YStack>
-      
-      {/* Form Section */}
-      <YStack width="100%" alignItems="center" flex={1} justifyContent="center" paddingBottom={isWeb ? "$8" : "$6"} paddingHorizontal="$4">
-        <Form
-          alignItems="center"
-          width="100%"
-          maxWidth={isWeb ? 400 : 320}
-          minWidth={280}
-          gap="$3"
-          className="auth-form"
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className="flex-1"
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        className="flex-1 bg-background dark:bg-background-dark"
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Theme Selector - Fixed at top center */}
+        <View
+          className="fixed left-1/2 -translate-x-1/2 top-6 z-10 w-[226px]"
           style={{
-            boxSizing: 'border-box',
-            overflow: 'hidden'
+            position: 'fixed',
+            left: '50%',
+            transform: [{ translateX: -113 }], // half of 226px
+            top: 24,
+            zIndex: 10,
+            width: 226,
           }}
-          onSubmit={() => {
-            if (authStep === "login") {
-              handleLogin(username, password);
-            } else if (authStep === "signup") {
-              handleSignup(username, password, confirmPassword);
-            } else {
-              handleContinue();
-            }
-          }}
-          padding={isWeb ? "$6" : "$3"}
         >
-        <FieldError message={errors.form} />
-        <AuthInput 
-          placeholder="Email" 
-          onChangeText={setUsername}
-          value={username}
-          width = "100%"
+          <ThemeSelector
+            className="relative flex-row bg-gray-100 dark:bg-neutral-800 rounded-lg p-1"
+            style={{ width: 218 }}
           />
-        <FieldError message={errors.username} />
-        {authStep === 'login' && (
-          <YStack gap="$2" width="100%">
-            <AuthInput 
-              placeholder="Password" 
-              onChangeText={setPassword} 
-              value={password}
-              width={"100%"}
-              secureTextEntry />
-            <FieldError message={errors.password} />
-          </YStack>
-          )}
-          
-        {authStep === 'signup' && (
-          <YStack gap="$2" width="100%">
-            <AuthInput 
-              placeholder="Password" 
-              onChangeText={setPassword} 
-              value={password}
-              width={"100%"}
-              secureTextEntry 
-            />
-            <FieldError message={errors.password}/>
-            <AuthInput 
-              placeholder="Confirm password" 
-              onChangeText={setConfirmPassword}  
-              value={confirmPassword}
-              width={"100%"}
-              secureTextEntry 
-            />
-            <FieldError message={errors.confirmPassword} />
-          </YStack>
-          )}
-          <Form.Trigger asChild>
-            <PrimaryButton 
-              width={'100%'} 
-              disabled={loading || (authStep === 'initial' && !username) // disable if loading or username empty
-                || (authStep !== 'initial' && !password) // disable if loading or password empty for login/signup
-                || (authStep === 'signup' && !confirmPassword)}  // disable if loading or confirm password empty for signup
-            >
-              {loading ? 'Please wait...' : authStep === 'login' ? 'Log In' : authStep === 'signup' ? 'Sign Up' : 'Continue'}
-            </PrimaryButton>
-          </Form.Trigger>
-        </Form>
-        
-        {/* Dev Mode Button - only show on web */}
-        {isWeb && (
-          <Button 
-            icon={<Code color="$color" />} 
-            marginTop="$4"
-            onPress={() => {
-              const devUser = {
-                username: 'dev_user',
-                id: 'dev_id',
-                center: -1,
-                points: 999,
-                isVerified: true,
-                verificationLevel: 99,
-                exists: true,
-                isActive: true,
-                events: [],
-              };
-              // Set the mock user in the context
-              setUser(devUser);
-              // Navigate to the main screen
-              router.push('/(tabs)');
-            }}
+        </View>
+
+        {/* Main content - card expands downward, always below the fixed controls */}
+        <View
+          className="flex-1 justify-center items-center w-full px-6"
+          style={{
+            marginTop: 80, // ensures card starts below the fixed controls
+            paddingBottom: 48,
+          }}
+        >
+          {/* Card Container */}
+          <View
+            className={`w-full ${
+              isWeb ? 'max-w-[380px]' : 'max-w-[380px]'
+            } bg-card dark:bg-card-dark rounded-3xl shadow-md p-8 ${isWeb ? 'py-12' : 'py-10'}`}
           >
-            Dev Mode
-          </Button>
-        )}
-      </YStack>
-    </YStack>
-  );
+            {/* Back Button */}
+            {authStep !== 'initial' && (
+              <TouchableOpacity
+                onPress={handleBack}
+                activeOpacity={0.7}
+                {...(isWeb && {
+                  onMouseEnter: () => setBackHover(true),
+                  onMouseLeave: () => setBackHover(false),
+                })}
+                className={`flex-row items-center gap-2 mb-6 rounded-xl px-3 py-2 transition-colors duration-150 self-start ${
+                  backHover ? 'bg-gray-100 dark:bg-neutral-800' : ''
+                }`}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                <ArrowLeft
+                  size={20}
+                  className={backHover ? 'text-primary' : isDark ? 'text-white' : 'text-content'}
+                />
+                <Text
+                  className={`font-inter font-medium ${
+                    backHover ? 'text-primary' : 'text-content dark:text-content-dark'
+                  }`}
+                >
+                  Back
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Logo & Title */}
+            <View className="items-center mb-8">
+              {isDark ? (
+                <Image
+                  source={require('assets/images/chinmaya_logo_dark.svg')}
+                  style={{ width: logoSize, height: logoSize }}
+                />
+              ) : (
+                <Image
+                  source={require('assets/images/chinmaya_logo_light.svg')}
+                  style={{ width: logoSize, height: logoSize }}
+                />
+              )}
+
+              <Text className="text-3xl font-inter font-bold text-content dark:text-content-dark text-center mt-6">
+                {authStep === 'login'
+                  ? 'Welcome Back'
+                  : authStep === 'signup'
+                  ? 'Create Account'
+                  : 'Get Started'}
+              </Text>
+
+              <Text className="text-base font-inter text-content dark:text-content-dark opacity-70 text-center mt-2">
+                {authStep === 'login'
+                  ? 'Enter your password to continue'
+                  : authStep === 'signup'
+                  ? 'Set up your new account'
+                  : 'Enter your email to continue'}
+              </Text>
+            </View>
+
+            {/* Form */}
+            {errorMessages.length > 0 && (
+              <View className="w-full font-inter bg-red-50 dark:bg-red-900/20 rounded-xl px-4 py-3 mb-4">
+                {errorMessages.map((msg, idx) => (
+                  <Text key={idx} className="text-red-500 text-sm font-inter">
+                    {msg}
+                  </Text>
+                ))}
+              </View>
+            )}
+
+            <View className="gap-4">
+              <View>
+                <AuthInput
+                  placeholder="Email"
+                  onChangeText={handleUsernameChange}
+                  value={username}
+                  editable={authStep === 'initial'}
+                />
+              </View>
+
+              {authStep === 'login' && (
+                <View>
+                  <AuthInput
+                    placeholder="Password"
+                    onChangeText={handlePasswordChange}
+                    value={password}
+                    secureTextEntry
+                    autoComplete="password"
+                  />
+                </View>
+              )}
+
+              {authStep === 'signup' && (
+                <>
+                  <View>
+                    <PasswordStrength password={password} show={password.length > 0} />
+                    <AuthInput
+                      placeholder="Password"
+                      onChangeText={handlePasswordChange}
+                      value={password}
+                      secureTextEntry
+                      autoComplete="password-new"
+                    />
+                  </View>
+                  <View>
+                    <AuthInput
+                      placeholder="Confirm password"
+                      onChangeText={handleConfirmPasswordChange}
+                      value={confirmPassword}
+                      secureTextEntry
+                      autoComplete="password-new"
+                    />
+                  </View>
+                </>
+              )}
+
+              {/* Submit Button */}
+              <Pressable
+                onPress={handleSubmit}
+                disabled={isButtonDisabled}
+                className={`items-center justify-center mt-2 rounded-2xl ${
+                  isButtonDisabled
+                    ? 'bg-primary/40 dark:bg-primary/30'
+                    : 'bg-primary active:bg-primary-press hover:scale-105 hovershadow-md transition-transform duration-150'
+                } py-4 px-8`}
+              >
+                <Text className="text-white font-inter font-bold text-md">
+                  {loading
+                    ? 'Please wait...'
+                    : authStep === 'login'
+                    ? 'Log In'
+                    : authStep === 'signup'
+                    ? 'Sign Up'
+                    : 'Continue'}
+                </Text>
+              </Pressable>
+
+              {/* Forgot Password (only on login) */}
+              {authStep === 'login' && (
+                <Pressable className="items-center mt-2">
+                  <Text className="text-primary font-inter font-medium">Forgot password?</Text>
+                </Pressable>
+              )}
+            </View>
+
+            {/* Dev Mode Button */}
+            <View className="mt-8 pt-6 border-t border-borderColor dark:border-borderColor-dark">
+              <Pressable
+                onPress={() => setShowDevPanel(true)}
+                className="flex-row items-center justify-center bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-xl active:opacity-70"
+              >
+                <Code size={18} className={isDark ? 'text-white' : 'text-black'} />
+                <Text className="ml-2 text-content dark:text-content-dark font-inter font-semibold">
+                  Developer Mode
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Show DevPanel when Developer Mode is clicked */}
+            {showDevPanel && (
+              <DevPanel visible={showDevPanel} onClose={() => setShowDevPanel(false)} />
+            )}
+          </View>
+
+          {/* Footer Text */}
+          <Text className="text-content dark:text-content-dark opacity-50 text-sm font-inter mt-8 text-center px-4">
+            By continuing, you agree to our Terms of Service and Privacy Policy
+          </Text>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  )
 }
