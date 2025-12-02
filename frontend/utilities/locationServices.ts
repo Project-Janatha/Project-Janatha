@@ -28,7 +28,7 @@ async function getLocationAccess()
     let {status} = await Location.requestForegroundPermissionsAsync();
     return status == 'granted';
 }
-/**
+/**w
  * Gets the current position.
  * @return {Array[number]} If no permission is granted, returns an empty array. Else, returns the current position of the user, as an array of length 2, in the form [latitude, longitude]
  */

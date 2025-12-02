@@ -1,110 +1,140 @@
-import '../tamagui-web.css'
-
-import { useEffect, useContext } from 'react'
-import { useColorScheme } from 'react-native'
-import { StatusBar } from 'expo-status-bar'
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
-import { Platform } from 'react-native'
-import { SplashScreen, Stack, Redirect, usePathname } from 'expo-router'
-import { Provider } from 'components';
-import { useTheme } from 'tamagui';
-import { UserProvider, UserContext } from 'components';
-import { Share } from '@tamagui/lucide-icons';
-import { Button } from 'tamagui';
-
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router'
+import '@expo/metro-runtime'
+import { useEffect, useContext, useState } from 'react'
+import { ActivityIndicator, View, Text } from 'react-native'
+import { useFonts } from 'expo-font'
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider as NavigationThemeProvider,
+} from '@react-navigation/native'
+import { SplashScreen, Stack, usePathname, useRouter } from 'expo-router'
+import {
+  UserProvider,
+  UserContext,
+  ThemeProvider as CustomThemeProvider,
+  useThemeContext,
+} from 'components/contexts'
+import { IconButton } from 'components/ui'
+import { Share } from 'lucide-react-native'
+import '../globals.css'
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(tabs)',
 }
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync()
 
-/**
- * RootLayout Component
- * @return {JSX.Element} A Map component that displays a map using mapboxgl.
- */
 export default function RootLayout() {
-  // const [interLoaded, interError] = useFonts({
-  //   Inter: require('@tamagui/font-inter/otf/Inter-Medium.otf'),
-  //   InterBold: require('@tamagui/font-inter/otf/Inter-Bold.otf'),
-  // })
+  const [fontsLoaded, fontsError] = useFonts({
+    'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
+    'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
+    'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.ttf'),
+    'Inter-Medium': require('../assets/fonts/Inter-Medium.ttf'),
+    'Inter-Light': require('../assets/fonts/Inter-Light.ttf'),
+  })
 
+  const [fontTimeout, setFontTimeout] = useState(false)
 
-  // Font loading - web uses CSS @font-face, native uses expo-font
-  const [loaded, loadError] = Platform.OS === 'web' 
-    ? [true, null] // For web, fonts are loaded via CSS @font-face declarations
-    : (() => {
-        // For native platforms, we'll need to handle this differently
-        // For now, just return loaded state
-        return [true, null];
-      })();
+  // Add a timeout in case fonts don't load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!fontsLoaded && !fontsError) {
+        console.log('Font loading timeout - continuing anyway')
+        setFontTimeout(true)
+      }
+    }, 3000) // 3 second timeout
+
+    return () => clearTimeout(timer)
+  }, [fontsLoaded, fontsError])
+
+  console.log('Fonts loaded:', fontsLoaded, 'Fonts error:', fontsError)
 
   useEffect(() => {
-    if (loaded || loadError) {
-      // Hide the splash screen after the fonts have loaded (or an error was returned) and the UI is ready.
+    if (fontsLoaded || fontsError || fontTimeout) {
       SplashScreen.hideAsync()
     }
-  }, [loaded, loadError])
+  }, [fontsLoaded, fontsError, fontTimeout])
 
-  if (!loaded && !loadError) {
-    return null
+  if (!fontsLoaded && !fontsError && !fontTimeout) {
+    return (
+      <View
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}
+      >
+        <ActivityIndicator size="large" color="#ea580c" />
+        <Text style={{ marginTop: 10 }}>Loading fonts...</Text>
+      </View>
+    )
+  }
+  // If fonts failed to load, show error
+  if (fontsError) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+        <Text style={{ fontSize: 18, color: 'red' }}>Font loading failed</Text>
+        <Text style={{ marginTop: 10 }}>Continuing anyway...</Text>
+      </View>
+    )
   }
 
   return (
-    <Providers>
-      <RootLayoutNav />
-    </Providers>
-  )
-}
-
-const Providers = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <UserProvider>
-      <Provider>{children}</Provider>
-    </UserProvider>
+    <CustomThemeProvider>
+      <UserProvider>
+        <RootLayoutNav />
+      </UserProvider>
+    </CustomThemeProvider>
   )
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme()
-  const theme = useTheme()
-  const { isAuthenticated } = useContext(UserContext);
+  const { user, loading } = useContext(UserContext)
+  const { isDark } = useThemeContext()
+  const pathname = usePathname()
+  const router = useRouter()
+  const isAuthenticated = !!user
 
-  const pathname = usePathname();
-  if (!isAuthenticated && pathname !== '/auth') {
-    return <Redirect href="/auth" />
+  console.log(
+    'RootLayoutNav - isAuthenticated:',
+    isAuthenticated,
+    'pathname:',
+    pathname,
+    'loading:',
+    loading,
+    'isDark:',
+    isDark
+  )
+
+  useEffect(() => {
+    if (pathname === '/auth') {
+      console.log('On auth page, skipping redirect logic')
+      return
+    }
+
+    if (!loading) {
+      if (!isAuthenticated) {
+        console.log('Not authenticated, redirecting to /auth')
+        router.replace('/auth')
+      } else if (pathname === '/auth') {
+        console.log('Authenticated on auth page, redirecting to /(tabs)')
+        router.replace('/(tabs)')
+      }
+    }
+  }, [isAuthenticated, loading, pathname])
+
+  if (loading && pathname !== '/auth') {
+    console.log('SHOWING LOADING SCREEN')
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Loading...</Text>
+      </View>
+    )
   }
+
+  const navTheme = isDark ? DarkTheme : DefaultTheme
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Stack>
-        <Stack.Screen
-          name="(tabs)"
-          options={{
-            headerShown: false,
-          }}
-        />
-
-        <Stack.Screen
-          name="auth"
-          options={{
-            headerShown: false,
-            //title: 'Log In or Sign Up',
-            //presentation: 'modal',
-            //animation: 'slide_from_right',
-            //gestureEnabled: true,
-            //gestureDirection: 'horizontal',
-            
-          }}
-        />
-
+    <NavigationThemeProvider value={navTheme}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
         <Stack.Screen
           name="profile"
           options={{
@@ -113,51 +143,43 @@ function RootLayoutNav() {
             animation: 'slide_from_bottom',
           }}
         />
-
+        <Stack.Screen
+          name="settings"
+          options={{ headerShown: true }} // Explicitly show for settings
+        />
         <Stack.Screen
           name="events/[id]"
-          options={({ route }) => ({
+          options={{
             headerShown: true,
             title: 'Event Details',
-            headerBackTitleVisible: false,
+            headerBackTitle: '', // Use empty string instead of headerBackTitleVisible
             headerRight: () => (
-              <Button
-                size="$3"
-                circular
-                icon={<Share size={20} />}
-                variant="outlined"
-                mr="$3"
-                onPress={() => {
-                  // TODO: Implement share functionality
-                  console.log('Share event');
-                }}
-              />
+              <IconButton
+                className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
+                onPress={() => console.log('Share event')}
+              >
+                <Share size={20} />
+              </IconButton>
             ),
-          })}
+          }}
         />
-
         <Stack.Screen
           name="center/[id]"
-          options={({ route }) => ({
+          options={{
             headerShown: true,
             title: 'Center Details',
-            headerBackTitleVisible: false,
+            headerBackTitle: '', // Use empty string instead of headerBackTitleVisible
             headerRight: () => (
-              <Button
-                size="$3"
-                circular
-                icon={<Share size={20} />}
-                variant="outlined"
-                mr="$3"
-                onPress={() => {
-                  // TODO: Implement share functionality
-                  console.log('Share center');
-                }}
-              />
+              <IconButton
+                className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
+                onPress={() => console.log('Share center')}
+              >
+                <Share size={20} />
+              </IconButton>
             ),
-          })}
+          }}
         />
       </Stack>
-    </ThemeProvider>
+    </NavigationThemeProvider>
   )
 }
