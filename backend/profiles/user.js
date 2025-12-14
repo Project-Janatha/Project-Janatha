@@ -27,6 +27,10 @@ class User
     if(isCalledAtRegistration || auth.checkUserExistence(username))
     {
       this.username = username;
+      this.firstName = '';
+      this.lastName = '';
+      this.dateOfBirth = null; // Stored as a Date object.
+      this.profilePictureURL = this.getDefaultAvatar();
       this.center = -1;
       this.points = 0;
       this.isVerified = false;
@@ -38,6 +42,20 @@ class User
     }else{
       console.error('User does not exist!');
       this.exists = false;
+    }
+  }
+
+  /** 
+   * Generates the default avatar for a user.
+   * @returns {string} The URL of the default avatar.
+   */
+  getDefaultAvatar()
+  {
+    if (this.firstName && this.lastName) {
+    const initials = this.firstName.charAt(0).toUpperCase() + this.lastName.charAt(0).toUpperCase();
+      return `https://ui-avatars.com/api/?name=${initials}&background=random&size=256`;
+    } else {
+      return 'https://ui-avatars.com/api/?name=User&background=random&size=256';
     }
   }
   /**
@@ -53,6 +71,15 @@ class User
       return this.points;
     }
     return -1;
+  }
+  /**
+   * Sets user's first name.
+   * @param {string} firstName The first name to set.
+   */
+  setFirstName(firstName)
+  {
+    this.firstName = firstName;
+    return true;
   }
   /**
    * Sets the center.
@@ -104,6 +131,10 @@ class User
     
     return {
       "username": this.username,
+      "firstName": this.firstName,
+      "lastName": this.lastName,
+      "dateOfBirth": this.dateOfBirth,
+      "profilePictureURL": this.profilePictureURL,
       "center": this.center,
       "points": this.points,
       "isVerified": this.isVerified,
@@ -132,6 +163,10 @@ class User
     if(data.exists)
     {
       this.username = data.username;
+      this.firstName = data.firstName;
+      this.lastName = data.lastName;
+      this.dateOfBirth = data.dateOfBirth;
+      this.profilePictureURL = data.profilePictureURL;
       this.center = data.center;
       this.points = data.points;
       this.isVerified = data.isVerified;

@@ -10,27 +10,33 @@
  * Backend constants.
  */
 //Imports
-import Datastore from '@seald-io/nedb';
-import fs from 'fs';
-import path from 'path';
+// import Datastore from '@seald-io/nedb';
+// import fs from 'fs';
+// import path from 'path';
+import { docClient } from './dynamoClient';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const dbDir = path.join(__dirname, '..', 'db');
-if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir);
-}
+// const dbDir = path.join(__dirname, '..', 'db');
+// if (!fs.existsSync(dbDir)) {
+//     fs.mkdirSync(dbDir);
+// }
 
-const usersBase = new Datastore({
-    "filename": path.join(dbDir, "users.db"), 
-    "autoload":true
-});
+// const usersBase = new Datastore({
+//     "filename": path.join(dbDir, "users.db"), 
+//     "autoload":true
+// });
 
-//Start constants
-//Databases
-const eventsBase = new Datastore({'filename': path.join(dbDir, "events.db"), 'autoload': true});
+// //Start constants
+// //Databases
+// const eventsBase = new Datastore({'filename': path.join(dbDir, "events.db"), 'autoload': true});
+
+// DynamoDB Tables
+const USERS_TABLE = process.env.USERS_TABLE || "ChinmayaJanata-Users";
+const EVENTS_TABLE = process.env.EVENTS_TABLE || "ChinmayaJanata-Events";
+const CENTERS_TABLE = process.env.CENTERS_TABLE || "ChinmayaJanata-Centers";
 
 //Admin constants
 const ADMIN_NAME = "Brahman";
@@ -56,4 +62,4 @@ const BHIKSHA = 92;
 
 
 //Export
-export default {usersBase, eventsBase, ADMIN_NAME, ADMIN_CUTOFF, NORMAL_USER, SEVAK, SENIOR_SEVAK, BRAHMACHARI, SWAMI, GLOBAL_HEAD, CENTER_ID_VARIABILITY, EVENT_ID_VARIABILITY, TIER_DESCALE, SATSANG, BHIKSHA};
+export default {docClient, USERS_TABLE, EVENTS_TABLE, CENTERS_TABLE, ADMIN_NAME, ADMIN_CUTOFF, NORMAL_USER, SEVAK, SENIOR_SEVAK, BRAHMACHARI, SWAMI, GLOBAL_HEAD, CENTER_ID_VARIABILITY, EVENT_ID_VARIABILITY, TIER_DESCALE, SATSANG, BHIKSHA};
