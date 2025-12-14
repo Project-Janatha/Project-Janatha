@@ -301,10 +301,11 @@ export default function AuthScreen() {
                   placeholder="Email"
                   onChangeText={handleUsernameChange}
                   value={username}
+                  secureTextEntry={false}
                   editable={authStep === 'initial'}
+                  style={{}}
                 />
               </View>
-
               {authStep === 'login' && (
                 <View>
                   <AuthInput
@@ -313,6 +314,7 @@ export default function AuthScreen() {
                     value={password}
                     secureTextEntry
                     autoComplete="password"
+                    style={{}}
                   />
                 </View>
               )}
@@ -327,6 +329,7 @@ export default function AuthScreen() {
                       value={password}
                       secureTextEntry
                       autoComplete="password-new"
+                      style={{}}
                     />
                   </View>
                   <View>
@@ -336,6 +339,7 @@ export default function AuthScreen() {
                       value={confirmPassword}
                       secureTextEntry
                       autoComplete="password-new"
+                      style={{}}
                     />
                   </View>
                 </>
