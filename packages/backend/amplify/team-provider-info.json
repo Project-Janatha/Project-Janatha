@@ -1,0 +1,15 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-projectjanata-dev-0afc5-authRole",
+      "UnauthRoleArn": "arn:aws:iam::278582032351:role/amplify-projectjanata-dev-0afc5-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::278582032351:role/amplify-projectjanata-dev-0afc5-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-projectjanata-dev-0afc5-deployment",
+      "UnauthRoleName": "amplify-projectjanata-dev-0afc5-unauthRole",
+      "StackName": "amplify-projectjanata-dev-0afc5",
+      "StackId": "arn:aws:cloudformation:us-east-1:278582032351:stack/amplify-projectjanata-dev-0afc5/c08cedb0-d939-11f0-aff9-0affd2545ccb",
+      "AmplifyAppId": "d15uljc1lbelkz"
+    }
+  }
+}
