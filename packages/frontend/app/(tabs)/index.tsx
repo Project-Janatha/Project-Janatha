@@ -3,9 +3,9 @@ import React, { useContext } from 'react'
 import { View, Text, ScrollView, Pressable } from 'react-native'
 import { MapPin, ChevronRight, ThumbsUp, MessageCircle } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
-import { UserContext } from 'components/contexts'
-import { SecondaryButton } from 'components/ui'
-import { Map } from 'components'
+import { UserContext } from '../../components/contexts'
+import { SecondaryButton } from '../../components/ui'
+import { Map } from '../../components'
 import { useRouter } from 'expo-router'
 
 type MapPoint = {

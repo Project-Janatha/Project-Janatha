@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { View, TextInput, Pressable, Text } from 'react-native'
-import { IconButton } from 'components/ui'
+import { IconButton } from '../../components/ui'
 import {
   Search,
   SlidersHorizontal,
@@ -10,8 +10,8 @@ import {
   LayoutGrid,
 } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
-import { useThemeContext } from 'components/contexts'
-import Map, { MapRef } from 'components/Map.web'
+import { useThemeContext } from '../../components/contexts'
+import Map, { MapRef } from '../../components/Map.web'
 
 /**
  * ExploreScreen Component

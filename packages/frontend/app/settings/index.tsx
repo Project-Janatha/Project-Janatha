@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { Camera } from 'lucide-react-native'
-import { UserContext } from 'components/contexts'
+import { UserContext } from '../../components/contexts'
 
 type ProfileData = {
   name: string

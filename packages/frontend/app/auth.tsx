@@ -13,11 +13,11 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
-import { PrimaryButton, IconButton, AuthInput } from 'components/ui'
-import { UserContext, useThemeContext } from 'components/contexts'
-import { validateEmail, validatePassword } from 'frontend/utilities'
-import { ThemeSelector, PasswordStrength } from 'components'
-import DevPanel from 'components/DevPanel'
+import { PrimaryButton, IconButton, AuthInput } from '../components/ui'
+import { UserContext, useThemeContext } from '../components/contexts'
+import { validateEmail, validatePassword } from '../utilities'
+import { ThemeSelector, PasswordStrength } from '../components'
+import DevPanel from '../components/DevPanel'
 
 const FieldError = ({ message }: { message?: string }) => {
   if (!message) return null

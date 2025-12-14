@@ -13,8 +13,8 @@ import {
   UserContext,
   ThemeProvider as CustomThemeProvider,
   useThemeContext,
-} from 'components/contexts'
-import { IconButton } from 'components/ui'
+} from '../components/contexts'
+import { IconButton } from '../components/ui'
 import { Share } from 'lucide-react-native'
 import '../globals.css'
 

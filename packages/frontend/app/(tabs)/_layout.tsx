@@ -1,11 +1,11 @@
 import { Link, Tabs, useRouter, usePathname } from 'expo-router'
 import { Platform, View, Text, Pressable } from 'react-native'
 import { useContext, useState } from 'react'
-import { UserContext, useThemeContext } from 'components/contexts'
-import { GhostButton, DestructiveButton } from 'components/ui'
+import { UserContext, useThemeContext } from '../../components/contexts'
+import { GhostButton, DestructiveButton } from '../../components/ui'
 import { Compass, User, Settings, LogOut } from 'lucide-react-native'
 import { Ionicons } from '@expo/vector-icons'
-import SettingsPanel from 'components/SettingsPanel'
+import SettingsPanel from '../../components/SettingsPanel'
 
 /**
  * TabLayout Component - The main layout for the tab-based navigation.

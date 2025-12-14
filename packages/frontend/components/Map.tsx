@@ -1,20 +1,20 @@
 /**
  * Map.tsx
- * 
+ *
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
  * Author: Abhiram Ramachandran
  * Date Authored: September 2, 2025
  * Last Date Modified: September 2, 2025
- * 
+ *
  * This file exports a Map component that integrates with react-native-maps to provide map functionalities for iOS and Android.
- * 
+ *
  * Dependencies:
  * - react-native-maps: For rendering maps and handling map-related
  */
-import MapView, { Marker } from "react-native-maps";
-import { StyleSheet } from "react-native";
-import React, { useEffect, useState } from "react";
-import { getCurrentPosition } from 'frontend/utilities'
+import MapView, { Marker } from 'react-native-maps'
+import { StyleSheet } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { getCurrentPosition } from '../../frontend/utilities'
 
 const styles = StyleSheet.create({
   container: {
@@ -24,28 +24,28 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-});
+})
 
 interface MapPoint {
-  id: string;
-  type: 'center' | 'event';
-  name: string;
-  latitude: number;
-  longitude: number;
+  id: string
+  type: 'center' | 'event'
+  name: string
+  latitude: number
+  longitude: number
 }
 
 interface MapProps {
-  points?: MapPoint[];
-  onPointPress?: (point: MapPoint) => void;
+  points?: MapPoint[]
+  onPointPress?: (point: MapPoint) => void
 }
 
- /**
+/**
  * Map Component
  * @param {MapProps} props - Props passed to the Map component including points and onPointPress handler.
  * @return {JSX.Element} A Map component that displays a map using react-native-maps with markers.
  */
 export default function Map({ points = [], onPointPress }: MapProps) {
-  const [region, setRegion] = useState<any>(null);
+  const [region, setRegion] = useState<any>(null)
 
   useEffect(() => {
     getCurrentPosition().then((position: any) => {
@@ -55,23 +55,25 @@ export default function Map({ points = [], onPointPress }: MapProps) {
         longitude: position.longitude,
         latitudeDelta: 0.0922,
         longitudeDelta: 0.0421,
-      });
-    });
-  }, []);
+      })
+    })
+  }, [])
 
   const getMarkerColor = (type: string) => {
-    return type === 'center' ? '#dc2626' : '#2563eb'; // Red for centers, blue for events
-  };
+    return type === 'center' ? '#dc2626' : '#2563eb' // Red for centers, blue for events
+  }
 
   return (
     <MapView
       style={styles.map}
-      initialRegion={region || {
-        latitude: 37.78825,
-        longitude: -122.4324,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      }}
+      initialRegion={
+        region || {
+          latitude: 37.78825,
+          longitude: -122.4324,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        }
+      }
       showsUserLocation={true}
       showsMyLocationButton={true}
       showsCompass={true}
@@ -93,5 +95,5 @@ export default function Map({ points = [], onPointPress }: MapProps) {
         />
       ))}
     </MapView>
-  );
-};
+  )
+}

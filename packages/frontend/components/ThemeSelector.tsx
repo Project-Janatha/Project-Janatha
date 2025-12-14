@@ -48,7 +48,7 @@ export default function ThemeSelector({ style, className }) {
       {themeOptions.map((option, idx) => (
         <Pressable
           key={option}
-          onPress={() => setThemePreference(option)}
+          onPress={() => setThemePreference(option as 'light' | 'dark' | 'system')}
           className="flex-row items-center justify-center gap-1 py-2 px-3 rounded-md z-10"
           style={{ width: optionWidth }}
         >

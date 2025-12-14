@@ -1,6 +1,6 @@
 import { View, Text, Pressable, SafeAreaView } from 'react-native'
 import React, { useState } from 'react'
-import { useOnboarding } from 'components/contexts'
+import { useOnboarding } from '../contexts'
 
 export default function Step4() {
   const { goToNextStep, interests, setInterests } = useOnboarding()

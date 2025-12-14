@@ -6,11 +6,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"yarn workspace @janatha/backend dev\" \"yarn workspace @janatha/frontend dev\"",
-    "build": "yarn workspaces run build",
-    "backend": "yarn workspace @janatha/backend dev",
-    "frontend": "yarn workspace @janatha/frontend dev",
-    "deploy": "bash infrastructure/scripts/deploy.sh"
+    "dev": "concurrently \"npm run dev --workspace=@janatha/backend\" \"npm run dev --workspace=@janatha/frontend\"",
+    "build": "npm run build --workspaces",
+    "backend": "npm run dev --workspace=@janatha/backend",
+    "frontend": "npm run dev --workspace=@janatha/frontend",
+    "deploy": "bash infrastructure/scripts/deploy.sh",
+    "amplify": "amplify"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

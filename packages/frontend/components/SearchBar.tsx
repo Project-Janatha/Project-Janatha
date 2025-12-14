@@ -11,7 +11,7 @@
  * Dependencies:
  * - @rnmapbox/maps: For rendering maps and handling map-related functionalities.
  */
-import { PrimaryButton } from 'components/ui'
+import { PrimaryButton } from './ui'
 import { Search } from 'lucide-react-native'
 import { TextInput, View } from 'react-native'
 
