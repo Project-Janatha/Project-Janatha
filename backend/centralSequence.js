@@ -16,11 +16,15 @@ import cors from 'cors';
 console.log("CORS");
 import express from 'express';
 console.log("Express");
-import Datastore from '@seald-io/nedb';
-console.log("nedb");
+// import Datastore from '@seald-io/nedb';
+// console.log("nedb");
 import cryptography from 'bcryptjs';
 console.log("Bcrypt");
-import session from 'express-session';
+// import session from 'express-session';
+import jwt from 'jsonwebtoken';
+console.log("JWT");
+import cookieParser from 'cookie-parser';
+console.log("Cookie parser");
 console.log("Session");
 import fs from 'fs';
 console.log("Fs");
@@ -52,19 +56,21 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+//Middleware
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
-console.log("Entering session usage");
-app.use(session({
-    "secret": "OmSriCinmayaSadguraveNamahaOmSriSainathayaNamahaOmSriGurubyoNamaha"+(((((Math.random())*Math.random())+2)*Math.random())*(Math.random()*Math.pow(SALT_ROUNDS, 38)*Math.pow(Math.random()+1, Math.random()))), //funny random generation method
-    'resave': false,
-    'saveUninitialized': false,
-    'cookie':
-    {
-        'maxAge': 1000 * 60 * 60 * 24 * 3,
-        'secure': false //change in prod
-    }
-}));
+console.log("Entering JWT usage");
+// app.use(session({
+//     "secret": "OmSriCinmayaSadguraveNamahaOmSriSainathayaNamahaOmSriGurubyoNamaha"+(((((Math.random())*Math.random())+2)*Math.random())*(Math.random()*Math.pow(SALT_ROUNDS, 38)*Math.pow(Math.random()+1, Math.random()))), //funny random generation method
+//     'resave': false,
+//     'saveUninitialized': false,
+//     'cookie':
+//     {
+//         'maxAge': 1000 * 60 * 60 * 24 * 3,
+//         'secure': false //change in prod
+//     }
+// }));
+app.use(cookieParser());
 
 
 console.log("Entering definitions");
