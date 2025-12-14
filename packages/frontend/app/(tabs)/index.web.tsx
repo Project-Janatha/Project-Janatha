@@ -3,9 +3,9 @@ import React, { useContext } from 'react'
 import { View, Text, Pressable, useWindowDimensions, ScrollView } from 'react-native'
 import { ThumbsUp, MessageCircle, MapPin, ChevronRight } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
-import { UserContext } from 'components/contexts'
-import { SecondaryButton } from 'components/ui'
-import { Map } from 'components'
+import { UserContext } from '../../components/contexts'
+import { SecondaryButton } from '../../components/ui'
+import { Map } from '../../components'
 import { useRouter } from 'expo-router'
 
 // Import mobile component for responsive fallback

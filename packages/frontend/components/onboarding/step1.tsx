@@ -1,5 +1,5 @@
 import { View, Text, Pressable, TextInput } from 'react-native'
-import { useOnboarding } from 'components/contexts'
+import { useOnboarding } from '../contexts'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useState } from 'react'
 

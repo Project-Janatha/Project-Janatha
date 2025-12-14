@@ -1,7 +1,7 @@
 import { View, Text, Pressable, SafeAreaView, Image } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { useOnboarding } from 'components/contexts'
-import { useThemeContext } from 'components/contexts'
+import { useOnboarding } from '../contexts'
+import { useThemeContext } from '../contexts'
 
 export default function Complete() {
   const { completeOnboarding } = useOnboarding()

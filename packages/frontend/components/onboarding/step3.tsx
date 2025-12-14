@@ -1,8 +1,8 @@
 import { View, Text, Pressable, TextInput, ActivityIndicator, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useOnboarding } from 'components/contexts'
+import { useOnboarding } from '../contexts'
 import { useState, useEffect, useRef } from 'react'
-import { findNearestLocation, calculateDistance } from 'frontend/utilities/distance'
+import { findNearestLocation, calculateDistance } from '../../utilities/distance'
 import { Check } from 'lucide-react-native'
 
 const CENTERS = [

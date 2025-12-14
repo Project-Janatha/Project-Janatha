@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { View, Text, ScrollView, Image, Pressable } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { TabSegment, SecondaryButton, PrimaryButton } from 'components/ui'
+import { TabSegment, SecondaryButton, PrimaryButton } from '../../components/ui'
 import {
   ArrowLeft,
   Share,

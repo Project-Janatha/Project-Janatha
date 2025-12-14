@@ -1,8 +1,8 @@
 import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { View, Text, Pressable } from 'react-native'
-import { useOnboarding } from 'components/contexts'
-import BirthdatePicker from 'components/BirthdatePicker'
+import { useOnboarding } from '../contexts'
+import BirthdatePicker from '../BirthdatePicker'
 
 export default function Step2() {
   const { goToNextStep, birthdate, setBirthdate } = useOnboarding()
@@ -25,7 +25,7 @@ export default function Step2() {
               </Text>
             </View>
             <View className="mt-8 w-full flex items-center justify-center">
-              <BirthdatePicker value={birthdate} onChange={setBirthdate} />
+              <BirthdatePicker value={birthdate ?? undefined} onChange={setBirthdate} />
             </View>
           </View>
         </View>

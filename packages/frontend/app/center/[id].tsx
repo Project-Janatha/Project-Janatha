@@ -13,7 +13,7 @@ import {
   ThumbsUp,
   MessageCircle,
 } from 'lucide-react-native'
-import { TabSegment, IconButton, SecondaryButton, PrimaryButton } from 'components/ui'
+import { TabSegment, IconButton, SecondaryButton, PrimaryButton } from '../../components/ui'
 
 // Hardcoded center data
 const centerData = {

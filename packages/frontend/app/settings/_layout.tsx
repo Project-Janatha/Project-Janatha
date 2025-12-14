@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView, Platform } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, usePathname, Slot, Stack } from 'expo-router'
 import { User, Settings as SettingsIcon, X } from 'lucide-react-native'
-import { useThemeContext } from 'components/contexts'
+import { useThemeContext } from '../../components/contexts'
 import { Ionicons } from '@expo/vector-icons'
 
 const SETTINGS_TABS = [
