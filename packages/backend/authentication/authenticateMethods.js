@@ -8,7 +8,8 @@
  * Methods for authentication.
  */
 // import Datastore from '@seald-io/nedb';
-import { hash, compareSync } from 'bcryptjs'
+import bcrypt from 'bcryptjs'
+const { hash, compareSync } = bcrypt
 import constants from '../constants.js'
 import user from '../profiles/user.js'
 import fs from 'fs'

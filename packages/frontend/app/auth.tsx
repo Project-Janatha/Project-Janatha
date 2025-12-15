@@ -303,7 +303,6 @@ export default function AuthScreen() {
                   value={username}
                   secureTextEntry={false}
                   editable={authStep === 'initial'}
-                  style={{}}
                 />
               </View>
               {authStep === 'login' && (

@@ -136,14 +136,21 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         body: JSON.stringify({ username, password }),
       })
 
+      const data = await response.json()
+
       if (response.ok) {
         // Auto-login after signup
-        return await login(username, password)
+        const loginSuccess = await login(username, password)
+        if (!loginSuccess) {
+          throw new Error('Signup succeeded but login failed. Please try logging in.')
+        }
+        return true
+      } else {
+        throw new Error(data.message || 'Signup failed. Please try again.')
       }
-      return false
-    } catch (error) {
+    } catch (error: any) {
       console.error('Signup error:', error)
-      return false
+      throw error
     }
   }
 
@@ -170,10 +177,15 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const checkUserExists = async (username: string) => {
     try {
-      const response = await fetch(`${API_URL}/api/auth/check/${username}`)
+      const response = await fetch(`${API_URL}/userExistence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+      })
       const data = await response.json()
-      return data.exists
+      return data.existence
     } catch (error) {
+      console.error('Check user existence error:', error)
       return false
     }
   }
