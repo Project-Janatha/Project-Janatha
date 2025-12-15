@@ -14,7 +14,7 @@
 import MapView, { Marker } from 'react-native-maps'
 import { StyleSheet } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { getCurrentPosition } from '../../frontend/utilities'
+import { getCurrentPosition } from '../utils'
 
 const styles = StyleSheet.create({
   container: {

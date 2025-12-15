@@ -43,12 +43,12 @@ export default function Complete() {
             >
               {isDark ? (
                 <Image
-                  source={require('assets/images/chinmaya_logo_dark.svg')}
+                  source={require('../../assets/images/chinmaya_logo_dark.svg')}
                   style={{ width: logoSize, height: logoSize }}
                 />
               ) : (
                 <Image
-                  source={require('assets/images/chinmaya_logo_light.svg')}
+                  source={require('../../assets/images/chinmaya_logo_light.svg')}
                   style={{ width: logoSize, height: logoSize }}
                 />
               )}
