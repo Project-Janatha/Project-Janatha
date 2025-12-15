@@ -15,7 +15,7 @@ import { useRouter } from 'expo-router'
 import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
 import { PrimaryButton, IconButton, AuthInput } from '../components/ui'
 import { UserContext, useThemeContext } from '../components/contexts'
-import { validateEmail, validatePassword } from '../utilities'
+import { validateEmail, validatePassword } from '../utils'
 import { ThemeSelector, PasswordStrength } from '../components'
 import DevPanel from '../components/DevPanel'
 
@@ -257,12 +257,12 @@ export default function AuthScreen() {
             <View className="items-center mb-8">
               {isDark ? (
                 <Image
-                  source={require('assets/images/chinmaya_logo_dark.svg')}
+                  source={require('../assets/images/chinmaya_logo_dark.svg')}
                   style={{ width: logoSize, height: logoSize }}
                 />
               ) : (
                 <Image
-                  source={require('assets/images/chinmaya_logo_light.svg')}
+                  source={require('../assets/images/chinmaya_logo_light.svg')}
                   style={{ width: logoSize, height: logoSize }}
                 />
               )}

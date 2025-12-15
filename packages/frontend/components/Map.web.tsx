@@ -15,7 +15,7 @@ import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react
 import { useRouter, usePathname } from 'expo-router'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { getCurrentPosition } from '../../frontend/utilities/locationServices'
+import { getCurrentPosition } from '../utils/locationServices'
 import { useThemeContext } from './contexts'
 
 mapboxgl.accessToken =
