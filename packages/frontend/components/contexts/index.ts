@@ -1,5 +1,5 @@
 import OnboardingProvider, { useOnboarding } from './OnboardingProvider'
-import UserContext, { UserProvider } from './UserContext'
+import { UserContext, UserProvider } from './UserContext'
 import { ThemeProvider, useThemeContext } from './ThemeContext'
 
 export {
