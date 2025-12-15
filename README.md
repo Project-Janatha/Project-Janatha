@@ -1,4 +1,5 @@
 ## Project-Janatha
+
 The official project to connect the CHYKs of Chinmaya Mission West!
 
 May Gurudev's and Lord Krishna's grace be with us.
@@ -6,11 +7,13 @@ May Gurudev's and Lord Krishna's grace be with us.
 Authors: Abhiram Ramachandran, Sahanav Sai Ramesh
 
 ## How to run:
-Requirements: 
-- Ubuntu development environment (or WSL2) Install here([link])
+
+Requirements:
+
+- Docker
 - NodeJS version [19.0.0]
 - Expo SDK 52
-   - Expo Go for native
+  - Expo Go for native
 
 1. Install dependencies
 
@@ -25,6 +28,7 @@ Requirements:
    ```
 
 3. Start the frontend
+
 ```bash
 npm run start
 ```
@@ -35,7 +39,6 @@ In the output, you'll find options to open the app in a
 - [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
@@ -157,4 +160,3 @@ You may potentially want to have the native module transpiled for the next app. 
 - Install command to be `yarn set version stable && yarn install`
 - Build command: leave default setting
 - Output dir: leave default setting
-
