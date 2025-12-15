@@ -15,208 +15,166 @@
 // TODO: Improve upon this file and interface with backend auth system
 // TODO: Enable post calls from android and ios to backend server
 // TODO: Enable persistent login sessions using cookies or tokens
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import * as SecureStore from 'expo-secure-store'
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { Platform } from 'react-native'
+import * as SecureStore from 'expo-secure-store'
 
-const storage = {
-  getItemAsync: (key: string) => {
-    if (Platform.OS === 'web') {
-      return Promise.resolve(localStorage.getItem(key))
-    }
-    return SecureStore.getItemAsync(key)
-  },
-  setItemAsync: (key: string, value: string) => {
-    if (Platform.OS === 'web') {
-      localStorage.setItem(key, value)
-      return Promise.resolve()
-    }
-    return SecureStore.setItemAsync(key, value)
-  },
-  deleteItemAsync: (key: string) => {
-    if (Platform.OS === 'web') {
-      localStorage.removeItem(key)
-      return Promise.resolve()
-    }
-    return SecureStore.deleteItemAsync(key)
-  },
-}
-const SESSION_KEY = 'user_session'
-
-type User = {
+// Define the shape of the User object based on your backend response
+interface User {
   username: string
-  center: number
-  points: number
-  isVerified: boolean
-  verificationLevel: number
-  exists: boolean
-  isActive: boolean
-  id: string
-  events: any[]
+  isAdmin?: boolean
+  // Add other user properties here
 }
 
-const url = 'http://localhost:8008'
-
-const UserContext = createContext<{
+interface UserContextType {
   user: User | null
-  setUser: (user: User | null) => void
-  isAuthenticated: boolean
   loading: boolean
-  error: string | null
-  checkUserExists: (username: string) => Promise<boolean>
-  login: (username: string, password: string) => Promise<void>
+  login: (username: string, password: string) => Promise<boolean>
+  signup: (username: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
-  signup: (username: string, password: string) => Promise<void>
-}>({
+  checkUserExists: (username: string) => Promise<boolean>
+  setUser: (user: User | null) => void
+  getToken: () => Promise<string | null> // Helper to get token for other components
+}
+
+export const UserContext = createContext<UserContextType>({
   user: null,
-  setUser: () => {},
-  isAuthenticated: false,
-  loading: false,
-  error: null,
-  checkUserExists: async () => false,
-  login: async () => {},
+  loading: true,
+  login: async () => false,
+  signup: async () => false,
   logout: async () => {},
-  signup: async () => {},
+  checkUserExists: async () => false,
+  setUser: () => {},
+  getToken: async () => null,
 })
 
-export default UserContext
+// Helper for storage abstraction (Web vs Native)
+const TOKEN_KEY = 'user_jwt'
 
-export function UserProvider({ children }) {
-  console.log('=== UserProvider component rendering ===')
+const setStoredToken = async (token: string) => {
+  if (Platform.OS === 'web') {
+    localStorage.setItem(TOKEN_KEY, token)
+  } else {
+    await SecureStore.setItemAsync(TOKEN_KEY, token)
+  }
+}
+
+const getStoredToken = async () => {
+  if (Platform.OS === 'web') {
+    return localStorage.getItem(TOKEN_KEY)
+  } else {
+    return await SecureStore.getItemAsync(TOKEN_KEY)
+  }
+}
+
+const removeStoredToken = async () => {
+  if (Platform.OS === 'web') {
+    localStorage.removeItem(TOKEN_KEY)
+  } else {
+    await SecureStore.deleteItemAsync(TOKEN_KEY)
+  }
+}
+
+export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
 
+  // Base URL for your API
+  // Replace with your actual EC2 IP or localhost for dev
+  const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001'
+
+  // Check for token on app load
   useEffect(() => {
-    const loadSession = async () => {
-      console.log('=== Starting session load ===')
+    const loadUser = async () => {
       try {
-        const session = await storage.getItemAsync(SESSION_KEY)
-        console.log('Session retrieved:', session ? 'exists' : 'null')
-        if (session) {
-          setUser(JSON.parse(session))
+        const token = await getStoredToken()
+        if (token) {
+          // Optional: Verify token validity with backend here
+          // For now, we assume if token exists, we try to fetch user profile
+          // You might need a specific endpoint like /api/auth/me
+          // If you don't have a /me endpoint yet, you might rely on stored user data
+          // or just let the first API call fail with 401 to trigger logout
         }
       } catch (error) {
-        console.error('Failed to load session:', error)
+        console.error('Failed to load user session', error)
       } finally {
-        console.log('=== Session load complete, setting loading to false ===')
         setLoading(false)
       }
     }
-    loadSession()
+    loadUser()
   }, [])
 
-  const checkUserExists = async (username: string) => {
-    setLoading(true)
-    console.log('🟡 checkUserExists called for:', username)
-    const endpoint = `${url}/userExistence`
-    try {
-      console.log('🟡 Sending request to:', endpoint)
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ username: username }),
-      })
-      console.log('🟡 Response received:', response.status)
-      const data = await response.json()
-      console.log('🟡 Response data:', data)
-      if (response.ok) {
-        console.log('User existence response data:', data)
-        setLoading(false) // Add this
-        return data.existence
-      } else {
-        const errorMessage = data.message || `Request failed with status ${response.status}`
-        console.log('Error checking user existence: ', errorMessage)
-        setError(errorMessage)
-        setLoading(false) // Add this
-        throw new Error(errorMessage)
-      }
-    } catch (error) {
-      console.error("Couldn't fetch from server: ", error)
-      setError(error.message)
-      setLoading(false) // Add this
-      throw error // Add this to propagate error
-    }
-  }
-
   const login = async (username: string, password: string) => {
-    setLoading(true)
-    setError(null)
-    const endpoint = `${url}/authenticate`
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${API_URL}/api/auth/authenticate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          username: username,
-          password: password,
-        }),
+        body: JSON.stringify({ username, password }),
       })
+
       const data = await response.json()
-      if (response.ok) {
-        const user = data.user
-        console.log('Login response data:', data)
-        setUser(user)
-        await storage.setItemAsync(SESSION_KEY, JSON.stringify(user))
+
+      if (response.ok && data.token) {
+        await setStoredToken(data.token)
+        setUser(data.user)
+        return true
       } else {
-        const errorMessage = data.message || `Request failed with status ${response.status}`
-        setError(errorMessage) // Set the error state in the context
-        throw new Error(errorMessage)
+        console.error('Login failed:', data.message)
+        return false
       }
     } catch (error) {
       console.error('Login error:', error)
-      if (!error.message.includes('Request failed')) {
-        setError(error.message)
-      }
-      throw error
-    } finally {
-      setLoading(false)
+      return false
     }
   }
 
-  // Deauths user from backend and clears session.
-  const logout = async () => {
-    setLoading(true)
-    const endpoint = `${url}/deauthenticate`
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        credentials: 'include',
-      })
-      if (response.ok) {
-        setUser(null)
-        await storage.deleteItemAsync(SESSION_KEY) // Clears stored session
-        setError(null)
-      }
-      throw new Error('Logout failed')
-    } catch (error) {
-      setError(error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-  // TODO: Implement signup function with onboarding flow
   const signup = async (username: string, password: string) => {
-    setLoading(true)
     try {
-      const endpoint = `${url}/register`
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username, password: password }),
+        body: JSON.stringify({ username, password }),
       })
-      const data = await response.json()
+
       if (response.ok) {
-        await login(username, password)
+        // Auto-login after signup
+        return await login(username, password)
       }
-      throw new Error('Signup failed:', data.message)
+      return false
     } catch (error) {
       console.error('Signup error:', error)
-      setError(error.message)
+      return false
+    }
+  }
+
+  const logout = async () => {
+    try {
+      // Optional: Call backend to blacklist token
+      const token = await getStoredToken()
+      if (token) {
+        await fetch(`${API_URL}/api/auth/deauthenticate`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      }
+    } catch (error) {
+      console.error('Logout error', error)
     } finally {
-      setLoading(false)
+      // Always clear local state
+      await removeStoredToken()
+      setUser(null)
+    }
+  }
+
+  const checkUserExists = async (username: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/check/${username}`)
+      const data = await response.json()
+      return data.exists
+    } catch (error) {
+      return false
     }
   }
 
@@ -224,14 +182,13 @@ export function UserProvider({ children }) {
     <UserContext.Provider
       value={{
         user,
-        setUser,
-        isAuthenticated: !!user,
         loading,
-        error,
-        checkUserExists,
         login,
-        logout,
         signup,
+        logout,
+        checkUserExists,
+        setUser,
+        getToken: getStoredToken,
       }}
     >
       {children}
