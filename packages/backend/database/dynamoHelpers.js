@@ -1,3 +1,15 @@
+/**
+ * @file dynamoHelpers.js
+ * @author Abhiram Ramachandran
+ * @date 2025-12-18
+ * @description Helper functions for DynamoDB operations.
+ * @module backend/database/dynamoHelpers
+ * @requires ../constants.js
+ * @requires uuid
+ * @requires @aws-sdk/lib-dynamodb
+ *
+ * Om Sri Chinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
+ */
 import constants from '../constants.js'
 import { v4 as uuidv4 } from 'uuid'
 import {
@@ -13,7 +25,7 @@ import {
 /**
  * Creates a new user in the DynamoDB table.
  * @param {User} userItem
- * @returns {{success: boolean, error?: string}} An object indicating success or failure of the operation
+ * @returns {{success: boolean, error?: string, id?: string}} An object indicating success or failure of the operation and the user ID if successful.
  */
 export async function createUser(userItem) {
   try {
@@ -31,15 +43,14 @@ export async function createUser(userItem) {
         ConditionExpression: 'attribute_not_exists(username)',
       })
     )
-    return true
+    return { success: true, id: userItem.id }
   } catch (err) {
     if (err.name === 'ConditionalCheckFailedException') {
       console.log('User already exists: ', userItem.username)
       return { success: false, error: 'User already exists' }
-    } else {
-      console.error('Error creating user:', err)
     }
-    return false
+    console.error('Error creating user:', err)
+    return { success: false, error: err.message }
   }
 }
 
