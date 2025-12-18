@@ -1,11 +1,24 @@
 /**
- * centralSequence.js
+ * @file centralSequence.js
+ * @description The central backend sequence for Janata
+ * @author Sahanav Sai Ramesh, Abhiram Ramachandran
+ * @date 2025-12-18
+ * @module backend/centralSequence
+ * @requires express
+ * @requires cors
+ * @requires bcryptjs
+ * @requires jsonwebtoken
+ * @requires dotenv
+ * @requires cookie-parser
+ * @requires ../authentication/authenticateMethods.js
+ * @requires ../events/event.js
+ * @requires ../events/eventStorage.js
+ * @requires ../profiles/user.js
+ * @requires ../profiles/center.js
+ * @requires ../constants.js
+ * @requires ../location/location.js
  *
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
- *
- * Author: Sahanav Sai Ramesh
- *
- * The central backend sequence.
  */
 
 //Imports
@@ -181,11 +194,9 @@ app.post('/verifyCenter', async (req, res) => {
   if (c && c.verify(req)) {
     return res.status(200).json({ message: 'Successful verification!' })
   } else {
-    return res
-      .status(401)
-      .json({
-        message: 'User is not authorized to verify or verification failed at another point.',
-      })
+    return res.status(401).json({
+      message: 'User is not authorized to verify or verification failed at another point.',
+    })
   }
 })
 /**
@@ -263,12 +274,10 @@ app.post('/getEventUsers', async function (req, res) {
  * {}
  */
 app.post('/brewCoffee', async (req, res) => {
-  return res
-    .status(418)
-    .json({
-      message:
-        'This server is a teapot, and cannot brew coffee. It not just cannot, but it will not. How dare you disgrace this server with a request to brew coffee? This is a server that brews tea. Masala Chai >>> Filter Coffee.',
-    })
+  return res.status(418).json({
+    message:
+      'This server is a teapot, and cannot brew coffee. It not just cannot, but it will not. How dare you disgrace this server with a request to brew coffee? This is a server that brews tea. Masala Chai >>> Filter Coffee.',
+  })
 })
 /**
  * Fetches all centers.
