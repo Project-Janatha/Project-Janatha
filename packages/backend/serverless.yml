@@ -24,6 +24,7 @@ provider:
             - dynamodb:DeleteItem
           Resource:
             - arn:aws:dynamodb:us-east-1:*:table/ChinmayaJanata-Users
+            - arn:aws:dynamodb:us-east-1:*:table/ChinmayaJanata-Users/index/*
             - arn:aws:dynamodb:us-east-1:*:table/ChinmayaJanata-Centers
             - arn:aws:dynamodb:us-east-1:*:table/ChinmayaJanata-Events
             - arn:aws:dynamodb:us-east-1:*:table/ChinmayaJanata-Events/index/*
@@ -35,11 +36,20 @@ resources:
       Properties:
         TableName: ChinmayaJanata-Users
         AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
           - AttributeName: username
             AttributeType: S
         KeySchema:
-          - AttributeName: username
+          - AttributeName: id
             KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: username-index
+            KeySchema:
+              - AttributeName: username
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
