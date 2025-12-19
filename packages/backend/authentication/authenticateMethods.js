@@ -1,33 +1,21 @@
 /**
- * authenticateMethods.js
+ * @file authenticateMethods.js
+ * @description Methods for user authentication and authorization.
+ * @author Sahanav Sai Ramesh, Abhiram Ramachandran
+ * @date 2025-12-19
+ * @module backend/authentication/authenticateMethods
+ * @requires ../database/dynamoHelpers.js
+ * @requires ../utils/jwt.js
+ * @requires bcryptjs
  *
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
- * Author: Sahanav Sai Ramesh
- * Date Authored: August 12, 2025
- * Last Date Modified: August 30, 2025
- * Methods for authentication.
  */
 // import Datastore from '@seald-io/nedb';
+import * as db from '../database/dynamoHelpers.js'
 import bcrypt from 'bcryptjs'
-const { hash, compareSync } = bcrypt
-import constants from '../constants.js'
-import user from '../profiles/user.js'
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import { dirname } from 'path'
-import center from '../profiles/center.js'
-import location from '../location/location.js'
 import { generateToken, verifyToken } from '../utils/jwt.js'
+
 const SALT_ROUNDS = 10
-
-//Start constants
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-// Use usersBase from constants.js
-const usersBase = constants.usersBase
-//const constantFile = require('../constants');
 
 /**
  * Checks if a user is authenticated. Acts as middleware.
@@ -310,6 +298,83 @@ function getAllCenters() {
   })
 }
 
+/**
+ * Complete user onboarding profile
+ * Called after user completes all onboarding steps
+ */
+async function completeOnboarding(req, res) {
+  const { userId, firstName, lastName, dateOfBirth, centerID, profileComplete } = req.body
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' })
+  }
+
+  try {
+    // Get existing user
+    const user = await db.getUserById(userId)
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    // Update user with onboarding data
+    const updates = {
+      firstName: firstName || '',
+      lastName: lastName || '',
+      dateOfBirth: dateOfBirth || null,
+      centerID: centerID || null,
+      profileComplete: profileComplete || false,
+    }
+
+    const result = await db.updateUser(userId, updates)
+
+    if (result.success) {
+      return res.status(200).json({
+        message: 'Profile completed successfully',
+        user: result.user,
+      })
+    } else {
+      return res.status(500).json({
+        message: 'Failed to update profile',
+        error: result.error,
+      })
+    }
+  } catch (err) {
+    console.error('Onboarding completion error:', err)
+    return res.status(500).json({ message: 'Server error' })
+  }
+}
+
+/**
+ * Update user profile (partial update during onboarding)
+ */
+async function updateProfile(req, res) {
+  const { userId, ...updates } = req.body
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' })
+  }
+
+  try {
+    const result = await db.updateUser(userId, updates)
+
+    if (result.success) {
+      return res.status(200).json({
+        message: 'Profile updated',
+        user: result.user,
+      })
+    } else {
+      return res.status(500).json({
+        message: 'Failed to update profile',
+        error: result.error,
+      })
+    }
+  } catch (err) {
+    console.error('Profile update error:', err)
+    return res.status(500).json({ message: 'Server error' })
+  }
+}
+
 export default {
   isAuthenticated,
   register,
@@ -325,4 +390,6 @@ export default {
   updateCenter,
   removeCenter,
   isUserAdmin,
+  completeOnboarding,
+  updateProfile,
 }

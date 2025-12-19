@@ -37,6 +37,7 @@ export async function createUser(userItem) {
         TableName: constants.USERS_TABLE,
         Item: {
           ...userItem,
+          username: userItem.username.toLowerCase(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -46,7 +47,7 @@ export async function createUser(userItem) {
     return { success: true, id: userItem.id }
   } catch (err) {
     if (err.name === 'ConditionalCheckFailedException') {
-      console.log('User already exists: ', userItem.username)
+      console.log('User already exists.')
       return { success: false, error: 'User already exists' }
     }
     console.error('Error creating user:', err)
@@ -54,22 +55,32 @@ export async function createUser(userItem) {
   }
 }
 
+/**
+ * Gets a user by their email/username using a GSI.
+ * @param {string} username
+ * @returns {Object | null} The user object if found, else null.
+ */
 export async function getUserByUsername(username) {
   try {
     const command = new QueryCommand({
       TableName: constants.USERS_TABLE,
-      IndexName: 'UsernameIndex',
+      IndexName: 'username-index',
       KeyConditionExpression: 'username = :u',
-      ExpressionAttributeValues: { ':u': username },
+      ExpressionAttributeValues: { ':u': username.toLowerCase() },
     })
     const result = await constants.docClient.send(command)
-    return result.Items ? result.Items[0] : null
+    return result.Items && result.Items.length > 0 ? result.Items[0] : null
   } catch (err) {
     console.error('Error retrieving user:', err)
     return null
   }
 }
 
+/**
+ * Gets a user by UUID - primary key.
+ * @param {string} userId
+ * @returns {Object | null} The user object if found, else null.
+ */
 export async function getUserById(userId) {
   try {
     const command = new GetCommand({
@@ -84,15 +95,33 @@ export async function getUserById(userId) {
   }
 }
 
-export async function updateUser(username, updateExpression, expressionAttributeValues) {
+/**
+ * Updates a user's data.
+ * @param {string} userId
+ * @param {Object} updates
+ * @returns {{success: boolean, user?: Object, error?: string}} An object indicating success or failure of the operation.
+ */
+export async function updateUser(userId, updates) {
   try {
-    await constants.docClient.send(
+    updates.updatedAt = new Date().toISOString()
+
+    const updateExpressions = []
+    const expressionAttributeNames = {}
+    const expressionAttributeValues = {}
+
+    Object.keys(updates).forEach((key, index) => {
+      updateExpressions.push(`#field${index} = :val${index}`)
+      expressionAttributeNames[`#field${index}`] = key
+      expressionAttributeValues[`:val${index}`] = updates[key]
+    })
+    const result = await constants.docClient.send(
       new UpdateCommand({
         TableName: constants.USERS_TABLE,
-        Key: { username: username },
-        UpdateExpression: updateExpression,
+        Key: { id: userId },
+        UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+        ExpressionAttributeNames: expressionAttributeNames,
         ExpressionAttributeValues: expressionAttributeValues,
-        ReturnValues: 'UPDATED_NEW',
+        ReturnValues: 'ALL_NEW',
       })
     )
     return true
