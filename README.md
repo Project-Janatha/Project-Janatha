@@ -14,6 +14,7 @@ Requirements:
 - NodeJS version [19.0.0]
 - Expo SDK 52
   - Expo Go for native
+- AWS SDK
 
 1. Install dependencies
 
@@ -21,17 +22,18 @@ Requirements:
    npm install
    ```
 
-2. Start the backend
+2. Run the app
 
-   ```bash
-   npm run start:backend
-   ```
+- Locally
 
-3. Start the frontend
+  ```sh
+  npm run dev
+  ```
 
-```bash
-npm run start
-```
+- Dockerized Container
+  ```sh
+  npm run compose
+  ```
 
 In the output, you'll find options to open the app in a
 
@@ -42,43 +44,16 @@ In the output, you'll find options to open the app in a
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-
-# Tamagui + Solito + Next + Expo Monorepo
-
-```sh
-npm create tamagui
-```
-
-## 🔦 About
-
-This monorepo is a starter for an Expo + Next.js + Tamagui + Solito app.
-
-Many thanks to [@FernandoTheRojo](https://twitter.com/fernandotherojo) for the Solito starter monorepo which this was forked from. Check out his [talk about using expo + next together at Next.js Conf 2021](https://www.youtube.com/watch?v=0lnbdRweJtA).
+# Expo + AWS EC2 + AWS DynamoDB Monorepo
 
 ## 📦 Included packages
 
-- [Tamagui](https://tamagui.dev) 🪄
-- [solito](https://solito.dev) for cross-platform navigation
 - Expo SDK
-- Next.js
+- AWS SDK
+- Nativewind
 - Expo Router
 
 ## 🗂 Folder layout
-
-The main apps are:
 
 - `expo` (native)
 - `next` (web)

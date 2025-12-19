@@ -1,6 +1,6 @@
 # Chinmaya Janata Development Guidelines
 
-We are glad that you have decided to do Seva for Mission by helping us work on this project! To ensure this project can be better maintained in the future, please esnure that you adhere to the guidelines listed below before pushing your changes to the codebase.
+We are glad that you have decided to do Seva for Mission by helping us work on this project! To ensure this project can be better maintained in the future, please ensure that you adhere to the guidelines listed below before pushing your changes to the codebase.
 
 ## Merge Strategies
 
