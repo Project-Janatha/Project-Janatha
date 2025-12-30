@@ -13,10 +13,10 @@
 // import Datastore from '@seald-io/nedb';
 import * as db from '../database/dynamoHelpers.js'
 import bcrypt from 'bcryptjs'
+const { hash, compareSync } = bcrypt
 import { generateToken, verifyToken } from '../utils/jwt.js'
 import { v4 as uuidv4 } from 'uuid'
 import jwt from 'jsonwebtoken'
-import { hash, compareSync } from 'bcryptjs'
 import user from '../profiles/user.js'
 import center from '../profiles/center.js'
 import location from '../location/location.js'

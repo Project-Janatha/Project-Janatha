@@ -1,10 +1,11 @@
 {
   "name": "@janatha/backend",
   "version": "1.0.0",
+  "type": "module",
   "main": "centralSequence.js",
   "scripts": {
     "start": "node centralSequence.js",
-    "dev": "node centralSequence.js"
+    "dev": "nodemon centralSequence.js"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.948.0",
