@@ -424,3 +424,23 @@ export async function getAllEvents() {
     return []
   }
 }
+
+// Default export for backward compatibility
+export default {
+  createUser,
+  getUserByUsername,
+  getUserById,
+  updateUser,
+  deleteUser,
+  createEvent,
+  getEventById,
+  updateEvent,
+  deleteEvent,
+  getEventsByCenterId,
+  createCenter,
+  getCenterById,
+  updateCenter,
+  deleteCenter,
+  getAllCenters,
+  getAllEvents,
+}

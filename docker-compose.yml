@@ -1,4 +1,4 @@
-version: '3.8'
+
 services:
   app:
     image: chinmaya-janata-app:latest
@@ -6,8 +6,8 @@ services:
       context: .
     platform: linux/amd64
     ports:
-      - "80:80"      # Nginx serving frontend
-      - "8008:8008"  # Backend API
+      - "80:80"
+      - "8008:8008"
     environment:
       - NODE_ENV=production
       - PORT=8008

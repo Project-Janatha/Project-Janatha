@@ -81,7 +81,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   // Base URL for your API
   // Replace with your actual EC2 IP or localhost for dev
-  const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001'
+  const API_URL = 'http://ec2-3-236-142-145.compute-1.amazonaws.com'
 
   // Check for token on app load
   useEffect(() => {
@@ -177,7 +177,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const checkUserExists = async (username: string) => {
     try {
-      const response = await fetch(`${API_URL}/userExistence`, {
+      const response = await fetch(`${API_URL}/api/userExistence`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username }),
