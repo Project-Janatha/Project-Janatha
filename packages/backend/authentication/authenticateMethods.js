@@ -14,6 +14,13 @@
 import * as db from '../database/dynamoHelpers.js'
 import bcrypt from 'bcryptjs'
 import { generateToken, verifyToken } from '../utils/jwt.js'
+import { v4 as uuidv4 } from 'uuid'
+import jwt from 'jsonwebtoken'
+import { hash, compareSync } from 'bcryptjs'
+import user from '../profiles/user.js'
+import center from '../profiles/center.js'
+import location from '../location/location.js'
+import constants from '../constants.js'
 
 const SALT_ROUNDS = 10
 
@@ -60,29 +67,43 @@ async function register(req, res) {
     return res.status(400).json({ message: 'Username and password are required.' })
   }
   try {
-    usersBase.findOne({ username: username }, async (err, existing) => {
-      if (err) {
-        console.log(err)
-        return res.status(500).json({ message: 'Internal server error' })
-      }
-      if (existing) {
-        return res.status(409).json({ message: 'User already exists' })
-      }
-      let passwordHash = await hash(password, SALT_ROUNDS)
-      let userObject = new user.User(username, true)
-      const newUser = {
-        username: username,
-        passwordHash: passwordHash,
-        userObject: userObject.toJSON(),
-      }
-      usersBase.insert(newUser, (err, user) => {
-        if (err) {
-          console.log(err)
-          return res.status(500).json({ message: 'Internal server error' })
-        }
-        return res.status(201).json({ message: 'User created successfully' })
+    const existing = await db.getUserByUsername(username)
+    if (existing) {
+      return res.status(409).json({ message: 'User already exists' })
+    }
+
+    let passwordHash = await hash(password, SALT_ROUNDS)
+    let userObject = new user.User(username, true)
+    const userId = uuidv4()
+
+    const newUser = {
+      id: userId,
+      username: username,
+      password: passwordHash,
+      profileComplete: false,
+      firstName: '',
+      lastName: '',
+      dateOfBirth: null,
+      centerID: null,
+      userObject: userObject.toJSON(),
+    }
+
+    const result = await db.createUser(newUser)
+
+    if (result.success) {
+      const token = jwt.sign({ username: username, userId: userId }, constants.JWT_SECRET, {
+        expiresIn: '24h',
       })
-    })
+
+      return res.status(201).json({
+        message: 'User created successfully',
+        token: token,
+        userId: userId,
+        username: username,
+      })
+    } else {
+      return res.status(500).json({ message: 'Registration failed', error: result.error })
+    }
   } catch (err) {
     console.error('Error: Password hashing ', err)
     return res.status(500).json({ message: 'Server error during password hashing' })
@@ -100,22 +121,20 @@ async function authenticate(req, res) {
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password are required.' })
   }
-  usersBase.findOne({ username: username }, (err, user) => {
-    if (err) {
-      console.log(err)
-      return res.status(500).json({ message: 'Internal server error during authentication' })
-    }
+  try {
+    const user = await db.getUserByUsername(username)
     if (!user) {
       return res.status(401).json({ message: 'User does not exist' })
     }
-    if (!compareSync(password, user.passwordHash)) {
+    if (!compareSync(password, user.password)) {
       return res.status(401).json({ message: 'Invalid credentials' })
     }
     const token = generateToken(user)
-    return res
-      .status(200)
-      .json({ message: 'Authentication successful!', user: user.userObject, token: token })
-  })
+    return res.status(200).json({ message: 'Authentication successful!', user: user, token: token })
+  } catch (err) {
+    console.error('Authentication error:', err)
+    return res.status(500).json({ message: 'Internal server error during authentication' })
+  }
 }
 async function deauthenticate(req, res) {
   return res.status(200).json({ message: 'Deauthentication successful!' })
@@ -126,15 +145,13 @@ async function deauthenticate(req, res) {
  * @returns {boolean} A boolean representing the state of the user's existence.
  */
 async function checkUserExistence(username) {
-  return new Promise((resolve, reject) => {
-    usersBase.findOne({ username: username }, async (err, existing) => {
-      if (err) {
-        console.log(err)
-        return reject(res.status(500).json({ message: 'Internal server error' }))
-      }
-      resolve(!!existing)
-    })
-  })
+  try {
+    const user = await db.getUserByUsername(username)
+    return !!user
+  } catch (err) {
+    console.error('Check user existence error:', err)
+    return false
+  }
 }
 /**
  * Constructs a User object by username.
@@ -142,20 +159,20 @@ async function checkUserExistence(username) {
  * @returns {user.User | null} If the user exists, returns a user constructed with their data. Else, returns null.
  */
 async function getUserByUsername(username) {
-  const exists = await checkUserExistence(username)
-  if (!exists) {
+  try {
+    const existing = await db.getUserByUsername(username)
+    if (!existing) {
+      return null
+    }
+    let constructedUser = new user.User(username)
+    if (existing.userObject) {
+      constructedUser.buildFromJSON(existing.userObject)
+    }
+    return constructedUser
+  } catch (err) {
+    console.error('Get user by username error:', err)
     return null
   }
-  return new Promise((resolve) => {
-    usersBase.findOne({ username: username }, (err, existing) => {
-      if (err || !existing) {
-        return resolve(null)
-      }
-      let constructedUser = new user.User(username)
-      constructedUser.buildFromJSON(existing.userObject)
-      return resolve(constructedUser)
-    })
-  })
 }
 /**
  * Updates a user's data in the database.
@@ -163,139 +180,149 @@ async function getUserByUsername(username) {
  * @param {user.User} user The user to update the user data with.
  * @returns {boolean} A boolean representing if the operation was successful.
  */
-function updateUserData(username, user) {
-  let flag = false
-  usersBase.update(
-    { username: username },
-    { $set: { userObject: user.toJSON() } },
-    {},
-    (err, numReplaced) => {
-      flag = !(err || !numReplaced)
+async function updateUserData(username, user) {
+  try {
+    const existing = await db.getUserByUsername(username)
+    if (!existing) {
+      return false
     }
-  )
-  return flag
+    const updates = {
+      userObject: user.toJSON(),
+    }
+    const result = await db.updateUser(existing.id, updates)
+    return result.success
+  } catch (err) {
+    console.error('Update user data error:', err)
+    return false
+  }
 }
+
 /**
  * Checks if a centerID exists in the database.
- * @param {number} centerID The Center ID to check.
- * @returns {boolean | null} A boolean representing if the centerID exists, or null for any errors.
+ * @param {string} centerID The Center UUID to check.
+ * @returns {boolean} A boolean representing if the centerID exists.
  */
 async function centerIDExists(centerID) {
-  return new Promise((resolve) => {
-    if (isNaN(centerID)) {
-      return resolve(false)
-    }
-    usersBase.findOne({ centerID: centerID }, (err, center) => {
-      if (err) {
-        return resolve(false)
-      }
-      resolve(!!center)
-    })
-  })
+  try {
+    const center = await db.getCenterById(centerID)
+    return !!center
+  } catch (err) {
+    console.error('Check center ID error:', err)
+    return false
+  }
 }
+
 /**
  * Gets a Center by centerID.
- * @param {number} centerID The ID of the center to get
+ * @param {string} centerID The UUID of the center to get
  * @returns {center.Center | null} A constructed Center object, or null if an error occurred/the center does not exist.
  */
 async function getCenterByCenterID(centerID) {
-  const exists = await centerIDExists(centerID)
-  if (!exists) {
+  try {
+    const dbCenter = await db.getCenterById(centerID)
+
+    if (!dbCenter) {
+      return null
+    }
+
+    const c = new center.Center(new location.Location(0, 0), 'Hello World!')
+    if (dbCenter.centerObject) {
+      c.buildFromJSON(dbCenter.centerObject)
+    }
+    return c
+  } catch (err) {
+    console.error('Get center by ID error:', err)
     return null
   }
-  return new Promise((resolve) => {
-    usersBase.findOne({ centerID: centerID }, (err, centered) => {
-      if (err || !centered) {
-        return resolve(null)
-      }
-      let c = new center.Center(new location.Location(0, 0), 'Hello World!')
-      c.buildFromJSON(centered.centerObject)
-      resolve(c)
-    })
-  })
 }
+
 /**
  * Stores a Center by centerID.
- * @param {number} centerID The generated centerID of the center.
+ * @param {string} centerID The UUID of the center.
  * @param {center.Center} centerObject The object representing the center.
  * @returns {boolean} A boolean representing the success or failure of the operation.
  */
 async function storeCenter(centerID, centerObject) {
-  if (centerObject.centerID != centerID || isNaN(centerID) || centerID == null) {
+  try {
+    if (centerObject.centerID != centerID || !centerID) {
+      return false
+    }
+
+    const exists = await centerIDExists(centerID)
+    if (exists) {
+      return false
+    }
+
+    const centerData = {
+      centerID: centerID,
+      centerObject: centerObject.toJSON(),
+    }
+
+    const result = await db.createCenter(centerData)
+    return result.success
+  } catch (err) {
+    console.error('Store center error:', err)
     return false
   }
-  const exists = await centerIDExists(centerID)
-  if (exists) {
-    return false
-  }
-  let center = { centerID: centerID, centerObject: centerObject.toJSON() }
-  return new Promise((resolve) => {
-    usersBase.insert(center, (err, c) => {
-      if (err || !c) {
-        resolve(false)
-      } else {
-        resolve(true)
-      }
-    })
-  })
 }
 
 /**
  * Updates a center in the database.
- * @param {number} centerID The center ID to update.
+ * @param {string} centerID The center UUID to update.
  * @param {center.Center} centerObject The Center to update data with.
  * @returns {boolean} A boolean representing the success or failure of the operation.
  */
-function updateCenter(centerID, centerObject) {
-  if (centerObject.centerID != centerID) {
+async function updateCenter(centerID, centerObject) {
+  try {
+    if (centerObject.centerID != centerID) {
+      return false
+    }
+
+    const updates = {
+      centerObject: centerObject.toJSON(),
+    }
+
+    const result = await db.updateCenter(centerID, updates)
+    return result.success
+  } catch (err) {
+    console.error('Update center error:', err)
     return false
   }
-  usersBase.update(
-    { centerID: centerID },
-    { $set: { centerObject: centerObject.toJSON() } },
-    {},
-    (err, numUpdated) => {
-      if (err) {
-        return false
-      }
-      if (numUpdated) {
-        return true
-      }
-    }
-  )
-  return false
 }
+
 /**
  * Removes a center.
- * @param {number} centerID The center ID of the center.
+ * @param {string} centerID The center UUID of the center.
  * @param {Request} req A request from the admin, confirming that sufficient permissions exist.
- * @returns {boolean | undefined} A boolean representing the success of the operation. If an error occurred, returns undefined.
+ * @returns {boolean} A boolean representing the success of the operation.
  */
-function removeCenter(centerID, req) {
-  if (isUserAdmin(req)) {
-    usersBase.remove({ centerID: centerID }, {}, (err, num) => {
-      if (err) {
-        return undefined
-      }
-      if (num) {
-        return true
-      }
-    })
+async function removeCenter(centerID, req) {
+  try {
+    if (!isUserAdmin(req)) {
+      return false
+    }
+
+    const result = await db.deleteCenter(centerID)
+    return result.success
+  } catch (err) {
+    console.error('Remove center error:', err)
+    return false
   }
-  return false
 }
+
 /**
  * Gets a list of all centers.
  *
  * @returns {boolean | JSON[]} Returns a boolean representing the success of the operation, or the array of all centers as JSON.
  */
-function getAllCenters() {
-  usersBase.find({ centerID: { $exists: true } }, (err, docs) => {
-    if (err) {
-      return false
-    }
-    return docs
-  })
+async function getAllCenters() {
+  try {
+    const centers = await db.getAllCenters()
+    return centers || []
+  } catch (err) {
+    console.error('Get all centers error:', err)
+    return false
+  }
 }
 
 /**
