@@ -52,6 +52,8 @@ import user from './profiles/user.js'
 import center from './profiles/center.js'
 import constants from './constants.js'
 import location from './location/location.js'
+import * as db from './database/dynamoHelpers.js'
+console.log('DynamoDB helpers')
 
 //Constants
 console.log('Constants')
@@ -163,23 +165,26 @@ app.post('/addCenter', async (req, res) => {
  *
  */
 app.post('/verifyUser', async (req, res) => {
-  constants.usersBase.findOne({ username: req.body.usernameToVerify }, (err, us) => {
-    if (err) {
-      return res.status(500).json({ message: 'Internal Server Error' })
-    }
-    if (!us) {
+  try {
+    const dbUser = await db.getUserByUsername(req.body.usernameToVerify)
+    if (!dbUser) {
       return res.status(404).json({ message: 'User not found.' })
     }
     let u = new user.User(req.body.usernameToVerify)
-    u.buildFromJSON(us.userObject)
+    if (dbUser.userObject) {
+      u.buildFromJSON(dbUser.userObject)
+    }
     let status = u.verify(req.body.verificationLevel, req)
-    auth.updateUserData(req.body.username, u)
+    await auth.updateUserData(req.body.username, u)
     if (status) {
       return res.status(200).json({ message: 'Verification successful.' })
     } else {
       return res.status(401).json({ message: 'Insufficient permission to authorize.' })
     }
-  })
+  } catch (err) {
+    console.error('Verify user error:', err)
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
 })
 /**
  * Verifies a center. Admin Only request.
@@ -427,15 +432,10 @@ app.post('/getUserEvents', async (req, res) => {
  */
 app.post('/fetchEventsByCenter', async (req, res) => {
   try {
-    // eventMethods currently lacks a direct method for this; attempt to fetch all and filter.
-    const all = constants.eventsBase // direct access to events DB
-    all.find({ 'eventObject.center.centerID': req.body.centerID }, (err, docs) => {
-      if (err) {
-        return res.status(500).json({ message: 'Internal server error' })
-      }
-      return res.status(200).json({ message: 'Success', events: docs })
-    })
+    const events = await db.getEventsByCenterId(req.body.centerID)
+    return res.status(200).json({ message: 'Success', events: events })
   } catch (err) {
+    console.error('Fetch events by center error:', err)
     return res.status(500).json({ message: 'Internal server error' })
   }
 })

@@ -29,11 +29,6 @@ Resources:
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
-      Tags:
-        - Key: Project
-          Value: ChinmayaJanata
-        - Key: Environment
-          Value: production
 
   CentersDynamoDBTable:
     Type: AWS::DynamoDB::Table
@@ -41,18 +36,13 @@ Resources:
       TableName: ChinmayaJanata-Centers
       AttributeDefinitions:
         - AttributeName: centerID
-          AttributeType: N
+          AttributeType: S # Changed from N to S (String for UUID)
       KeySchema:
         - AttributeName: centerID
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
-      Tags:
-        - Key: Project
-          Value: ChinmayaJanata
-        - Key: Environment
-          Value: production
 
   EventsDynamoDBTable:
     Type: AWS::DynamoDB::Table
@@ -62,7 +52,7 @@ Resources:
         - AttributeName: eventID
           AttributeType: S
         - AttributeName: centerID
-          AttributeType: N
+          AttributeType: S # Changed from N to S
         - AttributeName: date
           AttributeType: S
       KeySchema:
@@ -80,11 +70,6 @@ Resources:
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
-      Tags:
-        - Key: Project
-          Value: ChinmayaJanata
-        - Key: Environment
-          Value: production
 
 Outputs:
   UsersTableName:
