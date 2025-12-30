@@ -1,11 +1,21 @@
 version: '3.8'
 services:
   app:
-    build: .
+    image: chinmaya-janata-app:latest
+    build:
+      context: .
+    platform: linux/amd64
     ports:
       - "80:80"      # Nginx serving frontend
       - "8008:8008"  # Backend API
-    env_file:
-      - ./packages/backend/.env
     environment:
+      - NODE_ENV=production
       - PORT=8008
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - USERS_TABLE=${USERS_TABLE:-ChinmayaJanata-Users}
+      - CENTERS_TABLE=${CENTERS_TABLE:-ChinmayaJanata-Centers}
+      - EVENTS_TABLE=${EVENTS_TABLE:-ChinmayaJanata-Events}
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production}
+      - ADMIN_NAME=${ADMIN_NAME:-Brahman}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
