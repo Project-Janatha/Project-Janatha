@@ -11,7 +11,13 @@
     "build": "npm run build --workspaces",
     "backend": "npm run dev --workspace=@janatha/backend",
     "frontend": "npm run dev --workspace=@janatha/frontend",
+    "ec2:setup": "bash infrastructure/scripts/setup-ec2.sh",
+    "ec2:check": "bash infrastructure/scripts/check-ec2.sh",
     "deploy": "bash infrastructure/scripts/deploy.sh",
+    "db:setup": "bash infrastructure/scripts/setup-dynamo.sh",
+    "db:delete": "aws cloudformation delete-stack --stack-name ChinmayaJanata-DynamoDB --region us-east-1 && aws cloudformation wait stack-delete-complete --stack-name ChinmayaJanata-DynamoDB --region us-east-1",
+    "db:status": "aws cloudformation describe-stacks --stack-name ChinmayaJanata-DynamoDB --region us-east-1 --query 'Stacks[0].StackStatus' --output text",
+    "db:clean": "aws dynamodb delete-table --table-name ChinmayaJanata-Users --region us-east-1 2>/dev/null || true && aws dynamodb delete-table --table-name ChinmayaJanata-Centers --region us-east-1 2>/dev/null || true && aws dynamodb delete-table --table-name ChinmayaJanata-Events --region us-east-1 2>/dev/null || true",
     "amplify": "amplify"
   },
   "devDependencies": {

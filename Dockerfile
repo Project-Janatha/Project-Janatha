@@ -35,10 +35,8 @@ RUN npx expo export --platform web --output-dir dist --clear --no-minify
 FROM node:20-slim
 WORKDIR /app
 
-# Install Nginx & PM2
-# Note: apt-get is used in slim images instead of apk
+# Install Nginx
 RUN apt-get update && apt-get install -y nginx && rm -rf /var/lib/apt/lists/*
-RUN npm install -g pm2
 
 # Copy package files
 COPY package.json package-lock.json ./
@@ -54,9 +52,15 @@ COPY packages/backend ./packages/backend/
 COPY --from=frontend-builder /app/packages/frontend/dist /usr/share/nginx/html
 
 # Copy Nginx Config
-COPY nginx.conf /etc/nginx/sites-available/default
+COPY nginx.conf /etc/nginx/nginx.conf
 
-EXPOSE 80
+# Create startup script
+RUN echo '#!/bin/sh' > /start.sh && \
+  echo 'nginx' >> /start.sh && \
+  echo 'cd /app && node packages/backend/centralSequence.js' >> /start.sh && \
+  chmod +x /start.sh
 
-# Start Nginx and Backend
-CMD ["sh", "-c", "service nginx start && pm2-runtime start packages/backend/centralSequence.js"]
+EXPOSE 80 8008
+
+# Start both services
+CMD ["/start.sh"]
