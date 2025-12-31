@@ -117,9 +117,11 @@ function RootLayoutNav() {
     // Reset redirecting flag after a short delay
     const timer = setTimeout(() => setIsRedirecting(false), 500)
     return () => clearTimeout(timer)
-  }, [isAuthenticated, loading, pathname])
+  }, [isAuthenticated, loading, pathname, router, isRedirecting])
 
-  // Show loading screen while checking authentication
+  const navTheme = isDark ? DarkTheme : DefaultTheme
+
+  // Show loading screen while checking authentication - moved after all hooks
   if (loading && pathname !== '/auth') {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -128,8 +130,6 @@ function RootLayoutNav() {
       </View>
     )
   }
-
-  const navTheme = isDark ? DarkTheme : DefaultTheme
 
   return (
     <NavigationThemeProvider value={navTheme}>

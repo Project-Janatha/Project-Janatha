@@ -48,15 +48,21 @@ export default function Map({ points = [], onPointPress }: MapProps) {
   const [region, setRegion] = useState<any>(null)
 
   useEffect(() => {
-    getCurrentPosition().then((position: any) => {
-      // Ensure position has latitude and longitude
-      setRegion({
-        latitude: position.latitude,
-        longitude: position.longitude,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
+    getCurrentPosition()
+      .then((position: any) => {
+        // getCurrentPosition returns [longitude, latitude]
+        if (position && position.length === 2) {
+          setRegion({
+            latitude: position[1],
+            longitude: position[0],
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          })
+        }
       })
-    })
+      .catch((error) => {
+        console.error('Error getting position:', error)
+      })
   }, [])
 
   const getMarkerColor = (type: string) => {

@@ -11,32 +11,24 @@ export default function DevPanel({ visible, onClose }) {
 
   const handleGoToHome = () => {
     setUser({
-      id: 'dev',
       username: 'devuser@example.com',
-      center: -1,
-      points: 0,
-      isVerified: false,
-      verificationLevel: 0,
-      exists: true,
-      isActive: true,
-      events: [],
-      // add any other fields your app expects
+      firstName: 'Dev',
+      lastName: 'User',
+      email: 'devuser@example.com',
+      centerID: '-1',
+      profileComplete: true,
     })
     router.push('/')
   }
 
   const handleGoToOnboarding = () => {
     setUser({
-      id: 'dev',
       username: 'devuser@example.com',
-      center: -1,
-      points: 0,
-      isVerified: false,
-      verificationLevel: 0,
-      exists: true,
-      isActive: true,
-      events: [],
-      // add any other fields your app expects
+      firstName: 'Dev',
+      lastName: 'User',
+      email: 'devuser@example.com',
+      centerID: '-1',
+      profileComplete: false,
     })
     router.push('/onboarding')
   }
