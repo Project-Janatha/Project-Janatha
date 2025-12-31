@@ -25,13 +25,11 @@ export default function PrimaryButton({
   ...props
 }: any) {
   const handlePress = (e: any) => {
-    console.log('🔵 PrimaryButton handlePress called')
     if (Platform.OS === 'web' && e) {
       e.preventDefault()
       e.stopPropagation()
     }
     if (!disabled && onPress) {
-      console.log('🔵 Calling onPress')
       onPress(e)
     }
   }

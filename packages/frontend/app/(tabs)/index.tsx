@@ -3,7 +3,7 @@ import React, { useContext } from 'react'
 import { View, Text, ScrollView, Pressable } from 'react-native'
 import { MapPin, ChevronRight, ThumbsUp, MessageCircle } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
-import { UserContext } from '../../components/contexts'
+import { useUser } from '../../components/contexts'
 import { SecondaryButton } from '../../components/ui'
 import { Map } from '../../components'
 import { useRouter } from 'expo-router'
@@ -21,9 +21,8 @@ type MapPoint = {
  * @return {JSX.Element} A HomeScreen component that displays the main dashboard with events and calendar.
  */
 export default function HomeScreen() {
-  const { user } = useContext(UserContext)
+  const { user } = useUser()
   const router = useRouter()
-  console.log('User in HomeScreen:', user)
 
   const userName = user?.username || 'Pranav'
 

@@ -8,9 +8,12 @@ import {
   Pressable,
   Image,
   ActivityIndicator,
+  Alert,
+  Modal,
 } from 'react-native'
-import { Camera } from 'lucide-react-native'
-import { UserContext } from '../../components/contexts'
+import { Camera, Trash2, AlertTriangle } from 'lucide-react-native'
+import { useUser } from '../../components/contexts'
+import { useRouter } from 'expo-router'
 
 type ProfileData = {
   name: string
@@ -30,9 +33,12 @@ const PREFERENCE_OPTIONS = [
 ]
 
 export default function Profile() {
-  const { user } = useContext(UserContext)
+  const { user, deleteAccount } = useUser()
+  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [profileData, setProfileData] = useState<ProfileData>({
     name: user?.username || 'Pranav Vaish',
@@ -110,6 +116,23 @@ export default function Profile() {
         ...prev,
         [field]: value,
       }))
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true)
+    try {
+      const result = await deleteAccount()
+      if (result.success) {
+        setShowDeleteModal(false)
+        router.replace('/auth')
+      } else {
+        Alert.alert('Error', result.message || 'Failed to delete account')
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete account. Please try again.')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -329,6 +352,76 @@ export default function Profile() {
             </Pressable>
           </View>
         )}
+
+        {/* Danger Zone - Delete Account */}
+        <View className="mt-12 pt-8 border-t-2 border-red-200 dark:border-red-900/30">
+          <View className="mb-4">
+            <Text className="text-xl font-inter font-bold text-red-600 dark:text-red-400 mb-2">
+              Danger Zone
+            </Text>
+            <Text className="text-sm font-inter text-content/60 dark:text-content-dark/60">
+              Once you delete your account, there is no going back. Please be certain.
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => setShowDeleteModal(true)}
+            className="flex-row items-center justify-center gap-3 px-6 py-4 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-500 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/30 active:scale-98 transition-all duration-150"
+          >
+            <Trash2 size={20} color="#dc2626" />
+            <Text className="font-inter font-bold text-red-600 dark:text-red-400">
+              Delete Account
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          transparent
+          visible={showDeleteModal}
+          animationType="fade"
+          onRequestClose={() => setShowDeleteModal(false)}
+        >
+          <View className="flex-1 justify-center items-center bg-black/50 px-6">
+            <View className="bg-white dark:bg-neutral-900 rounded-2xl p-6 w-full max-w-[400px] border-2 border-red-500">
+              <View className="items-center mb-4">
+                <View className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 items-center justify-center mb-3">
+                  <AlertTriangle size={32} color="#dc2626" />
+                </View>
+                <Text className="text-2xl font-inter font-bold text-content dark:text-content-dark mb-2">
+                  Delete Account?
+                </Text>
+                <Text className="text-center font-inter text-content/70 dark:text-content-dark/70">
+                  This action cannot be undone. All your data will be permanently deleted.
+                </Text>
+              </View>
+
+              <View className="flex-row gap-3 mt-6">
+                <Pressable
+                  onPress={() => setShowDeleteModal(false)}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-3 rounded-xl bg-muted/30 dark:bg-muted-dark/20 hover:bg-muted/50 dark:hover:bg-muted-dark/30 active:scale-98"
+                >
+                  <Text className="text-center font-inter font-semibold text-content dark:text-content-dark">
+                    Cancel
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-3 rounded-xl bg-red-600 hover:bg-red-700 active:scale-98"
+                >
+                  {isDeleting ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <Text className="text-center font-inter font-semibold text-white">
+                      Delete Forever
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </ScrollView>
   )

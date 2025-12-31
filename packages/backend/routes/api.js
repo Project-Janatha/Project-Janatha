@@ -42,8 +42,16 @@ router.post('/userExistence', async (req, res) => {
 router.post('/auth/authenticate', authMethods.authenticate)
 router.post('/auth/register', authMethods.register)
 router.post('/auth/deauthenticate', authMethods.deauthenticate)
+router.get('/auth/verify', authMethods.isAuthenticated, (req, res) => {
+  // If we get here, token is valid (middleware already verified it)
+  res.status(200).json({
+    message: 'Token is valid',
+    user: req.user,
+  })
+})
 router.post('/auth/complete-onboarding', authMethods.completeOnboarding)
 router.put('/auth/update-profile', authMethods.updateProfile)
+router.delete('/auth/delete-account', authMethods.isAuthenticated, authMethods.deleteAccount)
 
 // Legacy auth routes (for backward compatibility)
 router.post('/register', authMethods.register)

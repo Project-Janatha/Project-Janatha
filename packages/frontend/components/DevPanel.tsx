@@ -1,11 +1,11 @@
 import React, { useContext } from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
-import { UserContext } from './contexts'
+import { UserContext, useUser } from './contexts'
 
 export default function DevPanel({ visible, onClose }) {
   const router = useRouter()
-  const { setUser } = useContext(UserContext)
+  const { setUser } = useUser()
 
   if (!visible) return null
 
