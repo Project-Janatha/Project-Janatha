@@ -4,34 +4,26 @@
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
  * Author: Abhiram Ramachandran
  * Date Authored: September 2, 2025
- * Last Date Modified: January 2025
+ * Last Date Modified: December 2025
  *
- * This file exports a Map component that integrates with Leaflet to provide map functionalities for Web.
- *
- * Dependencies:
- * - leaflet: For rendering maps and handling map-related functionalities.
- * - react-leaflet: React components for Leaflet integration.
+ * Industry-standard Leaflet + React implementation
+ * - No DOM manipulation in component code
+ * - CSS-only styling via globals.css
+ * - Standard Leaflet markers from CDN
+ * - Pure React custom controls
  */
-import React, { useEffect, forwardRef, useImperativeHandle, useRef, useState } from 'react'
-import { useRouter } from 'expo-router'
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
+import React, {
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useState,
+  useCallback,
+} from 'react'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
 import { getCurrentPosition } from '../utils/locationServices'
 import { useThemeContext } from './contexts'
-
-// Fix default marker icon issue in Leaflet
-// We'll use CDN URLs instead of importing PNG files
-const defaultIconUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png'
-const defaultIconRetinaUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png'
-const defaultShadowUrl = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
-
-delete (L.Icon.Default.prototype as any)._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: defaultIconRetinaUrl,
-  iconUrl: defaultIconUrl,
-  shadowUrl: defaultShadowUrl,
-})
 
 export interface MapPoint {
   id: string
@@ -52,92 +44,75 @@ export interface MapRef {
   centerOnUser: () => void
 }
 
-// Custom icons for centers and events
-const createCustomIcon = (type: 'center' | 'event') => {
-  const color = type === 'center' ? '#dc2626' : '#2563eb'
-  return L.divIcon({
-    className: 'custom-marker',
-    html: `<div style="
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background-color: ${color};
-      border: 2px solid #FFFFFF;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    "></div>`,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
-  })
-}
+// Standard Leaflet icons from CDN
+const centerIcon = new L.Icon({
+  iconUrl:
+    'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+})
 
-// Component to handle map instance and geolocation
-function MapController({
+const eventIcon = new L.Icon({
+  iconUrl:
+    'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+})
+
+// Map initialization - standard react-leaflet pattern
+function MapInitializer({
   mapRef,
   onUserLocation,
 }: {
-  mapRef: any
-  onUserLocation?: (latlng: [number, number]) => void
+  mapRef: React.MutableRefObject<L.Map | null>
+  onUserLocation: (latlng: [number, number]) => void
 }) {
   const map = useMap()
-  const router = useRouter()
 
   useEffect(() => {
     mapRef.current = map
 
-    // Wait for map to be ready before invalidating size
     map.whenReady(() => {
-      setTimeout(() => {
-        try {
-          map.invalidateSize()
-        } catch (error) {
-          console.error('Error invalidating map size:', error)
-        }
-      }, 100)
-    })
-  }, [map, mapRef])
+      map.invalidateSize()
 
-  // Get user location on mount
-  useEffect(() => {
-    getCurrentPosition()
-      .then((center) => {
-        if (
-          center &&
-          Array.isArray(center) &&
-          center.length === 2 &&
-          typeof center[0] === 'number' &&
-          typeof center[1] === 'number'
-        ) {
-          try {
-            // getCurrentPosition returns [longitude, latitude]
-            map.setView([center[1], center[0]], 10)
-            if (onUserLocation) {
-              onUserLocation([center[1], center[0]])
+      // Request user location on initial load
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            if (position?.coords) {
+              const latlng: [number, number] = [position.coords.latitude, position.coords.longitude]
+              onUserLocation(latlng)
+              map.setView(latlng, 12)
             }
-          } catch (error) {
-            console.error('Error setting map view:', error)
-          }
-        }
-      })
-      .catch((error) => {
-        console.error('Error getting user location:', error)
-        // Don't crash, just use default location
-      })
-  }, [map, onUserLocation])
+          },
+          (error) => {
+            console.warn('Initial location request failed:', error.message)
+            // Don't alert on initial load, just log
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+        )
+      }
+    })
+  }, [map, mapRef, onUserLocation])
 
   return null
 }
 
-// Component for geolocation control - Pure React, no Leaflet hooks needed for external button
-function GeolocationControlExternal({
-  isDark,
+// Custom controls using pure React (no Leaflet Control API)
+function CustomControls({
   mapRef,
+  isDark,
 }: {
+  mapRef: React.MutableRefObject<L.Map | null>
   isDark: boolean
-  mapRef: React.RefObject<L.Map | null>
 }) {
-  const handleLocationClick = () => {
-    console.log('Location button clicked')
+  const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by your browser')
       return
@@ -145,309 +120,131 @@ function GeolocationControlExternal({
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        console.log('Got position:', position.coords)
-        const latlng = { lat: position.coords.latitude, lng: position.coords.longitude }
-        if (mapRef.current) {
-          mapRef.current.flyTo(latlng, 16)
+        const latlng = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
         }
+        mapRef.current?.flyTo(latlng, 16)
       },
       (error) => {
-        console.error('Geolocation error:', error)
-        alert(`Cannot get location: ${error.message}`)
+        console.error('Location error:', error)
+        if (error.code === 1) {
+          alert(
+            'Location access denied. Please enable location permissions in your browser settings.'
+          )
+        } else if (error.code === 2) {
+          alert('Location unavailable. Please check your device settings.')
+        } else if (error.code === 3) {
+          alert('Location request timed out. Please try again.')
+        } else {
+          alert('Cannot get your location. Please try again.')
+        }
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     )
-  }
+  }, [mapRef])
 
-  const bgColor = isDark ? '#171717' : 'white'
-  const iconColor = isDark ? '#e5e5e5' : '#374151'
+  const handleLocate = useCallback(() => {
+    // Check permissions first if available
+    if (navigator.permissions) {
+      navigator.permissions
+        .query({ name: 'geolocation' })
+        .then((permissionStatus) => {
+          if (permissionStatus.state === 'denied') {
+            alert('Location access is blocked. Please enable it in your browser settings.')
+            return
+          }
+          requestLocation()
+        })
+        .catch(() => {
+          // Fallback if permissions API not fully supported
+          requestLocation()
+        })
+    } else {
+      requestLocation()
+    }
+  }, [requestLocation])
 
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: '10px',
-        right: '10px',
-        zIndex: 1000,
-        pointerEvents: 'auto',
-      }}
-    >
-      <button
-        onClick={handleLocationClick}
-        title="Show my location"
-        style={{
-          width: '30px',
-          height: '30px',
-          backgroundColor: bgColor,
-          color: iconColor,
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 1px 5px rgba(0,0,0,0.4)',
-          transition: 'all 0.2s ease',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#dc2626'
-          e.currentTarget.style.color = 'white'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = bgColor
-          e.currentTarget.style.color = iconColor
-        }}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polygon points="3 11 22 2 13 21 11 13 3 11" />
-        </svg>
-      </button>
-    </div>
-  )
-}
+  const handleZoomIn = useCallback(() => {
+    mapRef.current?.zoomIn()
+  }, [mapRef])
 
-// Component for custom zoom controls - Pure React, no Leaflet hooks
-function ZoomControlExternal({
-  isDark,
-  mapRef,
-}: {
-  isDark: boolean
-  mapRef: React.RefObject<L.Map | null>
-}) {
-  const bgColor = isDark ? '#171717' : 'white'
-  const iconColor = isDark ? '#e5e5e5' : '#171717'
-  const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+  const handleZoomOut = useCallback(() => {
+    mapRef.current?.zoomOut()
+  }, [mapRef])
 
-  const buttonStyle = {
-    width: '30px',
-    height: '30px',
-    backgroundColor: bgColor,
-    color: iconColor,
-    border: 'none',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 1px 5px rgba(0,0,0,0.4)',
-    transition: 'all 0.2s ease',
-  }
+  const buttonClass = isDark ? 'map-control-dark' : 'map-control-light'
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: '50px',
-        right: '10px',
-        zIndex: 1000,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1px',
-        pointerEvents: 'auto',
-      }}
-    >
-      <button
-        onClick={() => mapRef.current?.zoomIn()}
-        title="Zoom in"
-        style={{
-          ...buttonStyle,
-          borderRadius: '4px 4px 0 0',
-          borderBottom: `1px solid ${borderColor}`,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#dc2626'
-          e.currentTarget.style.color = 'white'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = bgColor
-          e.currentTarget.style.color = iconColor
-        }}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+    <>
+      {/* Location button */}
+      <div className="map-control-container" style={{ bottom: '10px', right: '10px' }}>
+        <button
+          className={buttonClass}
+          onClick={handleLocate}
+          title="Show my location"
+          aria-label="Show my location"
         >
-          <path d="M5 12h14" />
-          <path d="M12 5v14" />
-        </svg>
-      </button>
-      <button
-        onClick={() => mapRef.current?.zoomOut()}
-        title="Zoom out"
-        style={{
-          ...buttonStyle,
-          borderRadius: '0 0 4px 4px',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#dc2626'
-          e.currentTarget.style.color = 'white'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = bgColor
-          e.currentTarget.style.color = iconColor
-        }}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M5 12h14" />
-        </svg>
-      </button>
-    </div>
-  )
-}
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <polygon points="3 11 22 2 13 21 11 13 3 11" />
+          </svg>
+        </button>
+      </div>
 
-// Internal component for location events - INSIDE MapContainer
-function GeolocationControl({ isDark }: { isDark: boolean }) {
-  const map = useMap()
-
-  useMapEvents({
-    locationfound: (e) => {
-      console.log('Location found:', e.latlng)
-      map.flyTo(e.latlng, 16)
-    },
-    locationerror: (e) => {
-      console.error('Location error:', e.message)
-      alert(`Location error: ${e.message}. Please enable location permissions.`)
-    },
-  })
-
-  return null
-}
-
-// Component for custom zoom controls - Pure React, no Leaflet controls
-function ZoomControl({ isDark }: { isDark: boolean }) {
-  const map = useMap()
-
-  const bgColor = isDark ? '#171717' : 'white'
-  const iconColor = isDark ? '#e5e5e5' : '#171717'
-  const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
-
-  const buttonStyle = {
-    width: '30px',
-    height: '30px',
-    backgroundColor: bgColor,
-    color: iconColor,
-    border: 'none',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 1px 5px rgba(0,0,0,0.4)',
-    transition: 'all 0.2s ease',
-  }
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: '50px',
-        right: '10px',
-        zIndex: 1000,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1px',
-        pointerEvents: 'auto',
-      }}
-    >
-      <button
-        onClick={() => map.zoomIn()}
-        title="Zoom in"
-        style={{
-          ...buttonStyle,
-          borderRadius: '4px 4px 0 0',
-          borderBottom: `1px solid ${borderColor}`,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#dc2626'
-          e.currentTarget.style.color = 'white'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = bgColor
-          e.currentTarget.style.color = iconColor
-        }}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M5 12h14" />
-          <path d="M12 5v14" />
-        </svg>
-      </button>
-      <button
-        onClick={() => map.zoomOut()}
-        title="Zoom out"
-        style={{
-          ...buttonStyle,
-          borderRadius: '0 0 4px 4px',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#dc2626'
-          e.currentTarget.style.color = 'white'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = bgColor
-          e.currentTarget.style.color = iconColor
-        }}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M5 12h14" />
-        </svg>
-      </button>
-    </div>
+      {/* Zoom controls */}
+      <div className="map-control-container" style={{ bottom: '50px', right: '10px' }}>
+        <div className="map-zoom-group">
+          <button
+            className={`${buttonClass} map-zoom-in`}
+            onClick={handleZoomIn}
+            title="Zoom in"
+            aria-label="Zoom in"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <button
+            className={`${buttonClass} map-zoom-out`}
+            onClick={handleZoomOut}
+            title="Zoom out"
+            aria-label="Zoom out"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </>
   )
 }
 
 const Map = forwardRef<MapRef, MapProps>(
   ({ points = [], initialCenter = [37.7749, -122.4194], initialZoom = 10, onPointPress }, ref) => {
     const mapRef = useRef<L.Map | null>(null)
-    const router = useRouter()
     const { isDark } = useThemeContext()
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
 
@@ -457,30 +254,18 @@ const Map = forwardRef<MapRef, MapProps>(
           mapRef.current.setView(userLocation, 16)
         } else {
           getCurrentPosition()
-            .then((center) => {
-              if (
-                center &&
-                Array.isArray(center) &&
-                center.length === 2 &&
-                typeof center[0] === 'number' &&
-                typeof center[1] === 'number'
-              ) {
-                // getCurrentPosition returns [longitude, latitude]
-                const latlng: [number, number] = [center[1], center[0]]
+            .then((coords) => {
+              if (coords && Array.isArray(coords) && coords.length === 2) {
+                const latlng: [number, number] = [coords[1], coords[0]]
                 setUserLocation(latlng)
-                if (mapRef.current) {
-                  mapRef.current.setView(latlng, 16)
-                }
+                mapRef.current?.setView(latlng, 16)
               }
             })
-            .catch((error) => {
-              console.error('Error centering on user:', error)
-            })
+            .catch(() => {})
         }
       },
     }))
 
-    // Tile layer URL based on theme
     const tileLayerUrl = isDark
       ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
       : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
@@ -497,9 +282,6 @@ const Map = forwardRef<MapRef, MapProps>(
           style={{ width: '100%', height: '100%', zIndex: 0 }}
           zoomControl={false}
           preferCanvas={true}
-          whenReady={() => {
-            console.log('Map is ready')
-          }}
         >
           <TileLayer
             key={isDark ? 'dark' : 'light'}
@@ -507,31 +289,28 @@ const Map = forwardRef<MapRef, MapProps>(
             url={tileLayerUrl}
           />
 
-          <MapController mapRef={mapRef} onUserLocation={setUserLocation} />
-          <GeolocationControl isDark={isDark} />
+          <MapInitializer mapRef={mapRef} onUserLocation={setUserLocation} />
 
           {points.map((point) => (
             <Marker
               key={point.id}
               position={[point.latitude, point.longitude]}
-              icon={createCustomIcon(point.type)}
+              icon={point.type === 'center' ? centerIcon : eventIcon}
               eventHandlers={{
-                click: () => {
-                  if (onPointPress) {
-                    onPointPress(point)
-                  }
-                },
+                click: () => onPointPress?.(point),
               }}
             >
               <Popup>
-                <h3>{point.name}</h3>
-                <p>Type: {point.type}</p>
+                <strong>{point.name}</strong>
+                <br />
+                <span style={{ fontSize: '0.9em', color: '#666' }}>
+                  {point.type === 'center' ? 'Center' : 'Event'}
+                </span>
               </Popup>
             </Marker>
           ))}
         </MapContainer>
-        <ZoomControlExternal isDark={isDark} mapRef={mapRef} />
-        <GeolocationControlExternal isDark={isDark} mapRef={mapRef} />
+        <CustomControls mapRef={mapRef} isDark={isDark} />
       </div>
     )
   }

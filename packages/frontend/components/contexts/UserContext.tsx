@@ -59,7 +59,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   // Base URL for your API - smart detection for all environments
   const getApiUrl = () => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const hostname = window.location.hostname
+      const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
 
       // Only use localhost backend if actually on localhost
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
