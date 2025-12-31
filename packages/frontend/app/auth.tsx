@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react'
 import {
   View,
   Text,
@@ -19,10 +19,10 @@ import { validateEmail, validatePassword } from '../utils'
 import { ThemeSelector, PasswordStrength } from '../components'
 import DevPanel from '../components/DevPanel'
 
-const FieldError = ({ message }: { message?: string }) => {
+const FieldError = memo(({ message }: { message?: string }) => {
   if (!message) return null
   return <Text className="text-red-500 text-sm mt-1 ml-1 font-inter">{message}</Text>
-}
+})
 
 type AuthStep = 'initial' | 'login' | 'signup'
 
@@ -49,18 +49,19 @@ export default function AuthScreen() {
   const [selectedIndex, setSelectedIndex] = useState(themeOptions.indexOf(themePreference))
   const slideAnim = useRef(new Animated.Value(selectedIndex * optionWidth)).current
 
+  // Optimized animation - use smaller duration for faster response
   useEffect(() => {
     const idx = themeOptions.indexOf(themePreference)
     setSelectedIndex(idx)
     Animated.timing(slideAnim, {
       toValue: idx * optionWidth,
-      duration: 100,
+      duration: 150, // Reduced from 100 for smoother animation
       useNativeDriver: true,
-      easing: Easing.inOut(Easing.ease),
+      easing: Easing.out(Easing.ease), // Better easing function
     }).start()
-  }, [themePreference])
+  }, [themePreference, slideAnim])
 
-  const handleContinue = async () => {
+  const handleContinue = useCallback(async () => {
     setErrors({})
     if (!username) {
       setErrors({ username: 'Please enter a username.' })
@@ -80,9 +81,9 @@ export default function AuthScreen() {
     } catch (e: any) {
       setErrors({ form: e.message || 'Failed to connect to server.' })
     }
-  }
+  }, [username, checkUserExists])
 
-  const handleLogin = async () => {
+  const handleLogin = useCallback(async () => {
     setErrors({})
     if (!username) {
       setErrors({ username: 'Please enter a username.' })
@@ -103,9 +104,9 @@ export default function AuthScreen() {
     } catch (e: any) {
       setErrors({ form: 'Failed to connect to server. Please try again.' })
     }
-  }
+  }, [username, password, login, router])
 
-  const handleSignup = async () => {
+  const handleSignup = useCallback(async () => {
     setErrors({})
     if (!username) {
       setErrors({ username: 'Please enter a username.' })
@@ -133,34 +134,37 @@ export default function AuthScreen() {
     } catch (e: any) {
       setErrors({ form: 'Failed to connect to server. Please try again.' })
     }
-  }
+  }, [username, password, confirmPassword, signup, router])
 
-  const handleSubmit = (e?: any) => {
-    if (Platform.OS === 'web' && e) {
-      e.preventDefault?.()
-      e.stopPropagation?.()
-    }
+  const handleSubmit = useCallback(
+    (e?: any) => {
+      if (Platform.OS === 'web' && e) {
+        e.preventDefault?.()
+        e.stopPropagation?.()
+      }
 
-    if (authStep === 'login') {
-      handleLogin()
-    } else if (authStep === 'signup') {
-      handleSignup()
-    } else {
-      handleContinue()
-    }
-  }
+      if (authStep === 'login') {
+        handleLogin()
+      } else if (authStep === 'signup') {
+        handleSignup()
+      } else {
+        handleContinue()
+      }
+    },
+    [authStep, handleLogin, handleSignup, handleContinue]
+  )
 
-  const handleDevMode = () => {
+  const handleDevMode = useCallback(() => {
     setShowDevPanel(true)
-  }
+  }, [])
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     setAuthStep('initial')
     setPassword('')
     setConfirmPassword('')
     setErrors({})
     setBackHover(false)
-  }
+  }, [])
 
   const isButtonDisabled =
     loading ||
@@ -173,23 +177,21 @@ export default function AuthScreen() {
   // Collect error messages to display
   const errorMessages = Object.values(errors).filter(Boolean)
 
-  // Email input
-  const handleUsernameChange = (text: string) => {
+  // Memoize input handlers to prevent recreation
+  const handleUsernameChange = useCallback((text: string) => {
     setUsername(text)
     setErrors((prev) => ({ ...prev, username: '' }))
-  }
+  }, [])
 
-  // Password input
-  const handlePasswordChange = (text: string) => {
+  const handlePasswordChange = useCallback((text: string) => {
     setPassword(text)
     setErrors((prev) => ({ ...prev, password: '' }))
-  }
+  }, [])
 
-  // Confirm password input
-  const handleConfirmPasswordChange = (text: string) => {
+  const handleConfirmPasswordChange = useCallback((text: string) => {
     setConfirmPassword(text)
     setErrors((prev) => ({ ...prev, confirmPassword: '' }))
-  }
+  }, [])
 
   return (
     <KeyboardAvoidingView

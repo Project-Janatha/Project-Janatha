@@ -34,9 +34,12 @@ export default function RootLayout() {
   })
 
   const [fontTimeout, setFontTimeout] = useState(false)
+  const [splashHidden, setSplashHidden] = useState(false)
 
   // Add a timeout in case fonts don't load
   useEffect(() => {
+    if (fontsLoaded || fontsError) return // Don't set timeout if already loaded/errored
+
     const timer = setTimeout(() => {
       if (!fontsLoaded && !fontsError) {
         setFontTimeout(true)
@@ -47,10 +50,16 @@ export default function RootLayout() {
   }, [fontsLoaded, fontsError])
 
   useEffect(() => {
-    if (fontsLoaded || fontsError || fontTimeout) {
+    if ((fontsLoaded || fontsError || fontTimeout) && !splashHidden) {
       SplashScreen.hideAsync()
+        .then(() => {
+          setSplashHidden(true)
+        })
+        .catch(() => {
+          setSplashHidden(true)
+        })
     }
-  }, [fontsLoaded, fontsError, fontTimeout])
+  }, [fontsLoaded, fontsError, fontTimeout, splashHidden])
 
   if (!fontsLoaded && !fontsError && !fontTimeout) {
     return (
