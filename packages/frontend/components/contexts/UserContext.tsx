@@ -12,9 +12,6 @@
  * - @rnmapbox/maps: For rendering maps and handling map-related functionalities.
  */
 
-// TODO: Improve upon this file and interface with backend auth system
-// TODO: Enable post calls from android and ios to backend server
-// TODO: Enable persistent login sessions using cookies or tokens
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { Platform } from 'react-native'
 import { getStoredToken, setStoredToken, removeStoredToken } from '../utils/tokenStorage'
@@ -56,25 +53,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Base URL for your API - smart detection for all environments
-  const getApiUrl = () => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-
-      // Only use localhost backend if actually on localhost
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return 'http://localhost:8008'
-      }
-
-      // For any remote access (EC2 DNS, IP, or other), use EC2 IP
-      return 'http://3.236.142.145'
-    }
-
-    // For native mobile apps, always use EC2
-    return 'http://3.236.142.145'
-  }
-
-  const API_URL = getApiUrl()
+  // Base URL for your API - ALWAYS use EC2 instance (backend does NOT run locally)
+  const API_URL = 'http://3.236.142.145'
 
   // Check for token on app load
   useEffect(() => {

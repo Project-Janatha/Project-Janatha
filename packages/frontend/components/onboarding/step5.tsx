@@ -5,7 +5,6 @@ import { useOnboarding } from '../contexts'
 export default function Step4() {
   const { goToNextStep } = useOnboarding()
   const [memberType, setMemberType] = useState<string>('')
-  // TODO: set user member type in context + implement verifcation for Sevak and Bramacharya/Acharya
   const [error, setError] = useState<string | null>(null)
 
   const memberTypes = [

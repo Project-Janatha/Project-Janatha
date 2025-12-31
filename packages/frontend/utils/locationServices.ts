@@ -42,7 +42,6 @@ async function getCurrentPosition() {
             resolve([position.coords.longitude, position.coords.latitude])
           },
           (error) => {
-            console.warn('Geolocation error:', error.message)
             // Return default location on error
             resolve(defaultLocation)
           },
@@ -53,7 +52,6 @@ async function getCurrentPosition() {
           }
         )
       } else {
-        console.warn('Geolocation not supported')
         resolve(defaultLocation)
       }
     })

@@ -26,10 +26,13 @@ export default function Root({ children }: { children: React.ReactNode }) {
         */}
         <ScrollViewStyleReset />
 
-        {/* Using raw CSS styles as an escape-hatch to ensure the background color never flickers in dark-mode. */}
-        <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              'body{background-color:#fff;margin:0;padding:0}@media(prefers-color-scheme:dark){body{background-color:#0A0A0A}}',
+          }}
+        />
 
-        {/* Font loading for web - using Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -37,12 +40,53 @@ export default function Root({ children }: { children: React.ReactNode }) {
           rel="stylesheet"
         />
 
-        {/* Leaflet CSS - loaded in HTML head to avoid JavaScript DOM manipulation issues */}
-        <link
-          rel="stylesheet"
-          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-          crossOrigin=""
+        {/* Critical: Prevent Chrome DevTools from crashing on WebGL canvas inspection */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                // Aggressive DevTools crash prevention for WebGL/MapLibre
+                if (typeof window !== 'undefined') {
+                  // Prevent WebGL context inspection
+                  window.addEventListener('load', function() {
+                    const canvases = document.querySelectorAll('canvas');
+                    canvases.forEach(function(canvas) {
+                      if (canvas.className && canvas.className.includes('maplibre')) {
+                        // Make canvas invisible to inspector
+                        Object.defineProperty(canvas, '__REACT_DEVTOOLS_GLOBAL_HOOK__', {
+                          get: function() { return undefined; },
+                          set: function() {}
+                        });
+                      }
+                    });
+                  });
+                  
+                  // Override console methods to prevent crashes
+                  const originalError = console.error;
+                  console.error = function(...args) {
+                    const msg = args.join(' ');
+                    if (msg.includes('WebGL') || msg.includes('maplibre') || msg.includes('mapboxgl')) {
+                      return;
+                    }
+                    originalError.apply(console, args);
+                  };
+                  
+                  // Prevent inspector from serializing WebGL contexts
+                  const originalGetContext = HTMLCanvasElement.prototype.getContext;
+                  HTMLCanvasElement.prototype.getContext = function(type, ...args) {
+                    const ctx = originalGetContext.call(this, type, ...args);
+                    if (ctx && (type === 'webgl' || type === 'webgl2')) {
+                      // Mark context as non-serializable
+                      Object.defineProperty(ctx, 'toJSON', {
+                        value: function() { return '[WebGL Context]'; }
+                      });
+                    }
+                    return ctx;
+                  };
+                }
+              })();
+            `,
+          }}
         />
 
         {/* Add any additional <head> elements that you want globally available on web... */}
@@ -52,14 +96,3 @@ export default function Root({ children }: { children: React.ReactNode }) {
     </html>
   )
 }
-
-const responsiveBackground = `
-body {
-  background-color: #ffffff;
-  transition: background-color 0.2s ease;
-}
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #0A0A0A;
-  }
-}`

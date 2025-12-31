@@ -5,7 +5,7 @@ import { MapPin, ChevronRight, ThumbsUp, MessageCircle } from 'lucide-react-nati
 import Toast from 'react-native-toast-message'
 import { useUser } from '../../components/contexts'
 import { SecondaryButton } from '../../components/ui'
-import { Map } from '../../components'
+import { MapPreview } from '../../components'
 import { useRouter } from 'expo-router'
 
 type MapPoint = {
@@ -129,10 +129,20 @@ export default function HomeScreen() {
   return (
     <ScrollView className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-1 gap-4 px-4 pt-4 pb-8">
-        {/* Interactive Map Section */}
+        {/* Interactive Map Preview - Lightweight static preview */}
         <View className="bg-card rounded-2xl shadow-sm mb-4 overflow-hidden">
           <View className="h-[200px] rounded-t-2xl overflow-hidden">
-            <Map points={mapPoints} onPointPress={handlePointPress} />
+            <MapPreview
+              onPress={() => {
+                router.push('/explore')
+                Toast.show({
+                  type: 'info',
+                  text1: 'Explore',
+                  text2: 'Finding centers and events near you',
+                })
+              }}
+              pointCount={mapPoints.length}
+            />
           </View>
 
           <Pressable
