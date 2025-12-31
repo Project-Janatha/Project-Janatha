@@ -10,7 +10,7 @@ import {
 import { SplashScreen, Stack, usePathname, useRouter } from 'expo-router'
 import {
   UserProvider,
-  UserContext,
+  useUser,
   ThemeProvider as CustomThemeProvider,
   useThemeContext,
 } from '../components/contexts'
@@ -39,15 +39,12 @@ export default function RootLayout() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!fontsLoaded && !fontsError) {
-        console.log('Font loading timeout - continuing anyway')
         setFontTimeout(true)
       }
     }, 3000) // 3 second timeout
 
     return () => clearTimeout(timer)
   }, [fontsLoaded, fontsError])
-
-  console.log('Fonts loaded:', fontsLoaded, 'Fonts error:', fontsError)
 
   useEffect(() => {
     if (fontsLoaded || fontsError || fontTimeout) {
@@ -85,45 +82,40 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const { user, loading } = useContext(UserContext)
+  const { user, loading } = useUser()
   const { isDark } = useThemeContext()
   const pathname = usePathname()
   const router = useRouter()
   const isAuthenticated = !!user
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
-  console.log(
-    'RootLayoutNav - isAuthenticated:',
-    isAuthenticated,
-    'pathname:',
-    pathname,
-    'loading:',
-    loading,
-    'isDark:',
-    isDark
-  )
-
+  // Handle authentication redirects - only once when loading completes
   useEffect(() => {
-    if (pathname === '/auth') {
-      console.log('On auth page, skipping redirect logic')
-      return
+    if (loading || isRedirecting) return
+
+    // Skip redirect logic if already on the correct page
+    if (pathname === '/auth' && !isAuthenticated) return
+    if (pathname !== '/auth' && isAuthenticated) return
+
+    // Perform redirect
+    setIsRedirecting(true)
+    if (!isAuthenticated && pathname !== '/auth') {
+      router.replace('/auth')
+    } else if (isAuthenticated && pathname === '/auth') {
+      router.replace('/(tabs)')
     }
 
-    if (!loading) {
-      if (!isAuthenticated) {
-        console.log('Not authenticated, redirecting to /auth')
-        router.replace('/auth')
-      } else if (pathname === '/auth') {
-        console.log('Authenticated on auth page, redirecting to /(tabs)')
-        router.replace('/(tabs)')
-      }
-    }
+    // Reset redirecting flag after a short delay
+    const timer = setTimeout(() => setIsRedirecting(false), 500)
+    return () => clearTimeout(timer)
   }, [isAuthenticated, loading, pathname])
 
+  // Show loading screen while checking authentication
   if (loading && pathname !== '/auth') {
-    console.log('SHOWING LOADING SCREEN')
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Loading...</Text>
+        <ActivityIndicator size="large" color="#ea580c" />
+        <Text style={{ marginTop: 10 }}>Loading...</Text>
       </View>
     )
   }
@@ -156,7 +148,7 @@ function RootLayoutNav() {
             headerRight: () => (
               <IconButton
                 className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
-                onPress={() => console.log('Share event')}
+                onPress={() => {}}
               >
                 <Share size={20} />
               </IconButton>
@@ -172,7 +164,7 @@ function RootLayoutNav() {
             headerRight: () => (
               <IconButton
                 className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
-                onPress={() => console.log('Share center')}
+                onPress={() => {}}
               >
                 <Share size={20} />
               </IconButton>

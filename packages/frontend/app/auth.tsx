@@ -14,7 +14,7 @@ import {
 import { useRouter } from 'expo-router'
 import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
 import { PrimaryButton, IconButton, AuthInput } from '../components/ui'
-import { UserContext, useThemeContext } from '../components/contexts'
+import { useUser, useThemeContext } from '../components/contexts'
 import { validateEmail, validatePassword } from '../utils'
 import { ThemeSelector, PasswordStrength } from '../components'
 import DevPanel from '../components/DevPanel'
@@ -29,7 +29,7 @@ type AuthStep = 'initial' | 'login' | 'signup'
 export default function AuthScreen() {
   const router = useRouter()
   const { theme, toggleTheme, themePreference, setThemePreference, isDark } = useThemeContext()
-  const { checkUserExists, login, signup, setUser, loading } = useContext(UserContext)
+  const { checkUserExists, login, signup, setUser, loading } = useUser()
 
   const [authStep, setAuthStep] = useState<AuthStep>('initial')
   const [username, setUsername] = useState('')
@@ -94,10 +94,14 @@ export default function AuthScreen() {
       return
     }
     try {
-      await login(username, password)
-      router.replace('/(tabs)')
+      const result = await login(username, password)
+      if (result.success) {
+        router.replace('/(tabs)')
+      } else {
+        setErrors({ form: result.message || 'Username or password is incorrect.' })
+      }
     } catch (e: any) {
-      setErrors({ form: 'Username or password is incorrect.' })
+      setErrors({ form: 'Failed to connect to server. Please try again.' })
     }
   }
 
@@ -120,10 +124,14 @@ export default function AuthScreen() {
       return
     }
     try {
-      await signup(username, password)
-      router.replace('/onboarding')
+      const result = await signup(username, password)
+      if (result.success) {
+        router.replace('/onboarding')
+      } else {
+        setErrors({ form: result.message || 'Failed to sign up. Please try again.' })
+      }
     } catch (e: any) {
-      setErrors({ form: e.message || 'Failed to sign up. Please try again.' })
+      setErrors({ form: 'Failed to connect to server. Please try again.' })
     }
   }
 

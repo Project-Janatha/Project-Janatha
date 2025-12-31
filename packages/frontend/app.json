@@ -21,6 +21,12 @@
           "NSExceptionDomains": {
             "localhost": {
               "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "ec2-3-236-142-145.compute-1.amazonaws.com": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "3.236.142.145": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
             }
           }
         }
@@ -30,7 +36,9 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "usesCleartextTraffic": true,
+      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"]
     },
     "web": {
       "bundler": "metro",

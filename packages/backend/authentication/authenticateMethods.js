@@ -13,7 +13,7 @@
 // import Datastore from '@seald-io/nedb';
 import * as db from '../database/dynamoHelpers.js'
 import bcrypt from 'bcryptjs'
-const { hash, compareSync } = bcrypt
+const { hash, compare } = bcrypt // Change compareSync to compare
 import { generateToken, verifyToken } from '../utils/jwt.js'
 import { v4 as uuidv4 } from 'uuid'
 import jwt from 'jsonwebtoken'
@@ -30,14 +30,25 @@ const SALT_ROUNDS = 10
  * @param {Request} res The result of the query.
  * @param {function} next The function to call next, provided that the user is authenticated.
  */
-function isAuthenticated(req, res, next) {
+async function isAuthenticated(req, res, next) {
   const authHeader = req.headers.authorization
   if (authHeader) {
     const token = authHeader.split(' ')[1]
     const decoded = verifyToken(token)
     if (decoded) {
-      req.user = decoded
-      next()
+      // Fetch full user data from database
+      try {
+        const userData = await db.getUserByUsername(decoded.username)
+        if (userData) {
+          req.user = userData
+          next()
+        } else {
+          res.status(403).json({ message: 'User not found' })
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+        res.status(500).json({ message: 'Server error' })
+      }
     } else {
       res.status(403).json({ message: 'Invalid or expired token' })
     }
@@ -60,53 +71,60 @@ function isUserAdmin(req) {
  * @param {Request} res
  * @returns A response with status.
  */
-async function register(req, res) {
-  const { username, password } = req.body
-
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Username and password are required.' })
-  }
+const register = async (req, res) => {
   try {
-    const existing = await db.getUserByUsername(username)
-    if (existing) {
-      return res.status(409).json({ message: 'User already exists' })
+    const { username, password } = req.body
+
+    // Validate input
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' })
     }
 
-    let passwordHash = await hash(password, SALT_ROUNDS)
-    let userObject = new user.User(username, true)
-    const userId = uuidv4()
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters long' })
+    }
 
+    // Check if user already exists
+    const existingUser = await db.getUserByUsername(username)
+    if (existingUser && existingUser.exists) {
+      return res.status(409).json({ message: 'Username already exists' })
+    }
+
+    // Hash password with better error handling
+    let hashedPassword
+    try {
+      console.log('Hashing password for user:', username)
+      const saltRounds = 10
+      hashedPassword = await hash(password, saltRounds)
+      console.log('Password hashed successfully')
+    } catch (hashError) {
+      console.error('Password hashing error:', hashError)
+      return res.status(500).json({
+        message: 'Server error during password hashing',
+        error: hashError.message,
+      })
+    }
+
+    // Create user
     const newUser = {
-      id: userId,
-      username: username,
-      password: passwordHash,
-      profileComplete: false,
-      firstName: '',
-      lastName: '',
-      dateOfBirth: null,
-      centerID: null,
-      userObject: userObject.toJSON(),
+      username,
+      password: hashedPassword,
+      createdAt: new Date().toISOString(),
+      // Add other default fields
     }
 
-    const result = await db.createUser(newUser)
+    await db.createUser(newUser)
 
-    if (result.success) {
-      const token = jwt.sign({ username: username, userId: userId }, constants.JWT_SECRET, {
-        expiresIn: '24h',
-      })
-
-      return res.status(201).json({
-        message: 'User created successfully',
-        token: token,
-        userId: userId,
-        username: username,
-      })
-    } else {
-      return res.status(500).json({ message: 'Registration failed', error: result.error })
-    }
-  } catch (err) {
-    console.error('Error: Password hashing ', err)
-    return res.status(500).json({ message: 'Server error during password hashing' })
+    return res.status(201).json({
+      message: 'User registered successfully',
+      username,
+    })
+  } catch (error) {
+    console.error('Registration error:', error)
+    return res.status(500).json({
+      message: 'Registration failed',
+      error: error.message,
+    })
   }
 }
 /**
@@ -121,16 +139,32 @@ async function authenticate(req, res) {
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password are required.' })
   }
+
   try {
+    console.log('Authenticating user:', username)
     const user = await db.getUserByUsername(username)
+
     if (!user) {
-      return res.status(401).json({ message: 'User does not exist' })
+      console.log('User not found:', username)
+      return res.status(401).json({ message: 'Invalid credentials' }) // Don't reveal user doesn't exist
     }
-    if (!compareSync(password, user.password)) {
+
+    console.log('Comparing password...')
+    // Use async compare instead of sync
+    const passwordMatch = await compare(password, user.password)
+
+    if (!passwordMatch) {
+      console.log('Password does not match for user:', username)
       return res.status(401).json({ message: 'Invalid credentials' })
     }
+
+    console.log('Authentication successful for user:', username)
     const token = generateToken(user)
-    return res.status(200).json({ message: 'Authentication successful!', user: user, token: token })
+    return res.status(200).json({
+      message: 'Authentication successful!',
+      user: user,
+      token: token,
+    })
   } catch (err) {
     console.error('Authentication error:', err)
     return res.status(500).json({ message: 'Internal server error during authentication' })
@@ -402,6 +436,37 @@ async function updateProfile(req, res) {
   }
 }
 
+/**
+ * Delete user account
+ */
+async function deleteAccount(req, res) {
+  try {
+    const user = req.user
+
+    if (!user || !user.id) {
+      return res.status(400).json({ message: 'User not found' })
+    }
+
+    console.log('Deleting account for user:', user.username)
+
+    const result = await db.deleteUser(user.id)
+
+    if (result.success) {
+      return res.status(200).json({
+        message: 'Account deleted successfully',
+      })
+    } else {
+      return res.status(500).json({
+        message: 'Failed to delete account',
+        error: result.error,
+      })
+    }
+  } catch (err) {
+    console.error('Account deletion error:', err)
+    return res.status(500).json({ message: 'Server error' })
+  }
+}
+
 export default {
   isAuthenticated,
   register,
@@ -419,4 +484,5 @@ export default {
   isUserAdmin,
   completeOnboarding,
   updateProfile,
+  deleteAccount,
 }

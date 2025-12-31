@@ -3,7 +3,7 @@ import React, { useContext } from 'react'
 import { View, Text, Pressable, useWindowDimensions, ScrollView } from 'react-native'
 import { ThumbsUp, MessageCircle, MapPin, ChevronRight } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
-import { UserContext } from '../../components/contexts'
+import { useUser } from '../../components/contexts'
 import { SecondaryButton } from '../../components/ui'
 import { Map } from '../../components'
 import { useRouter } from 'expo-router'
@@ -28,7 +28,7 @@ export default function HomeScreenWeb() {
     return <MobileHome />
   }
 
-  const { user } = useContext(UserContext)
+  const { user } = useUser()
   const router = useRouter()
 
   const mapPoints: MapPoint[] = [

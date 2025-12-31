@@ -36,7 +36,6 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     const themeToApply = themePreference === 'system' ? systemScheme : themePreference
 
     if (themeToApply) {
-      console.log('🟣 Setting theme:', themeToApply, '(preference:', themePreference, ')')
       setColorScheme(themeToApply as 'light' | 'dark')
 
       // For web, set class immediately

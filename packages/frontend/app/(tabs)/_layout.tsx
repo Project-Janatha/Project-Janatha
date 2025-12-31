@@ -1,7 +1,7 @@
 import { Link, Tabs, useRouter, usePathname } from 'expo-router'
 import { Platform, View, Text, Pressable } from 'react-native'
 import { useContext, useState } from 'react'
-import { UserContext, useThemeContext } from '../../components/contexts'
+import { useUser, useThemeContext } from '../../components/contexts'
 import { GhostButton, DestructiveButton } from '../../components/ui'
 import { Compass, User, Settings, LogOut } from 'lucide-react-native'
 import { Ionicons } from '@expo/vector-icons'
@@ -14,7 +14,7 @@ import SettingsPanel from '../../components/SettingsPanel'
 export default function TabLayout() {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, logout } = useContext(UserContext)
+  const { user, logout } = useUser()
   const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
 
