@@ -58,3 +58,23 @@ div, p, span, a, button, input, textarea, select {
   font-weight: 300;
   font-style: normal;
 }
+
+/* Leaflet map customizations */
+.leaflet-top.leaflet-left {
+  display: none !important;
+}
+
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.leaflet-control-zoom a {
+  border: none !important;
+  border-radius: 4px !important;
+}
+
+.leaflet-bar {
+  border: none !important;
+  box-shadow: none !important;
+}
