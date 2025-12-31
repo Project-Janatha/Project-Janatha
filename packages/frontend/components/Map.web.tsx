@@ -490,11 +490,11 @@ const Map = forwardRef<MapRef, MapProps>(
       : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
     return (
-      <div style={{ width: '100%', height: '100%', position: 'relative', pointerEvents: 'none' }}>
+      <div style={{ width: '100%', height: '100%', position: 'relative' }}>
         <MapContainer
           center={initialCenter}
           zoom={initialZoom}
-          style={{ width: '100%', height: '100%', zIndex: 0, pointerEvents: 'auto' }}
+          style={{ width: '100%', height: '100%', zIndex: 0 }}
           zoomControl={false}
           preferCanvas={true}
           whenReady={() => {
@@ -508,6 +508,7 @@ const Map = forwardRef<MapRef, MapProps>(
           />
 
           <MapController mapRef={mapRef} onUserLocation={setUserLocation} />
+          <GeolocationControl isDark={isDark} />
 
           {points.map((point) => (
             <Marker
@@ -529,8 +530,8 @@ const Map = forwardRef<MapRef, MapProps>(
             </Marker>
           ))}
         </MapContainer>
-        <ZoomControl isDark={isDark} />
-        <GeolocationControl isDark={isDark} />
+        <ZoomControlExternal isDark={isDark} mapRef={mapRef} />
+        <GeolocationControlExternal isDark={isDark} mapRef={mapRef} />
       </div>
     )
   }
