@@ -17,6 +17,7 @@ import {
 import { IconButton } from '../components/ui'
 import { Share } from 'lucide-react-native'
 import '../globals.css'
+// Leaflet CSS loaded via CDN in +html.tsx head tag
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',

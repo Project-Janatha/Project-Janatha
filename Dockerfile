@@ -36,6 +36,9 @@ COPY packages/backend ./packages/backend/
 
 COPY --from=frontend-builder /app/packages/frontend/dist /usr/share/nginx/html
 
+# Inject Leaflet CSS CDN link into index.html after </head>
+RUN sed -i 's|</head>|<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/></head>|' /usr/share/nginx/html/index.html
+
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Create startup script with better error handling

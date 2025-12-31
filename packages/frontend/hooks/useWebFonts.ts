@@ -14,25 +14,26 @@ export function useWebFonts() {
       return;
     }
 
-    // Check if fonts are already loaded
-    if (document.fonts && document.fonts.check) {
-      const checkFonts = async () => {
-        try {
-          // Check if our main font is loaded
-          const isLoaded = document.fonts.check('16px AnekLatin-Regular');
-          if (isLoaded) {
-            setLoaded(true);
-            return;
-          }
+    // Check if fonts are already loaded - production safe
+    try {
+      if (document?.fonts && document.fonts.check) {
+        const checkFonts = async () => {
+          try {
+            // Check if our main font is loaded
+            const isLoaded = document.fonts.check('16px AnekLatin-Regular');
+            if (isLoaded) {
+              setLoaded(true);
+              return;
+            }
 
-          // Wait for fonts to load
-          await document.fonts.ready;
-          setLoaded(true);
-        } catch (err) {
-          console.warn('Font loading check failed:', err);
-          setError(err as Error);
-          setLoaded(true); // Fallback to loaded state
-        }
+            // Wait for fonts to load
+            await document.fonts.ready;
+            setLoaded(true);
+          } catch (err) {
+            console.warn('Font loading check failed:', err);
+            setError(err as Error);
+            setLoaded(true); // Fallback to loaded state
+          }
       };
 
       checkFonts();

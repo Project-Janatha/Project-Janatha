@@ -95,4 +95,10 @@ package-lock.json
 .tamagui/
 
 # Database
-db/
+db/# Build artifacts
+*.tar.gz
+.expo/
+test-dist/
+*.backup
+/tmp/build.log
+packages/backend/db/*.db

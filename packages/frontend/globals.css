@@ -2,11 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* Removed global transitions to prevent dev tools conflicts */
+/* Apply transitions selectively where needed instead of * selector */
 
 /* Prevent transitions on page load */
 .preload * {
@@ -77,4 +74,62 @@ div, p, span, a, button, input, textarea, select {
 .leaflet-bar {
   border: none !important;
   box-shadow: none !important;
+}
+/* Custom map controls - Industry standard styling */
+.map-control-container {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.map-control-light,
+.map-control-dark {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+}
+
+.map-control-light {
+  background-color: white;
+  color: #374151;
+}
+
+.map-control-dark {
+  background-color: #171717;
+  color: #e5e5e5;
+}
+
+.map-control-light:hover,
+.map-control-dark:hover {
+  background-color: #dc2626;
+  color: white;
+}
+
+.map-zoom-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.map-zoom-in {
+  border-radius: 4px 4px 0 0 !important;
+}
+
+.map-zoom-out {
+  border-radius: 0 0 4px 4px !important;
+}
+
+.map-control-light.map-zoom-in {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.map-control-dark.map-zoom-in {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
