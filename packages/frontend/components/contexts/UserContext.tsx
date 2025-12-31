@@ -60,16 +60,16 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const getApiUrl = () => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const hostname = window.location.hostname
-      
+
       // Only use localhost backend if actually on localhost
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         return 'http://localhost:8008'
       }
-      
+
       // For any remote access (EC2 DNS, IP, or other), use EC2 IP
       return 'http://3.236.142.145'
     }
-    
+
     // For native mobile apps, always use EC2
     return 'http://3.236.142.145'
   }
@@ -78,9 +78,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   // Check for token on app load
   useEffect(() => {
+    let isMounted = true
+
     const loadUser = async () => {
       try {
         const token = await getStoredToken()
+        if (!isMounted) return
+
         if (token) {
           // Verify token validity with backend
           const controller = new AbortController()
@@ -97,6 +101,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
             clearTimeout(timeoutId)
 
+            if (!isMounted) return
+
             if (response.ok) {
               const data = await response.json()
               setUser(data.user)
@@ -106,6 +112,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
             }
           } catch (verifyError: any) {
             clearTimeout(timeoutId)
+            if (!isMounted) return
+
             console.error('Token verification failed:', verifyError)
             // If timeout or network error, clear token
             if (verifyError.name === 'AbortError') {
@@ -115,12 +123,19 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           }
         }
       } catch (error) {
+        if (!isMounted) return
         console.error('Failed to load user session', error)
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
     loadUser()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const login = async (username: string, password: string) => {
