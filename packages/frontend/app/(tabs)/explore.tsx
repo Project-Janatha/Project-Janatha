@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import { View, TextInput, Pressable, Text } from 'react-native'
 import { IconButton } from '../../components/ui'
 import {
@@ -11,7 +11,7 @@ import {
 } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { useThemeContext } from '../../components/contexts'
-import Map, { MapRef } from '../../components/Map.web'
+import Map from '../../components/Map.web'
 
 /**
  * ExploreScreen Component
@@ -22,7 +22,6 @@ export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
   const { isDark } = useThemeContext()
-  const mapRef = useRef<MapRef>(null)
 
   // Map points data - centers and events
   const mapPoints = [
@@ -87,10 +86,8 @@ export default function ExploreScreen() {
   }
 
   const handleLocateUser = () => {
-    // This will be handled by the Map component
-    if (mapRef.current?.centerOnUser) {
-      mapRef.current.centerOnUser()
-    }
+    // Location centering is now handled internally by the Map component
+    // Users can click the location button on the map itself
   }
 
   const getFilterIcon = (filter: string) => {
@@ -130,7 +127,7 @@ export default function ExploreScreen() {
   return (
     <View className="flex-1">
       {/* Map - Full screen */}
-      <Map ref={mapRef} points={filteredPoints} onPointPress={handlePointPress} />
+      <Map points={filteredPoints} onPointPress={handlePointPress} />
 
       {/* Search and Filter Controls - Overlay on top */}
       <View className="absolute top-4 left-4 right-4 z-10 flex-row gap-2 items-center">

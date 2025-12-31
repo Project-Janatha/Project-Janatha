@@ -10,6 +10,7 @@
  *
  */
 export { default as Map } from './Map'
+export { MapPreview } from './MapPreview'
 export { default as SearchBar } from './SearchBar'
 export { default as SettingsPanel } from './SettingsPanel'
 export { default as TabSegment } from './ui/TabSegment'

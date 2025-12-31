@@ -56,25 +56,70 @@ div, p, span, a, button, input, textarea, select {
   font-style: normal;
 }
 
-/* Leaflet map customizations */
-.leaflet-top.leaflet-left {
-  display: none !important;
+/* MapLibre/react-map-gl optimizations and inspector crash prevention */
+.maplibregl-map,
+.maplibregl-canvas-container,
+.maplibregl-canvas {
+  /* Prevent inspector from deep-inspecting WebGL context */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  /* Hide from React DevTools */
+  pointer-events: auto !important;
 }
 
-.leaflet-control-zoom {
-  border: none !important;
-  box-shadow: none !important;
+/* CRITICAL: Hide WebGL canvas from DevTools element picker */
+.maplibregl-canvas::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 999999;
 }
 
-.leaflet-control-zoom a {
-  border: none !important;
-  border-radius: 4px !important;
+[data-inspector-safe="true"] {
+  /* Create isolation boundary to prevent inspector crashes */
+  contain: layout style paint;
+  isolation: isolate;
+  /* Prevent inspector from attaching */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
 }
 
-.leaflet-bar {
-  border: none !important;
-  box-shadow: none !important;
+[data-inspector-safe="true"] * {
+  /* Block inspector on all children */
+  pointer-events: auto !important;
 }
+
+.maplibregl-canvas {
+  /* WebGL canvas optimization */
+  will-change: transform;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  /* Make inspector ignore this element */
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+/* Prevent inspector from serializing MapLibre control elements */
+.maplibregl-ctrl,
+.maplibregl-ctrl-group,
+.maplibregl-ctrl-attrib {
+  pointer-events: auto !important;
+  /* Prevent deep inspection */
+  contain: content;
+}
+
+/* Map container optimizations for react-native-web-maps */
+[class*="MapView"] {
+  contain: layout style paint;
+  will-change: auto;
+}
+
 /* Custom map controls - Industry standard styling */
 .map-control-container {
   position: absolute;
@@ -84,38 +129,42 @@ div, p, span, a, button, input, textarea, select {
 
 .map-control-light,
 .map-control-dark {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   transition: all 0.2s ease;
+  outline: none;
 }
 
 .map-control-light {
-  background-color: white;
+  background-color: #ffffff;
   color: #374151;
 }
 
 .map-control-dark {
-  background-color: #171717;
+  background-color: #1f2937;
   color: #e5e5e5;
 }
 
-.map-control-light:hover,
-.map-control-dark:hover {
-  background-color: #dc2626;
-  color: white;
+.map-control-light:hover {
+  background-color: #f3f4f6;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
-.map-zoom-group {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
+.map-control-dark:hover {
+  background-color: #374151;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.map-control-light:active,
+.map-control-dark:active {
+  transform: scale(0.95);
 }
 
 .map-zoom-in {
@@ -127,7 +176,7 @@ div, p, span, a, button, input, textarea, select {
 }
 
 .map-control-light.map-zoom-in {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .map-control-dark.map-zoom-in {

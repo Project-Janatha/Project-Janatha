@@ -18,7 +18,7 @@ ENV EXPO_NO_TELEMETRY=1
 ENV WATCHMAN_DISABLE_RECRAWL=1
 ENV EXPO_NO_DOTENV=1
 
-RUN npx expo export --platform web --output-dir dist --clear --no-minify
+RUN npx expo export --platform web --output-dir dist --clear
 
 # Stage 2: Production Runtime
 FROM node:20-slim
@@ -36,8 +36,7 @@ COPY packages/backend ./packages/backend/
 
 COPY --from=frontend-builder /app/packages/frontend/dist /usr/share/nginx/html
 
-# Inject Leaflet CSS CDN link into index.html after </head>
-RUN sed -i 's|</head>|<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/></head>|' /usr/share/nginx/html/index.html
+RUN chmod -R 755 /usr/share/nginx/html
 
 COPY nginx.conf /etc/nginx/nginx.conf
 

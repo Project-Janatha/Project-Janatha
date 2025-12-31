@@ -97,7 +97,6 @@ export default function Step3() {
       }
     } catch (err) {
       setError('Unable to find location')
-      console.error(err)
       setNearbyCenters([])
       setShowSuggestions(false)
     } finally {

@@ -17,7 +17,6 @@ import {
 import { IconButton } from '../components/ui'
 import { Share } from 'lucide-react-native'
 import '../globals.css'
-// Leaflet CSS loaded via CDN in +html.tsx head tag
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -52,34 +51,17 @@ export default function RootLayout() {
 
   useEffect(() => {
     if ((fontsLoaded || fontsError || fontTimeout) && !splashHidden) {
-      SplashScreen.hideAsync()
-        .then(() => {
-          setSplashHidden(true)
-        })
-        .catch(() => {
-          setSplashHidden(true)
-        })
+      setSplashHidden(true)
+      SplashScreen.hideAsync().catch(() => {})
     }
   }, [fontsLoaded, fontsError, fontTimeout, splashHidden])
 
   if (!fontsLoaded && !fontsError && !fontTimeout) {
-    return (
-      <View
-        style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}
-      >
-        <ActivityIndicator size="large" color="#ea580c" />
-        <Text style={{ marginTop: 10 }}>Loading fonts...</Text>
-      </View>
-    )
+    return null
   }
-  // If fonts failed to load, show error
+
   if (fontsError) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <Text style={{ fontSize: 18, color: 'red' }}>Font loading failed</Text>
-        <Text style={{ marginTop: 10 }}>Continuing anyway...</Text>
-      </View>
-    )
+    return null
   }
 
   return (
@@ -99,35 +81,27 @@ function RootLayoutNav() {
   const isAuthenticated = !!user
   const [isRedirecting, setIsRedirecting] = useState(false)
 
-  // Handle authentication redirects - only once when loading completes
   useEffect(() => {
     if (loading || isRedirecting) return
 
-    // Skip redirect logic if already on the correct page
     if (pathname === '/auth' && !isAuthenticated) return
     if (pathname !== '/auth' && isAuthenticated) return
 
-    // Perform redirect
     setIsRedirecting(true)
     if (!isAuthenticated && pathname !== '/auth') {
       router.replace('/auth')
     } else if (isAuthenticated && pathname === '/auth') {
       router.replace('/(tabs)')
     }
-
-    // Reset redirecting flag after a short delay
-    const timer = setTimeout(() => setIsRedirecting(false), 500)
-    return () => clearTimeout(timer)
+    setTimeout(() => setIsRedirecting(false), 100)
   }, [isAuthenticated, loading, pathname, router, isRedirecting])
 
   const navTheme = isDark ? DarkTheme : DefaultTheme
 
-  // Show loading screen while checking authentication - moved after all hooks
   if (loading && pathname !== '/auth') {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#ea580c" />
-        <Text style={{ marginTop: 10 }}>Loading...</Text>
       </View>
     )
   }

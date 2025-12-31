@@ -4,318 +4,192 @@
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
  * Author: Abhiram Ramachandran
  * Date Authored: September 2, 2025
- * Last Date Modified: December 2025
+ * Last Date Modified: December 31, 2025
  *
- * Industry-standard Leaflet + React implementation
- * - No DOM manipulation in component code
- * - CSS-only styling via globals.css
- * - Standard Leaflet markers from CDN
- * - Pure React custom controls
+ * Web-only map component using react-map-gl with OpenStreetMap tiles.
+ * Native platforms (iOS/Android) use Map.tsx with react-native-maps.
  */
-import React, {
-  useEffect,
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  useState,
-  useCallback,
-} from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
-import L from 'leaflet'
-import { getCurrentPosition } from '../utils/locationServices'
+import React, { useState, useCallback, memo, Component, ErrorInfo, ReactNode } from 'react'
+import Map, { Marker, NavigationControl } from 'react-map-gl/maplibre'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import { useThemeContext } from './contexts'
 
+// Error Boundary to prevent map crashes from breaking the app
+class MapErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(_: Error) {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Map error:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#f3f4f6',
+            color: '#6b7280',
+          }}
+        >
+          Map failed to load
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
+
+// Type definitions
 export interface MapPoint {
   id: string
+  type: 'center' | 'event'
   name: string
   latitude: number
   longitude: number
-  type: 'center' | 'event'
+  description?: string
 }
 
-interface MapProps {
+export interface MapProps {
   points?: MapPoint[]
+  onPointPress?: (point: MapPoint) => void
   initialCenter?: [number, number]
   initialZoom?: number
-  onPointPress?: (point: MapPoint) => void
+  showUserLocation?: boolean
 }
 
-export interface MapRef {
-  centerOnUser: () => void
+// Default center - San Francisco Bay Area
+const DEFAULT_CENTER = { latitude: 37.7749, longitude: -122.4194 }
+const DEFAULT_ZOOM = 10
+
+/**
+ * Validate coordinate values
+ */
+const isValidCoordinate = (lat: number, lng: number): boolean => {
+  return !isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
 }
 
-// Standard Leaflet icons from CDN
-const centerIcon = new L.Icon({
-  iconUrl:
-    'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-})
-
-const eventIcon = new L.Icon({
-  iconUrl:
-    'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-})
-
-// Map initialization - standard react-leaflet pattern
-function MapInitializer({
-  mapRef,
-  onUserLocation,
-}: {
-  mapRef: React.MutableRefObject<L.Map | null>
-  onUserLocation: (latlng: [number, number]) => void
-}) {
-  const map = useMap()
-
-  useEffect(() => {
-    mapRef.current = map
-
-    map.whenReady(() => {
-      map.invalidateSize()
-
-      // Request user location on initial load
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            if (position?.coords) {
-              const latlng: [number, number] = [position.coords.latitude, position.coords.longitude]
-              onUserLocation(latlng)
-              map.setView(latlng, 12)
-            }
-          },
-          (error) => {
-            console.warn('Initial location request failed:', error.message)
-            // Don't alert on initial load, just log
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-        )
-      }
-    })
-  }, [map, mapRef, onUserLocation])
-
-  return null
-}
-
-// Custom controls using pure React (no Leaflet Control API)
-function CustomControls({
-  mapRef,
-  isDark,
-}: {
-  mapRef: React.MutableRefObject<L.Map | null>
-  isDark: boolean
-}) {
-  const requestLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser')
-      return
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const latlng = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        }
-        mapRef.current?.flyTo(latlng, 16)
-      },
-      (error) => {
-        console.error('Location error:', error)
-        if (error.code === 1) {
-          alert(
-            'Location access denied. Please enable location permissions in your browser settings.'
-          )
-        } else if (error.code === 2) {
-          alert('Location unavailable. Please check your device settings.')
-        } else if (error.code === 3) {
-          alert('Location request timed out. Please try again.')
-        } else {
-          alert('Cannot get your location. Please try again.')
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    )
-  }, [mapRef])
-
-  const handleLocate = useCallback(() => {
-    // Check permissions first if available
-    if (navigator.permissions) {
-      navigator.permissions
-        .query({ name: 'geolocation' })
-        .then((permissionStatus) => {
-          if (permissionStatus.state === 'denied') {
-            alert('Location access is blocked. Please enable it in your browser settings.')
-            return
-          }
-          requestLocation()
-        })
-        .catch(() => {
-          // Fallback if permissions API not fully supported
-          requestLocation()
-        })
-    } else {
-      requestLocation()
-    }
-  }, [requestLocation])
-
-  const handleZoomIn = useCallback(() => {
-    mapRef.current?.zoomIn()
-  }, [mapRef])
-
-  const handleZoomOut = useCallback(() => {
-    mapRef.current?.zoomOut()
-  }, [mapRef])
-
-  const buttonClass = isDark ? 'map-control-dark' : 'map-control-light'
-
-  return (
-    <>
-      {/* Location button */}
-      <div className="map-control-container" style={{ bottom: '10px', right: '10px' }}>
-        <button
-          className={buttonClass}
-          onClick={handleLocate}
-          title="Show my location"
-          aria-label="Show my location"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <polygon points="3 11 22 2 13 21 11 13 3 11" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Zoom controls */}
-      <div className="map-control-container" style={{ bottom: '50px', right: '10px' }}>
-        <div className="map-zoom-group">
-          <button
-            className={`${buttonClass} map-zoom-in`}
-            onClick={handleZoomIn}
-            title="Zoom in"
-            aria-label="Zoom in"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-          <button
-            className={`${buttonClass} map-zoom-out`}
-            onClick={handleZoomOut}
-            title="Zoom out"
-            aria-label="Zoom out"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </>
-  )
-}
-
-const Map = forwardRef<MapRef, MapProps>(
-  ({ points = [], initialCenter = [37.7749, -122.4194], initialZoom = 10, onPointPress }, ref) => {
-    const mapRef = useRef<L.Map | null>(null)
+/**
+ * Map Component for Web using react-map-gl with OpenStreetMap
+ */
+const MapComponent = memo<MapProps>(
+  ({
+    points = [],
+    onPointPress,
+    initialCenter,
+    initialZoom = DEFAULT_ZOOM,
+    showUserLocation = false,
+  }) => {
     const { isDark } = useThemeContext()
-    const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
 
-    useImperativeHandle(ref, () => ({
-      centerOnUser: () => {
-        if (mapRef.current && userLocation) {
-          mapRef.current.setView(userLocation, 16)
-        } else {
-          getCurrentPosition()
-            .then((coords) => {
-              if (coords && Array.isArray(coords) && coords.length === 2) {
-                const latlng: [number, number] = [coords[1], coords[0]]
-                setUserLocation(latlng)
-                mapRef.current?.setView(latlng, 16)
-              }
-            })
-            .catch(() => {})
+    // Calculate center from initialCenter prop or default
+    const center = initialCenter
+      ? { longitude: initialCenter[1], latitude: initialCenter[0] }
+      : { longitude: DEFAULT_CENTER.longitude, latitude: DEFAULT_CENTER.latitude }
+
+    const [viewState, setViewState] = useState({
+      ...center,
+      zoom: initialZoom,
+    })
+
+    const handleMarkerClick = useCallback(
+      (point: MapPoint) => (e: any) => {
+        e.originalEvent.stopPropagation()
+        if (onPointPress) {
+          onPointPress(point)
         }
       },
-    }))
+      [onPointPress]
+    )
 
-    const tileLayerUrl = isDark
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    // Filter and validate points
+    const validPoints = points.filter((point) => isValidCoordinate(point.latitude, point.longitude))
 
-    const tileLayerAttribution = isDark
-      ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-      : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    // OpenStreetMap tile URLs - light and dark themes
+    const mapStyle = isDark
+      ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+      : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 
     return (
-      <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-        <MapContainer
-          center={initialCenter}
-          zoom={initialZoom}
-          style={{ width: '100%', height: '100%', zIndex: 0 }}
-          zoomControl={false}
-          preferCanvas={true}
+      <div
+        style={{ width: '100%', height: '100%', position: 'relative' }}
+        data-inspector-safe="true"
+        suppressHydrationWarning
+        onMouseEnter={(e) => {
+          // Prevent DevTools from trying to inspect WebGL context
+          e.stopPropagation()
+        }}
+        onMouseDown={(e) => {
+          // Block inspector mouse events on map
+          if ((e as any).button === 2) {
+            // right-click
+            e.stopPropagation()
+          }
+        }}
+        onContextMenu={(e) => {
+          // Allow context menu but prevent inspector attachment
+          e.stopPropagation()
+        }}
+      >
+        <Map
+          {...viewState}
+          onMove={(evt) => setViewState(evt.viewState)}
+          mapStyle={mapStyle}
+          style={{ width: '100%', height: '100%' }}
+          reuseMaps={true}
         >
-          <TileLayer
-            key={isDark ? 'dark' : 'light'}
-            attribution={tileLayerAttribution}
-            url={tileLayerUrl}
-          />
+          <NavigationControl position="top-right" />
 
-          <MapInitializer mapRef={mapRef} onUserLocation={setUserLocation} />
-
-          {points.map((point) => (
+          {validPoints.map((point) => (
             <Marker
               key={point.id}
-              position={[point.latitude, point.longitude]}
-              icon={point.type === 'center' ? centerIcon : eventIcon}
-              eventHandlers={{
-                click: () => onPointPress?.(point),
-              }}
+              longitude={point.longitude}
+              latitude={point.latitude}
+              anchor="bottom"
+              onClick={handleMarkerClick(point)}
             >
-              <Popup>
-                <strong>{point.name}</strong>
-                <br />
-                <span style={{ fontSize: '0.9em', color: '#666' }}>
-                  {point.type === 'center' ? 'Center' : 'Event'}
-                </span>
-              </Popup>
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: '50% 50% 50% 0',
+                  background: point.type === 'center' ? '#ef4444' : '#3b82f6',
+                  transform: 'rotate(-45deg)',
+                  border: '2px solid white',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                  cursor: 'pointer',
+                }}
+                title={point.name}
+              />
             </Marker>
           ))}
-        </MapContainer>
-        <CustomControls mapRef={mapRef} isDark={isDark} />
+        </Map>
       </div>
     )
   }
 )
 
-Map.displayName = 'Map'
+MapComponent.displayName = 'Map'
 
-export default Map
+// Wrap with error boundary
+const MapWithErrorBoundary: React.FC<MapProps> = (props) => {
+  return (
+    <MapErrorBoundary>
+      <MapComponent {...props} />
+    </MapErrorBoundary>
+  )
+}
+
+export default MapWithErrorBoundary

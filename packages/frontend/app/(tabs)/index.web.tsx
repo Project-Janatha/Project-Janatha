@@ -5,7 +5,7 @@ import { ThumbsUp, MessageCircle, MapPin, ChevronRight } from 'lucide-react-nati
 import Toast from 'react-native-toast-message'
 import { useUser } from '../../components/contexts'
 import { SecondaryButton } from '../../components/ui'
-import { Map } from '../../components'
+import { MapPreview } from '../../components'
 import { useRouter } from 'expo-router'
 
 // Import mobile component for responsive fallback
@@ -132,10 +132,9 @@ export default function HomeScreenWeb() {
   return (
     <View className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-row h-full px-12 py-8 gap-8">
-        {/* Left Side - Map Preview (40%) */}
+        {/* Left Side - Map Preview (40%) - Lightweight static preview */}
         <View className="flex-[4] bg-card rounded-3xl shadow-md">
-          <Pressable
-            className="flex-1 rounded-2xl overflow-hidden hover:scale-[1.02] active:scale-[0.98] transition-transform"
+          <MapPreview
             onPress={() => {
               router.push('/explore')
               Toast.show({
@@ -144,9 +143,8 @@ export default function HomeScreenWeb() {
                 text2: 'Finding centers and events near you',
               })
             }}
-          >
-            <Map points={mapPoints} onPointPress={handlePointPress} />
-          </Pressable>
+            pointCount={mapPoints.length}
+          />
         </View>
         {/* Right Side - Scrollable Calendar & Events (60%) */}
         <View className="flex-[6]">

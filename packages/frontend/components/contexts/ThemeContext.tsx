@@ -38,21 +38,15 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     if (themeToApply) {
       setColorScheme(themeToApply as 'light' | 'dark')
 
-      // For web, set class immediately - wrapped for production safety
-      if (Platform.OS === 'web') {
-        try {
-          if (themeToApply === 'dark') {
-            document.documentElement.classList.add('dark')
-          } else {
-            document.documentElement.classList.remove('dark')
-          }
-        } catch (error) {
-          // Silently fail if DOM manipulation causes issues
-          console.warn('Theme class update failed:', error)
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        if (themeToApply === 'dark') {
+          document.documentElement.classList.add('dark')
+        } else {
+          document.documentElement.classList.remove('dark')
         }
       }
     }
-  }, [themePreference, systemScheme, initialized])
+  }, [themePreference, systemScheme, initialized, setColorScheme])
 
   return <>{children}</>
 }
