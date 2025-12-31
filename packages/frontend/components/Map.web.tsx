@@ -129,14 +129,20 @@ function MapController({
 }
 
 // Component for geolocation control - Pure React, no Leaflet hooks needed for external button
-function GeolocationControlExternal({ isDark, mapRef }: { isDark: boolean; mapRef: React.RefObject<L.Map | null> }) {
+function GeolocationControlExternal({
+  isDark,
+  mapRef,
+}: {
+  isDark: boolean
+  mapRef: React.RefObject<L.Map | null>
+}) {
   const handleLocationClick = () => {
     console.log('Location button clicked')
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by your browser')
       return
     }
-    
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         console.log('Got position:', position.coords)
@@ -152,7 +158,7 @@ function GeolocationControlExternal({ isDark, mapRef }: { isDark: boolean; mapRe
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0
+        maximumAge: 0,
       }
     )
   }
@@ -161,13 +167,15 @@ function GeolocationControlExternal({ isDark, mapRef }: { isDark: boolean; mapRe
   const iconColor = isDark ? '#e5e5e5' : '#374151'
 
   return (
-    <div style={{
-      position: 'absolute',
-      bottom: '10px',
-      right: '10px',
-      zIndex: 1000,
-      pointerEvents: 'auto'
-    }}>
+    <div
+      style={{
+        position: 'absolute',
+        bottom: '10px',
+        right: '10px',
+        zIndex: 1000,
+        pointerEvents: 'auto',
+      }}
+    >
       <button
         onClick={handleLocationClick}
         title="Show my location"
@@ -183,7 +191,7 @@ function GeolocationControlExternal({ isDark, mapRef }: { isDark: boolean; mapRe
           alignItems: 'center',
           justifyContent: 'center',
           boxShadow: '0 1px 5px rgba(0,0,0,0.4)',
-          transition: 'all 0.2s ease'
+          transition: 'all 0.2s ease',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = '#dc2626'
@@ -194,8 +202,18 @@ function GeolocationControlExternal({ isDark, mapRef }: { isDark: boolean; mapRe
           e.currentTarget.style.color = iconColor
         }}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polygon points="3 11 22 2 13 21 11 13 3 11" />
         </svg>
       </button>
     </div>
@@ -203,7 +221,13 @@ function GeolocationControlExternal({ isDark, mapRef }: { isDark: boolean; mapRe
 }
 
 // Component for custom zoom controls - Pure React, no Leaflet hooks
-function ZoomControlExternal({ isDark, mapRef }: { isDark: boolean; mapRef: React.RefObject<L.Map | null> }) {
+function ZoomControlExternal({
+  isDark,
+  mapRef,
+}: {
+  isDark: boolean
+  mapRef: React.RefObject<L.Map | null>
+}) {
   const bgColor = isDark ? '#171717' : 'white'
   const iconColor = isDark ? '#e5e5e5' : '#171717'
   const borderColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
@@ -219,27 +243,29 @@ function ZoomControlExternal({ isDark, mapRef }: { isDark: boolean; mapRef: Reac
     alignItems: 'center',
     justifyContent: 'center',
     boxShadow: '0 1px 5px rgba(0,0,0,0.4)',
-    transition: 'all 0.2s ease'
+    transition: 'all 0.2s ease',
   }
 
   return (
-    <div style={{
-      position: 'absolute',
-      bottom: '50px',
-      right: '10px',
-      zIndex: 1000,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '1px',
-      pointerEvents: 'auto'
-    }}>
+    <div
+      style={{
+        position: 'absolute',
+        bottom: '50px',
+        right: '10px',
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1px',
+        pointerEvents: 'auto',
+      }}
+    >
       <button
         onClick={() => mapRef.current?.zoomIn()}
         title="Zoom in"
         style={{
           ...buttonStyle,
           borderRadius: '4px 4px 0 0',
-          borderBottom: `1px solid ${borderColor}`
+          borderBottom: `1px solid ${borderColor}`,
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = '#dc2626'
@@ -250,8 +276,19 @@ function ZoomControlExternal({ isDark, mapRef }: { isDark: boolean; mapRef: Reac
           e.currentTarget.style.color = iconColor
         }}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14"/><path d="M12 5v14"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M5 12h14" />
+          <path d="M12 5v14" />
         </svg>
       </button>
       <button
@@ -259,7 +296,7 @@ function ZoomControlExternal({ isDark, mapRef }: { isDark: boolean; mapRef: Reac
         title="Zoom out"
         style={{
           ...buttonStyle,
-          borderRadius: '0 0 4px 4px'
+          borderRadius: '0 0 4px 4px',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = '#dc2626'
@@ -270,8 +307,18 @@ function ZoomControlExternal({ isDark, mapRef }: { isDark: boolean; mapRef: Reac
           e.currentTarget.style.color = iconColor
         }}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M5 12h14" />
         </svg>
       </button>
     </div>
@@ -315,27 +362,29 @@ function ZoomControl({ isDark }: { isDark: boolean }) {
     alignItems: 'center',
     justifyContent: 'center',
     boxShadow: '0 1px 5px rgba(0,0,0,0.4)',
-    transition: 'all 0.2s ease'
+    transition: 'all 0.2s ease',
   }
 
   return (
-    <div style={{
-      position: 'absolute',
-      bottom: '50px',
-      right: '10px',
-      zIndex: 1000,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '1px',
-      pointerEvents: 'auto'
-    }}>
+    <div
+      style={{
+        position: 'absolute',
+        bottom: '50px',
+        right: '10px',
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1px',
+        pointerEvents: 'auto',
+      }}
+    >
       <button
         onClick={() => map.zoomIn()}
         title="Zoom in"
         style={{
           ...buttonStyle,
           borderRadius: '4px 4px 0 0',
-          borderBottom: `1px solid ${borderColor}`
+          borderBottom: `1px solid ${borderColor}`,
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = '#dc2626'
@@ -346,8 +395,19 @@ function ZoomControl({ isDark }: { isDark: boolean }) {
           e.currentTarget.style.color = iconColor
         }}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14"/><path d="M12 5v14"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M5 12h14" />
+          <path d="M12 5v14" />
         </svg>
       </button>
       <button
@@ -355,7 +415,7 @@ function ZoomControl({ isDark }: { isDark: boolean }) {
         title="Zoom out"
         style={{
           ...buttonStyle,
-          borderRadius: '0 0 4px 4px'
+          borderRadius: '0 0 4px 4px',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = '#dc2626'
@@ -366,8 +426,18 @@ function ZoomControl({ isDark }: { isDark: boolean }) {
           e.currentTarget.style.color = iconColor
         }}
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M5 12h14" />
         </svg>
       </button>
     </div>
