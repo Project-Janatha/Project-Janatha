@@ -36,9 +36,11 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     const themeToApply = themePreference === 'system' ? systemScheme : themePreference
 
     if (themeToApply) {
+      console.log('🟣 Setting theme:', themeToApply, '(preference:', themePreference, ')')
       setColorScheme(themeToApply as 'light' | 'dark')
 
-      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      // For web, set class immediately
+      if (Platform.OS === 'web') {
         if (themeToApply === 'dark') {
           document.documentElement.classList.add('dark')
         } else {
@@ -46,7 +48,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
     }
-  }, [themePreference, systemScheme, initialized, setColorScheme])
+  }, [themePreference, systemScheme, initialized])
 
   return <>{children}</>
 }

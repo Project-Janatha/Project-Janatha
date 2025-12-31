@@ -9,8 +9,8 @@
  * Web-only map component using react-map-gl with OpenStreetMap tiles.
  * Native platforms (iOS/Android) use Map.tsx with react-native-maps.
  */
-import React, { useState, useCallback, memo, Component, ErrorInfo, ReactNode } from 'react'
-import Map, { Marker, NavigationControl } from 'react-map-gl/maplibre'
+import React, { useState, useCallback, memo, Component, ErrorInfo, ReactNode, useRef } from 'react'
+import Map, { Marker, MapRef } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useThemeContext } from './contexts'
 
@@ -82,6 +82,151 @@ const isValidCoordinate = (lat: number, lng: number): boolean => {
 }
 
 /**
+ * Custom Map Controls - Leaflet-style controls using pure React
+ */
+interface CustomControlsProps {
+  mapRef: React.RefObject<MapRef | null>
+  isDark: boolean
+}
+
+const CustomControls: React.FC<CustomControlsProps> = ({ mapRef, isDark }) => {
+  const requestLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser')
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latlng = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        }
+        mapRef.current?.flyTo({ center: [latlng.lng, latlng.lat], zoom: 16, duration: 2000 })
+      },
+      (error) => {
+        console.error('Location error:', error)
+        if (error.code === 1) {
+          alert(
+            'Location access denied. Please enable location permissions in your browser settings.'
+          )
+        } else if (error.code === 2) {
+          alert('Location unavailable. Please check your device settings.')
+        } else if (error.code === 3) {
+          alert('Location request timed out. Please try again.')
+        } else {
+          alert('Cannot get your location. Please try again.')
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    )
+  }, [mapRef])
+
+  const handleLocate = useCallback(() => {
+    // Check permissions first if available
+    if (navigator.permissions) {
+      navigator.permissions
+        .query({ name: 'geolocation' })
+        .then((permissionStatus) => {
+          if (permissionStatus.state === 'denied') {
+            alert('Location access is blocked. Please enable it in your browser settings.')
+            return
+          }
+          requestLocation()
+        })
+        .catch(() => {
+          // Fallback if permissions API not fully supported
+          requestLocation()
+        })
+    } else {
+      requestLocation()
+    }
+  }, [requestLocation])
+
+  const handleZoomIn = useCallback(() => {
+    const map = mapRef.current
+    if (map) {
+      map.zoomIn()
+    }
+  }, [mapRef])
+
+  const handleZoomOut = useCallback(() => {
+    const map = mapRef.current
+    if (map) {
+      map.zoomOut()
+    }
+  }, [mapRef])
+
+  const buttonClass = isDark ? 'map-control-dark' : 'map-control-light'
+
+  return (
+    <>
+      {/* Zoom controls */}
+      <div className="map-control-container" style={{ bottom: '88px', right: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <button
+            className={`${buttonClass} map-zoom-in`}
+            onClick={handleZoomIn}
+            title="Zoom in"
+            aria-label="Zoom in"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <button
+            className={`${buttonClass} map-zoom-out`}
+            onClick={handleZoomOut}
+            title="Zoom out"
+            aria-label="Zoom out"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Location button */}
+      <div className="map-control-container" style={{ bottom: '42px', right: '10px' }}>
+        <button
+          className={buttonClass}
+          onClick={handleLocate}
+          title="Show my location"
+          aria-label="Show my location"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <polygon points="3 11 22 2 13 21 11 13 3 11" />
+          </svg>
+        </button>
+      </div>
+    </>
+  )
+}
+
+/**
  * Map Component for Web using react-map-gl with OpenStreetMap
  */
 const MapComponent = memo<MapProps>(
@@ -93,6 +238,7 @@ const MapComponent = memo<MapProps>(
     showUserLocation = false,
   }) => {
     const { isDark } = useThemeContext()
+    const mapRef = useRef<MapRef>(null)
 
     // Calculate center from initialCenter prop or default
     const center = initialCenter
@@ -144,14 +290,13 @@ const MapComponent = memo<MapProps>(
         }}
       >
         <Map
+          ref={mapRef}
           {...viewState}
           onMove={(evt) => setViewState(evt.viewState)}
           mapStyle={mapStyle}
           style={{ width: '100%', height: '100%' }}
           reuseMaps={true}
         >
-          <NavigationControl position="top-right" />
-
           {validPoints.map((point) => (
             <Marker
               key={point.id}
@@ -176,6 +321,7 @@ const MapComponent = memo<MapProps>(
             </Marker>
           ))}
         </Map>
+        <CustomControls mapRef={mapRef} isDark={isDark} />
       </div>
     )
   }
