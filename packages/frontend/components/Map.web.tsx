@@ -83,10 +83,7 @@ const CustomControls = memo<CustomControlsProps>(({ mapRef, isDark }) => {
     )
   }, [mapRef])
 
-  const buttonClass = useMemo(
-    () => (isDark ? 'map-control-dark' : 'map-control-light'),
-    [isDark]
-  )
+  const buttonClass = useMemo(() => (isDark ? 'map-control-dark' : 'map-control-light'), [isDark])
 
   return (
     <>
