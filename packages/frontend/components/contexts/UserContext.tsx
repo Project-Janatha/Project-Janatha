@@ -12,7 +12,15 @@
  * - @rnmapbox/maps: For rendering maps and handling map-related functionalities.
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useMemo,
+  useCallback,
+} from 'react'
 import { Platform } from 'react-native'
 import { getStoredToken, setStoredToken, removeStoredToken } from '../utils/tokenStorage'
 
@@ -57,72 +65,78 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const API_URL = 'http://3.236.142.145'
 
   // Memoize login function to prevent recreation
-  const login = useCallback(async (username: string, password: string) => {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+  const login = useCallback(
+    async (username: string, password: string) => {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
-    try {
-      const response = await fetch(`${API_URL}/api/auth/authenticate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-        signal: controller.signal,
-      })
+      try {
+        const response = await fetch(`${API_URL}/api/auth/authenticate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+          signal: controller.signal,
+        })
 
-      clearTimeout(timeoutId)
-      const data = await response.json()
+        clearTimeout(timeoutId)
+        const data = await response.json()
 
-      if (response.ok && data.token) {
-        await setStoredToken(data.token)
-        setUser(data.user)
-        return { success: true }
-      } else {
-        return { success: false, message: data.message || 'Invalid credentials' }
-      }
-    } catch (error: any) {
-      clearTimeout(timeoutId)
-
-      if (error.name === 'AbortError') {
-        return { success: false, message: 'Request timeout. Please check your connection.' }
-      }
-      return { success: false, message: 'Network error. Please try again.' }
-    }
-  }, [API_URL, setUser])
-
-  const signup = useCallback(async (username: string, password: string) => {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
-
-    try {
-      const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-        signal: controller.signal,
-      })
-
-      clearTimeout(timeoutId)
-      const data = await response.json()
-
-      if (response.ok) {
-        // Auto-login after signup
-        const loginResult = await login(username, password)
-        if (!loginResult.success) {
-          throw new Error('Signup succeeded but login failed. Please try logging in.')
+        if (response.ok && data.token) {
+          await setStoredToken(data.token)
+          setUser(data.user)
+          return { success: true }
+        } else {
+          return { success: false, message: data.message || 'Invalid credentials' }
         }
-        return { success: true }
-      } else {
-        return { success: false, message: data.message || 'Signup failed. Please try again.' }
-      }
-    } catch (error: any) {
-      clearTimeout(timeoutId)
+      } catch (error: any) {
+        clearTimeout(timeoutId)
 
-      if (error.name === 'AbortError') {
-        return { success: false, message: 'Request timeout. Please check your connection.' }
+        if (error.name === 'AbortError') {
+          return { success: false, message: 'Request timeout. Please check your connection.' }
+        }
+        return { success: false, message: 'Network error. Please try again.' }
       }
-      return { success: false, message: error.message || 'Network error. Please try again.' }
-    }
-  }, [API_URL, login])
+    },
+    [API_URL, setUser]
+  )
+
+  const signup = useCallback(
+    async (username: string, password: string) => {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+      try {
+        const response = await fetch(`${API_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+          signal: controller.signal,
+        })
+
+        clearTimeout(timeoutId)
+        const data = await response.json()
+
+        if (response.ok) {
+          // Auto-login after signup
+          const loginResult = await login(username, password)
+          if (!loginResult.success) {
+            throw new Error('Signup succeeded but login failed. Please try logging in.')
+          }
+          return { success: true }
+        } else {
+          return { success: false, message: data.message || 'Signup failed. Please try again.' }
+        }
+      } catch (error: any) {
+        clearTimeout(timeoutId)
+
+        if (error.name === 'AbortError') {
+          return { success: false, message: 'Request timeout. Please check your connection.' }
+        }
+        return { success: false, message: error.message || 'Network error. Please try again.' }
+      }
+    },
+    [API_URL, login]
+  )
 
   const logout = useCallback(async () => {
     try {
@@ -155,35 +169,38 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [API_URL])
 
-  const checkUserExists = useCallback(async (username: string) => {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+  const checkUserExists = useCallback(
+    async (username: string) => {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
-    try {
-      const response = await fetch(`${API_URL}/api/userExistence`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username }),
-        signal: controller.signal,
-      })
+      try {
+        const response = await fetch(`${API_URL}/api/userExistence`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username }),
+          signal: controller.signal,
+        })
 
-      clearTimeout(timeoutId)
+        clearTimeout(timeoutId)
 
-      if (!response.ok) {
-        throw new Error('Failed to check user existence')
+        if (!response.ok) {
+          throw new Error('Failed to check user existence')
+        }
+
+        const data = await response.json()
+        return data.existence
+      } catch (error: any) {
+        clearTimeout(timeoutId)
+
+        if (error.name === 'AbortError') {
+          throw new Error('Request timeout. Please check your connection.')
+        }
+        throw new Error('Failed to connect to server. Please try again.')
       }
-
-      const data = await response.json()
-      return data.existence
-    } catch (error: any) {
-      clearTimeout(timeoutId)
-
-      if (error.name === 'AbortError') {
-        throw new Error('Request timeout. Please check your connection.')
-      }
-      throw new Error('Failed to connect to server. Please try again.')
-    }
-  }, [API_URL])
+    },
+    [API_URL]
+  )
 
   /**
    * Make an authenticated API request with JWT token
@@ -191,47 +208,50 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
    * @param options - Fetch options (method, body, etc.)
    * @returns Response from the API
    */
-  const authenticatedFetch = useCallback(async (endpoint: string, options: RequestInit = {}) => {
-    const token = await getStoredToken()
-    if (!token) {
-      throw new Error('No authentication token found')
-    }
-
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout for API calls
-
-    try {
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...options.headers,
+  const authenticatedFetch = useCallback(
+    async (endpoint: string, options: RequestInit = {}) => {
+      const token = await getStoredToken()
+      if (!token) {
+        throw new Error('No authentication token found')
       }
 
-      const response = await fetch(`${API_URL}${endpoint}`, {
-        ...options,
-        headers,
-        signal: controller.signal,
-      })
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout for API calls
 
-      clearTimeout(timeoutId)
+      try {
+        const headers = {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          ...options.headers,
+        }
 
-      // Handle token expiration
-      if (response.status === 401 || response.status === 403) {
-        await removeStoredToken()
-        setUser(null)
-        throw new Error('Session expired. Please login again.')
+        const response = await fetch(`${API_URL}${endpoint}`, {
+          ...options,
+          headers,
+          signal: controller.signal,
+        })
+
+        clearTimeout(timeoutId)
+
+        // Handle token expiration
+        if (response.status === 401 || response.status === 403) {
+          await removeStoredToken()
+          setUser(null)
+          throw new Error('Session expired. Please login again.')
+        }
+
+        return response
+      } catch (error: any) {
+        clearTimeout(timeoutId)
+
+        if (error.name === 'AbortError') {
+          throw new Error('Request timeout. Please check your connection.')
+        }
+        throw error
       }
-
-      return response
-    } catch (error: any) {
-      clearTimeout(timeoutId)
-
-      if (error.name === 'AbortError') {
-        throw new Error('Request timeout. Please check your connection.')
-      }
-      throw error
-    }
-  }, [API_URL])
+    },
+    [API_URL]
+  )
 
   const deleteAccount = useCallback(async () => {
     try {
