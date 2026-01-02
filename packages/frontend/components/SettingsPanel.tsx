@@ -16,6 +16,19 @@ function SettingsPanel({ visible, onClose, onLogout }) {
   const [selectedIndex, setSelectedIndex] = useState(themeOptions.indexOf(themePreference))
   const slideAnim = useRef(new Animated.Value(selectedIndex * optionWidth)).current
   const previousTheme = useRef(isDark)
+  const isMountedRef = useRef(true)
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      // Stop all animations immediately on unmount
+      opacityAnim.stopAnimation()
+      translateYAnim.stopAnimation()
+      slideAnim.stopAnimation()
+    }
+  }, [opacityAnim, translateYAnim, slideAnim])
 
   useEffect(() => {
     if (visible) {

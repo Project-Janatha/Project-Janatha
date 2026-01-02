@@ -1,4 +1,6 @@
 import '@expo/metro-runtime'
+import '../config/performance'
+import '../config/devtools'
 import { useEffect, useContext, useState } from 'react'
 import { ActivityIndicator, View, Text } from 'react-native'
 import { useFonts } from 'expo-font'
@@ -87,13 +89,22 @@ function RootLayoutNav() {
     if (pathname === '/auth' && !isAuthenticated) return
     if (pathname !== '/auth' && isAuthenticated) return
 
+    let isMounted = true
     setIsRedirecting(true)
     if (!isAuthenticated && pathname !== '/auth') {
       router.replace('/auth')
     } else if (isAuthenticated && pathname === '/auth') {
       router.replace('/(tabs)')
     }
-    setTimeout(() => setIsRedirecting(false), 100)
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        setIsRedirecting(false)
+      }
+    }, 100)
+    return () => {
+      isMounted = false
+      clearTimeout(timer)
+    }
   }, [isAuthenticated, loading, pathname, router, isRedirecting])
 
   const navTheme = isDark ? DarkTheme : DefaultTheme

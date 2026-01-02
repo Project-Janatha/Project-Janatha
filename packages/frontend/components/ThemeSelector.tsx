@@ -10,8 +10,19 @@ export default function ThemeSelector({ style, className }) {
   const indicatorPadding = 8
   const [selectedIndex, setSelectedIndex] = useState(themeOptions.indexOf(themePreference))
   const slideAnim = useRef(new Animated.Value(selectedIndex * optionWidth)).current
+  const isMountedRef = useRef(true)
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+      slideAnim.stopAnimation()
+    }
+  }, [slideAnim])
 
   useEffect(() => {
+    if (!isMountedRef.current) return
     const idx = themeOptions.indexOf(themePreference)
     setSelectedIndex(idx)
     Animated.timing(slideAnim, {
@@ -19,7 +30,7 @@ export default function ThemeSelector({ style, className }) {
       duration: 100,
       useNativeDriver: true,
     }).start()
-  }, [themePreference])
+  }, [themePreference, slideAnim])
 
   return (
     <View

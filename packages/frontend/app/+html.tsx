@@ -40,55 +40,6 @@ export default function Root({ children }: { children: React.ReactNode }) {
           rel="stylesheet"
         />
 
-        {/* Critical: Prevent Chrome DevTools from crashing on WebGL canvas inspection */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                // Aggressive DevTools crash prevention for WebGL/MapLibre
-                if (typeof window !== 'undefined') {
-                  // Prevent WebGL context inspection
-                  window.addEventListener('load', function() {
-                    const canvases = document.querySelectorAll('canvas');
-                    canvases.forEach(function(canvas) {
-                      if (canvas.className && canvas.className.includes('maplibre')) {
-                        // Make canvas invisible to inspector
-                        Object.defineProperty(canvas, '__REACT_DEVTOOLS_GLOBAL_HOOK__', {
-                          get: function() { return undefined; },
-                          set: function() {}
-                        });
-                      }
-                    });
-                  });
-                  
-                  // Override console methods to prevent crashes
-                  const originalError = console.error;
-                  console.error = function(...args) {
-                    const msg = args.join(' ');
-                    if (msg.includes('WebGL') || msg.includes('maplibre') || msg.includes('mapboxgl')) {
-                      return;
-                    }
-                    originalError.apply(console, args);
-                  };
-                  
-                  // Prevent inspector from serializing WebGL contexts
-                  const originalGetContext = HTMLCanvasElement.prototype.getContext;
-                  HTMLCanvasElement.prototype.getContext = function(type, ...args) {
-                    const ctx = originalGetContext.call(this, type, ...args);
-                    if (ctx && (type === 'webgl' || type === 'webgl2')) {
-                      // Mark context as non-serializable
-                      Object.defineProperty(ctx, 'toJSON', {
-                        value: function() { return '[WebGL Context]'; }
-                      });
-                    }
-                    return ctx;
-                  };
-                }
-              })();
-            `,
-          }}
-        />
-
         {/* Add any additional <head> elements that you want globally available on web... */}
         <meta title="Janatha" />
       </head>

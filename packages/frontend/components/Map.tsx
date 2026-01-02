@@ -121,8 +121,7 @@ const Map = memo<MapProps>(function Map({
           }
         }
       } catch (error) {
-        console.warn('Map: Failed to get user location:', error)
-        // Use default region on error
+        // Failed to get user location - using default region
         if (mounted && !initialRegion) {
           setRegion(DEFAULT_REGION)
         }
@@ -202,7 +201,6 @@ const Map = memo<MapProps>(function Map({
             point.longitude < -180 ||
             point.longitude > 180
           ) {
-            console.warn(`Map: Invalid coordinates for point ${point.id}`)
             return null
           }
 

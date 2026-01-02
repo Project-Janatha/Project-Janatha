@@ -10,9 +10,18 @@
   transition: none !important;
 }
 
+/* Optimize for browser DevTools - reduce reflow/repaint */
+* {
+  will-change: auto;
+}
+
 /* Set Inter as default font for the entire app */
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Enable GPU acceleration for smoother DevTools performance */
+  transform: translateZ(0);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* For React Native Web, target all text elements */
@@ -54,70 +63,6 @@ div, p, span, a, button, input, textarea, select {
   src: url('/app/assets/fonts/Inter-Light.ttf') format('truetype');
   font-weight: 300;
   font-style: normal;
-}
-
-/* MapLibre/react-map-gl optimizations and inspector crash prevention */
-.maplibregl-map,
-.maplibregl-canvas-container,
-.maplibregl-canvas {
-  /* Prevent inspector from deep-inspecting WebGL context */
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  /* Hide from React DevTools */
-  pointer-events: auto !important;
-}
-
-/* CRITICAL: Hide WebGL canvas from DevTools element picker */
-.maplibregl-canvas::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 999999;
-}
-
-[data-inspector-safe="true"] {
-  /* Create isolation boundary to prevent inspector crashes */
-  contain: layout style paint;
-  isolation: isolate;
-  /* Prevent inspector from attaching */
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-}
-
-[data-inspector-safe="true"] * {
-  /* Block inspector on all children */
-  pointer-events: auto !important;
-}
-
-.maplibregl-canvas {
-  /* WebGL canvas optimization */
-  will-change: transform;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  /* Make inspector ignore this element */
-  -webkit-user-drag: none;
-  user-drag: none;
-}
-
-/* Prevent inspector from serializing MapLibre control elements */
-.maplibregl-ctrl,
-.maplibregl-ctrl-group,
-.maplibregl-ctrl-attrib {
-  pointer-events: auto !important;
-  /* Prevent deep inspection */
-  contain: content;
-}
-
-/* Map container optimizations for react-native-web-maps */
-[class*="MapView"] {
-  contain: layout style paint;
-  will-change: auto;
 }
 
 /* Custom map controls - Industry standard styling */
