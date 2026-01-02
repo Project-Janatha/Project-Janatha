@@ -15,18 +15,22 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import { useThemeContext } from './contexts'
 
 // Error Boundary to prevent map crashes from breaking the app
-class MapErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+class MapErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
   constructor(props: { children: ReactNode }) {
     super(props)
-    this.state = { hasError: false }
+    this.state = { hasError: false, error: null }
   }
 
-  static getDerivedStateFromError(_: Error) {
-    return { hasError: true }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Map error:', error, errorInfo)
+    // Don't rethrow - just log
   }
 
   render() {
@@ -41,9 +45,14 @@ class MapErrorBoundary extends Component<{ children: ReactNode }, { hasError: bo
             justifyContent: 'center',
             backgroundColor: '#f3f4f6',
             color: '#6b7280',
+            flexDirection: 'column',
+            gap: '8px',
           }}
         >
-          Map failed to load
+          <div>Map failed to load</div>
+          {this.state.error && (
+            <div style={{ fontSize: '12px', opacity: 0.7 }}>{this.state.error.message}</div>
+          )}
         </div>
       )
     }
@@ -239,6 +248,13 @@ const MapComponent = memo<MapProps>(
   }) => {
     const { isDark } = useThemeContext()
     const mapRef = useRef<MapRef>(null)
+    const [isMounted, setIsMounted] = React.useState(false)
+
+    // Delay mount to avoid Expo dev mode conflicts
+    React.useEffect(() => {
+      const timer = setTimeout(() => setIsMounted(true), 100)
+      return () => clearTimeout(timer)
+    }, [])
 
     // Calculate center from initialCenter prop or default
     const center = initialCenter
@@ -249,6 +265,22 @@ const MapComponent = memo<MapProps>(
       ...center,
       zoom: initialZoom,
     })
+
+    // Handle cleanup to prevent WebGL context issues
+    React.useEffect(() => {
+      return () => {
+        if (mapRef.current) {
+          try {
+            const map = mapRef.current.getMap()
+            if (map) {
+              map.remove()
+            }
+          } catch (e) {
+            // Ignore cleanup errors
+          }
+        }
+      }
+    }, [])
 
     const handleMarkerClick = useCallback(
       (point: MapPoint) => (e: any) => {
@@ -268,34 +300,44 @@ const MapComponent = memo<MapProps>(
       ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
       : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 
+    if (!isMounted) {
+      return (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
+          }}
+        >
+          <div style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>Loading map...</div>
+        </div>
+      )
+    }
+
     return (
       <div
-        style={{ width: '100%', height: '100%', position: 'relative' }}
-        data-inspector-safe="true"
+        style={{ width: '100%', height: '100%', position: 'relative', isolation: 'isolate' }}
         suppressHydrationWarning
-        onMouseEnter={(e) => {
-          // Prevent DevTools from trying to inspect WebGL context
-          e.stopPropagation()
-        }}
-        onMouseDown={(e) => {
-          // Block inspector mouse events on map
-          if ((e as any).button === 2) {
-            // right-click
-            e.stopPropagation()
-          }
-        }}
-        onContextMenu={(e) => {
-          // Allow context menu but prevent inspector attachment
-          e.stopPropagation()
-        }}
       >
+        {/* Add a key to force remount when theme changes - helps with WebGL context issues */}
         <Map
+          key={`map-${isDark ? 'dark' : 'light'}`}
           ref={mapRef}
           {...viewState}
           onMove={(evt) => setViewState(evt.viewState)}
           mapStyle={mapStyle}
           style={{ width: '100%', height: '100%' }}
-          reuseMaps={true}
+          reuseMaps={false}
+          preserveDrawingBuffer={false}
+          antialias={false}
+          failIfMajorPerformanceCaveat={false}
+          trackResize={true}
+          onError={(e) => {
+            console.error('Map error:', e)
+          }}
         >
           {validPoints.map((point) => (
             <Marker
