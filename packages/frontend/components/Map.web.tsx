@@ -10,7 +10,7 @@
  * Native platforms (iOS/Android) use Map.tsx with react-native-maps.
  */
 import React, { useState, useCallback, memo, useRef, useMemo } from 'react'
-import Map, { Marker, MapRef } from 'react-map-gl/maplibre'
+import Map, { Marker, MapRef, AttributionControl } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useThemeContext } from './contexts'
 
@@ -83,15 +83,16 @@ const CustomControls = memo<CustomControlsProps>(({ mapRef, isDark }) => {
     )
   }, [mapRef])
 
-  const buttonClass = useMemo(() => (isDark ? 'map-control-dark' : 'map-control-light'), [isDark])
-
   return (
     <>
-      {/* Zoom controls */}
-      <div className="map-control-container" style={{ bottom: '88px', right: '10px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+      {/* Zoom controls - bottom right */}
+      <div className="absolute bottom-[52px] right-2.5 z-[1000] pointer-events-auto">
+        <div className="flex flex-col gap-0.5">
           <button
-            className={`${buttonClass} map-zoom-in`}
+            className={`w-9 h-9 border-none rounded-t cursor-pointer flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-all duration-200 outline-none
+              ${isDark ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-700'}
+              hover:bg-orange-500 hover:text-white hover:shadow-[0_4px_8px_rgba(0,0,0,0.4)]
+              active:scale-95 border-b ${isDark ? 'border-white/10' : 'border-black/[0.08]'}`}
             onClick={handleZoomIn}
             title="Zoom in"
             aria-label="Zoom in"
@@ -109,7 +110,10 @@ const CustomControls = memo<CustomControlsProps>(({ mapRef, isDark }) => {
             </svg>
           </button>
           <button
-            className={`${buttonClass} map-zoom-out`}
+            className={`w-9 h-9 border-none rounded-b cursor-pointer flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-all duration-200 outline-none
+              ${isDark ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-700'}
+              hover:bg-orange-500 hover:text-white hover:shadow-[0_4px_8px_rgba(0,0,0,0.4)]
+              active:scale-95`}
             onClick={handleZoomOut}
             title="Zoom out"
             aria-label="Zoom out"
@@ -128,10 +132,13 @@ const CustomControls = memo<CustomControlsProps>(({ mapRef, isDark }) => {
         </div>
       </div>
 
-      {/* Location button */}
-      <div className="map-control-container" style={{ bottom: '42px', right: '10px' }}>
+      {/* Location button - bottom right */}
+      <div className="absolute bottom-2.5 right-2.5 z-[1000] pointer-events-auto">
         <button
-          className={buttonClass}
+          className={`w-9 h-9 border-none rounded cursor-pointer flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-all duration-200 outline-none
+            ${isDark ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-700'}
+            hover:bg-orange-500 hover:text-white hover:shadow-[0_4px_8px_rgba(0,0,0,0.4)]
+            active:scale-95`}
           onClick={handleLocate}
           title="Show my location"
           aria-label="Show my location"
@@ -213,16 +220,8 @@ const MapComponent = memo<MapProps>(
             onClick={handleMarkerClick(point)}
           >
             <div
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: '50% 50% 50% 0',
-                background: point.type === 'center' ? '#ef4444' : '#3b82f6',
-                transform: 'rotate(-45deg)',
-                border: '2px solid white',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                cursor: 'pointer',
-              }}
+              className={`w-[30px] h-[30px] rounded-[50%_50%_50%_0] -rotate-45 border-2 border-white shadow-[0_2px_4px_rgba(0,0,0,0.3)] cursor-pointer
+                ${point.type === 'center' ? 'bg-red-500' : 'bg-blue-500'}`}
               title={point.name}
             />
           </Marker>
@@ -231,7 +230,7 @@ const MapComponent = memo<MapProps>(
     )
 
     return (
-      <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <div className="w-full h-full relative">
         <Map
           ref={mapRef}
           {...viewState}
@@ -242,6 +241,14 @@ const MapComponent = memo<MapProps>(
           attributionControl={false}
         >
           {markers}
+          <AttributionControl
+            compact={true}
+            position="bottom-left"
+            style={{
+              marginBottom: '10px',
+              marginLeft: '10px',
+            }}
+          />
         </Map>
         <CustomControls mapRef={mapRef} isDark={isDark} />
       </div>
