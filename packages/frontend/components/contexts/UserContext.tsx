@@ -12,7 +12,7 @@
  * - @rnmapbox/maps: For rendering maps and handling map-related functionalities.
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react'
 import { Platform } from 'react-native'
 import { getStoredToken, setStoredToken, removeStoredToken } from '../utils/tokenStorage'
 
@@ -56,69 +56,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   // Base URL for your API - ALWAYS use EC2 instance (backend does NOT run locally)
   const API_URL = 'http://3.236.142.145'
 
-  // Check for token on app load
-  useEffect(() => {
-    let isMounted = true
-
-    const loadUser = async () => {
-      try {
-        const token = await getStoredToken()
-        if (!isMounted) return
-
-        if (token) {
-          // Verify token validity with backend
-          const controller = new AbortController()
-          const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
-
-          try {
-            const response = await fetch(`${API_URL}/api/auth/verify`, {
-              method: 'GET',
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-              signal: controller.signal,
-            })
-
-            clearTimeout(timeoutId)
-
-            if (!isMounted) return
-
-            if (response.ok) {
-              const data = await response.json()
-              setUser(data.user)
-            } else {
-              // Token invalid, clear it
-              await removeStoredToken()
-            }
-          } catch (verifyError: any) {
-            clearTimeout(timeoutId)
-            if (!isMounted) return
-
-            console.error('Token verification failed:', verifyError)
-            // If timeout or network error, clear token
-            if (verifyError.name === 'AbortError') {
-              console.error('Token verification timeout - clearing token')
-            }
-            await removeStoredToken()
-          }
-        }
-      } catch (error) {
-        if (!isMounted) return
-        console.error('Failed to load user session', error)
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-        }
-      }
-    }
-    loadUser()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
-  const login = async (username: string, password: string) => {
+  // Memoize login function to prevent recreation
+  const login = useCallback(async (username: string, password: string) => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
@@ -142,16 +81,15 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error: any) {
       clearTimeout(timeoutId)
-      console.error('Login error:', error)
 
       if (error.name === 'AbortError') {
         return { success: false, message: 'Request timeout. Please check your connection.' }
       }
       return { success: false, message: 'Network error. Please try again.' }
     }
-  }
+  }, [API_URL, setUser])
 
-  const signup = async (username: string, password: string) => {
+  const signup = useCallback(async (username: string, password: string) => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
@@ -178,16 +116,15 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error: any) {
       clearTimeout(timeoutId)
-      console.error('Signup error:', error)
 
       if (error.name === 'AbortError') {
         return { success: false, message: 'Request timeout. Please check your connection.' }
       }
       return { success: false, message: error.message || 'Network error. Please try again.' }
     }
-  }
+  }, [API_URL, login])
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       // Optional: Call backend to blacklist token
       const token = await getStoredToken()
@@ -207,19 +144,18 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         } catch (fetchError) {
           clearTimeout(timeoutId)
           // Ignore logout errors, still clear local state
-          console.error('Logout API error (ignored):', fetchError)
         }
       }
     } catch (error) {
-      console.error('Logout error', error)
+      // Logout error
     } finally {
       // Always clear local state
       await removeStoredToken()
       setUser(null)
     }
-  }
+  }, [API_URL])
 
-  const checkUserExists = async (username: string) => {
+  const checkUserExists = useCallback(async (username: string) => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
@@ -241,14 +177,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       return data.existence
     } catch (error: any) {
       clearTimeout(timeoutId)
-      console.error('Check user existence error:', error)
 
       if (error.name === 'AbortError') {
         throw new Error('Request timeout. Please check your connection.')
       }
       throw new Error('Failed to connect to server. Please try again.')
     }
-  }
+  }, [API_URL])
 
   /**
    * Make an authenticated API request with JWT token
@@ -256,7 +191,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
    * @param options - Fetch options (method, body, etc.)
    * @returns Response from the API
    */
-  const authenticatedFetch = async (endpoint: string, options: RequestInit = {}) => {
+  const authenticatedFetch = useCallback(async (endpoint: string, options: RequestInit = {}) => {
     const token = await getStoredToken()
     if (!token) {
       throw new Error('No authentication token found')
@@ -296,9 +231,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       }
       throw error
     }
-  }
+  }, [API_URL])
 
-  const deleteAccount = async () => {
+  const deleteAccount = useCallback(async () => {
     try {
       const response = await authenticatedFetch('/api/auth/delete-account', {
         method: 'DELETE',
@@ -318,26 +253,90 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       console.error('Delete account error:', error)
       return { success: false, message: error.message || 'Network error. Please try again.' }
     }
-  }
+  }, [authenticatedFetch])
 
-  return (
-    <UserContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        signup,
-        logout,
-        checkUserExists,
-        setUser,
-        getToken: getStoredToken,
-        authenticatedFetch,
-        deleteAccount,
-      }}
-    >
-      {children}
-    </UserContext.Provider>
+  // Check for token on app load
+  useEffect(() => {
+    let isMounted = true
+    const controller = new AbortController()
+    let timeoutId: NodeJS.Timeout | null = null
+
+    const loadUser = async () => {
+      try {
+        const token = await getStoredToken()
+        if (!isMounted) return
+
+        if (token) {
+          // Verify token validity with backend
+          timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+          try {
+            const response = await fetch(`${API_URL}/api/auth/verify`, {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+              signal: controller.signal,
+            })
+
+            if (timeoutId) clearTimeout(timeoutId)
+
+            if (!isMounted) return
+
+            if (response.ok) {
+              const data = await response.json()
+              setUser(data.user)
+            } else {
+              // Token invalid, clear it
+              await removeStoredToken()
+            }
+          } catch (verifyError: any) {
+            if (timeoutId) clearTimeout(timeoutId)
+            if (!isMounted) return
+
+            // If timeout or network error, clear token
+            if (verifyError.name === 'AbortError') {
+              // Token verification timeout - clearing token
+            }
+            await removeStoredToken()
+          }
+        }
+      } catch (error) {
+        if (!isMounted) return
+        // Failed to load user session
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+    loadUser()
+
+    return () => {
+      isMounted = false
+      controller.abort()
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }, [API_URL])
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({
+      user,
+      loading,
+      login,
+      signup,
+      logout,
+      checkUserExists,
+      setUser,
+      getToken: getStoredToken,
+      authenticatedFetch,
+      deleteAccount,
+    }),
+    [user, loading, login, signup, logout, checkUserExists, authenticatedFetch, deleteAccount]
   )
+
+  return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
 }
 
 export default UserContext
