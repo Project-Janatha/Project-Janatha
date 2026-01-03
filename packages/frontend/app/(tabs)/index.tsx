@@ -1,13 +1,15 @@
 // This is the mobile/native layout
-import React, { useContext } from 'react'
-import { View, Text, ScrollView, Pressable, Platform } from 'react-native'
+import React, { useContext, Suspense } from 'react'
+import { View, Text, ScrollView, Pressable, Platform, ActivityIndicator } from 'react-native'
 import { MapPin, ChevronRight, ThumbsUp, MessageCircle } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
 import { useUser } from '../../components/contexts'
 import { SecondaryButton } from '../../components/ui'
 import { MapPreview } from '../../components'
-import Map from '../../components/Map'
 import { useRouter } from 'expo-router'
+
+// Lazy load Map to avoid loading heavy web dependencies on mobile web
+const Map = React.lazy(() => import('../../components/Map'))
 
 type MapPoint = {
   id: string
@@ -136,7 +138,15 @@ export default function HomeScreen() {
             {Platform.OS === 'web' ? (
               <MapPreview onPress={() => router.push('/explore')} pointCount={mapPoints.length} />
             ) : (
-              <Map points={mapPoints} onPointPress={handlePointPress} />
+              <Suspense
+                fallback={
+                  <View className="flex-1 justify-center items-center bg-gray-100 dark:bg-neutral-800">
+                    <ActivityIndicator size="large" color="#0ea5e9" />
+                  </View>
+                }
+              >
+                <Map points={mapPoints} onPointPress={handlePointPress} />
+              </Suspense>
             )}
           </View>
 
