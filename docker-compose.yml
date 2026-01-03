@@ -21,3 +21,5 @@ services:
       - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production}
       - ADMIN_NAME=${ADMIN_NAME:-Brahman}
       - CORS_ORIGIN=${CORS_ORIGIN:-*}
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro

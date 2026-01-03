@@ -5,7 +5,7 @@ import { ThumbsUp, MessageCircle, MapPin, ChevronRight } from 'lucide-react-nati
 import Toast from 'react-native-toast-message'
 import { useUser } from '../../components/contexts'
 import { SecondaryButton } from '../../components/ui'
-import { Map } from '../../components'
+import Map from '../../components/Map'
 import { useRouter } from 'expo-router'
 
 // Import mobile component for responsive fallback
