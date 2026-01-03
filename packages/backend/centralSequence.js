@@ -38,7 +38,12 @@ const app = express()
 console.log('Entering usages')
 app.use(
   cors({
-    origin: '*',
+    origin: [
+      'https://chinmayajanata.org',
+      'https://app.chinmayajanata.org',
+      'http://localhost:8081',
+      'http://localhost:8008',
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
