@@ -45,6 +45,7 @@ interface UserContextType {
   getToken: () => Promise<string | null>
   authenticatedFetch: (endpoint: string, options?: RequestInit) => Promise<Response>
   deleteAccount: () => Promise<{ success: boolean; message?: string }>
+  updateProfile: (updates: Partial<User>) => Promise<{ success: boolean; message?: string }>
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -275,6 +276,32 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [authenticatedFetch])
 
+  const updateProfile = useCallback(async (data: Partial<User>) => {
+    try {
+      // Optimistic update
+      setUser((prev) => (prev ? { ...prev, ...data } : null))
+
+      const token = await getStoredToken()
+      const response = await fetch(`${API_URL}/api/users/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) throw new Error('Failed to update profile')
+
+      const updatedUser = await response.json()
+      setUser(updatedUser)
+      return updatedUser
+    } catch (error) {
+      console.error('Update profile error:', error)
+      throw error
+    }
+  }, [])
+
   // Check for token on app load
   useEffect(() => {
     let isMounted = true
@@ -352,8 +379,19 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       getToken: getStoredToken,
       authenticatedFetch,
       deleteAccount,
+      updateProfile,
     }),
-    [user, loading, login, signup, logout, checkUserExists, authenticatedFetch, deleteAccount]
+    [
+      user,
+      loading,
+      login,
+      signup,
+      logout,
+      checkUserExists,
+      authenticatedFetch,
+      deleteAccount,
+      updateProfile,
+    ]
   )
 
   return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
