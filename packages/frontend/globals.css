@@ -18,8 +18,6 @@
 /* Set Inter as default font for the entire app */
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  /* Enable GPU acceleration for smoother DevTools performance */
-  transform: translateZ(0);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

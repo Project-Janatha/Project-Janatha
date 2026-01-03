@@ -62,7 +62,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   // Base URL for your API - ALWAYS use EC2 instance (backend does NOT run locally)
-  const API_URL = 'http://3.236.142.145'
+  const API_URL = 'https://app.chinmayajanata.org'
 
   // Memoize login function to prevent recreation
   const login = useCallback(

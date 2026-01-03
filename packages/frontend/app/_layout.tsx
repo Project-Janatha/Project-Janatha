@@ -1,6 +1,6 @@
 import '@expo/metro-runtime'
-import '../config/performance'
-import '../config/devtools'
+// import '../config/performance'
+// import '../config/devtools'
 import { useEffect, useContext, useState } from 'react'
 import { ActivityIndicator, View, Text } from 'react-native'
 import { useFonts } from 'expo-font'
@@ -81,35 +81,25 @@ function RootLayoutNav() {
   const pathname = usePathname()
   const router = useRouter()
   const isAuthenticated = !!user
-  const [isRedirecting, setIsRedirecting] = useState(false)
 
   useEffect(() => {
-    if (loading || isRedirecting) return
+    if (loading) return
 
-    if (pathname === '/auth' && !isAuthenticated) return
-    if (pathname !== '/auth' && isAuthenticated) return
+    // Check if current path starts with /auth (handles /auth, /auth/, /auth/login etc)
+    const inAuthGroup = pathname === '/auth' || pathname.startsWith('/auth/')
 
-    let isMounted = true
-    setIsRedirecting(true)
-    if (!isAuthenticated && pathname !== '/auth') {
+    if (!isAuthenticated && !inAuthGroup) {
+      // Redirect to sign-in
       router.replace('/auth')
-    } else if (isAuthenticated && pathname === '/auth') {
+    } else if (isAuthenticated && inAuthGroup) {
+      // Redirect to home
       router.replace('/(tabs)')
     }
-    const timer = setTimeout(() => {
-      if (isMounted) {
-        setIsRedirecting(false)
-      }
-    }, 100)
-    return () => {
-      isMounted = false
-      clearTimeout(timer)
-    }
-  }, [isAuthenticated, loading, pathname, router, isRedirecting])
+  }, [user, loading, pathname, isAuthenticated])
 
   const navTheme = isDark ? DarkTheme : DefaultTheme
 
-  if (loading && pathname !== '/auth') {
+  if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#ea580c" />

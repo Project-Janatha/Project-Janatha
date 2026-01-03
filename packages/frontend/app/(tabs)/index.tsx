@@ -1,11 +1,12 @@
 // This is the mobile/native layout
 import React, { useContext } from 'react'
-import { View, Text, ScrollView, Pressable } from 'react-native'
+import { View, Text, ScrollView, Pressable, Platform } from 'react-native'
 import { MapPin, ChevronRight, ThumbsUp, MessageCircle } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
 import { useUser } from '../../components/contexts'
 import { SecondaryButton } from '../../components/ui'
-import { Map } from '../../components'
+import { MapPreview } from '../../components'
+import Map from '../../components/Map'
 import { useRouter } from 'expo-router'
 
 type MapPoint = {
@@ -132,7 +133,11 @@ export default function HomeScreen() {
         {/* Interactive Map Section */}
         <View className="bg-card rounded-2xl shadow-sm mb-4 overflow-hidden">
           <View className="h-[200px] rounded-t-2xl overflow-hidden">
-            <Map points={mapPoints} onPointPress={handlePointPress} />
+            {Platform.OS === 'web' ? (
+              <MapPreview onPress={() => router.push('/explore')} pointCount={mapPoints.length} />
+            ) : (
+              <Map points={mapPoints} onPointPress={handlePointPress} />
+            )}
           </View>
 
           <Pressable

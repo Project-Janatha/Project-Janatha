@@ -239,6 +239,7 @@ const MapComponent = memo<MapProps>(
           style={{ width: '100%', height: '100%' }}
           reuseMaps
           attributionControl={false}
+          cooperativeGestures={true}
         >
           {markers}
           <AttributionControl
