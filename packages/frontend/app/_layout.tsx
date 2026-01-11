@@ -85,15 +85,34 @@ function RootLayoutNav() {
   useEffect(() => {
     if (loading) return
 
-    // Check if current path starts with /auth (handles /auth, /auth/, /auth/login etc)
-    const inAuthGroup = pathname === '/auth' || pathname.startsWith('/auth/')
+    const inAuthGroup = pathname.startsWith('/auth')
+    const inOnboardingGroup = pathname.startsWith('/onboarding')
 
-    if (!isAuthenticated && !inAuthGroup) {
-      // Redirect to sign-in
-      router.replace('/auth')
-    } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to home
-      router.replace('/(tabs)')
+    if (!isAuthenticated) {
+      // User is NOT authenticated
+      if (!inAuthGroup) {
+        // Redirect to Auth if not already there
+        router.replace('/auth')
+      }
+    } else {
+      // User IS authenticated
+
+      // Check for completion flag OR fallback to checking fields
+      const isComplete =
+        user.profileComplete || user.profileComplete || (!!user.firstName && !!user.lastName)
+
+      if (!isComplete) {
+        // User needs to onboard
+        if (!inOnboardingGroup) {
+          router.replace('/onboarding')
+        }
+      } else {
+        // User is fully onboarded
+        if (inAuthGroup || inOnboardingGroup) {
+          // Redirect away from auth/onboarding pages to Home
+          router.replace('/(tabs)')
+        }
+      }
     }
   }, [user, loading, pathname, isAuthenticated])
 
@@ -112,6 +131,8 @@ function RootLayoutNav() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
+        {/* Registering onboarding explicitly ensures stable navigation */}
+        <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen
           name="profile"
           options={{

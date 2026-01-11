@@ -7,7 +7,6 @@
  *
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
  */
-
 //Imports
 console.log('Imports')
 console.log('Starting express')
@@ -27,7 +26,6 @@ import cookieParser from 'cookie-parser'
 console.log('Cookie parser')
 import fs from 'fs'
 console.log('Fs')
-
 //Constants
 console.log('Constants')
 const PORT = 8008
@@ -36,25 +34,59 @@ const PORT = 8008
 console.log('Entering init')
 const app = express()
 console.log('Entering usages')
+
+// AGGRESSIVE CORS - Debug version
+app.use((req, res, next) => {
+  console.log('Incoming request:', req.method, req.url)
+  console.log('Origin:', req.headers.origin)
+  next()
+})
+
 app.use(
   cors({
-    origin: [
-      'https://chinmayajanata.org',
-      'https://app.chinmayajanata.org',
-      'http://localhost:8081',
-      'http://localhost:8008',
-    ],
+    origin: function (origin, callback) {
+      console.log('CORS check for origin:', origin)
+      // Always allow requests with no origin
+      if (!origin) {
+        console.log('No origin - allowing')
+        return callback(null, true)
+      }
+      // Allow everything in development
+      console.log('Allowing origin:', origin)
+      return callback(null, true)
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    exposedHeaders: ['Set-Cookie'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   })
 )
+
+// Additional manual CORS headers as backup
+app.use((req, res, next) => {
+  const origin = req.headers.origin
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin)
+  }
+  res.header('Access-Control-Allow-Credentials', 'true')
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Requested-With, Accept, Origin'
+  )
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204)
+  }
+  next()
+})
 
 //Middleware
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
-
 console.log('Entering definitions')
 
 // Mount API routes under /api (includes tester at /api root)
