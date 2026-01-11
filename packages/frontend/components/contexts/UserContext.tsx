@@ -77,6 +77,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password }),
           signal: controller.signal,
+          credentials: 'include', // <--- Added to fix CORS/Cookies
         })
 
         clearTimeout(timeoutId)
@@ -112,6 +113,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password }),
           signal: controller.signal,
+          credentials: 'include', // <--- Added
         })
 
         clearTimeout(timeoutId)
@@ -154,6 +156,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
               Authorization: `Bearer ${token}`,
             },
             signal: controller.signal,
+            credentials: 'include', // <--- Added
           })
           clearTimeout(timeoutId)
         } catch (fetchError) {
@@ -181,6 +184,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username }),
           signal: controller.signal,
+          credentials: 'include', // <--- Added
         })
 
         clearTimeout(timeoutId)
@@ -230,6 +234,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           ...options,
           headers,
           signal: controller.signal,
+          credentials: 'include', // <--- Added
         })
 
         clearTimeout(timeoutId)
@@ -289,6 +294,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(data),
+        credentials: 'include', // <--- Added
       })
 
       if (!response.ok) throw new Error('Failed to update profile')
@@ -324,6 +330,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
                 Authorization: `Bearer ${token}`,
               },
               signal: controller.signal,
+              credentials: 'include', // <--- Added
             })
 
             if (timeoutId) clearTimeout(timeoutId)
