@@ -4,7 +4,7 @@ import { View, Text, Pressable, useWindowDimensions, ScrollView } from 'react-na
 import { ThumbsUp, MessageCircle, MapPin, ChevronRight } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
 import { useUser } from '../../components/contexts'
-import { SecondaryButton } from '../../components/ui'
+import { SecondaryButton, Card } from '../../components/ui'
 import Map from '../../components/Map'
 import { useRouter } from 'expo-router'
 
@@ -128,15 +128,15 @@ export default function HomeScreenWeb() {
     })
   }
 
-  // Desktop layout: Cleaner structure with proper spacing
+  // Desktop layout: Two-column layout with map container and scrollable content panel
   return (
     <View className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-row h-full px-12 py-8 gap-8">
-        {/* Left Side - Map (40%) - Interactive map preview */}
-        <View className="flex-[4] bg-card rounded-3xl shadow-md overflow-hidden">
+        {/* Left Side - Map Container (40%) - Card-styled container with rounded corners and border */}
+        <Card size="lg" overflowHidden className="flex-[4]">
           <Map points={mapPoints} onPointPress={handlePointPress} />
-        </View>
-        {/* Right Side - Scrollable Calendar & Events (60%) */}
+        </Card>
+        {/* Right Side - Scrollable Content Panel (60%) - Calendar and events list */}
         <View className="flex-[6]">
           <ScrollView
             className="flex-1 px-2"
@@ -145,12 +145,9 @@ export default function HomeScreenWeb() {
           >
             {/* Your Week Section */}
             <View className="mb-6">
-              <Text className="text-content dark:text-content-dark font-inter text-2xl font-bold mb-4">
-                Your Week
-              </Text>
 
               {/* Calendar Week View */}
-              <View className="bg-card rounded-2xl p-6 shadow-md">
+              <Card padding="md">
                 <View className="flex-row justify-between">
                   {weekDays.map((day, index) => (
                     <View key={index} className="items-center gap-3">
@@ -177,25 +174,7 @@ export default function HomeScreenWeb() {
                     </View>
                   ))}
                 </View>
-              </View>
-            </View>
-
-            {/* Quick Stats */}
-            <View className="bg-card rounded-2xl p-6 shadow-md mb-6">
-              <Text className="text-content dark:text-content-dark font-inter text-xl font-bold mb-4">
-                Quick Stats
-              </Text>
-              <View className="gap-3">
-                <Text className="text-content dark:text-content-dark font-inter text-base">
-                  📅 2 events this week
-                </Text>
-                <Text className="text-content dark:text-content-dark font-inter text-base">
-                  🏛️ 3 centers nearby
-                </Text>
-                <Text className="text-content dark:text-content-dark font-inter text-base">
-                  👥 28 total attendees
-                </Text>
-              </View>
+              </Card>
             </View>
 
             {/* Events List */}
@@ -220,12 +199,14 @@ export default function HomeScreenWeb() {
 
               <View className="gap-4">
                 {events.map((event) => (
-                  <Pressable
+                  <Card
                     key={event.id}
+                    pressable
                     onPress={() => handleEventPress(event)}
-                    className="bg-card rounded-2xl hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                    padding="md"
+                    hoverBorderColor="primary"
                   >
-                    <View className="p-6 gap-3">
+                    <View className="gap-3">
                       <Text className="font-inter text-sm text-primary font-bold uppercase tracking-wide">
                         {event.time}
                       </Text>
@@ -243,7 +224,7 @@ export default function HomeScreenWeb() {
                       </Text>
                     </View>
 
-                    <View className="px-6 pb-5 flex-row items-center gap-8 pt-4">
+                    <View className="flex-row items-center gap-8 pt-4">
                       <View className="flex-row items-center gap-2">
                         <ThumbsUp size={18} color="#a1a1aa" />
                         <Text className="text-content dark:text-content-dark font-inter text-sm font-medium">
@@ -257,7 +238,7 @@ export default function HomeScreenWeb() {
                         </Text>
                       </View>
                     </View>
-                  </Pressable>
+                  </Card>
                 ))}
               </View>
             </View>

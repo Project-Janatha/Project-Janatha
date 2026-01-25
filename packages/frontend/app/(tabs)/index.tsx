@@ -4,7 +4,7 @@ import { View, Text, ScrollView, Pressable, Platform, ActivityIndicator } from '
 import { MapPin, ChevronRight, ThumbsUp, MessageCircle } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
 import { useUser } from '../../components/contexts'
-import { SecondaryButton } from '../../components/ui'
+import { SecondaryButton, Card } from '../../components/ui'
 import { MapPreview } from '../../components'
 import { useRouter } from 'expo-router'
 
@@ -133,7 +133,7 @@ export default function HomeScreen() {
     <ScrollView className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-1 gap-4 px-4 pt-4 pb-8">
         {/* Interactive Map Section */}
-        <View className="bg-card rounded-2xl shadow-sm mb-4 overflow-hidden">
+        <Card className="mb-4">
           <View className="h-[200px] rounded-t-2xl overflow-hidden">
             {Platform.OS === 'web' ? (
               <MapPreview onPress={() => router.push('/explore')} pointCount={mapPoints.length} />
@@ -169,7 +169,7 @@ export default function HomeScreen() {
             </View>
             <ChevronRight size={20} color="#a1a1aa" />
           </Pressable>
-        </View>
+        </Card>
 
         {/* Your Week Section */}
         <View className="gap-3">
@@ -221,12 +221,13 @@ export default function HomeScreen() {
         {/* Events List */}
         <View className="gap-3 mt-4">
           {events.map((event) => (
-            <Pressable
+            <Card
               key={event.id}
+              pressable
               onPress={() => handleEventPress(event)}
-              className="bg-card rounded-2xl shadow-sm overflow-hidden active:scale-[0.98]"
+              padding="sm"
             >
-              <View className="p-4 gap-2">
+              <View className="gap-2">
                 <Text className="font-inter text-sm text-primary font-medium">{event.time}</Text>
                 <Text className="text-content dark:text-content-dark font-inter text-sm">
                   {event.location}
@@ -239,7 +240,7 @@ export default function HomeScreen() {
                 </Text>
               </View>
 
-              <View className="px-4 pb-4 flex-row justify-end gap-4">
+              <View className="flex-row justify-end gap-4 pt-2">
                 <View className="flex-row items-center gap-1">
                   <ThumbsUp size={16} color="#a1a1aa" />
                   <Text className="text-content dark:text-content-dark font-inter text-sm">
@@ -253,7 +254,7 @@ export default function HomeScreen() {
                   </Text>
                 </View>
               </View>
-            </Pressable>
+            </Card>
           ))}
         </View>
       </View>
