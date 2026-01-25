@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Removed global transitions to prevent dev tools conflicts */
+/* Apply transitions selectively where needed instead of * selector */
+
+/* Prevent transitions on page load */
+.preload * {
+  transition: none !important;
+}
+
+/* Optimize for browser DevTools - reduce reflow/repaint */
+* {
+  will-change: auto;
+}
+
+/* Set Inter as default font for the entire app */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* For React Native Web, target all text elements */
+div, p, span, a, button, input, textarea, select {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Inter font faces for web (only .ttf files) */
+@font-face {
+  font-family: 'Inter';
+  src: url('/app/assets/fonts/Inter-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/app/assets/fonts/Inter-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/app/assets/fonts/Inter-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/app/assets/fonts/Inter-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/app/assets/fonts/Inter-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+/* Custom map controls - Industry standard styling */
+.map-control-container {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.map-control-light,
+.map-control-dark {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.map-control-light {
+  background-color: #ffffff;
+  color: #374151;
+}
+
+.map-control-dark {
+  background-color: #1f2937;
+  color: #e5e5e5;
+}
+
+.map-control-light:hover,
+.map-control-dark:hover {
+  background-color: #f97316;
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.map-control-light:active,
+.map-control-dark:active {
+  transform: scale(0.95);
+}
+
+.map-zoom-in {
+  border-radius: 4px 4px 0 0 !important;
+}
+
+.map-zoom-out {
+  border-radius: 0 0 4px 4px !important;
+}
+
+.map-control-light.map-zoom-in {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.map-control-dark.map-zoom-in {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}

@@ -1,0 +1,25 @@
+services:
+  app:
+    image: chinmaya-janata-app:latest
+    build:
+      context: .
+    platform: linux/amd64
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=8008
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+      - USERS_TABLE=${USERS_TABLE:-ChinmayaJanata-Users}
+      - CENTERS_TABLE=${CENTERS_TABLE:-ChinmayaJanata-Centers}
+      - EVENTS_TABLE=${EVENTS_TABLE:-ChinmayaJanata-Events}
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production}
+      - ADMIN_NAME=${ADMIN_NAME:-Brahman}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
