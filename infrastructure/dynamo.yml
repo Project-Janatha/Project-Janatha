@@ -1,0 +1,91 @@
+# infrastructure/dynamo.yml
+# DynamoDB CloudFormation Template for Chinmaya Janata Application
+# Author: Abhiram Ramachandran
+# Date: 2025-12-18
+# Om Sri Chinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: DynamoDB Tables for Chinmaya Janata
+
+Resources:
+  UsersDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ChinmayaJanata-Users
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: username
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: username-index
+          KeySchema:
+            - AttributeName: username
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  CentersDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ChinmayaJanata-Centers
+      AttributeDefinitions:
+        - AttributeName: centerID
+          AttributeType: S # Changed from N to S (String for UUID)
+      KeySchema:
+        - AttributeName: centerID
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  EventsDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ChinmayaJanata-Events
+      AttributeDefinitions:
+        - AttributeName: eventID
+          AttributeType: S
+        - AttributeName: centerID
+          AttributeType: S # Changed from N to S
+        - AttributeName: date
+          AttributeType: S
+      KeySchema:
+        - AttributeName: eventID
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: centerID-index
+          KeySchema:
+            - AttributeName: centerID
+              KeyType: HASH
+            - AttributeName: date
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+Outputs:
+  UsersTableName:
+    Description: Users Table Name
+    Value: !Ref UsersDynamoDBTable
+    Export:
+      Name: ChinmayaJanata-UsersTable
+
+  CentersTableName:
+    Description: Centers Table Name
+    Value: !Ref CentersDynamoDBTable
+    Export:
+      Name: ChinmayaJanata-CentersTable
+
+  EventsTableName:
+    Description: Events Table Name
+    Value: !Ref EventsDynamoDBTable
+    Export:
+      Name: ChinmayaJanata-EventsTable
