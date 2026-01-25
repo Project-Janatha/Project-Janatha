@@ -35,14 +35,14 @@ export function TabSegment({
       : 'flex-row bg-background-dark rounded-xl p-1'
 
   return (
-    <View className="flex-row p-1 font-inter">
+    <View className="flex-row p-1 font-inter gap-2">
       {options.map((option) => {
         const isActive = value === option.value
         return (
           <TouchableOpacity
             key={option.value}
             className={`flex rounded-full px-3 py-2 ${
-              isActive ? 'bg-primary' : 'bg-backgroundStrong dark:bg-backgroundStrong-dark'
+              isActive ? 'bg-primary' : 'bg-backgroundStrong-light dark:bg-backgroundStrong-dark'
             }`}
             activeOpacity={0.8}
             onPress={() => onValueChange(option.value)}

@@ -19,10 +19,10 @@ import { Pressable, Text } from 'react-native'
 export default function GhostButton({ children, ...props }) {
   return (
     <Pressable
-      className="bg-transparent text-color px-4 py-3 rounded-lg active:bg-gray-200"
+      className="bg-transparent px-4 py-3 rounded-lg active:bg-gray-200 dark:active:bg-gray-700"
       {...props}
     >
-      <Text className="text-color text-base text-center">{children}</Text>
+      <Text className="text-content dark:text-content-dark text-base text-center">{children}</Text>
     </Pressable>
   )
 }
