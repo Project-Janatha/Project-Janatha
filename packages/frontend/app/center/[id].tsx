@@ -13,7 +13,7 @@ import {
   ThumbsUp,
   MessageCircle,
 } from 'lucide-react-native'
-import { TabSegment, IconButton, SecondaryButton, PrimaryButton } from '../../components/ui'
+import { TabSegment, IconButton, SecondaryButton, PrimaryButton, Card } from '../../components/ui'
 
 // Hardcoded center data
 const centerData = {
@@ -240,7 +240,8 @@ export default function CenterDetailPage() {
 
   const EventCard = ({ event, opacity }: { event: (typeof sampleEvents)[0]; opacity: number }) => {
     return (
-      <Pressable
+      <Card
+        pressable
         onPress={() => {
           router.push(`/events/${event.id}`)
           Toast.show({
@@ -250,9 +251,10 @@ export default function CenterDetailPage() {
           })
         }}
         style={{ opacity }}
-        className="bg-card rounded-2xl shadow-sm overflow-hidden active:scale-[0.98]"
+        padding="sm"
+        overflowHidden
       >
-        <View className="p-4 gap-2">
+        <View className="gap-2">
           <Text className="text-sm text-primary font-medium">{event.time}</Text>
           <Text className="text-sm text-muted-foreground">{event.location}</Text>
           <Text className="text-base font-semibold text-foreground leading-tight">
@@ -260,7 +262,7 @@ export default function CenterDetailPage() {
           </Text>
           <Text className="text-sm text-muted-foreground mt-1">{event.attendees} people</Text>
         </View>
-      </Pressable>
+      </Card>
     )
   }
 }

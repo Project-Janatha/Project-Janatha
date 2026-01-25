@@ -14,6 +14,7 @@ import GhostButton from './buttons/GhostButton'
 import IconButton from './buttons/IconButton'
 import DestructiveButton from './buttons/DestructiveButton'
 import TabSegment from './TabSegment'
+import Card from './Card'
 
 export {
   PrimaryButton,
@@ -23,4 +24,5 @@ export {
   IconButton,
   DestructiveButton,
   TabSegment,
+  Card,
 }

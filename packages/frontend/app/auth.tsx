@@ -13,7 +13,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
-import { PrimaryButton, IconButton, AuthInput } from '../components/ui'
+import { PrimaryButton, IconButton, AuthInput, Card } from '../components/ui'
 import { useUser, useThemeContext } from '../components/contexts'
 import { validateEmail, validatePassword } from '../utils'
 import { ThemeSelector, PasswordStrength } from '../components'
@@ -241,10 +241,10 @@ export default function AuthScreen() {
           }}
         >
           {/* Card Container */}
-          <View
-            className={`w-full ${
-              isWeb ? 'max-w-[380px]' : 'max-w-[380px]'
-            } bg-card dark:bg-card-dark rounded-3xl shadow-md p-8 ${isWeb ? 'py-12' : 'py-10'}`}
+          <Card
+            size="lg"
+            padding={isWeb ? 'lg' : 'md'}
+            className={`w-full ${isWeb ? 'max-w-[380px]' : 'max-w-[380px]'}`}
           >
             {/* Back Button */}
             {authStep !== 'initial' && (
@@ -411,12 +411,12 @@ export default function AuthScreen() {
             {showDevPanel && (
               <DevPanel visible={showDevPanel} onClose={() => setShowDevPanel(false)} />
             )}
-          </View>
 
-          {/* Footer Text */}
-          <Text className="text-content dark:text-content-dark opacity-50 text-sm font-inter mt-8 text-center px-4">
-            By continuing, you agree to our Terms of Service and Privacy Policy
-          </Text>
+            {/* Footer Text */}
+            <Text className="text-content dark:text-content-dark opacity-50 text-sm font-inter mt-8 text-center px-4">
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </Text>
+          </Card>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
