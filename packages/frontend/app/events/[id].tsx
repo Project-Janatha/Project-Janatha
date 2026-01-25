@@ -124,8 +124,10 @@ export default function EventDetailPage() {
 
   if (!event) {
     return (
-      <View className="flex-1 justify-center items-center px-4">
-        <Text className="text-2xl font-semibold mb-4">Event not found</Text>
+      <View className="flex-1 justify-center items-center px-4 bg-background dark:bg-background-dark">
+        <Text className="text-2xl font-semibold mb-4 text-content dark:text-content-dark">
+          Event not found
+        </Text>
         <SecondaryButton onPress={() => router.back()} className="mt-4">
           Go Back
         </SecondaryButton>
@@ -144,47 +146,61 @@ export default function EventDetailPage() {
       <View className="gap-3">
         {/* Time */}
         <View className="flex-row items-center gap-2">
-          <Clock size={20} color="#FF9800" />
-          <Text className="text-base font-medium text-foreground">{event.time}</Text>
+          <Clock size={20} color="#f97316" />
+          <Text className="text-base font-medium text-content dark:text-content-dark">
+            {event.time}
+          </Text>
         </View>
 
         {/* Location */}
         <View className="flex-row items-center gap-2">
-          <MapPin size={20} color="#FF9800" />
+          <MapPin size={20} color="#f97316" />
           <View className="flex-1">
-            <Text className="text-base font-medium text-foreground">{event.location}</Text>
-            <Text className="text-sm text-muted-foreground">{event.address}</Text>
+            <Text className="text-base font-medium text-content dark:text-content-dark">
+              {event.location}
+            </Text>
+            <Text className="text-sm text-contentStrong dark:text-contentStrong-dark">
+              {event.address}
+            </Text>
           </View>
         </View>
 
         {/* Attendees */}
         <View className="flex-row items-center gap-2">
-          <Users size={20} color="#FF9800" />
-          <Text className="text-base font-medium text-foreground">
+          <Users size={20} color="#f97316" />
+          <Text className="text-base font-medium text-content dark:text-content-dark">
             {event.attendees} People Going
           </Text>
         </View>
 
         {/* Point of Contact */}
         <View className="flex-row items-center gap-2">
-          <Info size={20} color="#FF9800" />
+          <Info size={20} color="#f97316" />
           <View className="flex-1">
-            <Text className="text-sm text-muted-foreground">Point of Contact:</Text>
-            <Text className="text-base font-medium text-foreground">{event.pointOfContact}</Text>
+            <Text className="text-sm text-contentStrong dark:text-contentStrong-dark">
+              Point of Contact:
+            </Text>
+            <Text className="text-base font-medium text-content dark:text-content-dark">
+              {event.pointOfContact}
+            </Text>
           </View>
         </View>
 
         {/* Description */}
         <View className="gap-1 mt-2">
-          <Text className="text-lg font-semibold">About this event</Text>
-          <Text className="text-base text-muted-foreground leading-tight">{event.description}</Text>
+          <Text className="text-lg font-semibold text-content dark:text-content-dark">
+            About this event
+          </Text>
+          <Text className="text-base text-contentStrong dark:text-contentStrong-dark leading-tight">
+            {event.description}
+          </Text>
         </View>
       </View>
 
       {/* Registration Status and Action Button */}
       {event.isRegistered ? (
         <View className="gap-2 mt-4">
-          <Text className="text-base text-green-600 font-medium">
+          <Text className="text-base text-green-600 dark:text-green-400 font-medium">
             You are registered for this event!
           </Text>
           <SecondaryButton className="mt-2">Cancel Registration</SecondaryButton>
@@ -201,7 +217,7 @@ export default function EventDetailPage() {
         event.attendeesList.map((attendee) => (
           <View
             key={attendee.id}
-            className="bg-card rounded-xl shadow p-4 flex-row items-center gap-3 mb-2"
+            className="bg-muted/20 dark:bg-muted-dark/20 rounded-xl shadow p-4 flex-row items-center gap-3 mb-2"
           >
             <Image
               source={{ uri: attendee.avatar }}
@@ -209,15 +225,21 @@ export default function EventDetailPage() {
               className="mr-3"
             />
             <View className="flex-1">
-              <Text className="text-base font-medium">{attendee.name}</Text>
-              <Text className="text-sm text-muted-foreground">{attendee.role}</Text>
+              <Text className="text-base font-medium text-content dark:text-content-dark">
+                {attendee.name}
+              </Text>
+              <Text className="text-sm text-contentStrong dark:text-contentStrong-dark">
+                {attendee.role}
+              </Text>
             </View>
           </View>
         ))
       ) : (
         <View className="items-center py-8">
           <Users size={48} color="#888" />
-          <Text className="text-base text-muted-foreground mt-3">No attendees yet</Text>
+          <Text className="text-base text-contentStrong dark:text-contentStrong-dark mt-3">
+            No attendees yet
+          </Text>
         </View>
       )}
     </View>
@@ -227,13 +249,16 @@ export default function EventDetailPage() {
     <View className="gap-3">
       {event.messages.length > 0 ? (
         <>
-          <View className="bg-gray-100 rounded-xl shadow p-4 mb-2">
-            <Text className="text-sm text-muted-foreground text-center">
+          <View className="bg-muted/20 dark:bg-muted-dark/20 rounded-xl shadow p-4 mb-2">
+            <Text className="text-sm text-contentStrong dark:text-contentStrong-dark text-center">
               Only the host can post messages
             </Text>
           </View>
           {event.messages.map((message) => (
-            <View key={message.id} className="bg-card rounded-xl shadow p-4 flex-row gap-3 mb-2">
+            <View
+              key={message.id}
+              className="bg-muted/20 dark:bg-muted-dark/20 rounded-xl shadow p-4 flex-row gap-3 mb-2"
+            >
               <Image
                 source={{ uri: message.avatar }}
                 style={{ width: 36, height: 36, borderRadius: 18 }}
@@ -241,10 +266,16 @@ export default function EventDetailPage() {
               />
               <View className="flex-1">
                 <View className="flex-row justify-between items-center mb-2">
-                  <Text className="text-base font-medium">{message.sender}</Text>
-                  <Text className="text-sm text-muted-foreground">{message.time}</Text>
+                  <Text className="text-base font-medium text-content dark:text-content-dark">
+                    {message.sender}
+                  </Text>
+                  <Text className="text-sm text-contentStrong dark:text-contentStrong-dark">
+                    {message.time}
+                  </Text>
                 </View>
-                <Text className="text-base text-foreground leading-tight">{message.message}</Text>
+                <Text className="text-base text-content dark:text-content-dark leading-tight">
+                  {message.message}
+                </Text>
               </View>
             </View>
           ))}
@@ -252,23 +283,27 @@ export default function EventDetailPage() {
       ) : (
         <View className="items-center py-8">
           <MessageCircle size={48} color="#888" />
-          <Text className="text-base text-muted-foreground mt-3">No messages yet</Text>
+          <Text className="text-base text-contentStrong dark:text-contentStrong-dark mt-3">
+            No messages yet
+          </Text>
         </View>
       )}
     </View>
   )
 
   return (
-    <ScrollView className="flex-1 bg-background">
+    <ScrollView className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-1">
         {/* Event Title */}
-        <View className="px-4 py-3 bg-background border-b border-borderColor">
-          <Text className="text-2xl font-bold text-center">{event.title}</Text>
+        <View className="px-4 py-3 bg-background dark:bg-background-dark border-b border-borderColor dark:border-borderColor-dark">
+          <Text className="text-2xl font-bold text-center text-content dark:text-content-dark">
+            {event.title}
+          </Text>
         </View>
 
         {/* Tab Navigation - Only show if registered */}
         {event.isRegistered && (
-          <View className="bg-background px-4 py-2">
+          <View className="bg-background dark:bg-background-dark px-4 py-2">
             <TabSegment
               options={[
                 { value: 'Details', label: 'Details' },
@@ -288,7 +323,8 @@ export default function EventDetailPage() {
           ) : (
             <>
               {activeTab === 'Details' && renderDetailsTab()}
-              {/* You can refactor renderPeopleTab and renderMessagesTab similarly */}
+              {activeTab === 'People' && renderPeopleTab()}
+              {activeTab === 'Messages' && renderMessagesTab()}
             </>
           )}
         </View>

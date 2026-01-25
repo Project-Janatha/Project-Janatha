@@ -7,8 +7,9 @@
  * Date: September 21, 2025
  */
 
-import React from 'react'
-import { TouchableOpacity, Text, View } from 'react-native'
+import React, { useEffect, useRef } from 'react'
+import { TouchableOpacity, Text, View, Animated } from 'react-native'
+import { useThemeContext } from '../contexts'
 
 export interface TabOption {
   value: string
@@ -28,28 +29,61 @@ export function TabSegment({
   onValueChange,
   variant = 'primary',
 }: TabSegmentProps) {
-  // Tailwind classes for variants
+  const { isDark } = useThemeContext()
+  const selectedIndex = options.findIndex((opt) => opt.value === value)
+  const optionWidth = 80
+  const indicatorPadding = 8
+  const slideAnim = useRef(new Animated.Value(selectedIndex * optionWidth)).current
+
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: selectedIndex * optionWidth,
+      duration: 200,
+      useNativeDriver: true,
+    }).start()
+  }, [selectedIndex, slideAnim])
+
   const containerClass =
     variant === 'primary'
-      ? 'flex-row bg-background rounded-xl p-1 shadow'
-      : 'flex-row bg-background-dark rounded-xl p-1'
+      ? 'bg-gray-100 dark:bg-neutral-800'
+      : 'bg-gray-100 dark:bg-neutral-800'
 
   return (
-    <View className="flex-row p-1 font-inter gap-2">
-      {options.map((option) => {
+    <View
+      className={`relative flex-row ${containerClass} rounded-lg p-1`}
+      style={{
+        width: optionWidth * options.length + indicatorPadding,
+      }}
+    >
+      {/* Sliding indicator */}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          top: 4,
+          left: 4,
+          width: optionWidth - 8 + indicatorPadding,
+          height: 32,
+          borderRadius: 6,
+          backgroundColor: isDark ? '#3f3f46' : '#e5e7eb',
+          transform: [{ translateX: slideAnim }],
+        }}
+      />
+      {/* Tab options */}
+      {options.map((option, idx) => {
         const isActive = value === option.value
         return (
           <TouchableOpacity
             key={option.value}
-            className={`flex rounded-full px-3 py-2 ${
-              isActive ? 'bg-primary' : 'bg-backgroundStrong-light dark:bg-backgroundStrong-dark'
-            }`}
-            activeOpacity={0.8}
             onPress={() => onValueChange(option.value)}
+            className="flex-row items-center justify-center py-2 px-3 rounded-md z-10"
+            style={{ width: optionWidth }}
+            activeOpacity={0.8}
           >
             <Text
-              className={`text-center font-inter ${
-                isActive ? 'text-background-strong' : 'text-gray-500'
+              className={`text-center text-xs font-inter ${
+                isActive
+                  ? 'text-primary font-inter-semibold'
+                  : 'text-gray-700 dark:text-white'
               }`}
             >
               {option.label}
