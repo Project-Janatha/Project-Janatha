@@ -10,6 +10,7 @@
 import location from '../location/location.js';
 import auth from '../authentication/authenticateMethods.js';
 import constants from '../constants.js';
+import { v4 as uuidv4 } from 'uuid';
 /**
  * Represents a center on the app.
  */
@@ -72,16 +73,16 @@ class Center{
   }
   /**
    * Assigns a unique center ID to this center.
-   * 
-   * @returns {number} The unique center ID assigned.
+   *
+   * @returns {string} The unique center ID assigned (UUID).
    */
   assignCenterID()
   {
     // generate until a unique centerID is found
     const generate = async () => {
-      let proposed = Math.round(Math.random() * constants.CENTER_ID_VARIABILITY);
-      while (await auth.centerIDExists(proposed) || (await auth.centerIDExists(proposed)) == null) {
-        proposed = Math.round(Math.random() * constants.CENTER_ID_VARIABILITY);
+      let proposed = uuidv4();
+      while (await auth.centerIDExists(proposed)) {
+        proposed = uuidv4();
       }
       this.centerID = proposed;
       return proposed;
