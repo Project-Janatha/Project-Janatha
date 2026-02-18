@@ -32,3 +32,13 @@ export const API_ENDPOINTS = {
     profile: '/user/profile',
   },
 } as const
+
+export const DEFAULT_FETCH_OPTIONS: RequestInit = {
+  credentials: 'include',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+}
+
+export const buildApiUrl = (path: string) =>
+  `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
