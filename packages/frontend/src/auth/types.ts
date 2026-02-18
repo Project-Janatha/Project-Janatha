@@ -54,5 +54,5 @@ export interface GenericSuccessResponse {
 }
 
 export type AsyncResult<T> = Promise<
-  { sucess: true; data: T } | { success: false; error: AuthError }
+  { success: true; data: T } | { success: false; error: AuthError }
 >
