@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from 'react'
 import { router } from 'expo-router'
+import { useUser } from './UserContext'
 
 interface OnboardingContextType {
   currentStep: number
@@ -26,6 +27,7 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 export default function OnboardingProvider({ children }: { children: React.ReactNode }) {
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 5 // Total form steps (not including Complete screen)
+  const { updateProfile } = useUser()
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -36,7 +38,7 @@ export default function OnboardingProvider({ children }: { children: React.React
 
   const goToNextStep = () => {
     // Allow incrementing past totalSteps to show Complete screen
-    setCurrentStep(currentStep + 1)
+    setCurrentStep((prev) => prev + 1)
   }
 
   const goToPreviousStep = () => {
@@ -45,9 +47,15 @@ export default function OnboardingProvider({ children }: { children: React.React
     }
   }
 
-  const completeOnboarding = () => {
-    // Logic to mark onboarding as complete (e.g., update user profile, local storage, etc.)
-    router.replace('/')
+  const completeOnboarding = async () => {
+    // Persist onboarding completion so RootLayout doesn't bounce back here.
+    await updateProfile({
+      firstName: firstName || undefined,
+      lastName: lastName || undefined,
+      centerID: centerID || undefined,
+      profileComplete: true,
+    })
+    router.replace('/(tabs)')
   }
 
   const value = {

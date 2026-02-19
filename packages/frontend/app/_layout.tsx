@@ -104,7 +104,7 @@ function RootLayoutNav() {
           targetRoute = '/onboarding'
         }
       } else {
-        if (inAuthGroup || inOnboardingGroup || !inTabsGroup) {
+        if (inAuthGroup || inOnboardingGroup) {
           targetRoute = '/(tabs)'
         }
       }
