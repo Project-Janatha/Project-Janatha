@@ -1,7 +1,7 @@
 import { Platform } from 'react-native'
 
 const WEB_FALLBACK = 'https://app.chinmayajanata.org/api'
-const NATIVE_FALLBACK = 'http://app.chinmayajanata.org/api'
+const NATIVE_FALLBACK = 'https://app.chinmayajanata.org/api'
 
 // Expo public env var
 const envBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim()

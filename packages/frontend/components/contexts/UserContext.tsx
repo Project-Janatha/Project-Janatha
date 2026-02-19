@@ -24,11 +24,12 @@ import React, {
 import { getStoredToken, setStoredToken, removeStoredToken } from '../utils/tokenStorage'
 import { authClient } from '../../src/auth/authClient'
 import { API_BASE_URL, API_TIMEOUTS } from '../../src/config/api'
-import type { User, UpdateProfileRequest } from '../../src/auth/types'
+import type { AuthStatus, User, UpdateProfileRequest } from '../../src/auth/types'
 
 interface UserContextType {
   user: User | null
   loading: boolean
+  authStatus: AuthStatus
   login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>
   signup: (username: string, password: string) => Promise<{ success: boolean; message?: string }>
   logout: () => Promise<void>
@@ -65,6 +66,7 @@ const resolveEndpointUrl = (endpoint: string): string => {
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('booting')
   const [loading, setLoading] = useState(true)
 
   const login = useCallback(async (username: string, password: string) => {
@@ -78,6 +80,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setUser(result.data.user)
+    setAuthStatus('authenticated')
     return { success: true }
   }, [])
 
@@ -109,6 +112,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       await removeStoredToken()
       setUser(null)
+      setAuthStatus('unauthenticated')
     }
   }, [])
 
@@ -146,6 +150,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       if (response.status === 401 || response.status === 403) {
         await removeStoredToken()
         setUser(null)
+        setAuthStatus('unauthenticated')
         throw new Error('Session expired. Please login again.')
       }
 
@@ -174,6 +179,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
       await removeStoredToken()
       setUser(null)
+      setAuthStatus('unauthenticated')
       return { success: true, message: result.data.message || 'Account deleted successfully' }
     } catch (error: any) {
       return { success: false, message: error.message || 'Network error. Please try again.' }
@@ -211,6 +217,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
         if (!token) {
           setUser(null)
+          setAuthStatus('unauthenticated')
           return
         }
 
@@ -219,18 +226,17 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
         if (result.success) {
           setUser(result.data.user)
+          setAuthStatus('authenticated')
         } else {
           await removeStoredToken()
           setUser(null)
+          setAuthStatus('unauthenticated')
         }
       } catch {
         if (!isMounted) return
         await removeStoredToken()
         setUser(null)
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-        }
+        setAuthStatus('unauthenticated')
       }
     }
 
@@ -245,6 +251,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       user,
       loading,
+      authStatus,
       login,
       signup,
       logout,
@@ -258,6 +265,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     [
       user,
       loading,
+      authStatus,
       login,
       signup,
       logout,

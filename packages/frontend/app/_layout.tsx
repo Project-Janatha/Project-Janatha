@@ -1,8 +1,8 @@
 import '@expo/metro-runtime'
 // import '../config/performance'
 // import '../config/devtools'
-import { useEffect, useContext, useState } from 'react'
-import { ActivityIndicator, View, Text } from 'react-native'
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, View } from 'react-native'
 import { useFonts } from 'expo-font'
 import {
   DarkTheme,
@@ -87,34 +87,33 @@ function RootLayoutNav() {
 
     const inAuthGroup = pathname.startsWith('/auth')
     const inOnboardingGroup = pathname.startsWith('/onboarding')
+    const inTabsGroup = pathname.startsWith('/(tabs)')
+
+    let targetRoute: '/auth' | '/onboarding' | '/(tabs)' | null = null
 
     if (!isAuthenticated) {
-      // User is NOT authenticated
       if (!inAuthGroup) {
-        // Redirect to Auth if not already there
-        router.replace('/auth')
+        targetRoute = '/auth'
       }
     } else {
-      // User IS authenticated
+      const hasCompletedOnboarding =
+        user?.profileComplete === true || (!!user?.firstName && !!user?.lastName && !!user?.email)
 
-      // Check for completion flag OR fallback to checking fields
-      const isComplete =
-        user.profileComplete || user.profileComplete || (!!user.firstName && !!user.lastName)
-
-      if (!isComplete) {
-        // User needs to onboard
+      if (!hasCompletedOnboarding) {
         if (!inOnboardingGroup) {
-          router.replace('/onboarding')
+          targetRoute = '/onboarding'
         }
       } else {
-        // User is fully onboarded
-        if (inAuthGroup || inOnboardingGroup) {
-          // Redirect away from auth/onboarding pages to Home
-          router.replace('/(tabs)')
+        if (inAuthGroup || inOnboardingGroup || !inTabsGroup) {
+          targetRoute = '/(tabs)'
         }
       }
     }
-  }, [user, loading, pathname, isAuthenticated])
+
+    if (targetRoute && pathname !== targetRoute) {
+      router.replace(targetRoute)
+    }
+  }, [loading, isAuthenticated, pathname, router, user])
 
   const navTheme = isDark ? DarkTheme : DefaultTheme
 
