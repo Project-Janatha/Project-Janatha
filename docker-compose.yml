@@ -17,9 +17,10 @@ services:
       - USERS_TABLE=${USERS_TABLE:-ChinmayaJanata-Users}
       - CENTERS_TABLE=${CENTERS_TABLE:-ChinmayaJanata-Centers}
       - EVENTS_TABLE=${EVENTS_TABLE:-ChinmayaJanata-Events}
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
-      - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET is required}
       - ADMIN_NAME=${ADMIN_NAME:-Brahman}
-      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      - CORS_ORIGIN=${CORS_ORIGIN:?CORS_ORIGIN is required}
+      - CORS_ALLOW_NO_ORIGIN=${CORS_ALLOW_NO_ORIGIN:-false}
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro

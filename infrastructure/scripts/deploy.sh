@@ -50,6 +50,68 @@ if [ ! -f "Dockerfile" ]; then
     exit 1
 fi
 
+load_env_file() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        echo -e "${YELLOW}📋 Loading environment from $file...${NC}"
+        set -a
+        # shellcheck source=/dev/null
+        . "$file"
+        set +a
+    fi
+}
+
+require_env_vars() {
+    local missing=0
+    for var_name in "$@"; do
+        if [ -z "${!var_name}" ]; then
+            echo -e "${RED}❌ Error: ${var_name} is not set${NC}"
+            missing=1
+        fi
+    done
+    if [ "$missing" -ne 0 ]; then
+        echo -e "${YELLOW}Set these as environment variables before running deploy.${NC}"
+        exit 1
+    fi
+}
+
+generate_secret() {
+    if command -v openssl >/dev/null 2>&1; then
+        openssl rand -hex 32
+        return 0
+    fi
+    # Fallback: /dev/urandom with tr
+    tr -dc 'a-f0-9' </dev/urandom | head -c 64
+}
+
+set_env_var_in_file() {
+    local file="$1"
+    local key="$2"
+    local value="$3"
+
+    if grep -qE "^${key}=" "$file"; then
+        # Replace existing (including empty) value
+        sed -i.bak "s|^${key}=.*|${key}=${value}|" "$file"
+        rm -f "${file}.bak"
+    else
+        echo "${key}=${value}" >> "$file"
+    fi
+}
+
+# Ensure required secrets exist locally if .env is present
+if [ -f "packages/backend/.env" ]; then
+    if ! grep -qE "^JWT_SECRET=.+$" packages/backend/.env; then
+        echo -e "${YELLOW}⚠️  JWT_SECRET missing in packages/backend/.env. Generating...${NC}"
+        set_env_var_in_file "packages/backend/.env" "JWT_SECRET" "$(generate_secret)"
+    fi
+    if ! grep -qE "^SESSION_SECRET=.+$" packages/backend/.env; then
+        echo -e "${YELLOW}⚠️  SESSION_SECRET missing in packages/backend/.env. Generating...${NC}"
+        set_env_var_in_file "packages/backend/.env" "SESSION_SECRET" "$(generate_secret)"
+    fi
+fi
+
+load_env_file "packages/backend/.env"
+
 echo -e "\n${YELLOW}🔐 Testing SSH connection...${NC}"
 if ! ssh -i "$EC2_KEY" -o ConnectTimeout=10 -o StrictHostKeyChecking=no "$EC2_USER@$EC2_HOST" "echo 'Connection successful'" 2>/dev/null; then
     echo -e "${RED}❌ Error: Cannot connect to EC2 instance${NC}"
@@ -87,19 +149,24 @@ if [ -f "packages/backend/.env" ]; then
     echo -e "${YELLOW}📋 Copying environment file...${NC}"
     scp -i "$EC2_KEY" packages/backend/.env "$EC2_USER@$EC2_HOST:$DEPLOY_DIR/packages/backend/"
 else
-    echo -e "${YELLOW}⚠️  Creating default .env file on EC2...${NC}"
+    echo -e "${YELLOW}📋 No local .env found. Creating .env on EC2 from environment variables...${NC}"
+    require_env_vars JWT_SECRET SESSION_SECRET CORS_ORIGIN
     ssh -i "$EC2_KEY" "$EC2_USER@$EC2_HOST" << 'ENVEOF'
 cat > /home/ubuntu/chinmaya-janata/packages/backend/.env << 'EOF'
 NODE_ENV=production
 PORT=8008
-AWS_REGION=us-east-1
-USERS_TABLE=ChinmayaJanata-Users
-CENTERS_TABLE=ChinmayaJanata-Centers
-EVENTS_TABLE=ChinmayaJanata-Events
-JWT_SECRET=CHANGE-THIS-SECRET-IN-PRODUCTION
-SESSION_SECRET=CHANGE-THIS-SECRET-IN-PRODUCTION
-ADMIN_NAME=Brahman
-CORS_ORIGIN=*
+AWS_REGION=${AWS_REGION:-us-east-1}
+USERS_TABLE=${USERS_TABLE:-ChinmayaJanata-Users}
+CENTERS_TABLE=${CENTERS_TABLE:-ChinmayaJanata-Centers}
+EVENTS_TABLE=${EVENTS_TABLE:-ChinmayaJanata-Events}
+AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
+JWT_SECRET=${JWT_SECRET}
+SESSION_SECRET=${SESSION_SECRET}
+ADMIN_NAME=${ADMIN_NAME:-Brahman}
+CORS_ORIGIN=${CORS_ORIGIN}
+CORS_ALLOW_NO_ORIGIN=${CORS_ALLOW_NO_ORIGIN:-false}
 EOF
 ENVEOF
 fi
