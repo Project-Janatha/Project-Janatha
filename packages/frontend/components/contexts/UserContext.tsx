@@ -21,8 +21,8 @@ import React, {
   useMemo,
   useCallback,
 } from 'react'
-import { getStoredToken, setStoredToken, removeStoredToken } from '../utils/tokenStorage'
-import { authClient } from '../../src/auth/authClient'
+import { getStoredToken, removeStoredToken } from '../utils/tokenStorage'
+import { authService } from '../../src/auth/authService'
 import { API_BASE_URL, API_TIMEOUTS } from '../../src/config/api'
 import type { AuthStatus, User, UpdateProfileRequest } from '../../src/auth/types'
 
@@ -70,58 +70,39 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const loading = authStatus === 'booting'
 
   const login = useCallback(async (username: string, password: string) => {
-    const result = await authClient.login({ username, password })
+    const result = await authService.login(username, password)
     if (!result.success) {
-      return { success: false, message: result.error.message }
+      return { success: false, message: result.message }
     }
 
-    if (result.data.token) {
-      await setStoredToken(result.data.token)
-    }
-
-    setUser(result.data.user)
+    setUser(result.user || null)
     setAuthStatus('authenticated')
     return { success: true }
   }, [])
 
-  const signup = useCallback(
-    async (username: string, password: string) => {
-      const result = await authClient.signup({ username, password })
-      if (!result.success) {
-        return { success: false, message: result.error.message }
-      }
+  const signup = useCallback(async (username: string, password: string) => {
+    const result = await authService.signup(username, password)
+    if (!result.success || !result.user) {
+      return { success: false, message: result.message || 'Signup failed. Please try again.' }
+    }
 
-      const loginResult = await login(username, password)
-      if (!loginResult.success) {
-        return {
-          success: false,
-          message:
-            loginResult.message || 'Signup succeeded but login failed. Please try logging in.',
-        }
-      }
-
-      return { success: true }
-    },
-    [login]
-  )
+    setUser(result.user)
+    setAuthStatus('authenticated')
+    return { success: true }
+  }, [])
 
   const logout = useCallback(async () => {
-    try {
-      const token = await getStoredToken()
-      await authClient.logout(token || undefined)
-    } finally {
-      await removeStoredToken()
-      setUser(null)
-      setAuthStatus('unauthenticated')
-    }
+    await authService.logout()
+    setUser(null)
+    setAuthStatus('unauthenticated')
   }, [])
 
   const checkUserExists = useCallback(async (username: string) => {
-    const result = await authClient.checkUserExists(username)
-    if (!result.success) {
-      throw new Error(result.error.message)
+    const result = await authService.checkUserExists(username)
+    if (!result.success || typeof result.existence !== 'boolean') {
+      throw new Error(result.message || 'Failed to check user existence')
     }
-    return result.data.existence
+    return result.existence
   }, [])
 
   const authenticatedFetch = useCallback(async (endpoint: string, options: RequestInit = {}) => {
@@ -166,45 +147,26 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   const deleteAccount = useCallback(async () => {
-    try {
-      const token = await getStoredToken()
-      if (!token) {
-        return { success: false, message: 'No authentication token found' }
-      }
-
-      const result = await authClient.deleteAccount(token)
-      if (!result.success) {
-        return { success: false, message: result.error.message }
-      }
-
-      await removeStoredToken()
-      setUser(null)
-      setAuthStatus('unauthenticated')
-      return { success: true, message: result.data.message || 'Account deleted successfully' }
-    } catch (error: any) {
-      return { success: false, message: error.message || 'Network error. Please try again.' }
+    const result = await authService.deleteAccount()
+    if (!result.success) {
+      return { success: false, message: result.message || 'Failed to delete account' }
     }
+
+    setUser(null)
+    setAuthStatus('unauthenticated')
+    return { success: true, message: result.message || 'Account deleted successfully' }
   }, [])
 
   const updateProfile = useCallback(async (updates: UpdateProfileRequest) => {
-    try {
-      setUser((prev) => (prev ? { ...prev, ...updates } : null))
+    setUser((prev) => (prev ? { ...prev, ...updates } : null))
 
-      const token = await getStoredToken()
-      if (!token) {
-        return { success: false, message: 'No authentication token found' }
-      }
-
-      const result = await authClient.updateProfile(token, updates)
-      if (!result.success) {
-        return { success: false, message: result.error.message }
-      }
-
-      setUser(result.data.user)
-      return { success: true }
-    } catch (error: any) {
-      return { success: false, message: error.message || 'Failed to update profile' }
+    const result = await authService.updateProfile(updates)
+    if (!result.success || !result.user) {
+      return { success: false, message: result.message || 'Failed to update profile' }
     }
+
+    setUser(result.user)
+    return { success: true }
   }, [])
 
   useEffect(() => {
@@ -221,17 +183,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           return
         }
 
-        const result = await authClient.verify(token)
+        const session = await authService.bootstrapSession()
         if (!isMounted) return
 
-        if (result.success) {
-          setUser(result.data.user)
-          setAuthStatus('authenticated')
-        } else {
-          await removeStoredToken()
-          setUser(null)
-          setAuthStatus('unauthenticated')
-        }
+        setUser(session.user)
+        setAuthStatus(session.authStatus)
       } catch {
         if (!isMounted) return
         await removeStoredToken()
