@@ -76,14 +76,14 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const { user, loading } = useUser()
+  const { user, loading, authStatus } = useUser()
   const { isDark } = useThemeContext()
   const pathname = usePathname()
   const router = useRouter()
-  const isAuthenticated = !!user
+  const isAuthenticated = authStatus === 'authenticated'
 
   useEffect(() => {
-    if (loading) return
+    if (authStatus === 'booting') return
 
     const inAuthGroup = pathname.startsWith('/auth')
     const inOnboardingGroup = pathname.startsWith('/onboarding')
@@ -113,11 +113,11 @@ function RootLayoutNav() {
     if (targetRoute && pathname !== targetRoute) {
       router.replace(targetRoute)
     }
-  }, [loading, isAuthenticated, pathname, router, user])
+  }, [authStatus, isAuthenticated, pathname, router, user])
 
   const navTheme = isDark ? DarkTheme : DefaultTheme
 
-  if (loading) {
+  if (authStatus === 'booting') {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#ea580c" />

@@ -67,7 +67,7 @@ const resolveEndpointUrl = (endpoint: string): string => {
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('booting')
-  const [loading, setLoading] = useState(true)
+  const loading = authStatus === 'booting'
 
   const login = useCallback(async (username: string, password: string) => {
     const result = await authClient.login({ username, password })
