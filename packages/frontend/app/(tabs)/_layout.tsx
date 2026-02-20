@@ -1,4 +1,4 @@
-import { Link, Tabs, useRouter, usePathname } from 'expo-router'
+import { Link, Tabs, useRouter, usePathname, Slot } from 'expo-router'
 import { Platform, View, Text, Pressable } from 'react-native'
 import { useContext, useState } from 'react'
 import { useUser, useThemeContext } from '../../components/contexts'
@@ -17,6 +17,20 @@ export default function TabLayout() {
   const { user, logout } = useUser()
   const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
+  const isWeb = Platform.OS === 'web'
+  const noTabs =
+    isWeb && typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('notabs') === '1'
+      : false
+
+  if (noTabs) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 16, marginBottom: 6 }}>Tabs disabled</Text>
+        <Text style={{ fontSize: 12, opacity: 0.7 }}>{pathname}</Text>
+      </View>
+    )
+  }
 
   const handleLogout = async () => {
     await logout()
@@ -25,7 +39,7 @@ export default function TabLayout() {
 
   // Custom header with tabs for web
   const HeaderTitle = () => {
-    if (Platform.OS !== 'web') {
+    if (!isWeb) {
       return null // Use default title on mobile
     }
 
@@ -101,7 +115,7 @@ export default function TabLayout() {
         </Link>
       )
     }
-    if (Platform.OS === 'web') {
+    if (isWeb) {
       return (
         <>
           <Pressable
@@ -137,11 +151,11 @@ export default function TabLayout() {
           borderBottomColor: isDark ? '#262626' : '#E5E7EB',
         },
         headerTitleStyle: {
-          fontFamily: 'Inter-Bold',
+          fontFamily: Platform.OS === 'web' ? 'Inter' : 'Inter-Bold',
         },
         headerTintColor: isDark ? '#fff' : '#000',
         tabBarLabelStyle: {
-          fontFamily: 'Inter-Regular',
+          fontFamily: Platform.OS === 'web' ? 'Inter' : 'Inter-Regular',
         },
         headerTitle: Platform.OS === 'web' ? () => <HeaderTitle /> : undefined,
       }}

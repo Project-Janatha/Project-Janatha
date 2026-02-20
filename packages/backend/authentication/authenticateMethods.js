@@ -74,9 +74,10 @@ function isUserAdmin(req) {
 const register = async (req, res) => {
   try {
     const { username, password } = req.body
+    const normalizedUsername = typeof username === 'string' ? username.trim().toLowerCase() : ''
 
     // Validate input
-    if (!username || !password) {
+    if (!normalizedUsername || !password) {
       return res.status(400).json({ message: 'Username and password are required' })
     }
 
@@ -85,15 +86,15 @@ const register = async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await db.getUserByUsername(username)
-    if (existingUser && existingUser.exists) {
+    const existingUser = await db.getUserByUsername(normalizedUsername)
+    if (existingUser) {
       return res.status(409).json({ message: 'Username already exists' })
     }
 
     // Hash password with better error handling
     let hashedPassword
     try {
-      console.log('Hashing password for user:', username)
+      console.log('Hashing password for user:', normalizedUsername)
       const saltRounds = 10
       hashedPassword = await hash(password, saltRounds)
       console.log('Password hashed successfully')
@@ -107,17 +108,26 @@ const register = async (req, res) => {
 
     // Create user
     const newUser = {
-      username,
+      username: normalizedUsername,
       password: hashedPassword,
       createdAt: new Date().toISOString(),
       // Add other default fields
     }
 
-    await db.createUser(newUser)
+    const created = await db.createUser(newUser)
+    if (!created?.success) {
+      const message =
+        created?.error === 'User already exists'
+          ? 'Username already exists'
+          : 'Failed to create user'
+      return res.status(created?.error === 'User already exists' ? 409 : 500).json({
+        message,
+      })
+    }
 
     return res.status(201).json({
       message: 'User registered successfully',
-      username,
+      username: normalizedUsername,
     })
   } catch (error) {
     console.error('Registration error:', error)
@@ -135,17 +145,18 @@ const register = async (req, res) => {
  */
 async function authenticate(req, res) {
   const { username, password } = req.body
+  const normalizedUsername = typeof username === 'string' ? username.trim().toLowerCase() : ''
 
-  if (!username || !password) {
+  if (!normalizedUsername || !password) {
     return res.status(400).json({ message: 'Username and password are required.' })
   }
 
   try {
-    console.log('Authenticating user:', username)
-    const user = await db.getUserByUsername(username)
+    console.log('Authenticating user:', normalizedUsername)
+    const user = await db.getUserByUsername(normalizedUsername)
 
     if (!user) {
-      console.log('User not found:', username)
+      console.log('User not found:', normalizedUsername)
       return res.status(401).json({ message: 'Invalid credentials' }) // Don't reveal user doesn't exist
     }
 

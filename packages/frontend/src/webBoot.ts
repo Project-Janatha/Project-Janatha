@@ -3,6 +3,21 @@
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   try {
     const d = document
+    // Ensure Inter is requested even if CSS fails to load
+    if (!d.querySelector('link[data-jn-font="inter"]')) {
+      const link = d.createElement('link')
+      link.rel = 'stylesheet'
+      link.href =
+        'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
+      link.setAttribute('data-jn-font', 'inter')
+      d.head.appendChild(link)
+    }
+    d.documentElement.style.fontFamily =
+      'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    if (d.body) {
+      d.body.style.fontFamily =
+        'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    }
     if (!d.getElementById('jn-boot-overlay')) {
       const overlay = d.createElement('div')
       overlay.id = 'jn-boot-overlay'

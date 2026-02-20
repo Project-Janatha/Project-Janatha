@@ -11,7 +11,6 @@ import {
   Easing,
   TouchableOpacity,
 } from 'react-native'
-import { useRouter } from 'expo-router'
 import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
 import { PrimaryButton, IconButton, AuthInput, Card } from '../components/ui'
 import { useUser, useThemeContext } from '../components/contexts'
@@ -27,7 +26,6 @@ const FieldError = memo(({ message }: { message?: string }) => {
 type AuthStep = 'initial' | 'login' | 'signup'
 
 export default function AuthScreen() {
-  const router = useRouter()
   const { theme, toggleTheme, themePreference, setThemePreference, isDark } = useThemeContext()
   const { checkUserExists, login, signup, setUser, loading } = useUser()
 
@@ -36,6 +34,7 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [infoMessage, setInfoMessage] = useState('')
 
   const [backHover, setBackHover] = useState(false)
   const [showDevPanel, setShowDevPanel] = useState(false)
@@ -74,6 +73,7 @@ export default function AuthScreen() {
 
   const handleContinue = useCallback(async () => {
     setErrors({})
+    setInfoMessage('')
     if (!username) {
       setErrors({ username: 'Please enter a username.' })
       return
@@ -89,13 +89,16 @@ export default function AuthScreen() {
       } else {
         setAuthStep('signup')
       }
-    } catch (e: any) {
-      setErrors({ form: e.message || 'Failed to connect to server.' })
+    } catch {
+      // Avoid blocking the flow on existence check failures
+      setInfoMessage('Unable to verify account. If you have an account, log in; otherwise sign up.')
+      setAuthStep('login')
     }
   }, [username, checkUserExists])
 
   const handleLogin = useCallback(async () => {
     setErrors({})
+    setInfoMessage('')
     if (!username) {
       setErrors({ username: 'Please enter a username.' })
       return
@@ -108,17 +111,18 @@ export default function AuthScreen() {
     try {
       const result = await login(username, password)
       if (result.success) {
-        router.replace('/(tabs)')
+        // Let RootLayoutNav handle redirects after auth state updates
       } else {
         setErrors({ form: result.message || 'Username or password is incorrect.' })
       }
     } catch (e: any) {
       setErrors({ form: 'Failed to connect to server. Please try again.' })
     }
-  }, [username, password, login, router])
+  }, [username, password, login])
 
   const handleSignup = useCallback(async () => {
     setErrors({})
+    setInfoMessage('')
     if (!username) {
       setErrors({ username: 'Please enter a username.' })
       return
@@ -138,14 +142,15 @@ export default function AuthScreen() {
     try {
       const result = await signup(username, password)
       if (result.success) {
-        router.replace('/onboarding')
+        setInfoMessage(result.message || 'Signup successful. Please log in.')
+        setAuthStep('login')
       } else {
         setErrors({ form: result.message || 'Failed to sign up. Please try again.' })
       }
     } catch (e: any) {
       setErrors({ form: 'Failed to connect to server. Please try again.' })
     }
-  }, [username, password, confirmPassword, signup, router])
+  }, [username, password, confirmPassword, signup])
 
   const handleSubmit = useCallback(
     (e?: any) => {
@@ -315,6 +320,13 @@ export default function AuthScreen() {
                 ))}
               </View>
             )}
+            {infoMessage ? (
+              <View className="w-full font-inter bg-blue-50 dark:bg-blue-900/20 rounded-xl px-4 py-3 mb-4">
+                <Text className="text-blue-600 dark:text-blue-300 text-sm font-inter">
+                  {infoMessage}
+                </Text>
+              </View>
+            ) : null}
 
             <View className="gap-4">
               <View>

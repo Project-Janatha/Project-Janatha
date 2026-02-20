@@ -37,6 +37,8 @@ const toError = (message: string, status?: number, code?: string): AuthError => 
   code,
 })
 
+const normalizeUsername = (username: string) => username.trim().toLowerCase()
+
 const buildUrl = (path: string) => `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
 
 const safeJson = async <T>(response: Response): Promise<T | null> => {
@@ -50,11 +52,15 @@ const safeJson = async <T>(response: Response): Promise<T | null> => {
 export const authClient = {
   async login(payload: LoginRequest): AsyncResult<AuthSuccessResponse> {
     try {
+      const normalizedPayload = {
+        ...payload,
+        username: normalizeUsername(payload.username),
+      }
       const response = await withTimeout(
         buildUrl('/auth/authenticate'),
         {
           method: 'POST',
-          body: JSON.stringify(payload),
+          body: JSON.stringify(normalizedPayload),
         },
         API_TIMEOUTS.auth
       )
@@ -79,11 +85,15 @@ export const authClient = {
 
   async signup(payload: SignupRequest): AsyncResult<GenericSuccessResponse> {
     try {
+      const normalizedPayload = {
+        ...payload,
+        username: normalizeUsername(payload.username),
+      }
       const response = await withTimeout(
         buildUrl('/auth/register'),
         {
           method: 'POST',
-          body: JSON.stringify(payload),
+          body: JSON.stringify(normalizedPayload),
         },
         API_TIMEOUTS.auth
       )
@@ -166,11 +176,12 @@ export const authClient = {
 
   async checkUserExists(username: string): AsyncResult<CheckUserExistsResponse> {
     try {
+      const normalizedUsername = normalizeUsername(username)
       const response = await withTimeout(
         buildUrl('/userExistence'),
         {
           method: 'POST',
-          body: JSON.stringify({ username }),
+          body: JSON.stringify({ username: normalizedUsername, email: normalizedUsername }),
         },
         API_TIMEOUTS.standard
       )

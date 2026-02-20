@@ -1,4 +1,4 @@
-import { TextInput } from 'react-native'
+import { Platform, TextInput } from 'react-native'
 import { useState } from 'react'
 
 export default function AuthInput({ secureTextEntry, onChangeText, ...props }) {
@@ -19,7 +19,12 @@ export default function AuthInput({ secureTextEntry, onChangeText, ...props }) {
       onChangeText={handleChangeText}
       style={{
         fontSize: 16,
-        fontFamily: secureTextEntry && hasText ? 'Verdana' : 'Inter-Regular',
+        fontFamily:
+          secureTextEntry && hasText
+            ? 'Verdana'
+            : Platform.OS === 'web'
+              ? 'Inter'
+              : 'Inter-Regular',
         letterSpacing: secureTextEntry ? 0.125 : 0,
       }}
       {...props}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, TextInput, Pressable, Text } from 'react-native'
+import { View, TextInput, Pressable, Text, Platform } from 'react-native'
 import { IconButton } from '../../components/ui'
 import {
   Search,
@@ -160,7 +160,10 @@ export default function ExploreScreen() {
             >
               {getFilterIcon(filter)}
               <Text
-                style={{ fontFamily: activeFilter === filter ? 'Inter-SemiBold' : 'Inter-Regular' }}
+                style={{
+                  fontFamily: Platform.OS === 'web' ? 'Inter' : 'Inter-Regular',
+                  fontWeight: activeFilter === filter ? '600' : '400',
+                }}
                 className={`text-xs ${
                   activeFilter === filter
                     ? 'text-background'

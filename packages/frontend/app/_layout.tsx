@@ -103,6 +103,8 @@ function RootLayoutNav() {
   const [debugEnabled, setDebugEnabled] = useState(false)
   const [noStack, setNoStack] = useState(false)
   const [isSafariWeb, setIsSafariWeb] = useState(false)
+  const [navReady, setNavReady] = useState(false)
+  const [redirecting, setRedirecting] = useState(false)
 
   useEffect(() => {
     if (Platform.OS !== 'web') return
@@ -119,7 +121,14 @@ function RootLayoutNav() {
   }, [])
 
   useEffect(() => {
+    if (pathname) {
+      setNavReady(true)
+    }
+  }, [pathname])
+
+  useEffect(() => {
     if (authStatus === 'booting') return
+    if (!navReady) return
     if (safeMode || noStack) return
 
     const inAuthGroup = pathname.startsWith('/auth')
@@ -150,9 +159,12 @@ function RootLayoutNav() {
     }
 
     if (targetRoute && pathname !== targetRoute) {
+      if (redirecting) return
+      setRedirecting(true)
       router.replace(targetRoute)
+      setTimeout(() => setRedirecting(false), 500)
     }
-  }, [authStatus, isAuthenticated, pathname, router, user])
+  }, [authStatus, isAuthenticated, navReady, pathname, redirecting, router, user])
 
   const navTheme = isDark ? DarkTheme : DefaultTheme
 
