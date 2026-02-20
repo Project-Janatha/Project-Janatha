@@ -1,5 +1,5 @@
 import { Link, Tabs, useRouter, usePathname } from 'expo-router'
-import { Platform, View, Text, Pressable } from 'react-native'
+import { Platform, View, Text, Pressable, useWindowDimensions } from 'react-native'
 import { useState } from 'react'
 import { useUser, useThemeContext } from '../../components/contexts'
 import { GhostButton, DestructiveButton } from '../../components/ui'
@@ -18,6 +18,8 @@ export default function TabLayout() {
   const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
   const isWeb = Platform.OS === 'web'
+  const { width } = useWindowDimensions()
+  const isMobileWeb = isWeb && width < 768
 
   const handleLogout = async () => {
     await logout()

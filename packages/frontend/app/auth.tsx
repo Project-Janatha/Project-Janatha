@@ -12,12 +12,11 @@ import {
   TouchableOpacity,
 } from 'react-native'
 import { useRouter } from 'expo-router'
-import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
+import { Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
 import { PrimaryButton, IconButton, AuthInput, Card } from '../components/ui'
 import { useUser, useThemeContext } from '../components/contexts'
 import { validateEmail, validatePassword } from '../utils'
 import { ThemeSelector, PasswordStrength } from '../components'
-import DevPanel from '../components/DevPanel'
 
 const FieldError = memo(({ message }: { message?: string }) => {
   if (!message) return null
@@ -39,7 +38,6 @@ export default function AuthScreen() {
   const [infoMessage, setInfoMessage] = useState('')
 
   const [backHover, setBackHover] = useState(false)
-  const [showDevPanel, setShowDevPanel] = useState(false)
 
   const isWeb = Platform.OS === 'web'
 
@@ -170,10 +168,6 @@ export default function AuthScreen() {
     },
     [authStep, handleLogin, handleSignup, handleContinue]
   )
-
-  const handleDevMode = useCallback(() => {
-    setShowDevPanel(true)
-  }, [])
 
   const handleBack = useCallback(() => {
     setAuthStep('initial')
@@ -406,24 +400,6 @@ export default function AuthScreen() {
                 </Pressable>
               )}
             </View>
-
-            {/* Dev Mode Button */}
-            <View className="mt-8 pt-6 border-t border-borderColor dark:border-borderColor-dark">
-              <Pressable
-                onPress={() => setShowDevPanel(true)}
-                className="flex-row items-center justify-center bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-xl active:opacity-70"
-              >
-                <Code size={18} className={isDark ? 'text-white' : 'text-black'} />
-                <Text className="ml-2 text-content dark:text-content-dark font-inter font-semibold">
-                  Developer Mode
-                </Text>
-              </Pressable>
-            </View>
-
-            {/* Show DevPanel when Developer Mode is clicked */}
-            {showDevPanel && (
-              <DevPanel visible={showDevPanel} onClose={() => setShowDevPanel(false)} />
-            )}
 
             {/* Footer Text */}
             <Text className="text-content dark:text-content-dark opacity-50 text-sm font-inter mt-8 text-center px-4">
