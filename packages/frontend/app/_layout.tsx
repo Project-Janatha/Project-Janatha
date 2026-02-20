@@ -1,10 +1,8 @@
 import '@expo/metro-runtime'
 // import '../config/performance'
 // import '../config/devtools'
-import '../src/webBoot'
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, View } from 'react-native'
-import { Platform } from 'react-native'
+import { ActivityIndicator, View, Platform } from 'react-native'
 import { useFonts } from 'expo-font'
 import {
   DarkTheme,
@@ -13,7 +11,6 @@ import {
 } from '@react-navigation/native'
 import { SplashScreen, Slot, usePathname, useRouter } from 'expo-router'
 import { useWebFonts } from '../hooks/useWebFonts'
-import { Text } from 'react-native'
 import {
   UserProvider,
   useUser,
@@ -45,12 +42,6 @@ export default function RootLayout() {
 
   const [fontTimeout, setFontTimeout] = useState(false)
   const [splashHidden, setSplashHidden] = useState(false)
-
-  useEffect(() => {
-    if (isWeb && typeof window !== 'undefined') {
-      window.__jn_markReady?.()
-    }
-  }, [isWeb])
 
   // Add a timeout in case fonts don't load
   useEffect(() => {
@@ -95,30 +86,13 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const { user, loading, authStatus, onboardingComplete, safeMode } = useUser()
+  const { user, authStatus, onboardingComplete } = useUser()
   const { isDark } = useThemeContext()
   const pathname = usePathname()
   const router = useRouter()
   const isAuthenticated = authStatus === 'authenticated'
-  const [debugEnabled, setDebugEnabled] = useState(false)
-  const [noStack, setNoStack] = useState(false)
-  const [isSafariWeb, setIsSafariWeb] = useState(false)
   const [navReady, setNavReady] = useState(false)
   const [redirecting, setRedirecting] = useState(false)
-
-  useEffect(() => {
-    if (Platform.OS !== 'web') return
-    try {
-      const ua = navigator.userAgent || ''
-      setIsSafariWeb(/safari/i.test(ua) && !/chrome|crios|fxios|edg/i.test(ua))
-      const params = new URLSearchParams(window.location.search)
-      setDebugEnabled(params.get('debug') === '1')
-      setNoStack(params.get('nostack') === '1')
-    } catch {
-      setDebugEnabled(false)
-      setNoStack(false)
-    }
-  }, [])
 
   useEffect(() => {
     if (pathname) {
@@ -129,12 +103,8 @@ function RootLayoutNav() {
   useEffect(() => {
     if (authStatus === 'booting') return
     if (!navReady) return
-    if (safeMode || noStack) return
-
     const inAuthGroup = pathname.startsWith('/auth')
     const inOnboardingGroup = pathname.startsWith('/onboarding')
-    const inTabsGroup = pathname.startsWith('/(tabs)')
-
     let targetRoute: '/auth' | '/onboarding' | '/(tabs)' | null = null
 
     if (!isAuthenticated) {
@@ -176,40 +146,8 @@ function RootLayoutNav() {
     )
   }
 
-  if (safeMode || noStack) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ fontSize: 16, marginBottom: 8 }}>
-          {safeMode ? 'Safe mode enabled' : 'Navigation disabled'}
-        </Text>
-        <Text style={{ fontSize: 12, opacity: 0.7 }}>
-          path: {pathname} | auth: {authStatus} | onboard: {String(onboardingComplete)}
-        </Text>
-      </View>
-    )
-  }
-
   return (
     <NavigationThemeProvider value={navTheme}>
-      {debugEnabled && (
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 9999,
-            backgroundColor: 'rgba(0,0,0,0.8)',
-            paddingVertical: 6,
-            paddingHorizontal: 10,
-          }}
-        >
-          <Text style={{ color: '#fff', fontSize: 12 }}>
-            debug | path: {pathname} | auth: {authStatus} | onboard: {String(onboardingComplete)} |
-            user: {user ? 'yes' : 'no'}
-          </Text>
-        </View>
-      )}
       <Slot />
     </NavigationThemeProvider>
   )

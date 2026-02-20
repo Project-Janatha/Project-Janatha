@@ -11,6 +11,7 @@ import {
   Easing,
   TouchableOpacity,
 } from 'react-native'
+import { useRouter } from 'expo-router'
 import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
 import { PrimaryButton, IconButton, AuthInput, Card } from '../components/ui'
 import { useUser, useThemeContext } from '../components/contexts'
@@ -26,8 +27,9 @@ const FieldError = memo(({ message }: { message?: string }) => {
 type AuthStep = 'initial' | 'login' | 'signup'
 
 export default function AuthScreen() {
+  const router = useRouter()
   const { theme, toggleTheme, themePreference, setThemePreference, isDark } = useThemeContext()
-  const { checkUserExists, login, signup, setUser, loading } = useUser()
+  const { checkUserExists, login, signup, loading } = useUser()
 
   const [authStep, setAuthStep] = useState<AuthStep>('initial')
   const [username, setUsername] = useState('')
@@ -142,8 +144,7 @@ export default function AuthScreen() {
     try {
       const result = await signup(username, password)
       if (result.success) {
-        setInfoMessage(result.message || 'Signup successful. Please log in.')
-        setAuthStep('login')
+        router.replace('/onboarding')
       } else {
         setErrors({ form: result.message || 'Failed to sign up. Please try again.' })
       }

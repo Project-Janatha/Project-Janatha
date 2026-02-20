@@ -24,6 +24,12 @@ import constants from '../constants.js'
 
 const SALT_ROUNDS = 10
 
+const sanitizeUser = (userData) => {
+  if (!userData) return null
+  const { password, ...safeUser } = userData
+  return safeUser
+}
+
 /**
  * Checks if a user is authenticated. Acts as middleware.
  * @param {Request} req The request of the query
@@ -40,7 +46,7 @@ async function isAuthenticated(req, res, next) {
       try {
         const userData = await db.getUserByUsername(decoded.username)
         if (userData) {
-          req.user = userData
+          req.user = sanitizeUser(userData)
           next()
         } else {
           res.status(403).json({ message: 'User not found' })
@@ -171,9 +177,10 @@ async function authenticate(req, res) {
 
     console.log('Authentication successful for user:', username)
     const token = generateToken(user)
+    const safeUser = sanitizeUser(user)
     return res.status(200).json({
       message: 'Authentication successful!',
-      user: user,
+      user: safeUser,
       token: token,
     })
   } catch (err) {
@@ -191,7 +198,8 @@ async function deauthenticate(req, res) {
  */
 async function checkUserExistence(username) {
   try {
-    const user = await db.getUserByUsername(username)
+    const normalizedUsername = typeof username === 'string' ? username.trim().toLowerCase() : ''
+    const user = await db.getUserByUsername(normalizedUsername)
     return !!user
   } catch (err) {
     console.error('Check user existence error:', err)
@@ -375,15 +383,16 @@ async function getAllCenters() {
  * Called after user completes all onboarding steps
  */
 async function completeOnboarding(req, res) {
-  const { userId, firstName, lastName, dateOfBirth, centerID, profileComplete } = req.body
+  const { firstName, lastName, dateOfBirth, centerID, profileComplete, phoneNumber, interests } =
+    req.body
 
-  if (!userId) {
-    return res.status(400).json({ message: 'User ID is required' })
+  if (!req.user?.id) {
+    return res.status(401).json({ message: 'Unauthorized' })
   }
 
   try {
     // Get existing user
-    const user = await db.getUserById(userId)
+    const user = await db.getUserById(req.user.id)
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' })
@@ -391,19 +400,21 @@ async function completeOnboarding(req, res) {
 
     // Update user with onboarding data
     const updates = {
-      firstName: firstName || '',
-      lastName: lastName || '',
-      dateOfBirth: dateOfBirth || null,
-      centerID: centerID || null,
-      profileComplete: profileComplete || false,
+      ...(firstName !== undefined ? { firstName } : {}),
+      ...(lastName !== undefined ? { lastName } : {}),
+      ...(dateOfBirth !== undefined ? { dateOfBirth } : {}),
+      ...(centerID !== undefined ? { centerID } : {}),
+      ...(profileComplete !== undefined ? { profileComplete } : {}),
+      ...(phoneNumber !== undefined ? { phoneNumber } : {}),
+      ...(interests !== undefined ? { interests } : {}),
     }
 
-    const result = await db.updateUser(userId, updates)
+    const result = await db.updateUser(req.user.id, updates)
 
     if (result.success) {
       return res.status(200).json({
         message: 'Profile completed successfully',
-        user: result.user,
+        user: sanitizeUser(result.user),
       })
     } else {
       return res.status(500).json({
@@ -421,19 +432,38 @@ async function completeOnboarding(req, res) {
  * Update user profile (partial update during onboarding)
  */
 async function updateProfile(req, res) {
-  const { userId, ...updates } = req.body
+  const {
+    firstName,
+    lastName,
+    email,
+    centerID,
+    profileComplete,
+    profileImage,
+    phoneNumber,
+    interests,
+  } = req.body
 
-  if (!userId) {
-    return res.status(400).json({ message: 'User ID is required' })
+  if (!req.user?.id) {
+    return res.status(401).json({ message: 'Unauthorized' })
   }
 
   try {
-    const result = await db.updateUser(userId, updates)
+    const updates = {
+      ...(firstName !== undefined ? { firstName } : {}),
+      ...(lastName !== undefined ? { lastName } : {}),
+      ...(email !== undefined ? { email } : {}),
+      ...(centerID !== undefined ? { centerID } : {}),
+      ...(profileComplete !== undefined ? { profileComplete } : {}),
+      ...(profileImage !== undefined ? { profileImage } : {}),
+      ...(phoneNumber !== undefined ? { phoneNumber } : {}),
+      ...(interests !== undefined ? { interests } : {}),
+    }
+    const result = await db.updateUser(req.user.id, updates)
 
     if (result.success) {
       return res.status(200).json({
         message: 'Profile updated',
-        user: result.user,
+        user: sanitizeUser(result.user),
       })
     } else {
       return res.status(500).json({

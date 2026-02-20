@@ -65,7 +65,7 @@ export const authService = {
       return { success: false, message: signupResult.error.message }
     }
 
-    return { success: true, message: signupResult.data?.message || 'Signup successful. Please log in.' }
+    return authService.login(username, password)
   },
 
   async logout(): Promise<void> {

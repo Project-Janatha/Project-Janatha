@@ -36,7 +36,6 @@ interface UserContextType {
   loading: boolean
   authStatus: AuthStatus
   onboardingComplete: boolean
-  safeMode: boolean
   login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>
   signup: (username: string, password: string) => Promise<{ success: boolean; message?: string }>
   logout: () => Promise<void>
@@ -46,6 +45,7 @@ interface UserContextType {
   authenticatedFetch: (endpoint: string, options?: RequestInit) => Promise<Response>
   deleteAccount: () => Promise<{ success: boolean; message?: string }>
   updateProfile: (updates: UpdateProfileRequest) => Promise<{ success: boolean; message?: string }>
+  setDevSession: (user: User, onboardingComplete: boolean) => Promise<void>
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -75,7 +75,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('booting')
   const [onboardingComplete, setOnboardingCompleteState] = useState(false)
-  const [safeMode, setSafeMode] = useState(false)
   const loading = authStatus === 'booting'
 
   const login = useCallback(async (username: string, password: string) => {
@@ -186,28 +185,22 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     return { success: true }
   }, [])
 
+  const setDevSession = useCallback(async (devUser: User, completed: boolean) => {
+    setUser(devUser)
+    setAuthStatus('authenticated')
+    setOnboardingCompleteState(!!completed)
+    if (completed) {
+      await setOnboardingComplete(true)
+    } else {
+      await clearOnboardingComplete()
+    }
+  }, [])
+
   useEffect(() => {
     let isMounted = true
 
     const loadUser = async () => {
       try {
-        if (typeof window !== 'undefined') {
-          const params = new URLSearchParams(window.location.search)
-          if (params.get('safe') === '1') {
-            setSafeMode(true)
-            setUser(null)
-            setAuthStatus('unauthenticated')
-            setOnboardingCompleteState(false)
-            return
-          }
-          if (params.get('noauth') === '1') {
-            setUser(null)
-            setAuthStatus('unauthenticated')
-            setOnboardingCompleteState(false)
-            return
-          }
-        }
-
         const token = await getStoredToken()
         if (!isMounted) return
 
@@ -254,7 +247,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       loading,
       authStatus,
       onboardingComplete,
-      safeMode,
       login,
       signup,
       logout,
@@ -264,13 +256,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       authenticatedFetch,
       deleteAccount,
       updateProfile,
+      setDevSession,
     }),
     [
       user,
       loading,
       authStatus,
       onboardingComplete,
-      safeMode,
       login,
       signup,
       logout,
@@ -278,6 +270,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       authenticatedFetch,
       deleteAccount,
       updateProfile,
+      setDevSession,
     ]
   )
 

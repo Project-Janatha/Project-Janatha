@@ -33,7 +33,7 @@ export const API_ENDPOINTS = {
   },
   users: {
     exists: '/userExistence',
-    profile: '/user/profile',
+    profile: '/auth/update-profile',
   },
 } as const
 

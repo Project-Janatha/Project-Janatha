@@ -1,36 +1,42 @@
-import React, { useContext } from 'react'
+import React from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
-import { UserContext, useUser } from './contexts'
+import { useUser } from './contexts'
 
 export default function DevPanel({ visible, onClose }) {
   const router = useRouter()
-  const { setUser } = useUser()
+  const { setDevSession } = useUser()
 
   if (!visible) return null
 
   const handleGoToHome = () => {
-    setUser({
-      username: 'devuser@example.com',
-      firstName: 'Dev',
-      lastName: 'User',
-      email: 'devuser@example.com',
-      centerID: '-1',
-      profileComplete: true,
-    })
-    router.push('/')
+    setDevSession(
+      {
+        username: 'devuser@example.com',
+        firstName: 'Dev',
+        lastName: 'User',
+        email: 'devuser@example.com',
+        centerID: '-1',
+        profileComplete: true,
+      },
+      true
+    )
+    router.replace('/(tabs)')
   }
 
   const handleGoToOnboarding = () => {
-    setUser({
-      username: 'devuser@example.com',
-      firstName: 'Dev',
-      lastName: 'User',
-      email: 'devuser@example.com',
-      centerID: '-1',
-      profileComplete: false,
-    })
-    router.push('/onboarding')
+    setDevSession(
+      {
+        username: 'devuser@example.com',
+        firstName: 'Dev',
+        lastName: 'User',
+        email: 'devuser@example.com',
+        centerID: '-1',
+        profileComplete: false,
+      },
+      false
+    )
+    router.replace('/onboarding')
   }
 
   return (

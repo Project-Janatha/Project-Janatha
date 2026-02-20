@@ -1,6 +1,6 @@
-import { Link, Tabs, useRouter, usePathname, Slot } from 'expo-router'
+import { Link, Tabs, useRouter, usePathname } from 'expo-router'
 import { Platform, View, Text, Pressable } from 'react-native'
-import { useContext, useState } from 'react'
+import { useState } from 'react'
 import { useUser, useThemeContext } from '../../components/contexts'
 import { GhostButton, DestructiveButton } from '../../components/ui'
 import { Compass, User, Settings, LogOut } from 'lucide-react-native'
@@ -18,19 +18,6 @@ export default function TabLayout() {
   const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
   const isWeb = Platform.OS === 'web'
-  const noTabs =
-    isWeb && typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search).get('notabs') === '1'
-      : false
-
-  if (noTabs) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: 16, marginBottom: 6 }}>Tabs disabled</Text>
-        <Text style={{ fontSize: 12, opacity: 0.7 }}>{pathname}</Text>
-      </View>
-    )
-  }
 
   const handleLogout = async () => {
     await logout()
@@ -137,6 +124,14 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
+        ...(isMobileWeb
+          ? {
+              // Avoid mounting heavy tabs (e.g., Map) on mobile web
+              lazy: true,
+              lazyPreloadDistance: 0,
+              unmountOnBlur: true,
+            }
+          : {}),
         tabBarActiveTintColor: '#9A3412',
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle:

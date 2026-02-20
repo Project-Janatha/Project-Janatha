@@ -207,9 +207,9 @@ export const authClient = {
   async updateProfile(token: string, updates: UpdateProfileRequest): AsyncResult<{ user: User }> {
     try {
       const response = await withTimeout(
-        buildUrl('/users/profile'),
+        buildUrl('/auth/update-profile'),
         {
-          method: 'PATCH',
+          method: 'PUT',
           headers: { Authorization: `Bearer ${token}` },
           body: JSON.stringify(updates),
         },

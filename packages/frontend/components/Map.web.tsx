@@ -10,6 +10,7 @@
  * Native platforms (iOS/Android) use Map.tsx with react-native-maps.
  */
 import React, { useState, useCallback, memo, useRef, useMemo, Suspense } from 'react'
+import { useWindowDimensions } from 'react-native'
 import type { MapRef } from 'react-map-gl/maplibre'
 import { useThemeContext } from './contexts'
 
@@ -162,6 +163,7 @@ const CustomControls = memo<CustomControlsProps>(({ mapRef, isDark }) => {
 CustomControls.displayName = 'CustomControls'
 
 const LazyMapView = React.lazy(() => import('./MaplibreView'))
+const LazyLeafletView = React.lazy(() => import('./LeafletView'))
 
 /**
  * Map Component for Web using react-map-gl with OpenStreetMap.
@@ -176,18 +178,11 @@ const MapComponent = memo<MapProps>(
     showUserLocation = false,
   }) => {
     const { isDark } = useThemeContext()
+    const { width } = useWindowDimensions()
+    const isMobileWeb = width < 768
     const mapRef = useRef<MapRef>(null)
     const [mapEnabled, setMapEnabled] = useState(false)
     const [permissionError, setPermissionError] = useState<string | null>(null)
-    const [mapDisabledByFlag] = useState(() => {
-      if (typeof window === 'undefined') return false
-      try {
-        const params = new URLSearchParams(window.location.search)
-        return params.get('nomap') === '1'
-      } catch {
-        return false
-      }
-    })
 
     const center = initialCenter
       ? { longitude: initialCenter[1], latitude: initialCenter[0] }
@@ -255,17 +250,6 @@ const MapComponent = memo<MapProps>(
       [validPoints, handleMarkerClick]
     )
 
-    if (mapDisabledByFlag) {
-      return (
-        <div className="w-full h-full relative flex items-center justify-center bg-muted/10 dark:bg-muted-dark/10">
-          <div className="text-center px-6">
-            <div className="text-sm font-inter text-content/70 dark:text-content-dark/70">
-              Map disabled for diagnostics.
-            </div>
-          </div>
-        </div>
-      )
-    }
 
     if (!mapEnabled) {
       return (
@@ -290,16 +274,30 @@ const MapComponent = memo<MapProps>(
 
     return (
       <div className="w-full h-full relative">
-        <Suspense fallback={null}>
-          <LazyMapView
-            mapRef={mapRef}
-            viewState={viewState}
-            onMove={handleMove}
-            mapStyle={mapStyle}
-            markers={markersData}
-          />
-        </Suspense>
-        <CustomControls mapRef={mapRef} isDark={isDark} />
+        {isMobileWeb ? (
+          <Suspense fallback={null}>
+            <LazyLeafletView
+              viewState={viewState}
+              onMove={handleMove}
+              points={validPoints}
+              isDark={isDark}
+              onPointPress={onPointPress}
+            />
+          </Suspense>
+        ) : (
+          <>
+            <Suspense fallback={null}>
+              <LazyMapView
+                mapRef={mapRef}
+                viewState={viewState}
+                onMove={handleMove}
+                mapStyle={mapStyle}
+                markers={markersData}
+              />
+            </Suspense>
+            <CustomControls mapRef={mapRef} isDark={isDark} />
+          </>
+        )}
       </div>
     )
   }

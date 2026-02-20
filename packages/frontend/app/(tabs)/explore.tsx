@@ -11,7 +11,7 @@ import {
 } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { useThemeContext } from '../../components/contexts'
-import Map from '../../components/Map.web'
+import Map from '../../components/Map'
 
 /**
  * ExploreScreen Component
