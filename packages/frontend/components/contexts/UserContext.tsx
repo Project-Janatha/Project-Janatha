@@ -36,6 +36,7 @@ interface UserContextType {
   loading: boolean
   authStatus: AuthStatus
   onboardingComplete: boolean
+  safeMode: boolean
   login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>
   signup: (username: string, password: string) => Promise<{ success: boolean; message?: string }>
   logout: () => Promise<void>
@@ -74,6 +75,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('booting')
   const [onboardingComplete, setOnboardingCompleteState] = useState(false)
+  const [safeMode, setSafeMode] = useState(false)
   const loading = authStatus === 'booting'
 
   const login = useCallback(async (username: string, password: string) => {
@@ -189,6 +191,23 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
     const loadUser = async () => {
       try {
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search)
+          if (params.get('safe') === '1') {
+            setSafeMode(true)
+            setUser(null)
+            setAuthStatus('unauthenticated')
+            setOnboardingCompleteState(false)
+            return
+          }
+          if (params.get('noauth') === '1') {
+            setUser(null)
+            setAuthStatus('unauthenticated')
+            setOnboardingCompleteState(false)
+            return
+          }
+        }
+
         const token = await getStoredToken()
         if (!isMounted) return
 
@@ -235,6 +254,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       loading,
       authStatus,
       onboardingComplete,
+      safeMode,
       login,
       signup,
       logout,
@@ -250,6 +270,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       loading,
       authStatus,
       onboardingComplete,
+      safeMode,
       login,
       signup,
       logout,

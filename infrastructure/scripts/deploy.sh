@@ -131,14 +131,16 @@ AWS_REGION="${AWS_REGION:-us-east-1}"
 
 require_env_vars ECR_REPO AWS_REGION JWT_SECRET SESSION_SECRET CORS_ORIGIN
 
-IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M%S)}"
+if [ -z "${IMAGE_TAG:-}" ]; then
+    IMAGE_TAG="$(date +%Y%m%d%H%M%S)"
+fi
 ECR_IMAGE="${ECR_REPO}:${IMAGE_TAG}"
-
-echo -e "\n${YELLOW}📦 Building Docker image locally (linux/amd64)...${NC}"
-docker buildx build --platform linux/amd64 -t "$ECR_IMAGE" --push .
 
 echo -e "\n${YELLOW}🔐 Logging in to ECR...${NC}"
 aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REPO" >/dev/null
+
+echo -e "\n${YELLOW}📦 Building & pushing Docker image (linux/amd64)...${NC}"
+docker buildx build --platform linux/amd64 -t "$ECR_IMAGE" --push .
 
 echo -e "\n${YELLOW}📤 Copying files to EC2...${NC}"
 ssh -i "$EC2_KEY" "$EC2_USER@$EC2_HOST" "mkdir -p $DEPLOY_DIR"

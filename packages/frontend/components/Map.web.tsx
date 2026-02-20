@@ -9,9 +9,8 @@
  * Web-only map component using react-map-gl with OpenStreetMap tiles.
  * Native platforms (iOS/Android) use Map.tsx with react-native-maps.
  */
-import React, { useState, useCallback, memo, useRef, useMemo } from 'react'
-import Map, { Marker, MapRef, AttributionControl } from 'react-map-gl/maplibre'
-import 'maplibre-gl/dist/maplibre-gl.css'
+import React, { useState, useCallback, memo, useRef, useMemo, Suspense } from 'react'
+import type { MapRef } from 'react-map-gl/maplibre'
 import { useThemeContext } from './contexts'
 
 // Type definitions
@@ -162,8 +161,11 @@ const CustomControls = memo<CustomControlsProps>(({ mapRef, isDark }) => {
 
 CustomControls.displayName = 'CustomControls'
 
+const LazyMapView = React.lazy(() => import('./MaplibreView'))
+
 /**
- * Map Component for Web using react-map-gl with OpenStreetMap
+ * Map Component for Web using react-map-gl with OpenStreetMap.
+ * We lazy-load Maplibre to avoid Safari crashes during initial load.
  */
 const MapComponent = memo<MapProps>(
   ({
@@ -177,6 +179,15 @@ const MapComponent = memo<MapProps>(
     const mapRef = useRef<MapRef>(null)
     const [mapEnabled, setMapEnabled] = useState(false)
     const [permissionError, setPermissionError] = useState<string | null>(null)
+    const [mapDisabledByFlag] = useState(() => {
+      if (typeof window === 'undefined') return false
+      try {
+        const params = new URLSearchParams(window.location.search)
+        return params.get('nomap') === '1'
+      } catch {
+        return false
+      }
+    })
 
     const center = initialCenter
       ? { longitude: initialCenter[1], latitude: initialCenter[0] }
@@ -239,25 +250,22 @@ const MapComponent = memo<MapProps>(
       [isDark]
     )
 
-    const markers = useMemo(
-      () =>
-        validPoints.map((point) => (
-          <Marker
-            key={point.id}
-            longitude={point.longitude}
-            latitude={point.latitude}
-            anchor="bottom"
-            onClick={handleMarkerClick(point)}
-          >
-            <div
-              className={`w-[30px] h-[30px] rounded-[50%_50%_50%_0] -rotate-45 border-2 border-white shadow-[0_2px_4px_rgba(0,0,0,0.3)] cursor-pointer
-                ${point.type === 'center' ? 'bg-red-500' : 'bg-blue-500'}`}
-              title={point.name}
-            />
-          </Marker>
-        )),
+    const markersData = useMemo(
+      () => validPoints.map((point) => ({ point, onClick: handleMarkerClick(point) })),
       [validPoints, handleMarkerClick]
     )
+
+    if (mapDisabledByFlag) {
+      return (
+        <div className="w-full h-full relative flex items-center justify-center bg-muted/10 dark:bg-muted-dark/10">
+          <div className="text-center px-6">
+            <div className="text-sm font-inter text-content/70 dark:text-content-dark/70">
+              Map disabled for diagnostics.
+            </div>
+          </div>
+        </div>
+      )
+    }
 
     if (!mapEnabled) {
       return (
@@ -282,26 +290,15 @@ const MapComponent = memo<MapProps>(
 
     return (
       <div className="w-full h-full relative">
-        <Map
-          ref={mapRef}
-          {...viewState}
-          onMove={handleMove}
-          mapStyle={mapStyle}
-          style={{ width: '100%', height: '100%' }}
-          reuseMaps
-          attributionControl={false}
-          cooperativeGestures={true}
-        >
-          {markers}
-          <AttributionControl
-            compact={true}
-            position="bottom-left"
-            style={{
-              marginBottom: '10px',
-              marginLeft: '10px',
-            }}
+        <Suspense fallback={null}>
+          <LazyMapView
+            mapRef={mapRef}
+            viewState={viewState}
+            onMove={handleMove}
+            mapStyle={mapStyle}
+            markers={markersData}
           />
-        </Map>
+        </Suspense>
         <CustomControls mapRef={mapRef} isDark={isDark} />
       </div>
     )

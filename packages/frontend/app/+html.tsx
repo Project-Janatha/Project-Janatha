@@ -44,7 +44,57 @@ export default function Root({ children }: { children: React.ReactNode }) {
         {/* Add any additional <head> elements that you want globally available on web... */}
         <meta title="Janatha" />
       </head>
-      <body>{children}</body>
+      <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var d = document;
+                  var overlay = d.createElement('div');
+                  overlay.id = 'jn-boot-overlay';
+                  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#111;color:#fff;padding:8px 12px;font:12px -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;';
+                  overlay.textContent = 'Loading app...';
+                  d.body.appendChild(overlay);
+
+                  var ready = false;
+                  window.__jn_markReady = function () {
+                    ready = true;
+                    if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                  };
+
+                  var report = function (msg) {
+                    try {
+                      localStorage.setItem('jn_last_error', msg);
+                    } catch (e) {}
+                    if (overlay) {
+                      overlay.textContent = 'App error: ' + msg;
+                    }
+                  };
+
+                  window.addEventListener('error', function (e) {
+                    var msg = (e && e.message) ? e.message : 'Unknown error';
+                    report(msg);
+                  });
+                  window.addEventListener('unhandledrejection', function (e) {
+                    var msg = (e && e.reason && e.reason.message) ? e.reason.message : 'Unhandled promise rejection';
+                    report(msg);
+                  });
+
+                  setTimeout(function () {
+                    if (!ready) {
+                      var last = '';
+                      try { last = localStorage.getItem('jn_last_error') || ''; } catch (e) {}
+                      overlay.textContent = last ? ('App error: ' + last) : 'App did not finish loading.';
+                    }
+                  }, 8000);
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+        {children}
+      </body>
     </html>
   )
 }

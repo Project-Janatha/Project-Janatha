@@ -1,23 +1,25 @@
 import '@expo/metro-runtime'
 // import '../config/performance'
 // import '../config/devtools'
+import '../src/webBoot'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, View } from 'react-native'
+import { Platform } from 'react-native'
 import { useFonts } from 'expo-font'
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider as NavigationThemeProvider,
 } from '@react-navigation/native'
-import { SplashScreen, Stack, usePathname, useRouter } from 'expo-router'
+import { SplashScreen, Slot, usePathname, useRouter } from 'expo-router'
+import { useWebFonts } from '../hooks/useWebFonts'
+import { Text } from 'react-native'
 import {
   UserProvider,
   useUser,
   ThemeProvider as CustomThemeProvider,
   useThemeContext,
 } from '../components/contexts'
-import { IconButton } from '../components/ui'
-import { Share } from 'lucide-react-native'
 import '../globals.css'
 
 export const unstable_settings = {
@@ -27,16 +29,28 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
-  const [fontsLoaded, fontsError] = useFonts({
-    'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
-    'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
-    'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.ttf'),
-    'Inter-Medium': require('../assets/fonts/Inter-Medium.ttf'),
-    'Inter-Light': require('../assets/fonts/Inter-Light.ttf'),
-  })
+  const isWeb = Platform.OS === 'web'
+  const [fontsLoaded, fontsError] = useFonts(
+    isWeb
+      ? {}
+      : {
+          'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
+          'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
+          'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.ttf'),
+          'Inter-Medium': require('../assets/fonts/Inter-Medium.ttf'),
+          'Inter-Light': require('../assets/fonts/Inter-Light.ttf'),
+        }
+  )
+  const [webFontsLoaded] = useWebFonts()
 
   const [fontTimeout, setFontTimeout] = useState(false)
   const [splashHidden, setSplashHidden] = useState(false)
+
+  useEffect(() => {
+    if (isWeb && typeof window !== 'undefined') {
+      window.__jn_markReady?.()
+    }
+  }, [isWeb])
 
   // Add a timeout in case fonts don't load
   useEffect(() => {
@@ -52,18 +66,23 @@ export default function RootLayout() {
   }, [fontsLoaded, fontsError])
 
   useEffect(() => {
+    if (isWeb) return
     if ((fontsLoaded || fontsError || fontTimeout) && !splashHidden) {
       setSplashHidden(true)
       SplashScreen.hideAsync().catch(() => {})
     }
-  }, [fontsLoaded, fontsError, fontTimeout, splashHidden])
+  }, [fontsLoaded, fontsError, fontTimeout, splashHidden, isWeb])
 
-  if (!fontsLoaded && !fontsError && !fontTimeout) {
-    return null
-  }
-
-  if (fontsError) {
-    return null
+  if (!isWeb) {
+    if (!fontsLoaded && !fontsError && !fontTimeout) {
+      return null
+    }
+    if (fontsError) {
+      return null
+    }
+  } else if (!webFontsLoaded) {
+    // Avoid blocking web render on font loading
+    // Web fonts will hydrate after first paint
   }
 
   return (
@@ -76,14 +95,32 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const { user, loading, authStatus, onboardingComplete } = useUser()
+  const { user, loading, authStatus, onboardingComplete, safeMode } = useUser()
   const { isDark } = useThemeContext()
   const pathname = usePathname()
   const router = useRouter()
   const isAuthenticated = authStatus === 'authenticated'
+  const [debugEnabled, setDebugEnabled] = useState(false)
+  const [noStack, setNoStack] = useState(false)
+  const [isSafariWeb, setIsSafariWeb] = useState(false)
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') return
+    try {
+      const ua = navigator.userAgent || ''
+      setIsSafariWeb(/safari/i.test(ua) && !/chrome|crios|fxios|edg/i.test(ua))
+      const params = new URLSearchParams(window.location.search)
+      setDebugEnabled(params.get('debug') === '1')
+      setNoStack(params.get('nostack') === '1')
+    } catch {
+      setDebugEnabled(false)
+      setNoStack(false)
+    }
+  }, [])
 
   useEffect(() => {
     if (authStatus === 'booting') return
+    if (safeMode || noStack) return
 
     const inAuthGroup = pathname.startsWith('/auth')
     const inOnboardingGroup = pathname.startsWith('/onboarding')
@@ -127,58 +164,41 @@ function RootLayoutNav() {
     )
   }
 
+  if (safeMode || noStack) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ fontSize: 16, marginBottom: 8 }}>
+          {safeMode ? 'Safe mode enabled' : 'Navigation disabled'}
+        </Text>
+        <Text style={{ fontSize: 12, opacity: 0.7 }}>
+          path: {pathname} | auth: {authStatus} | onboard: {String(onboardingComplete)}
+        </Text>
+      </View>
+    )
+  }
+
   return (
     <NavigationThemeProvider value={navTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="auth" options={{ headerShown: false }} />
-        {/* Registering onboarding explicitly ensures stable navigation */}
-        <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
-        <Stack.Screen
-          name="profile"
-          options={{
-            headerShown: false,
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
+      {debugEnabled && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            paddingVertical: 6,
+            paddingHorizontal: 10,
           }}
-        />
-        <Stack.Screen
-          name="settings"
-          options={{ headerShown: true }} // Explicitly show for settings
-        />
-        <Stack.Screen
-          name="events/[id]"
-          options={{
-            headerShown: true,
-            title: 'Event Details',
-            headerBackTitle: '', // Use empty string instead of headerBackTitleVisible
-            headerRight: () => (
-              <IconButton
-                className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
-                onPress={() => {}}
-              >
-                <Share size={20} />
-              </IconButton>
-            ),
-          }}
-        />
-        <Stack.Screen
-          name="center/[id]"
-          options={{
-            headerShown: true,
-            title: 'Center Details',
-            headerBackTitle: '', // Use empty string instead of headerBackTitleVisible
-            headerRight: () => (
-              <IconButton
-                className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
-                onPress={() => {}}
-              >
-                <Share size={20} />
-              </IconButton>
-            ),
-          }}
-        />
-      </Stack>
+        >
+          <Text style={{ color: '#fff', fontSize: 12 }}>
+            debug | path: {pathname} | auth: {authStatus} | onboard: {String(onboardingComplete)} |
+            user: {user ? 'yes' : 'no'}
+          </Text>
+        </View>
+      )}
+      <Slot />
     </NavigationThemeProvider>
   )
 }
