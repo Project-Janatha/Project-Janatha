@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from 'react'
 import { router } from 'expo-router'
 import { useUser } from './UserContext'
+import { setOnboardingComplete } from '../utils/onboardingStorage'
 
 interface OnboardingContextType {
   currentStep: number
@@ -55,6 +56,7 @@ export default function OnboardingProvider({ children }: { children: React.React
       centerID: centerID || undefined,
       profileComplete: true,
     })
+    await setOnboardingComplete(true)
     router.replace('/(tabs)')
   }
 

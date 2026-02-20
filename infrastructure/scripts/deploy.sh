@@ -110,7 +110,14 @@ if [ -f "packages/backend/.env" ]; then
     fi
 fi
 
-load_env_file "packages/backend/.env"
+# Load only well-formed KEY=VALUE lines from packages/backend/.env
+if [ -f "packages/backend/.env" ]; then
+    echo -e "${YELLOW}📋 Loading environment from packages/backend/.env (key=value only)...${NC}"
+    set -a
+    # shellcheck source=/dev/null
+    . <(rg -N "^[A-Za-z_][A-Za-z0-9_]*=.*$" packages/backend/.env)
+    set +a
+fi
 
 echo -e "\n${YELLOW}🔐 Testing SSH connection...${NC}"
 if ! ssh -i "$EC2_KEY" -o ConnectTimeout=10 -o StrictHostKeyChecking=no "$EC2_USER@$EC2_HOST" "echo 'Connection successful'" 2>/dev/null; then
@@ -119,43 +126,35 @@ if ! ssh -i "$EC2_KEY" -o ConnectTimeout=10 -o StrictHostKeyChecking=no "$EC2_US
 fi
 echo -e "${GREEN}✓${NC} SSH connection successful"
 
-echo -e "\n${YELLOW}📦 Building Docker image...${NC}"
-docker-compose build
+ECR_REPO="${ECR_REPO:-}"
+AWS_REGION="${AWS_REGION:-us-east-1}"
 
-echo -e "\n${YELLOW}💾 Saving Docker image...${NC}"
-IMAGE_NAME=$(docker-compose config | grep 'image:' | head -1 | awk '{print $2}')
-if [ -z "$IMAGE_NAME" ]; then
-    IMAGE_NAME="chinmaya-janata-app:latest"
-fi
-echo "Image name: $IMAGE_NAME"
-docker save "$IMAGE_NAME" | gzip > /tmp/janata-app.tar.gz
+require_env_vars ECR_REPO AWS_REGION JWT_SECRET SESSION_SECRET CORS_ORIGIN
+
+IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M%S)}"
+ECR_IMAGE="${ECR_REPO}:${IMAGE_TAG}"
+
+echo -e "\n${YELLOW}📦 Building Docker image locally...${NC}"
+docker build -t "$ECR_IMAGE" .
+
+echo -e "\n${YELLOW}🔐 Logging in to ECR...${NC}"
+aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REPO" >/dev/null
+
+echo -e "\n${YELLOW}📤 Pushing image to ECR...${NC}"
+docker push "$ECR_IMAGE"
 
 echo -e "\n${YELLOW}📤 Copying files to EC2...${NC}"
-ssh -i "$EC2_KEY" "$EC2_USER@$EC2_HOST" "mkdir -p $DEPLOY_DIR/packages/backend"
+ssh -i "$EC2_KEY" "$EC2_USER@$EC2_HOST" "mkdir -p $DEPLOY_DIR"
 
 echo "Copying docker-compose.yml..."
 scp -i "$EC2_KEY" docker-compose.yml "$EC2_USER@$EC2_HOST:$DEPLOY_DIR/"
 
-echo "Copying Docker image..."
-scp -i "$EC2_KEY" /tmp/janata-app.tar.gz "$EC2_USER@$EC2_HOST:$DEPLOY_DIR/"
-
-if [ -f "nginx.conf" ]; then
-    echo "Copying nginx.conf..."
-    scp -i "$EC2_KEY" nginx.conf "$EC2_USER@$EC2_HOST:$DEPLOY_DIR/"
-fi
-
-# Create or copy .env file
-if [ -f "packages/backend/.env" ]; then
-    echo -e "${YELLOW}📋 Copying environment file...${NC}"
-    scp -i "$EC2_KEY" packages/backend/.env "$EC2_USER@$EC2_HOST:$DEPLOY_DIR/packages/backend/"
-else
-    echo -e "${YELLOW}📋 No local .env found. Creating .env on EC2 from environment variables...${NC}"
-    require_env_vars JWT_SECRET SESSION_SECRET CORS_ORIGIN
-    ssh -i "$EC2_KEY" "$EC2_USER@$EC2_HOST" << 'ENVEOF'
-cat > /home/ubuntu/chinmaya-janata/packages/backend/.env << 'EOF'
+echo "Uploading runtime environment file..."
+cat > /tmp/janata-root.env << EOF
+ECR_IMAGE=${ECR_IMAGE}
 NODE_ENV=production
 PORT=8008
-AWS_REGION=${AWS_REGION:-us-east-1}
+AWS_REGION=${AWS_REGION}
 USERS_TABLE=${USERS_TABLE:-ChinmayaJanata-Users}
 CENTERS_TABLE=${CENTERS_TABLE:-ChinmayaJanata-Centers}
 EVENTS_TABLE=${EVENTS_TABLE:-ChinmayaJanata-Events}
@@ -168,39 +167,38 @@ ADMIN_NAME=${ADMIN_NAME:-Brahman}
 CORS_ORIGIN=${CORS_ORIGIN}
 CORS_ALLOW_NO_ORIGIN=${CORS_ALLOW_NO_ORIGIN:-false}
 EOF
-ENVEOF
-fi
+scp -i "$EC2_KEY" /tmp/janata-root.env "$EC2_USER@$EC2_HOST:$DEPLOY_DIR/.env"
 
 echo -e "\n${YELLOW}🚢 Deploying on EC2...${NC}"
 ssh -i "$EC2_KEY" "$EC2_USER@$EC2_HOST" << 'ENDSSH'
     set -e
     cd /home/ubuntu/chinmaya-janata
-    
-    echo "Loading Docker image..."
-    docker load < janata-app.tar.gz
-    
+
+    echo "Logging in to ECR..."
+    aws ecr get-login-password --region "${AWS_REGION:-us-east-1}" | docker login --username AWS --password-stdin "$(cat .env | grep '^ECR_IMAGE=' | cut -d: -f1 | cut -d= -f2)" >/dev/null
+
+    echo "Pulling image..."
+    docker pull "$(cat .env | grep '^ECR_IMAGE=' | cut -d= -f2)"
+
     echo "Stopping existing containers..."
     docker-compose down || true
-    
+
     echo "Starting new containers..."
     docker-compose up -d
-    
+
     echo "Waiting for containers to start..."
     sleep 5
-    
+
     echo "Checking container status..."
     docker-compose ps
-    
+
     echo "Recent logs:"
     docker-compose logs --tail=30
-    
-    echo "Cleaning up..."
-    rm janata-app.tar.gz
-    
+
     echo "✅ Deployment complete!"
 ENDSSH
 
-rm /tmp/janata-app.tar.gz
+rm /tmp/janata-root.env
 
 echo -e "\n${GREEN}✅ Deployment successful!${NC}"
 echo -e "Your app should be running at: http://$EC2_HOST"

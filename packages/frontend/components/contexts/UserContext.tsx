@@ -22,6 +22,11 @@ import React, {
   useCallback,
 } from 'react'
 import { getStoredToken, removeStoredToken } from '../utils/tokenStorage'
+import {
+  clearOnboardingComplete,
+  getOnboardingComplete,
+  setOnboardingComplete,
+} from '../utils/onboardingStorage'
 import { authService } from '../../src/auth/authService'
 import { API_BASE_URL, API_TIMEOUTS } from '../../src/config/api'
 import type { AuthStatus, User, UpdateProfileRequest } from '../../src/auth/types'
@@ -30,6 +35,7 @@ interface UserContextType {
   user: User | null
   loading: boolean
   authStatus: AuthStatus
+  onboardingComplete: boolean
   login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>
   signup: (username: string, password: string) => Promise<{ success: boolean; message?: string }>
   logout: () => Promise<void>
@@ -67,6 +73,7 @@ const resolveEndpointUrl = (endpoint: string): string => {
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('booting')
+  const [onboardingComplete, setOnboardingCompleteState] = useState(false)
   const loading = authStatus === 'booting'
 
   const login = useCallback(async (username: string, password: string) => {
@@ -93,8 +100,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(async () => {
     await authService.logout()
+    await clearOnboardingComplete()
     setUser(null)
     setAuthStatus('unauthenticated')
+    setOnboardingCompleteState(false)
   }, [])
 
   const checkUserExists = useCallback(async (username: string) => {
@@ -152,8 +161,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       return { success: false, message: result.message || 'Failed to delete account' }
     }
 
+    await clearOnboardingComplete()
     setUser(null)
     setAuthStatus('unauthenticated')
+    setOnboardingCompleteState(false)
     return { success: true, message: result.message || 'Account deleted successfully' }
   }, [])
 
@@ -166,6 +177,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setUser(result.user)
+    if (updates.profileComplete || result.user.profileComplete) {
+      await setOnboardingComplete(true)
+      setOnboardingCompleteState(true)
+    }
     return { success: true }
   }, [])
 
@@ -188,11 +203,22 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
         setUser(session.user)
         setAuthStatus(session.authStatus)
+
+        const storedOnboarding = await getOnboardingComplete()
+        const derivedComplete =
+          session.user?.profileComplete === true ||
+          (!!session.user?.firstName && !!session.user?.lastName && !!session.user?.email)
+        const finalComplete = storedOnboarding || derivedComplete
+        setOnboardingCompleteState(finalComplete)
+        if (derivedComplete && !storedOnboarding) {
+          await setOnboardingComplete(true)
+        }
       } catch {
         if (!isMounted) return
         await removeStoredToken()
         setUser(null)
         setAuthStatus('unauthenticated')
+        setOnboardingCompleteState(false)
       }
     }
 
@@ -208,6 +234,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       user,
       loading,
       authStatus,
+      onboardingComplete,
       login,
       signup,
       logout,
@@ -222,6 +249,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       user,
       loading,
       authStatus,
+      onboardingComplete,
       login,
       signup,
       logout,

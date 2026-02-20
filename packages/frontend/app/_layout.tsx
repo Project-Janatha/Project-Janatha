@@ -76,7 +76,7 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const { user, loading, authStatus } = useUser()
+  const { user, loading, authStatus, onboardingComplete } = useUser()
   const { isDark } = useThemeContext()
   const pathname = usePathname()
   const router = useRouter()
@@ -97,7 +97,9 @@ function RootLayoutNav() {
       }
     } else {
       const hasCompletedOnboarding =
-        user?.profileComplete === true || (!!user?.firstName && !!user?.lastName && !!user?.email)
+        onboardingComplete ||
+        user?.profileComplete === true ||
+        (!!user?.firstName && !!user?.lastName && !!user?.email)
 
       if (!hasCompletedOnboarding) {
         if (!inOnboardingGroup) {

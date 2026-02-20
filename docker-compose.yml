@@ -1,8 +1,6 @@
 services:
   app:
-    image: chinmaya-janata-app:latest
-    build:
-      context: .
+    image: ${ECR_IMAGE:?ECR_IMAGE is required}
     platform: linux/amd64
     network_mode: host
     env_file:

@@ -36,6 +36,7 @@ export interface MapProps {
 const DEFAULT_CENTER = { latitude: 37.7749, longitude: -122.4194 }
 const DEFAULT_ZOOM = 10
 
+
 /**
  * Validate coordinate values
  */
@@ -174,6 +175,8 @@ const MapComponent = memo<MapProps>(
   }) => {
     const { isDark } = useThemeContext()
     const mapRef = useRef<MapRef>(null)
+    const [mapEnabled, setMapEnabled] = useState(false)
+    const [permissionError, setPermissionError] = useState<string | null>(null)
 
     const center = initialCenter
       ? { longitude: initialCenter[1], latitude: initialCenter[0] }
@@ -186,6 +189,33 @@ const MapComponent = memo<MapProps>(
 
     const handleMove = useCallback((evt: any) => {
       setViewState(evt.viewState)
+    }, [])
+
+    const requestLocationAndEnableMap = useCallback(() => {
+      setPermissionError(null)
+      if (!navigator.geolocation) {
+        setPermissionError('Location is not supported by your browser.')
+        return
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setMapEnabled(true)
+          mapRef.current?.flyTo({
+            center: [position.coords.longitude, position.coords.latitude],
+            zoom: 14,
+            duration: 800,
+          })
+        },
+        (error) => {
+          if (error.code === 1) {
+            setPermissionError('Location permission is required to load the map.')
+          } else {
+            setPermissionError('Unable to access location. Please try again.')
+          }
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+      )
     }, [])
 
     const handleMarkerClick = useCallback(
@@ -228,6 +258,27 @@ const MapComponent = memo<MapProps>(
         )),
       [validPoints, handleMarkerClick]
     )
+
+    if (!mapEnabled) {
+      return (
+        <div className="w-full h-full relative flex items-center justify-center bg-muted/10 dark:bg-muted-dark/10">
+          <div className="text-center px-6">
+            <div className="text-sm font-inter text-content/70 dark:text-content-dark/70">
+              Enable location to load the map.
+            </div>
+            {permissionError && (
+              <div className="text-xs font-inter text-red-500 mt-2">{permissionError}</div>
+            )}
+            <button
+              className="mt-4 px-4 py-2 rounded-lg bg-primary text-white text-sm font-inter hover:opacity-90"
+              onClick={requestLocationAndEnableMap}
+            >
+              Allow Location
+            </button>
+          </div>
+        </div>
+      )
+    }
 
     return (
       <div className="w-full h-full relative">
