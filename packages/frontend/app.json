@@ -12,7 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -30,7 +32,8 @@
             }
           }
         }
-      }
+      },
+      "bundleIdentifier": "com.anonymous.chinmayajanata"
     },
     "android": {
       "adaptiveIcon": {
@@ -38,7 +41,13 @@
         "backgroundColor": "#ffffff"
       },
       "usesCleartextTraffic": true,
-      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"]
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
+      "package": "com.anonymous.chinmayajanata"
     },
     "web": {
       "bundler": "metro",
