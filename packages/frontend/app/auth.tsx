@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react'
+import React, { useState, useCallback, memo } from 'react'
 import {
   View,
   Text,
@@ -7,8 +7,6 @@ import {
   KeyboardAvoidingView,
   Pressable,
   Image,
-  Animated,
-  Easing,
   TouchableOpacity,
 } from 'react-native'
 import { useRouter } from 'expo-router'
@@ -40,36 +38,6 @@ export default function AuthScreen() {
   const [backHover, setBackHover] = useState(false)
 
   const isWeb = Platform.OS === 'web'
-
-  // Theme selector logic (copied from SettingsPanel)
-  const themeOptions = ['light', 'dark', 'system']
-  const optionWidth = 70
-  const indicatorPadding = 8
-  const [selectedIndex, setSelectedIndex] = useState(themeOptions.indexOf(themePreference))
-  const slideAnim = useRef(new Animated.Value(selectedIndex * optionWidth)).current
-  const isMountedRef = useRef(true)
-
-  // Cleanup on unmount
-  useEffect(() => {
-    isMountedRef.current = true
-    return () => {
-      isMountedRef.current = false
-      slideAnim.stopAnimation()
-    }
-  }, [slideAnim])
-
-  // Optimized animation - use smaller duration for faster response
-  useEffect(() => {
-    if (!isMountedRef.current) return
-    const idx = themeOptions.indexOf(themePreference)
-    setSelectedIndex(idx)
-    Animated.timing(slideAnim, {
-      toValue: idx * optionWidth,
-      duration: 150, // Reduced from 100 for smoother animation
-      useNativeDriver: true,
-      easing: Easing.out(Easing.ease), // Better easing function
-    }).start()
-  }, [themePreference, slideAnim])
 
   const handleContinue = useCallback(async () => {
     setErrors({})
@@ -292,16 +260,16 @@ export default function AuthScreen() {
                 {authStep === 'login'
                   ? 'Welcome Back'
                   : authStep === 'signup'
-                  ? 'Create Account'
-                  : 'Get Started'}
+                    ? 'Create Account'
+                    : 'Get Started'}
               </Text>
 
               <Text className="text-base font-inter text-content dark:text-content-dark opacity-70 text-center mt-2">
                 {authStep === 'login'
                   ? 'Enter your password to continue'
                   : authStep === 'signup'
-                  ? 'Set up your new account'
-                  : 'Enter your email to continue'}
+                    ? 'Set up your new account'
+                    : 'Enter your email to continue'}
               </Text>
             </View>
 
@@ -379,17 +347,17 @@ export default function AuthScreen() {
                 className={`items-center justify-center mt-2 rounded-2xl ${
                   isButtonDisabled
                     ? 'bg-primary/40 dark:bg-primary/30'
-                    : 'bg-primary active:bg-primary-press hover:scale-105 hovershadow-md transition-transform duration-150'
+                    : 'bg-primary active:bg-primary-press hover:scale-105 transition-transform duration-150'
                 } py-4 px-8`}
               >
                 <Text className="text-white font-inter font-bold text-md">
                   {loading
                     ? 'Please wait...'
                     : authStep === 'login'
-                    ? 'Log In'
-                    : authStep === 'signup'
-                    ? 'Sign Up'
-                    : 'Continue'}
+                      ? 'Log In'
+                      : authStep === 'signup'
+                        ? 'Sign Up'
+                        : 'Continue'}
                 </Text>
               </Pressable>
 

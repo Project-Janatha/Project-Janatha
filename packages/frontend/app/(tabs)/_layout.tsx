@@ -5,7 +5,8 @@ import { useUser, useThemeContext } from '../../components/contexts'
 import { GhostButton, DestructiveButton } from '../../components/ui'
 import { Compass, User, Settings, LogOut } from 'lucide-react-native'
 import { Ionicons } from '@expo/vector-icons'
-import SettingsPanel from '../../components/SettingsPanel'
+import SettingsPanelWeb from '../../components/SettingsPanel'
+import SettingsModalNative from '../../components/SettingsModal.native'
 
 /**
  * TabLayout Component - The main layout for the tab-based navigation.
@@ -113,11 +114,19 @@ export default function TabLayout() {
           >
             <User size={20} color={isDark ? '#fff' : '#9A3412'} />
           </Pressable>
-          <SettingsPanel
-            visible={settingsVisible}
-            onClose={() => setSettingsVisible(false)}
-            onLogout={handleLogout}
-          />
+          {Platform.OS === 'web' ? (
+            <SettingsPanelWeb
+              visible={settingsVisible}
+              onClose={() => setSettingsVisible(false)}
+              onLogout={handleLogout}
+            />
+          ) : (
+            <SettingsModalNative
+              visible={settingsVisible}
+              onClose={() => setSettingsVisible(false)}
+              onLogout={handleLogout}
+            />
+          )}
         </>
       )
     }

@@ -30,6 +30,36 @@ export const generateToken = (user) => {
 }
 
 /**
+ * Generates a refresh token for a user.
+ * @param {Object} user - The user object.
+ * @returns {string} - The generated refresh token.
+ */
+export const generateRefreshToken = (user) => {
+  const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET
+  return jwt.sign({ id: user.id || user._id, username: user.username, type: 'refresh' }, REFRESH_SECRET, {
+    expiresIn: '90d',
+  })
+}
+
+/**
+ * Verifies a refresh token.
+ * @param {string} token - The refresh token to verify.
+ * @returns {Object|null} - The decoded token payload if valid and is a refresh token, otherwise null.
+ */
+export const verifyRefreshToken = (token) => {
+  const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET
+  try {
+    const decoded = jwt.verify(token, REFRESH_SECRET)
+    if (decoded.type !== 'refresh') {
+      return null
+    }
+    return decoded
+  } catch (error) {
+    return null
+  }
+}
+
+/**
  * Verifies a JWT token.
  * @param {string} token - The JWT token to verify.
  * @returns {Object|null} - The decoded token payload if valid, otherwise null.

@@ -14,7 +14,12 @@
 import * as db from '../database/dynamoHelpers.js'
 import bcrypt from 'bcryptjs'
 const { hash, compare } = bcrypt // Change compareSync to compare
-import { generateToken, verifyToken } from '../utils/jwt.js'
+import {
+  generateToken,
+  verifyToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from '../utils/jwt.js'
 import { v4 as uuidv4 } from 'uuid'
 import jwt from 'jsonwebtoken'
 import user from '../profiles/user.js'
@@ -39,7 +44,11 @@ const sanitizeUser = (userData) => {
 async function isAuthenticated(req, res, next) {
   const authHeader = req.headers.authorization
   if (authHeader) {
-    const token = authHeader.split(' ')[1]
+    const parts = authHeader.split(' ')
+    const token = parts.length > 1 ? parts[1] : parts[0]
+    if (!token) {
+      return res.status(401).json({ message: 'Authorization header missing' })
+    }
     const decoded = verifyToken(token)
     if (decoded) {
       // Fetch full user data from database
@@ -177,11 +186,13 @@ async function authenticate(req, res) {
 
     console.log('Authentication successful for user:', username)
     const token = generateToken(user)
+    const refreshToken = generateRefreshToken(user)
     const safeUser = sanitizeUser(user)
     return res.status(200).json({
       message: 'Authentication successful!',
       user: safeUser,
       token: token,
+      refreshToken: refreshToken,
     })
   } catch (err) {
     console.error('Authentication error:', err)
@@ -526,4 +537,8 @@ export default {
   completeOnboarding,
   updateProfile,
   deleteAccount,
+  generateToken,
+  verifyToken,
+  generateRefreshToken,
+  verifyRefreshToken,
 }
