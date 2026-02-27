@@ -164,6 +164,33 @@ export async function fetchEventUsers(eventID: string): Promise<any[]> {
   }
 }
 
+export async function updateEvent(eventJSON: Record<string, any>): Promise<any> {
+  try {
+    const response = await authFetch('/api/updateEvent', {
+      method: 'POST',
+      body: JSON.stringify(eventJSON),
+    })
+    if (!response.ok) throw new Error('Failed to update event')
+    return await response.json()
+  } catch (error) {
+    throw error
+  }
+}
+
+export async function getUserEvents(username: string): Promise<EventData[]> {
+  try {
+    const response = await authFetch('/api/getUserEvents', {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    })
+    if (!response.ok) return []
+    const data = await response.json()
+    return data.events || []
+  } catch {
+    return []
+  }
+}
+
 // ── Data normalization ─────────────────────────────────────────────────
 
 export function centersToMapPoints(centers: CenterData[]): MapPoint[] {
