@@ -1,14 +1,15 @@
 // Discover tab — mobile / native layout
-import React, { useState, Suspense } from 'react'
+import React, { useState, Suspense, useRef } from 'react'
 import {
   View,
   Text,
   ScrollView,
   Pressable,
-  Platform,
   ActivityIndicator,
   TextInput,
-  useWindowDimensions,
+  Animated,
+  PanResponder,
+  StyleSheet,
 } from 'react-native'
 import {
   MapPin,
@@ -19,9 +20,7 @@ import {
 import { useRouter } from 'expo-router'
 import { useThemeContext } from '../../components/contexts'
 import { FilterChip, Badge } from '../../components/ui'
-import { MapPreview } from '../../components'
 import { useDiscoverData, type DiscoverFilter } from '../../hooks/useApiData'
-import { useMapPoints } from '../../hooks/useApiData'
 import type { EventDisplay, DiscoverCenter } from '../../utils/api'
 import WeekCalendar from '../../components/WeekCalendar'
 
@@ -150,21 +149,96 @@ function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () =
 export default function DiscoverScreen() {
   const router = useRouter()
   const { isDark } = useThemeContext()
-  const { height: windowHeight } = useWindowDimensions()
-  const mapHeight = windowHeight < 700 ? 200 : 280
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const { items, filteredPoints, loading, allEvents } = useDiscoverData(activeFilter, searchQuery)
-  const { points: allPoints } = useMapPoints()
 
-  // Dates that have events (for calendar dots)
+  // ── Sheet snap points ──────────────────────────────────
+  // Three positions (as translateY values from the expanded state):
+  //   expanded  = 0            → sheet covers almost everything
+  //   mid       = ~55% down    → roughly half the screen, showing map + sheet header/list
+  //   collapsed = near bottom  → just the drag handle + filter chips peeking up
+
+  const EXPANDED_TOP = 60 // px from top of container when fully expanded
+
+  const [containerHeight, setContainerHeight] = useState(0)
+  const sheetHeight = containerHeight - EXPANDED_TOP // total sheet height
+
+  const SNAP_EXPANDED = 0
+  const SNAP_MID = Math.max(0, sheetHeight * 0.45)       // sheet top sits ~halfway
+  const SNAP_COLLAPSED = Math.max(0, sheetHeight - 80)    // only ~80px visible (handle + chip row)
+
+  const snapsRef = useRef({ expanded: SNAP_EXPANDED, mid: SNAP_MID, collapsed: SNAP_COLLAPSED })
+  snapsRef.current = { expanded: SNAP_EXPANDED, mid: SNAP_MID, collapsed: SNAP_COLLAPSED }
+
+  const sheetY = useRef(new Animated.Value(0)).current
+  const offsetRef = useRef(0)
+  const initializedRef = useRef(false)
+
+  // Track expansion state for scroll behavior
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false)
+
+  // Set initial sheet position to mid once we know the container height
+  React.useEffect(() => {
+    if (containerHeight > 0 && !initializedRef.current) {
+      const mid = Math.max(0, (containerHeight - EXPANDED_TOP) * 0.45)
+      sheetY.setValue(mid)
+      offsetRef.current = mid
+      initializedRef.current = true
+    }
+  }, [containerHeight, sheetY])
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 8,
+      onPanResponderGrant: () => {},
+      onPanResponderMove: (_, gs) => {
+        const max = snapsRef.current.collapsed
+        const next = Math.max(0, Math.min(max, offsetRef.current + gs.dy))
+        sheetY.setValue(next)
+      },
+      onPanResponderRelease: (_, gs) => {
+        const { expanded, mid, collapsed } = snapsRef.current
+        const current = Math.max(0, Math.min(collapsed, offsetRef.current + gs.dy))
+
+        // Find nearest snap, biased by velocity
+        let snapTo: number
+        if (gs.vy > 1) {
+          // Fast swipe down — jump one stop down from current
+          snapTo = offsetRef.current <= expanded + 10 ? mid : collapsed
+        } else if (gs.vy < -1) {
+          // Fast swipe up — jump one stop up from current
+          snapTo = offsetRef.current >= collapsed - 10 ? mid : expanded
+        } else {
+          // Position-based: snap to nearest
+          const dExp = Math.abs(current - expanded)
+          const dMid = Math.abs(current - mid)
+          const dCol = Math.abs(current - collapsed)
+          const minD = Math.min(dExp, dMid, dCol)
+          snapTo = minD === dExp ? expanded : minD === dMid ? mid : collapsed
+        }
+
+        offsetRef.current = snapTo
+        setIsSheetExpanded(snapTo === expanded)
+        Animated.spring(sheetY, {
+          toValue: snapTo,
+          useNativeDriver: false,
+          damping: 28,
+          stiffness: 220,
+          mass: 0.8,
+        }).start()
+      },
+    })
+  ).current
+
+  // ── Data ──────────────────────────────────────────────
   const eventDates = React.useMemo(
     () => new Set(allEvents.filter((e) => e.date).map((e) => e.date)),
     [allEvents]
   )
 
-  // When a date is selected, filter to just that day's events
   const displayItems = React.useMemo(() => {
     if (!selectedDate) return items
     return items.filter(
@@ -174,7 +248,7 @@ export default function DiscoverScreen() {
 
   const handleFilterPress = (f: DiscoverFilter) => {
     setActiveFilter(f)
-    setSelectedDate(null) // Clear date selection when chip is tapped
+    setSelectedDate(null)
   }
 
   const handlePointPress = (point: { id: string; type: 'center' | 'event' }) => {
@@ -186,108 +260,174 @@ export default function DiscoverScreen() {
   }
 
   return (
-    <View className="flex-1 bg-background dark:bg-background-dark">
-      {/* Map Section */}
-      <View style={{ height: mapHeight }}>
-        {Platform.OS === 'web' ? (
-          <MapPreview onPress={() => {}} pointCount={allPoints.length} />
-        ) : (
-          <Suspense
-            fallback={
-              <View className="flex-1 justify-center items-center bg-gray-100 dark:bg-neutral-800">
-                <ActivityIndicator size="large" color="#9A3412" />
-              </View>
-            }
-          >
-            <Map points={filteredPoints} onPointPress={handlePointPress} />
-          </Suspense>
-        )}
+    <View
+      style={styles.container}
+      onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
+    >
+      {/* Map — full bleed behind the sheet */}
+      <View style={StyleSheet.absoluteFill}>
+        <Suspense
+          fallback={
+            <View className="flex-1 justify-center items-center bg-gray-100 dark:bg-neutral-800">
+              <ActivityIndicator size="large" color="#9A3412" />
+            </View>
+          }
+        >
+          <Map points={filteredPoints} onPointPress={handlePointPress} />
+        </Suspense>
       </View>
 
-      {/* Bottom Sheet Area */}
-      <View className="flex-1 bg-white dark:bg-neutral-900 -mt-4 rounded-t-3xl border-t border-gray-100 dark:border-neutral-800">
-        {/* Drag Handle */}
-        <View className="items-center pt-2 pb-3">
-          <View className="w-10 h-1 rounded-full bg-gray-300 dark:bg-neutral-600" />
-        </View>
-
-        {/* Filter Chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
-          className="mb-2"
-          style={{ flexGrow: 0 }}
+      {/* Bottom Sheet — hidden until we measure the container */}
+      {containerHeight > 0 && (
+      <Animated.View
+        style={[
+          styles.sheet,
+          { top: EXPANDED_TOP, transform: [{ translateY: sheetY }] },
+        ]}
+      >
+        <View
+          style={[
+            styles.sheetInner,
+            {
+              backgroundColor: isDark ? '#171717' : '#fff',
+              borderTopColor: isDark ? '#262626' : '#E5E7EB',
+            },
+          ]}
         >
-          {FILTERS.map((f) => (
-            <FilterChip
-              key={f.label}
-              label={f.label}
-              active={activeFilter === f.label && !selectedDate}
-              onPress={() => handleFilterPress(f.label)}
-            />
-          ))}
-        </ScrollView>
+          {/* ─── Draggable Header Zone ─── */}
+          <View {...panResponder.panHandlers}>
+            {/* Drag Handle */}
+            <View style={styles.handleRow}>
+              <View
+                style={[
+                  styles.handle,
+                  { backgroundColor: isDark ? '#525252' : '#D1D5DB' },
+                ]}
+              />
+            </View>
 
-        {/* Search Input */}
-        <View className="flex-row items-center mx-4 mt-1 mb-2 px-3 rounded-xl bg-gray-100 dark:bg-neutral-800" style={{ minHeight: 44 }}>
-          <Search size={16} color="#9CA3AF" />
-          <TextInput
-            className="flex-1 ml-2 text-sm font-inter text-content dark:text-content-dark"
-            placeholder="Search events and centers..."
-            placeholderTextColor="#9CA3AF"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={{ paddingVertical: 10 }}
-          />
-        </View>
+            {/* Filter Chips */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+              style={{ flexGrow: 0, marginBottom: 8 }}
+            >
+              {FILTERS.map((f) => (
+                <FilterChip
+                  key={f.label}
+                  label={f.label}
+                  active={activeFilter === f.label && !selectedDate}
+                  onPress={() => handleFilterPress(f.label)}
+                />
+              ))}
+            </ScrollView>
 
-        {/* Week Calendar — hidden when Centers filter or searching */}
-        {activeFilter !== 'Centers' && !searchQuery.trim() && (
-          <WeekCalendar
-            eventDates={eventDates}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-          />
-        )}
+            {/* Search Input */}
+            <View
+              className="flex-row items-center mx-4 mt-1 mb-2 px-3 rounded-xl"
+              style={{
+                minHeight: 44,
+                backgroundColor: isDark ? '#262626' : '#F3F4F6',
+              }}
+            >
+              <Search size={16} color="#9CA3AF" />
+              <TextInput
+                className="flex-1 ml-2 text-sm font-inter"
+                style={{ color: isDark ? '#E5E7EB' : '#1F2937', paddingVertical: 10 }}
+                placeholder="Search events and centers..."
+                placeholderTextColor="#9CA3AF"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
 
-        {/* Loading indicator */}
-        {loading && (
-          <View className="py-4 items-center">
-            <ActivityIndicator size="small" color="#9A3412" />
+            {/* Week Calendar */}
+            {activeFilter !== 'Centers' && !searchQuery.trim() && (
+              <WeekCalendar
+                eventDates={eventDates}
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+              />
+            )}
           </View>
-        )}
 
-        {/* Unified List */}
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: Platform.OS === 'web' ? 24 : 40, gap: 2 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {!loading && displayItems.length === 0 && (
-            <View className="py-12 items-center">
-              <Text className="text-gray-400 dark:text-gray-500 font-inter text-sm">
-                {selectedDate ? 'No events on this day' : 'No results found'}
-              </Text>
+          {/* Loading indicator */}
+          {loading && (
+            <View className="py-4 items-center">
+              <ActivityIndicator size="small" color="#9A3412" />
             </View>
           )}
-          {displayItems.map((item) =>
-            item.type === 'event' ? (
-              <EventItem
-                key={`event-${item.data.id}`}
-                event={item.data as EventDisplay}
-                onPress={() => router.push(`/events/${item.data.id}`)}
-              />
-            ) : (
-              <CenterItem
-                key={`center-${item.data.id}`}
-                center={item.data as DiscoverCenter}
-                onPress={() => router.push(`/center/${item.data.id}`)}
-              />
-            )
-          )}
-        </ScrollView>
-      </View>
+
+          {/* Unified List */}
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40, gap: 2 }}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={isSheetExpanded}
+          >
+            {!loading && displayItems.length === 0 && (
+              <View className="py-12 items-center">
+                <Text className="text-gray-400 dark:text-gray-500 font-inter text-sm">
+                  {selectedDate ? 'No events on this day' : 'No results found'}
+                </Text>
+              </View>
+            )}
+            {displayItems.map((item) =>
+              item.type === 'event' ? (
+                <EventItem
+                  key={`event-${item.data.id}`}
+                  event={item.data as EventDisplay}
+                  onPress={() => router.push(`/events/${item.data.id}`)}
+                />
+              ) : (
+                <CenterItem
+                  key={`center-${item.data.id}`}
+                  center={item.data as DiscoverCenter}
+                  onPress={() => router.push(`/center/${item.data.id}`)}
+                />
+              )
+            )}
+          </ScrollView>
+        </View>
+      </Animated.View>
+      )}
     </View>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  sheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    // top is set dynamically via style prop
+  },
+  sheetInner: {
+    flex: 1,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    overflow: 'hidden',
+    // Shadow for visibility over the map
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 16,
+  },
+  handleRow: {
+    alignItems: 'center',
+    paddingTop: 10,
+    paddingBottom: 12,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+  },
+})
