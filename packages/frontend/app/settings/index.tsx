@@ -9,10 +9,12 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Platform,
 } from 'react-native'
-import { Camera, Trash2, AlertTriangle } from 'lucide-react-native'
-import { useUser } from '../../components/contexts'
+import { Camera, AlertTriangle } from 'lucide-react-native'
+import { useUser, useThemeContext } from '../../components/contexts'
 import { useRouter } from 'expo-router'
+import { DestructiveButton } from '../../components/ui'
 
 type ProfileData = {
   name: string
@@ -33,12 +35,14 @@ const PREFERENCE_OPTIONS = [
 
 export default function Profile() {
   const { user, deleteAccount, updateProfile } = useUser()
+  const { isDark } = useThemeContext()
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const isWeb = Platform.OS === 'web'
 
   const getDisplayName = () => {
     if (user?.firstName && user?.lastName) return `${user.firstName} ${user.lastName}`
@@ -54,7 +58,6 @@ export default function Profile() {
     profileImage: user?.profileImage || `https://i.pravatar.cc/150?u=${user?.username || 'default'}`,
   })
 
-  // Sync profile data when user changes (e.g., after login)
   useEffect(() => {
     if (user) {
       setProfileData((prev) => ({
@@ -67,56 +70,27 @@ export default function Profile() {
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {}
-
-    if (!profileData.name.trim()) {
-      newErrors.name = 'Name is required'
-    }
-
-    if (!profileData.bio.trim()) {
-      newErrors.bio = 'Bio is required'
-    }
-
-    if (!profileData.birthday.trim()) {
-      newErrors.birthday = 'Birthday is required'
-    }
-
-    if (profileData.preferences.length === 0) {
-      newErrors.preferences = 'At least one preference must be selected'
-    }
-
+    if (!profileData.name.trim()) newErrors.name = 'Name is required'
+    if (!profileData.bio.trim()) newErrors.bio = 'Bio is required'
+    if (!profileData.birthday.trim()) newErrors.birthday = 'Birthday is required'
+    if (profileData.preferences.length === 0) newErrors.preferences = 'At least one preference must be selected'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleEdit = () => {
-    setIsEditing(true)
-  }
-
-  const handleCancel = () => {
-    setErrors({})
-    setIsEditing(false)
-  }
+  const handleEdit = () => setIsEditing(true)
+  const handleCancel = () => { setErrors({}); setIsEditing(false) }
 
   const handleSave = async () => {
-    if (!validateForm()) {
-      return
-    }
-
+    if (!validateForm()) return
     setIsSaving(true)
     try {
       const nameParts = profileData.name.trim().split(' ')
-      const firstName = nameParts[0]
-      const lastName = nameParts.slice(1).join(' ')
-
-      await updateProfile({
-        firstName,
-        lastName,
-      })
+      await updateProfile({ firstName: nameParts[0], lastName: nameParts.slice(1).join(' ') })
       setIsEditing(false)
       setErrors({})
     } catch (error) {
       console.error('Error saving profile:', error)
-      // Profile saved locally even if backend fails (optimistic update)
       setIsEditing(false)
       setErrors({})
     } finally {
@@ -125,23 +99,18 @@ export default function Profile() {
   }
 
   const handlePreferenceToggle = (preference: string) => {
-    if (isEditing) {
-      setProfileData((prev) => ({
-        ...prev,
-        preferences: prev.preferences.includes(preference)
-          ? prev.preferences.filter((p) => p !== preference)
-          : [...prev.preferences, preference],
-      }))
-    }
+    if (!isEditing) return
+    setProfileData((prev) => ({
+      ...prev,
+      preferences: prev.preferences.includes(preference)
+        ? prev.preferences.filter((p) => p !== preference)
+        : [...prev.preferences, preference],
+    }))
   }
 
   const handleInputChange = (field: keyof ProfileData, value: string) => {
-    if (isEditing) {
-      setProfileData((prev) => ({
-        ...prev,
-        [field]: value,
-      }))
-    }
+    if (!isEditing) return
+    setProfileData((prev) => ({ ...prev, [field]: value }))
   }
 
   const handleDeleteAccount = async () => {
@@ -161,293 +130,357 @@ export default function Profile() {
     }
   }
 
-  return (
-    <ScrollView className="flex-1 bg-white dark:bg-neutral-900">
-      <View className="max-w-[800px] w-full self-center p-8">
-        {/* Header */}
-        <View className="flex-row justify-between items-center mb-8">
-          <View>
-            <Text className="text-3xl font-inter font-bold text-content dark:text-content-dark mb-1">
-              Profile Settings
+  const labelColor = isDark ? '#78716C' : '#A8A29E'
+  const textColor = isDark ? '#F5F5F5' : '#1C1917'
+  const mutedTextColor = isDark ? '#A8A29E' : '#78716C'
+  const borderColor = isDark ? '#262626' : '#E5E7EB'
+  const cardBg = isDark ? '#171717' : '#FFFFFF'
+  const chipBg = isDark ? '#262626' : '#F3F0ED'
+
+  // ─── Shared: Interest chips ───
+  const InterestChips = () => (
+    <View>
+      <Text
+        style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: labelColor, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}
+      >
+        Interests
+      </Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {PREFERENCE_OPTIONS.map((pref) => {
+          const selected = profileData.preferences.includes(pref)
+          return (
+            <Pressable
+              key={pref}
+              onPress={() => handlePreferenceToggle(pref)}
+              disabled={!isEditing}
+              style={{
+                paddingHorizontal: 18,
+                paddingVertical: 8,
+                borderRadius: 100,
+                backgroundColor: selected ? '#C2410C' : chipBg,
+                opacity: !isEditing && !selected ? 0.5 : 1,
+              }}
+            >
+              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: selected ? '#FFFFFF' : mutedTextColor }}>
+                {pref}
+              </Text>
+            </Pressable>
+          )
+        })}
+      </View>
+      {errors.preferences && (
+        <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}>{errors.preferences}</Text>
+      )}
+    </View>
+  )
+
+  // ─── Shared: Delete confirmation modal ───
+  const DeleteModal = () => (
+    <Modal transparent visible={showDeleteModal} animationType="fade" onRequestClose={() => setShowDeleteModal(false)}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 24 }}>
+        <View style={{ backgroundColor: cardBg, borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, borderWidth: 1, borderColor: '#FECACA' }}>
+          <View style={{ alignItems: 'center', marginBottom: 16 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: isDark ? 'rgba(220,38,38,0.15)' : '#FEE2E2', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+              <AlertTriangle size={32} color="#DC2626" />
+            </View>
+            <Text style={{ fontFamily: 'Inter-Bold', fontSize: 22, color: textColor, marginBottom: 8 }}>Delete Account?</Text>
+            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor, textAlign: 'center', lineHeight: 22 }}>
+              This action cannot be undone. All your data will be permanently deleted.
             </Text>
-            <Text className="text-base font-inter text-content/60 dark:text-content-dark/60">
+          </View>
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+            <Pressable
+              onPress={() => setShowDeleteModal(false)}
+              disabled={isDeleting}
+              style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: isDark ? '#262626' : '#F3F0ED', alignItems: 'center' }}
+            >
+              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: textColor }}>Cancel</Text>
+            </Pressable>
+            <Pressable
+              onPress={handleDeleteAccount}
+              disabled={isDeleting}
+              style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#DC2626', alignItems: 'center' }}
+            >
+              {isDeleting ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#FFFFFF' }}>Delete Forever</Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  )
+
+  // ─── Field label ───
+  const FieldLabel = ({ children }: { children: string }) => (
+    <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: labelColor, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>
+      {children}
+    </Text>
+  )
+
+  // ─── Read-only field value (mobile) ───
+  const FieldValue = ({ value, multiline }: { value: string; multiline?: boolean }) => (
+    <Text style={{ fontFamily: multiline ? 'Inter-Regular' : 'Inter-Medium', fontSize: multiline ? 15 : 16, color: multiline ? mutedTextColor : textColor, lineHeight: multiline ? 22 : 24 }}>
+      {value || '—'}
+    </Text>
+  )
+
+  // ─── Editable field ───
+  const EditableField = ({ field, value, error, multiline }: { field: keyof ProfileData; value: string; error?: string; multiline?: boolean }) => (
+    <View>
+      {isEditing ? (
+        <>
+          <TextInput
+            value={value}
+            onChangeText={(v) => handleInputChange(field, v)}
+            multiline={multiline}
+            textAlignVertical={multiline ? 'top' : 'center'}
+            placeholderTextColor="#9ca3af"
+            style={{
+              fontFamily: 'Inter-Regular',
+              fontSize: 15,
+              color: textColor,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: error ? '#DC2626' : borderColor,
+              backgroundColor: cardBg,
+              minHeight: multiline ? 100 : undefined,
+            }}
+          />
+          {error && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{error}</Text>}
+        </>
+      ) : (
+        <FieldValue value={value} multiline={multiline} />
+      )}
+    </View>
+  )
+
+  // ═══════════════════════════════════════════
+  //  MOBILE LAYOUT
+  // ═══════════════════════════════════════════
+  if (!isWeb) {
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
+        {/* Hero: centered avatar + name */}
+        <View style={{ alignItems: 'center', paddingTop: 28, paddingBottom: 24, paddingHorizontal: 20 }}>
+          <View style={{ position: 'relative', marginBottom: 14 }}>
+            <Image
+              source={{ uri: profileData.profileImage }}
+              style={{ width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: cardBg, backgroundColor: '#D6D3D1' }}
+            />
+            {isEditing && (
+              <Pressable
+                style={{
+                  position: 'absolute', bottom: 0, right: 0,
+                  width: 28, height: 28, borderRadius: 14,
+                  backgroundColor: '#C2410C', alignItems: 'center', justifyContent: 'center',
+                  borderWidth: 2, borderColor: isDark ? '#171717' : '#FAFAF7',
+                }}
+              >
+                <Camera size={13} color="#fff" />
+              </Pressable>
+            )}
+          </View>
+          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 24, color: textColor, letterSpacing: -0.5, marginBottom: 3 }}>
+            {profileData.name || '—'}
+          </Text>
+          <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
+            @{user?.username || 'user'}
+          </Text>
+        </View>
+
+        {/* Info fields */}
+        <View style={{ paddingHorizontal: 20, gap: 20 }}>
+          <View>
+            <FieldLabel>Full Name</FieldLabel>
+            <EditableField field="name" value={profileData.name} error={errors.name} />
+          </View>
+          <View>
+            <FieldLabel>Bio</FieldLabel>
+            <EditableField field="bio" value={profileData.bio} error={errors.bio} multiline />
+          </View>
+          <View>
+            <FieldLabel>Birthday</FieldLabel>
+            <EditableField field="birthday" value={profileData.birthday} error={errors.birthday} />
+          </View>
+
+          <InterestChips />
+
+          {/* Save/Cancel when editing */}
+          {isEditing && (
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+              <Pressable
+                onPress={handleCancel}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: isDark ? '#262626' : '#F3F0ED', alignItems: 'center' }}
+              >
+                <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: textColor }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleSave}
+                disabled={isSaving}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#C2410C', alignItems: 'center' }}
+              >
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#FFFFFF' }}>Save Changes</Text>
+                )}
+              </Pressable>
+            </View>
+          )}
+        </View>
+
+        {/* Delete Account */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 32, paddingBottom: 40, marginTop: 'auto' }}>
+          <DestructiveButton onPress={() => setShowDeleteModal(true)}>
+            Delete Account
+          </DestructiveButton>
+        </View>
+
+        <DeleteModal />
+      </ScrollView>
+    )
+  }
+
+  // ═══════════════════════════════════════════
+  //  WEB LAYOUT
+  // ═══════════════════════════════════════════
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
+      <View style={{ maxWidth: 900, width: '100%', alignSelf: 'center', padding: 40, paddingHorizontal: 60, gap: 36 }}>
+        {/* Header row */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View style={{ gap: 4 }}>
+            <Text style={{ fontFamily: 'Inter-Bold', fontSize: 28, color: textColor, letterSpacing: -0.5 }}>
+              Profile
+            </Text>
+            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor }}>
               Manage your public profile information
             </Text>
           </View>
           <Pressable
             onPress={isEditing ? handleSave : handleEdit}
             disabled={isSaving}
-            className={`px-6 py-3 rounded-xl ${
-              isEditing
-                ? 'bg-primary hover:scale-105'
-                : 'bg-muted/50 dark:bg-muted-dark/20 hover:bg-muted/70 dark:hover:bg-muted-dark/30'
-            } active:scale-95 transition-all duration-150`}
+            style={{
+              paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10,
+              backgroundColor: isEditing ? '#C2410C' : '#1C1917',
+            }}
           >
             {isSaving ? (
-              <ActivityIndicator size="small" color="#ea580c" />
+              <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text
-                className={`font-inter font-semibold ${
-                  isEditing ? 'text-white' : 'text-content dark:text-content-dark'
-                }`}
-              >
-                {isEditing ? 'Save' : 'Edit'}
+              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: '#FFFFFF' }}>
+                {isEditing ? 'Save Changes' : 'Edit Profile'}
               </Text>
             )}
           </Pressable>
         </View>
 
-        {/* Profile Picture Section */}
-        <View className="mb-8 p-6 bg-muted/10 dark:bg-muted-dark/10 rounded-2xl">
-          <Text className="text-lg font-inter font-semibold text-content dark:text-content-dark mb-4">
-            Profile Picture
-          </Text>
-          <View className="flex-row items-center gap-6">
-            <View className="w-24 h-24 rounded-full overflow-hidden bg-primary">
-              <Image source={{ uri: profileData.profileImage }} className="w-full h-full" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-2xl font-inter font-bold text-content dark:text-content-dark mb-1">
-                {profileData.name}
-              </Text>
-              <Text className="text-base font-inter text-content/60 dark:text-content-dark/60 mb-3">
-                @{user?.username || 'user'}
-              </Text>
-              {isEditing && (
-                <Pressable className="flex-row items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-primary rounded-xl self-start hover:scale-105 active:scale-95 transition-transform">
-                  <Camera size={18} color="#ea580c" />
-                  <Text className="font-inter font-medium text-primary">Change Photo</Text>
-                </Pressable>
-              )}
-            </View>
+        {/* Profile card */}
+        <View
+          style={{
+            flexDirection: 'row', alignItems: 'center', gap: 28, padding: 28,
+            backgroundColor: cardBg, borderRadius: 20, borderWidth: 1, borderColor,
+          }}
+        >
+          <View style={{ position: 'relative' }}>
+            <Image
+              source={{ uri: profileData.profileImage }}
+              style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#D6D3D1' }}
+            />
+            {isEditing && (
+              <Pressable
+                style={{
+                  position: 'absolute', bottom: 2, right: 2,
+                  width: 28, height: 28, borderRadius: 14,
+                  backgroundColor: '#C2410C', alignItems: 'center', justifyContent: 'center',
+                  borderWidth: 2, borderColor: cardBg,
+                }}
+              >
+                <Camera size={13} color="#fff" />
+              </Pressable>
+            )}
+          </View>
+          <View style={{ gap: 4 }}>
+            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 24, color: textColor, letterSpacing: -0.3 }}>
+              {profileData.name || '—'}
+            </Text>
+            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
+              @{user?.username || 'user'}
+            </Text>
           </View>
         </View>
 
-        {/* Name Section */}
-        <View className="mb-6">
-          <Text className="text-lg font-inter font-semibold text-content dark:text-content-dark mb-3">
-            Full Name
-          </Text>
-          {isEditing ? (
-            <View>
-              <TextInput
-                value={profileData.name}
-                onChangeText={(value) => handleInputChange('name', value)}
-                className={`text-base font-inter px-4 py-3 rounded-xl border-2 ${
-                  errors.name
-                    ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
-                    : 'border-muted/30 dark:border-muted-dark/30 bg-white dark:bg-neutral-800'
-                } text-content dark:text-content-dark`}
-                placeholderTextColor="#9ca3af"
-              />
-              {errors.name && (
-                <Text className="text-sm text-red-600 dark:text-red-400 mt-2">{errors.name}</Text>
-              )}
-            </View>
-          ) : (
-            <Text className="text-base font-inter text-content dark:text-content-dark px-4 py-3 bg-muted/10 dark:bg-muted-dark/10 rounded-xl">
-              {profileData.name}
-            </Text>
-          )}
-        </View>
-
-        {/* Bio Section */}
-        <View className="mb-6">
-          <Text className="text-lg font-inter font-semibold text-content dark:text-content-dark mb-3">
-            Bio
-          </Text>
-          {isEditing ? (
-            <View>
-              <TextInput
-                value={profileData.bio}
-                onChangeText={(value) => handleInputChange('bio', value)}
-                placeholder="Tell us about yourself..."
-                className={`text-base font-inter px-4 py-3 rounded-xl border-2 ${
-                  errors.bio
-                    ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
-                    : 'border-muted/30 dark:border-muted-dark/30 bg-white dark:bg-neutral-800'
-                } text-content dark:text-content-dark min-h-[100px]`}
-                multiline
-                textAlignVertical="top"
-                placeholderTextColor="#9ca3af"
-              />
-              {errors.bio && (
-                <Text className="text-sm text-red-600 dark:text-red-400 mt-2">{errors.bio}</Text>
-              )}
-            </View>
-          ) : (
-            <Text className="text-base font-inter text-content dark:text-content-dark px-4 py-3 bg-muted/10 dark:bg-muted-dark/10 rounded-xl leading-relaxed">
-              {profileData.bio}
-            </Text>
-          )}
-        </View>
-
-        {/* Birthday Section */}
-        <View className="mb-6">
-          <Text className="text-lg font-inter font-semibold text-content dark:text-content-dark mb-3">
-            Birthday
-          </Text>
-          {isEditing ? (
-            <View>
-              <TextInput
-                value={profileData.birthday}
-                onChangeText={(value) => handleInputChange('birthday', value)}
-                className={`text-base font-inter px-4 py-3 rounded-xl border-2 ${
-                  errors.birthday
-                    ? 'border-red-500 bg-red-50 dark:bg-red-900/10'
-                    : 'border-muted/30 dark:border-muted-dark/30 bg-white dark:bg-neutral-800'
-                } text-content dark:text-content-dark`}
-                placeholderTextColor="#9ca3af"
-              />
-              {errors.birthday && (
-                <Text className="text-sm text-red-600 dark:text-red-400 mt-2">
-                  {errors.birthday}
-                </Text>
-              )}
-            </View>
-          ) : (
-            <Text className="text-base font-inter text-content dark:text-content-dark px-4 py-3 bg-muted/10 dark:bg-muted-dark/10 rounded-xl">
-              {profileData.birthday}
-            </Text>
-          )}
-        </View>
-
-        {/* Preferences Section */}
-        <View className="mb-6">
-          <Text className="text-lg font-inter font-semibold text-content dark:text-content-dark mb-3">
-            Interests
-          </Text>
-          <View className="flex-row flex-wrap gap-3">
-            {PREFERENCE_OPTIONS.map((preference) => {
-              const isSelected = profileData.preferences.includes(preference)
-              return (
-                <Pressable
-                  key={preference}
-                  className={`px-5 py-3 rounded-full border-2 ${
-                    isSelected
-                      ? 'bg-primary border-primary'
-                      : 'bg-muted/20 dark:bg-muted-dark/20 border-transparent'
-                  } ${
-                    isEditing ? 'hover:scale-105' : isSelected ? '' : 'opacity-50'
-                  } active:scale-95 transition-all duration-150`}
-                  onPress={() => handlePreferenceToggle(preference)}
-                  disabled={!isEditing}
-                >
-                  <Text
-                    className={`font-inter font-semibold ${
-                      isSelected ? 'text-white' : 'text-content dark:text-content-dark'
-                    }`}
-                  >
-                    {preference}
-                  </Text>
-                </Pressable>
-              )
-            })}
+        {/* Two-column: Name + Birthday */}
+        <View style={{ flexDirection: 'row', gap: 28 }}>
+          <View style={{ flex: 1, gap: 8 }}>
+            <FieldLabel>Full Name</FieldLabel>
+            {isEditing ? (
+              <EditableField field="name" value={profileData.name} error={errors.name} />
+            ) : (
+              <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: cardBg, borderRadius: 12, borderWidth: 1, borderColor }}>
+                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>{profileData.name || '—'}</Text>
+              </View>
+            )}
           </View>
-          {errors.preferences && (
-            <Text className="text-sm text-red-600 dark:text-red-400 mt-3">
-              {errors.preferences}
-            </Text>
+          <View style={{ flex: 1, gap: 8 }}>
+            <FieldLabel>Birthday</FieldLabel>
+            {isEditing ? (
+              <EditableField field="birthday" value={profileData.birthday} error={errors.birthday} />
+            ) : (
+              <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: cardBg, borderRadius: 12, borderWidth: 1, borderColor }}>
+                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>{profileData.birthday || '—'}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Bio */}
+        <View style={{ gap: 8 }}>
+          <FieldLabel>Bio</FieldLabel>
+          {isEditing ? (
+            <EditableField field="bio" value={profileData.bio} error={errors.bio} multiline />
+          ) : (
+            <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: cardBg, borderRadius: 12, borderWidth: 1, borderColor, minHeight: 80 }}>
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor, lineHeight: 24 }}>{profileData.bio || '—'}</Text>
+            </View>
           )}
         </View>
 
-        {/* Action Buttons */}
+        <InterestChips />
+
+        {/* Cancel button when editing */}
         {isEditing && (
-          <View className="flex-row gap-3 mt-8">
-            <Pressable
-              onPress={handleCancel}
-              className="flex-1 px-6 py-4 rounded-xl bg-muted/30 dark:bg-muted-dark/20 hover:bg-muted/50 dark:hover:bg-muted-dark/30 active:scale-98 transition-all duration-150"
-            >
-              <Text className="text-center font-inter font-semibold text-content dark:text-content-dark">
-                Cancel
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={handleSave}
-              disabled={isSaving}
-              className="flex-1 px-6 py-4 rounded-xl bg-primary hover:scale-105 active:scale-95 transition-all duration-150"
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <Text className="text-center font-inter font-semibold text-white">
-                  Save Changes
-                </Text>
-              )}
-            </Pressable>
-          </View>
+          <Pressable
+            onPress={handleCancel}
+            style={{ alignSelf: 'flex-start', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10, backgroundColor: isDark ? '#262626' : '#F3F0ED' }}
+          >
+            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: textColor }}>Cancel</Text>
+          </Pressable>
         )}
 
-        {/* Danger Zone - Delete Account */}
-        <View className="mt-12 pt-8 border-t-2 border-red-200 dark:border-red-900/30">
-          <View className="mb-4">
-            <Text className="text-xl font-inter font-bold text-red-600 dark:text-red-400 mb-2">
-              Danger Zone
-            </Text>
-            <Text className="text-sm font-inter text-content/60 dark:text-content-dark/60">
-              Once you delete your account, there is no going back. Please be certain.
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => setShowDeleteModal(true)}
-            className="flex-row items-center justify-center gap-3 px-6 py-4 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-500 dark:border-red-700 hover:bg-red-100 dark:hover:bg-red-900/30 active:scale-98 transition-all duration-150"
-          >
-            <Trash2 size={20} color="#dc2626" />
-            <Text className="font-inter font-bold text-red-600 dark:text-red-400">
-              Delete Account
-            </Text>
-          </Pressable>
-        </View>
-
-        {/* Delete Confirmation Modal */}
-        <Modal
-          transparent
-          visible={showDeleteModal}
-          animationType="fade"
-          onRequestClose={() => setShowDeleteModal(false)}
+        {/* Danger Zone */}
+        <View
+          style={{
+            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+            padding: 20, paddingHorizontal: 24, borderRadius: 14, borderWidth: 1, borderColor: '#FECACA', marginTop: 12,
+          }}
         >
-          <View className="flex-1 justify-center items-center bg-black/50 px-6">
-            <View className="bg-white dark:bg-neutral-900 rounded-2xl p-6 w-full max-w-[400px] border-2 border-red-500">
-              <View className="items-center mb-4">
-                <View className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 items-center justify-center mb-3">
-                  <AlertTriangle size={32} color="#dc2626" />
-                </View>
-                <Text className="text-2xl font-inter font-bold text-content dark:text-content-dark mb-2">
-                  Delete Account?
-                </Text>
-                <Text className="text-center font-inter text-content/70 dark:text-content-dark/70">
-                  This action cannot be undone. All your data will be permanently deleted.
-                </Text>
-              </View>
-
-              <View className="flex-row gap-3 mt-6">
-                <Pressable
-                  onPress={() => setShowDeleteModal(false)}
-                  disabled={isDeleting}
-                  className="flex-1 px-4 py-3 rounded-xl bg-muted/30 dark:bg-muted-dark/20 hover:bg-muted/50 dark:hover:bg-muted-dark/30 active:scale-98"
-                >
-                  <Text className="text-center font-inter font-semibold text-content dark:text-content-dark">
-                    Cancel
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={handleDeleteAccount}
-                  disabled={isDeleting}
-                  className="flex-1 px-4 py-3 rounded-xl bg-red-600 hover:bg-red-700 active:scale-98"
-                >
-                  {isDeleting ? (
-                    <ActivityIndicator size="small" color="#ffffff" />
-                  ) : (
-                    <Text className="text-center font-inter font-semibold text-white">
-                      Delete Forever
-                    </Text>
-                  )}
-                </Pressable>
-              </View>
-            </View>
+          <View style={{ gap: 3 }}>
+            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#DC2626' }}>Danger Zone</Text>
+            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: labelColor }}>Permanently delete your account and all data</Text>
           </View>
-        </Modal>
+          <DestructiveButton onPress={() => setShowDeleteModal(true)}>
+            Delete Account
+          </DestructiveButton>
+        </View>
       </View>
+
+      <DeleteModal />
     </ScrollView>
   )
 }
