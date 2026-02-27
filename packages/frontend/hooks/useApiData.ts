@@ -5,6 +5,7 @@ import {
   fetchEvent,
   fetchEventsByCenter,
   fetchEventUsers,
+  updateEvent,
   centersToMapPoints,
   eventsToMapPoints,
   MapPoint,
@@ -149,6 +150,8 @@ export function useEventDetail(eventId: string) {
   const [messages, setMessages] = useState(SAMPLE_MESSAGES)
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
+  const [isToggling, setIsToggling] = useState(false)
+  const [usersAttending, setUsersAttending] = useState<string[]>([])
 
   useEffect(() => {
     let mounted = true
@@ -161,13 +164,15 @@ export function useEventDetail(eventId: string) {
 
         if (apiEvent?.eventObject) {
           const obj = apiEvent.eventObject
+          const attending = obj.usersAttending || []
+          setUsersAttending(attending)
           setEvent({
             id: eventId,
             title: obj.title || obj.description || 'Event',
             time: obj.date ? new Date(obj.date).toLocaleString() : '',
             location: obj.center?.centerName || 'TBD',
             address: '',
-            attendees: obj.peopleAttending || 0,
+            attendees: obj.peopleAttending || attending.length,
             likes: 0,
             comments: 0,
             description: obj.description,
@@ -202,7 +207,39 @@ export function useEventDetail(eventId: string) {
     return () => { mounted = false }
   }, [eventId])
 
-  return { event, attendees, messages, loading, isLive }
+  const toggleRegistration = useCallback(async (username: string) => {
+    if (!event) return
+    setIsToggling(true)
+
+    try {
+      const isCurrentlyRegistered = usersAttending.includes(username)
+      const newAttending = isCurrentlyRegistered
+        ? usersAttending.filter((u) => u !== username)
+        : [...usersAttending, username]
+
+      await updateEvent({
+        id: eventId,
+        eventObject: { usersAttending: newAttending },
+      })
+
+      setUsersAttending(newAttending)
+      setEvent((prev) =>
+        prev
+          ? {
+              ...prev,
+              isRegistered: !isCurrentlyRegistered,
+              attendees: newAttending.length,
+            }
+          : null
+      )
+    } catch (error) {
+      throw error
+    } finally {
+      setIsToggling(false)
+    }
+  }, [event, eventId, usersAttending])
+
+  return { event, attendees, messages, loading, isLive, toggleRegistration, isToggling }
 }
 
 export function useWeekCalendar() {
