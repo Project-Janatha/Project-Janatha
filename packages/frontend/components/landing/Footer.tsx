@@ -1,5 +1,6 @@
 import React from 'react'
 import { View, Text, Pressable, useWindowDimensions } from 'react-native'
+import Logo from '../ui/Logo'
 
 interface FooterColumn {
   title: string
@@ -43,38 +44,7 @@ export function Footer() {
       >
         {/* Left: Logo + tagline */}
         <View style={{ maxWidth: 280 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <View
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 14,
-                backgroundColor: '#1C1917',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Text
-                style={{
-                  color: '#FFFFFF',
-                  fontSize: 14,
-                  fontFamily: '"Inclusive Sans", sans-serif',
-                }}
-              >
-                J
-              </Text>
-            </View>
-            <Text
-              style={{
-                fontFamily: '"Inclusive Sans", sans-serif',
-                fontWeight: '600',
-                fontSize: 18,
-                color: '#1C1917',
-              }}
-            >
-              Janata
-            </Text>
-          </View>
+          <Logo size={32} style={{ marginBottom: 12 }} />
           <Text
             style={{
               fontFamily: 'Inter, sans-serif',
