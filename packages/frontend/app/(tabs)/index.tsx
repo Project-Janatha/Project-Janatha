@@ -1,12 +1,13 @@
 // This is the mobile/native layout
-import React, { useContext, Suspense } from 'react'
-import { View, Text, ScrollView, Pressable, Platform, ActivityIndicator } from 'react-native'
-import { MapPin, ChevronRight, ThumbsUp, MessageCircle } from 'lucide-react-native'
+import React, { useContext, Suspense, useState } from 'react'
+import { View, Text, ScrollView, Pressable, Platform, ActivityIndicator, Image } from 'react-native'
+import { MapPin, ChevronRight, ThumbsUp, MessageCircle, User } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
-import { useUser } from '../../components/contexts'
+import { useUser, useThemeContext } from '../../components/contexts'
 import { SecondaryButton, Card } from '../../components/ui'
 import { MapPreview } from '../../components'
 import { useRouter } from 'expo-router'
+import SettingsModal from '../../components/SettingsModal.native'
 
 // Lazy load Map to avoid loading heavy web dependencies on mobile web
 const Map = React.lazy(() => import('../../components/Map'))
@@ -24,10 +25,12 @@ type MapPoint = {
  * @return {JSX.Element} A HomeScreen component that displays the main dashboard with events and calendar.
  */
 export default function HomeScreen() {
-  const { user } = useUser()
+  const { user, logout } = useUser()
   const router = useRouter()
+  const [settingsVisible, setSettingsVisible] = useState(false)
 
   const userName = user?.username || 'Pranav'
+  const profileImage = user?.profileImage || null
 
   // Map points data - centers and events with proper coordinates
   const mapPoints: MapPoint[] = [
@@ -132,6 +135,33 @@ export default function HomeScreen() {
   return (
     <ScrollView className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-1 gap-4 px-4 pt-4 pb-8">
+        {/* Header with Profile */}
+        <View className="flex-row justify-between items-center mb-2">
+          <View>
+            <Text className="text-2xl font-bold text-content dark:text-content-dark">Welcome</Text>
+            <Text className="text-lg text-primary font-semibold">{userName}</Text>
+          </View>
+          <Pressable
+            onPress={() => setSettingsVisible(true)}
+            className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700"
+          >
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} className="w-full h-full" />
+            ) : (
+              <View className="w-full h-full justify-center items-center">
+                <User size={20} color="#666" />
+              </View>
+            )}
+          </Pressable>
+        </View>
+
+        {/* Settings Modal */}
+        <SettingsModal
+          visible={settingsVisible}
+          onClose={() => setSettingsVisible(false)}
+          onLogout={logout}
+        />
+
         {/* Interactive Map Section */}
         <Card className="mb-4">
           <View className="h-[200px] rounded-t-2xl overflow-hidden">

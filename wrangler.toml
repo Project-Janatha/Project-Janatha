@@ -1,0 +1,8 @@
+name = "api-cors"
+main = "cors-worker.js"
+compatibility_date = "2026-02-26"
+
+routes = [
+  { pattern = "chinmayajanata.org/api/*", zone_name = "chinmayajanata.org" },
+  { pattern = "app.chinmayajanata.org/api/*", zone_name = "chinmayajanata.org" }
+]

@@ -18,9 +18,9 @@ export const API_BASE_URL =
       : NATIVE_FALLBACK
 
 export const API_TIMEOUTS = {
-  auth: 10_000,
-  logout: 5_000,
-  standard: 15_000,
+  auth: 60_000,
+  logout: 30_000,
+  standard: 60_000,
 } as const
 
 export const API_ENDPOINTS = {
