@@ -1,6 +1,5 @@
 import React from 'react'
 import { View, Text, Pressable } from 'react-native'
-import { useThemeContext } from '../contexts'
 
 export interface UnderlineTabBarProps {
   tabs: string[]
@@ -9,14 +8,10 @@ export interface UnderlineTabBarProps {
 }
 
 export default function UnderlineTabBar({ tabs, activeTab, onTabChange }: UnderlineTabBarProps) {
-  const { isDark } = useThemeContext()
-  const borderColor = isDark ? '#404040' : '#E7E5E4'
-  const inactiveColor = isDark ? '#6B7280' : '#A8A29E'
-
   return (
     <View
       className="flex-row"
-      style={{ borderBottomWidth: 1, borderBottomColor: borderColor }}
+      style={{ borderBottomWidth: 1, borderBottomColor: '#E7E5E4' }}
     >
       {tabs.map((tab) => {
         const isActive = tab === activeTab
@@ -31,7 +26,7 @@ export default function UnderlineTabBar({ tabs, activeTab, onTabChange }: Underl
               style={{
                 fontSize: 14,
                 fontFamily: 'Inter-Medium',
-                color: isActive ? '#E8862A' : inactiveColor,
+                color: isActive ? '#E8862A' : '#A8A29E',
               }}
             >
               {tab}
