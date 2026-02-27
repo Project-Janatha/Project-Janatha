@@ -7,6 +7,7 @@ import {
   Switch,
   Linking,
   Modal,
+  Platform,
   ActivityIndicator,
   Alert,
 } from 'react-native'
@@ -52,7 +53,7 @@ export default function Settings() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
-      <View style={{ maxWidth: 900, width: '100%', alignSelf: 'center', padding: 40, paddingHorizontal: 60 }}>
+      <View style={{ maxWidth: 900, width: '100%', alignSelf: 'center', padding: Platform.OS === 'web' ? 40 : 20, paddingHorizontal: Platform.OS === 'web' ? 60 : 20 }}>
         {/* Header */}
         <View className="mb-8">
           <Text className="text-3xl font-inter font-bold text-content dark:text-content-dark mb-1">
