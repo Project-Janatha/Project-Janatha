@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, usePathname, Slot, Stack } from 'expo-router'
 import { User, Settings as SettingsIcon, ChevronLeft } from 'lucide-react-native'
 import { useThemeContext } from '../../components/contexts'
-import { Ionicons } from '@expo/vector-icons'
+import Logo from '../../components/ui/Logo'
 
 const SETTINGS_TABS = [
   { id: 'profile', label: 'Profile', icon: User, path: '/settings' },
@@ -31,27 +31,10 @@ export default function SettingsLayout() {
     }
 
     return (
-      <View className="flex-row items-center gap-8">
+      <View className="flex-row items-center">
         <Pressable onPress={() => router.push('/')}>
-          <Text className="text-xl font-inter-bold text-content dark:text-content-dark">
-            Chinmaya Janata
-          </Text>
+          <Logo size={28} />
         </Pressable>
-        <View className="flex-row gap-6">
-          <Pressable
-            onPress={() => router.push('/')}
-            className="flex-row items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
-          >
-            <Ionicons
-              name="compass-outline"
-              size={20}
-              className="text-contentStrong dark:text-contentStrong-dark"
-            />
-            <Text className="font-inter text-contentStrong dark:text-contentStrong-dark">
-              Discover
-            </Text>
-          </Pressable>
-        </View>
       </View>
     )
   }
