@@ -1,17 +1,32 @@
 import React from 'react'
 import { View, Text } from 'react-native'
 
+type BadgeVariant = 'going' | 'member' | 'upcoming' | 'past' | 'host'
+
 type BadgeProps = {
   label: string
-  variant: 'going' | 'member'
+  variant: BadgeVariant
+}
+
+const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string }> = {
+  going:    { bg: '#ECFDF5', text: '#059669' },
+  member:   { bg: '#ECFDF5', text: '#059669' },
+  upcoming: { bg: '#E8862A', text: '#FFFFFF' },
+  past:     { bg: 'rgba(120,113,108,0.85)', text: '#FFFFFF' },
+  host:     { bg: '#FFF7ED', text: '#E8862A' },
 }
 
 export default function Badge({ label, variant }: BadgeProps) {
+  const style = VARIANT_STYLES[variant]
   return (
-    <View className="px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30">
+    <View style={{ backgroundColor: style.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 }}>
       <Text
-        className="text-[10px] font-inter-semibold text-green-600 dark:text-green-400"
-        style={{ lineHeight: 14 }}
+        style={{
+          fontSize: 11,
+          fontFamily: 'Inter-SemiBold',
+          color: style.text,
+          lineHeight: 14,
+        }}
       >
         {label}
       </Text>
