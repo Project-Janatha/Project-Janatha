@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import Logo from '../ui/Logo'
 
 interface ImageCarouselProps {
   images: any[]
@@ -64,7 +65,7 @@ export function ImageCarousel({ images, interval = 15000 }: ImageCarouselProps) 
           background: 'linear-gradient(135deg, #F4DED7 0%, #E7D5CC 100%)',
         }}
       >
-        {/* Decorative Chinmaya logo at low opacity */}
+        {/* Decorative logo at low opacity */}
         <div
           style={{
             position: 'absolute',
@@ -74,28 +75,7 @@ export function ImageCarousel({ images, interval = 15000 }: ImageCarouselProps) 
             opacity: 0.08,
           }}
         >
-          <div
-            style={{
-              width: 200,
-              height: 200,
-              borderRadius: 100,
-              border: '3px solid #1C1917',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <span
-              style={{
-                fontFamily: '"Inclusive Sans", sans-serif',
-                fontSize: 96,
-                fontWeight: '400',
-                color: '#1C1917',
-              }}
-            >
-              J
-            </span>
-          </div>
+          <Logo size={200} showText={false} />
         </div>
 
         {/* Bottom gradient overlay */}
@@ -112,49 +92,8 @@ export function ImageCarousel({ images, interval = 15000 }: ImageCarouselProps) 
         />
 
         {/* Janata wordmark */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 32,
-            left: 32,
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 10,
-          }}
-        >
-          <div
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: 12,
-              backgroundColor: '#1C1917',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <span
-              style={{
-                color: '#FFFFFF',
-                fontSize: 12,
-                fontFamily: '"Inclusive Sans", sans-serif',
-                fontWeight: '400',
-              }}
-            >
-              J
-            </span>
-          </div>
-          <span
-            style={{
-              fontFamily: '"Inclusive Sans", sans-serif',
-              fontWeight: '600',
-              fontSize: 16,
-              color: '#FFFFFF',
-            }}
-          >
-            Janata
-          </span>
+        <div style={{ position: 'absolute', bottom: 32, left: 32 }}>
+          <Logo size={24} color="#FFFFFF" />
         </div>
       </div>
     )
@@ -213,49 +152,8 @@ export function ImageCarousel({ images, interval = 15000 }: ImageCarouselProps) 
       />
 
       {/* Janata wordmark */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 32,
-          left: 32,
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 10,
-        }}
-      >
-        <div
-          style={{
-            width: 24,
-            height: 24,
-            borderRadius: 12,
-            backgroundColor: '#1C1917',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <span
-            style={{
-              color: '#FFFFFF',
-              fontSize: 12,
-              fontFamily: '"Inclusive Sans", sans-serif',
-              fontWeight: '400',
-            }}
-          >
-            J
-          </span>
-        </div>
-        <span
-          style={{
-            fontFamily: '"Inclusive Sans", sans-serif',
-            fontWeight: '600',
-            fontSize: 16,
-            color: '#FFFFFF',
-          }}
-        >
-          Janata
-        </span>
+      <div style={{ position: 'absolute', bottom: 32, left: 32 }}>
+        <Logo size={24} color="#FFFFFF" />
       </div>
     </div>
   )

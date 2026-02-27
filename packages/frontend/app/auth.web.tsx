@@ -8,6 +8,7 @@ import DevPanel from '../components/DevPanel'
 import swamiChinmayanandaJpg from '../assets/images/landing/Swami Chinmayananda.jpg'
 import swamiChinmayanandaAlt from '../assets/images/landing/Swami Chinmayananda (1).jpg'
 import swamiChinmayanandaOption2 from '../assets/images/landing/Swami Chinmayananda Option 2.jpeg'
+import Logo from '../components/ui/Logo'
 
 // Inject CSS for placeholder and hover styles (web only)
 if (typeof document !== 'undefined') {
@@ -279,46 +280,8 @@ export default function AuthScreen() {
           )}
 
           {/* Janata logo */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 10,
-              marginBottom: 48,
-            }}
-          >
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 14,
-                backgroundColor: '#1C1917',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <span
-                style={{
-                  color: '#FFFFFF',
-                  fontSize: 14,
-                  fontFamily: '"Inclusive Sans", sans-serif',
-                }}
-              >
-                J
-              </span>
-            </div>
-            <span
-              style={{
-                fontFamily: '"Inclusive Sans", sans-serif',
-                fontWeight: '600',
-                fontSize: 18,
-                color: '#1C1917',
-              }}
-            >
-              Janata
-            </span>
+          <div style={{ marginBottom: 48 }}>
+            <Logo size={32} />
           </div>
 
           {/* Heading */}

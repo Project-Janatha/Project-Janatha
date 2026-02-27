@@ -17,6 +17,7 @@ import TabSegment from './TabSegment'
 import Card from './Card'
 import FilterChip from './FilterChip'
 import Badge from './Badge'
+import Logo from './Logo'
 
 export {
   PrimaryButton,
@@ -29,4 +30,5 @@ export {
   Card,
   FilterChip,
   Badge,
+  Logo,
 }
