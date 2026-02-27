@@ -6,6 +6,7 @@ import { ChevronLeft, Share2, MapPin, Users, User, CheckCircle, Info } from 'luc
 import { useEventDetail } from '../../hooks/useApiData'
 import { useUser } from '../../components/contexts'
 import { Badge, UnderlineTabBar } from '../../components/ui'
+import { useDetailColors } from '../../hooks/useDetailColors'
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -39,7 +40,7 @@ export default function EventDetailPage() {
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#E8862A" />
         </View>
@@ -51,9 +52,9 @@ export default function EventDetailPage() {
 
   if (!event) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}>
-          <Text style={{ fontSize: 22, fontFamily: 'Inter-SemiBold', color: '#1C1917', marginBottom: 16 }}>
+          <Text style={{ fontSize: 22, fontFamily: 'Inter-SemiBold', color: colors.text, marginBottom: 16 }}>
             Event not found
           </Text>
           <Pressable onPress={() => router.back()} style={{ marginTop: 8 }}>
@@ -68,18 +69,18 @@ export default function EventDetailPage() {
 
   const isPast = event.date ? new Date(event.date + 'T23:59:59') < new Date() : false
   const isRegistered = !!event.isRegistered
-  const iconColor = isPast ? '#A8A29E' : '#E8862A'
+  const iconColor = isPast ? colors.textMuted : '#E8862A'
 
   // ── Shared header ────────────────────────────────────────────────────
 
   const renderHeader = () => (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
       <Pressable onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-        <ChevronLeft size={22} color="#1C1917" />
-        <Text style={{ fontSize: 16, fontFamily: 'Inter-Regular', color: '#1C1917' }}>Back</Text>
+        <ChevronLeft size={22} color={colors.text} />
+        <Text style={{ fontSize: 16, fontFamily: 'Inter-Regular', color: colors.text }}>Back</Text>
       </Pressable>
       <Pressable onPress={() => {}} hitSlop={8}>
-        <Share2 size={22} color="#1C1917" />
+        <Share2 size={22} color={colors.text} />
       </Pressable>
     </View>
   )
@@ -103,7 +104,7 @@ export default function EventDetailPage() {
           width: 36,
           height: 36,
           borderRadius: 10,
-          backgroundColor: '#F5F5F4',
+          backgroundColor: colors.iconBoxBg,
           justifyContent: 'center',
           alignItems: 'center',
         }}
@@ -111,9 +112,9 @@ export default function EventDetailPage() {
         {icon}
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 15, fontFamily: 'Inter-Medium', color: '#1C1917' }}>{primary}</Text>
+        <Text style={{ fontSize: 15, fontFamily: 'Inter-Medium', color: colors.text }}>{primary}</Text>
         {secondary ? (
-          <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: '#78716C' }}>{secondary}</Text>
+          <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: colors.textSecondary }}>{secondary}</Text>
         ) : null}
       </View>
       {right}
@@ -135,7 +136,7 @@ export default function EventDetailPage() {
               height: 24,
               borderRadius: 12,
               borderWidth: 2,
-              borderColor: '#FFFFFF',
+              borderColor: colors.avatarBorder,
               marginLeft: i === 0 ? 0 : -8,
             }}
           />
@@ -150,7 +151,7 @@ export default function EventDetailPage() {
 
   if (!isRegistered) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
         {renderHeader()}
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: isPast ? 40 : 120 }}>
@@ -184,7 +185,7 @@ export default function EventDetailPage() {
                 style={{
                   borderRadius: 16,
                   height: 220,
-                  backgroundColor: '#F5F5F4',
+                  backgroundColor: colors.iconBoxBg,
                   justifyContent: 'center',
                   alignItems: 'center',
                 }}
@@ -198,14 +199,14 @@ export default function EventDetailPage() {
 
           {/* Title */}
           <View style={{ paddingHorizontal: 16, marginBottom: 4 }}>
-            <Text style={{ fontSize: 26, fontFamily: 'Inter-Bold', color: '#1C1917' }}>
+            <Text style={{ fontSize: 26, fontFamily: 'Inter-Bold', color: colors.text }}>
               {event.title}
             </Text>
           </View>
 
           {/* Date / time */}
           <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
-            <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: '#78716C' }}>
+            <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.textSecondary }}>
               {formatDate(event.date)}
               {event.time ? ` · ${event.time}` : ''}
             </Text>
@@ -217,7 +218,7 @@ export default function EventDetailPage() {
               style={{
                 marginHorizontal: 16,
                 marginBottom: 20,
-                backgroundColor: '#ECFDF5',
+                backgroundColor: colors.attendedBg,
                 borderRadius: 10,
                 paddingVertical: 14,
                 paddingHorizontal: 16,
@@ -266,7 +267,7 @@ export default function EventDetailPage() {
           </View>
 
           {/* Divider */}
-          <View style={{ height: 1, backgroundColor: '#E7E5E4', marginHorizontal: 16, marginTop: 24, marginBottom: 16 }} />
+          <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 16, marginTop: 24, marginBottom: 16 }} />
 
           {/* About */}
           <View style={{ paddingHorizontal: 16 }}>
@@ -274,7 +275,7 @@ export default function EventDetailPage() {
               style={{
                 fontSize: 11,
                 fontFamily: 'Inter-Medium',
-                color: '#A8A29E',
+                color: colors.textMuted,
                 textTransform: 'uppercase',
                 letterSpacing: 0.5,
                 marginBottom: 8,
@@ -282,7 +283,7 @@ export default function EventDetailPage() {
             >
               About
             </Text>
-            <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: '#78716C', lineHeight: 20 }}>
+            <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.textSecondary, lineHeight: 20 }}>
               {event.description || 'No description provided.'}
             </Text>
           </View>
@@ -296,7 +297,7 @@ export default function EventDetailPage() {
               bottom: 0,
               left: 0,
               right: 0,
-              backgroundColor: '#FFFFFF',
+              backgroundColor: colors.panelBg,
               paddingHorizontal: 16,
               paddingTop: 12,
               paddingBottom: 28,
@@ -325,7 +326,7 @@ export default function EventDetailPage() {
               style={{
                 fontSize: 12,
                 fontFamily: 'Inter-Regular',
-                color: '#A8A29E',
+                color: colors.textMuted,
                 textAlign: 'center',
                 marginTop: 8,
               }}
@@ -358,7 +359,7 @@ export default function EventDetailPage() {
             style={{
               borderRadius: 16,
               height: 220,
-              backgroundColor: '#F5F5F4',
+              backgroundColor: colors.iconBoxBg,
               justifyContent: 'center',
               alignItems: 'center',
             }}
@@ -372,7 +373,7 @@ export default function EventDetailPage() {
 
       {/* Date / time */}
       <View style={{ paddingHorizontal: 16 }}>
-        <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: '#78716C' }}>
+        <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.textSecondary }}>
           {formatDate(event.date)}
           {event.time ? ` · ${event.time}` : ''}
         </Text>
@@ -397,7 +398,7 @@ export default function EventDetailPage() {
       )}
 
       {/* Divider */}
-      <View style={{ height: 1, backgroundColor: '#E7E5E4', marginHorizontal: 16 }} />
+      <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 16 }} />
 
       {/* About */}
       <View style={{ paddingHorizontal: 16 }}>
@@ -405,7 +406,7 @@ export default function EventDetailPage() {
           style={{
             fontSize: 11,
             fontFamily: 'Inter-Medium',
-            color: '#A8A29E',
+            color: colors.textMuted,
             textTransform: 'uppercase',
             letterSpacing: 0.5,
             marginBottom: 8,
@@ -413,7 +414,7 @@ export default function EventDetailPage() {
         >
           About
         </Text>
-        <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: '#78716C', lineHeight: 20 }}>
+        <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.textSecondary, lineHeight: 20 }}>
           {event.description || 'No description provided.'}
         </Text>
       </View>
@@ -422,7 +423,7 @@ export default function EventDetailPage() {
 
   const renderPeopleTab = () => (
     <View style={{ paddingTop: 16, paddingHorizontal: 16 }}>
-      <Text style={{ fontSize: 13, fontFamily: 'Inter-Medium', color: '#78716C', marginBottom: 12 }}>
+      <Text style={{ fontSize: 13, fontFamily: 'Inter-Medium', color: colors.textSecondary, marginBottom: 12 }}>
         {event.attendees} people attending
       </Text>
 
@@ -442,11 +443,11 @@ export default function EventDetailPage() {
               style={{ width: 42, height: 42, borderRadius: 21 }}
             />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, fontFamily: 'Inter-Medium', color: '#1C1917' }}>
+              <Text style={{ fontSize: 15, fontFamily: 'Inter-Medium', color: colors.text }}>
                 {attendee.name}
               </Text>
               {attendee.subtitle ? (
-                <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: '#78716C' }}>
+                <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: colors.textSecondary }}>
                   {attendee.subtitle}
                 </Text>
               ) : null}
@@ -456,8 +457,8 @@ export default function EventDetailPage() {
         ))
       ) : (
         <View style={{ alignItems: 'center', paddingVertical: 32 }}>
-          <Users size={48} color="#A8A29E" />
-          <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: '#78716C', marginTop: 12 }}>
+          <Users size={48} color={colors.textMuted} />
+          <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.textSecondary, marginTop: 12 }}>
             No attendees yet
           </Text>
         </View>
@@ -484,10 +485,10 @@ export default function EventDetailPage() {
                 source={{ uri: message.image }}
                 style={{ width: 30, height: 30, borderRadius: 15 }}
               />
-              <Text style={{ fontSize: 14, fontFamily: 'Inter-SemiBold', color: '#1C1917' }}>
+              <Text style={{ fontSize: 14, fontFamily: 'Inter-SemiBold', color: colors.text }}>
                 {message.author}
               </Text>
-              <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: '#A8A29E' }}>
+              <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: colors.textMuted }}>
                 {message.timestamp}
               </Text>
             </View>
@@ -495,7 +496,7 @@ export default function EventDetailPage() {
             {/* Message bubble */}
             <View
               style={{
-                backgroundColor: '#F5F5F4',
+                backgroundColor: colors.cardBg,
                 borderTopLeftRadius: 4,
                 borderTopRightRadius: 16,
                 borderBottomLeftRadius: 16,
@@ -504,7 +505,7 @@ export default function EventDetailPage() {
                 marginLeft: 38,
               }}
             >
-              <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: '#1C1917', lineHeight: 20 }}>
+              <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.text, lineHeight: 20 }}>
                 {message.text}
               </Text>
             </View>
@@ -512,8 +513,8 @@ export default function EventDetailPage() {
         ))
       ) : (
         <View style={{ alignItems: 'center', paddingVertical: 32 }}>
-          <Info size={48} color="#A8A29E" />
-          <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: '#78716C', marginTop: 12 }}>
+          <Info size={48} color={colors.textMuted} />
+          <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.textSecondary, marginTop: 12 }}>
             No messages yet
           </Text>
         </View>
@@ -522,7 +523,7 @@ export default function EventDetailPage() {
   )
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
       {renderHeader()}
 
       {/* Compact summary */}
@@ -546,15 +547,15 @@ export default function EventDetailPage() {
               width: 48,
               height: 48,
               borderRadius: 8,
-              backgroundColor: '#F5F5F4',
+              backgroundColor: colors.iconBoxBg,
             }}
           />
         )}
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 16, fontFamily: 'Inter-SemiBold', color: '#1C1917' }} numberOfLines={1}>
+          <Text style={{ fontSize: 16, fontFamily: 'Inter-SemiBold', color: colors.text }} numberOfLines={1}>
             {event.title}
           </Text>
-          <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: '#78716C' }}>
+          <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: colors.textSecondary }}>
             {formatDate(event.date)}
             {event.time ? ` · ${event.time}` : ''}
           </Text>
@@ -583,7 +584,7 @@ export default function EventDetailPage() {
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: colors.panelBg,
           paddingHorizontal: 16,
           paddingTop: 12,
           paddingBottom: 28,
@@ -596,15 +597,15 @@ export default function EventDetailPage() {
             height: 52,
             borderRadius: 12,
             borderWidth: 1,
-            borderColor: '#E7E5E4',
+            borderColor: colors.border,
             justifyContent: 'center',
             alignItems: 'center',
           }}
         >
           {isToggling ? (
-            <ActivityIndicator size="small" color="#1C1917" />
+            <ActivityIndicator size="small" color={colors.text} />
           ) : (
-            <Text style={{ fontSize: 16, fontFamily: 'Inter-Medium', color: '#1C1917' }}>
+            <Text style={{ fontSize: 16, fontFamily: 'Inter-Medium', color: colors.text }}>
               Cancel Registration
             </Text>
           )}

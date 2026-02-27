@@ -17,6 +17,7 @@ import type { MapPoint, EventDisplay, DiscoverCenter } from '../../utils/api'
 import WeekCalendar from '../../components/WeekCalendar'
 import EventDetailPanel from '../../components/web/EventDetailPanel'
 import CenterDetailPanel from '../../components/web/CenterDetailPanel'
+import { useDetailColors } from '../../hooks/useDetailColors'
 
 const FILTERS: { label: DiscoverFilter }[] = [
   { label: 'All' },
@@ -176,6 +177,7 @@ function DetailPanelWrapper({
 function EventPanelInner({ eventId, onClose }: { eventId: string; onClose: () => void }) {
   const { user } = useUser()
   const { event, attendees, messages, loading, toggleRegistration, isToggling } = useEventDetail(eventId)
+  const colors = useDetailColors()
 
   const handleToggleRegistration = async () => {
     if (!user?.username) return
@@ -188,7 +190,7 @@ function EventPanelInner({ eventId, onClose }: { eventId: string; onClose: () =>
 
   if (loading || !event) {
     return (
-      <View style={{ width: 440, height: '100%', backgroundColor: '#FFFFFF', borderLeftWidth: 1, borderLeftColor: '#E7E5E4', justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ width: 440, height: '100%', backgroundColor: colors.panelBg, borderLeftWidth: 1, borderLeftColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#E8862A" />
       </View>
     )
@@ -220,10 +222,11 @@ function CenterPanelInner({
   onEventPress: (id: string) => void
 }) {
   const { center, events, loading } = useCenterDetail(centerId)
+  const colors = useDetailColors()
 
   if (loading || !center) {
     return (
-      <View style={{ width: 440, height: '100%', backgroundColor: '#FFFFFF', borderLeftWidth: 1, borderLeftColor: '#E7E5E4', justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ width: 440, height: '100%', backgroundColor: colors.panelBg, borderLeftWidth: 1, borderLeftColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#E8862A" />
       </View>
     )
@@ -239,7 +242,7 @@ function CenterPanelInner({
   )
 }
 
-// ─── Mobile Discover (inline for responsive fallback) ───
+// ─── Mobile Discover (map + list vertical layout) ───────
 
 function MobileDiscoverFallback() {
   const router = useRouter()
@@ -347,7 +350,8 @@ export default function DiscoverScreenWeb() {
     }
   }, [params.detail, params.id])
 
-  const rightPanelWidth = selectedItem ? 440 : panelWidth
+  // Fixed 440px width for both list and detail panels — no shift on selection
+  const rightPanelWidth = 440
 
   const eventDates = useMemo(
     () => new Set(allEvents.filter((e) => e.date).map((e) => e.date)),
@@ -467,32 +471,28 @@ export default function DiscoverScreenWeb() {
             onEventPress={(id) => setSelectedItem({ type: 'event', id })}
           />
         ) : (
-          <View style={{ width: rightPanelWidth }} className="border-l border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+          <View style={{ width: rightPanelWidth }} className="border-l border-stone-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
             {/* Panel Header */}
-            <View style={{ paddingHorizontal: isTablet ? 16 : 20, paddingTop: 20, paddingBottom: 12 }}>
-              <Text className="text-content dark:text-content-dark font-inter-bold text-xl mb-3">
-                Discover
-              </Text>
-
-              {/* Filter Chips */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 8 }}
-                style={{ flexGrow: 0 }}
-              >
-                {FILTERS.map((f) => (
-                  <FilterChip
-                    key={f.label}
-                    label={f.label}
-                    active={activeFilter === f.label && !selectedDate}
-                    onPress={() => handleFilterPress(f.label)}
-                  />
-                ))}
-              </ScrollView>
+            <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 }}>
+              {/* Heading + Filter Chips — compact single row */}
+              <View className="flex-row items-center" style={{ gap: 10, marginBottom: 8 }}>
+                <Text className="text-content dark:text-content-dark font-inter-bold text-xl" style={{ flexShrink: 0 }}>
+                  Discover
+                </Text>
+                <View className="flex-row items-center" style={{ gap: 8 }}>
+                  {FILTERS.map((f) => (
+                    <FilterChip
+                      key={f.label}
+                      label={f.label}
+                      active={activeFilter === f.label && !selectedDate}
+                      onPress={() => handleFilterPress(f.label)}
+                    />
+                  ))}
+                </View>
+              </View>
 
               {/* Search */}
-              <View className="flex-row items-center mt-3 px-3 rounded-xl bg-gray-100 dark:bg-neutral-800" style={{ minHeight: 40 }}>
+              <View className="flex-row items-center mt-3 px-3 rounded-xl bg-stone-100 dark:bg-neutral-800" style={{ minHeight: 40 }}>
                 <Search size={16} color="#9CA3AF" />
                 <TextInput
                   className="flex-1 ml-2 text-sm font-inter text-content dark:text-content-dark outline-none"
@@ -526,12 +526,12 @@ export default function DiscoverScreenWeb() {
             {/* List */}
             <ScrollView
               className="flex-1"
-              contentContainerStyle={{ paddingHorizontal: isTablet ? 12 : 16, paddingBottom: 24, gap: 4 }}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, gap: 4 }}
               showsVerticalScrollIndicator={false}
             >
               {!loading && displayItems.length === 0 && (
                 <View className="py-16 items-center">
-                  <Text className="text-gray-400 dark:text-gray-500 font-inter text-sm">
+                  <Text className="text-stone-400 dark:text-stone-500 font-inter text-sm">
                     {selectedDate ? 'No events on this day' : 'No results found'}
                   </Text>
                 </View>
