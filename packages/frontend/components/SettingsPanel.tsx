@@ -91,7 +91,7 @@ function SettingsPanel({ visible, onClose, onLogout }) {
   const displayName =
     user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Pranav Vaish'
 
-  const profileImage = user?.profileImage || 'https://via.placeholder.com/150'
+  const profileImage = user?.profileImage || `https://i.pravatar.cc/150?u=${user?.username || 'default'}`
 
   return (
     <>

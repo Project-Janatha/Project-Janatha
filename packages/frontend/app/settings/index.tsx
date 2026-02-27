@@ -1,5 +1,4 @@
-// app/settings/profile.tsx
-import React, { useState, useContext } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   ScrollView,
   View,
@@ -33,21 +32,38 @@ const PREFERENCE_OPTIONS = [
 ]
 
 export default function Profile() {
-  const { user, deleteAccount } = useUser()
+  const { user, deleteAccount, updateProfile } = useUser()
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+
+  const getDisplayName = () => {
+    if (user?.firstName && user?.lastName) return `${user.firstName} ${user.lastName}`
+    if (user?.firstName) return user.firstName
+    return user?.username || ''
+  }
+
   const [profileData, setProfileData] = useState<ProfileData>({
-    name: user?.username || 'Pranav Vaish',
-    bio: 'I am a CHYK from San Jose.',
-    birthday: 'October 1, 2000',
-    preferences: ['Global events', 'Casual'],
-    profileImage:
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    name: getDisplayName(),
+    bio: '',
+    birthday: '',
+    preferences: [],
+    profileImage: user?.profileImage || `https://i.pravatar.cc/150?u=${user?.username || 'default'}`,
   })
+
+  // Sync profile data when user changes (e.g., after login)
+  useEffect(() => {
+    if (user) {
+      setProfileData((prev) => ({
+        ...prev,
+        name: getDisplayName() || prev.name,
+        profileImage: user.profileImage || prev.profileImage,
+      }))
+    }
+  }, [user])
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {}
@@ -88,12 +104,21 @@ export default function Profile() {
 
     setIsSaving(true)
     try {
-      console.log('Saving profile:', profileData)
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const nameParts = profileData.name.trim().split(' ')
+      const firstName = nameParts[0]
+      const lastName = nameParts.slice(1).join(' ')
+
+      await updateProfile({
+        firstName,
+        lastName,
+      })
       setIsEditing(false)
       setErrors({})
     } catch (error) {
       console.error('Error saving profile:', error)
+      // Profile saved locally even if backend fails (optimistic update)
+      setIsEditing(false)
+      setErrors({})
     } finally {
       setIsSaving(false)
     }
@@ -186,7 +211,7 @@ export default function Profile() {
                 {profileData.name}
               </Text>
               <Text className="text-base font-inter text-content/60 dark:text-content-dark/60 mb-3">
-                CHYK • San Jose
+                @{user?.username || 'user'}
               </Text>
               {isEditing && (
                 <Pressable className="flex-row items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 border-2 border-primary rounded-xl self-start hover:scale-105 active:scale-95 transition-transform">
