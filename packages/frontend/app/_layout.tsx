@@ -87,11 +87,12 @@ function RootLayoutNav() {
 
     const inAuthGroup = pathname.startsWith('/auth')
     const inOnboardingGroup = pathname.startsWith('/onboarding')
+    const inLandingPage = pathname === '/landing'
 
     if (!isAuthenticated) {
       // User is NOT authenticated
-      if (!inAuthGroup) {
-        // Redirect to Auth if not already there
+      if (!inAuthGroup && !inLandingPage) {
+        // Redirect to Auth if not already there (landing page is public)
         router.replace('/auth')
       }
     } else {
@@ -131,6 +132,7 @@ function RootLayoutNav() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen name="landing" options={{ headerShown: false }} />
         {/* Registering onboarding explicitly ensures stable navigation */}
         <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen

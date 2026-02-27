@@ -61,6 +61,7 @@ module.exports = {
         'inter-semibold': ['Inter-SemiBold'],
         'inter-medium': ['Inter-Medium'],
         'inter-light': ['Inter-Light'],
+        'inclusive-sans': ['"Inclusive Sans"', 'sans-serif'],
       },
     },
   },
