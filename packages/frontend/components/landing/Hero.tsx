@@ -258,7 +258,7 @@ function InfiniteScrollColumn({
   const totalHeight = cards.length * (130 + 14) // approx card height + gap
 
   return (
-    <View style={{ overflow: 'hidden', height: 900, marginTop: offset }}>
+    <View style={{ overflow: 'hidden', height: 900, marginTop: offset, paddingHorizontal: 14 }}>
       <div
         style={{
           display: 'flex',
@@ -301,7 +301,7 @@ function HorizontalScrollRow() {
   const doubled = [...CARDS, ...CARDS]
 
   return (
-    <View style={{ overflow: 'hidden', marginTop: 32, marginHorizontal: -20, position: 'relative' }}>
+    <View style={{ overflow: 'hidden', marginTop: 32, marginHorizontal: -20, position: 'relative', paddingVertical: 14 }}>
       <div
         style={{
           display: 'flex',
@@ -316,32 +316,6 @@ function HorizontalScrollRow() {
           </View>
         ))}
       </div>
-      {/* Left fade edge */}
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: 60,
-          height: '100%',
-          zIndex: 2,
-          backgroundColor: '#FAFAF7',
-          opacity: 0.9,
-        }}
-      />
-      {/* Right fade edge */}
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: 60,
-          height: '100%',
-          zIndex: 2,
-          backgroundColor: '#FAFAF7',
-          opacity: 0.9,
-        }}
-      />
     </View>
   )
 }
@@ -363,13 +337,15 @@ export function Hero() {
         overflow: 'hidden',
         paddingTop: isMobile ? 60 : 100,
         paddingBottom: isMobile ? 40 : 80,
-        paddingHorizontal: isMobile ? 20 : isTablet ? 40 : 80,
+        paddingLeft: isMobile ? 20 : isTablet ? 40 : 80,
+        paddingRight: isMobile ? 20 : 0,
         minHeight: isMobile ? undefined : 656,
         backgroundColor: '#FAFAF7',
+        flexDirection: isMobile ? 'column' : 'row',
       }}
     >
       {/* Left column */}
-      <View style={{ maxWidth: isMobile ? undefined : 580, zIndex: 1 }}>
+      <View style={{ flex: isMobile ? undefined : 1, maxWidth: isMobile ? undefined : 560, zIndex: 1 }}>
         <Text
           style={{
             fontFamily: '"Inclusive Sans", sans-serif',
@@ -475,30 +451,35 @@ export function Hero() {
       {!isMobile && (
         <View
           style={{
-            position: 'absolute',
-            top: -60,
-            right: isTablet ? 20 : 60,
-            width: isTablet ? 400 : 500,
-            height: 1000,
-            transform: 'rotate(-4deg)',
-            flexDirection: 'row',
-            gap: 14,
+            flex: 1,
+            position: 'relative',
+            minHeight: 560,
+            overflow: 'hidden',
+            paddingHorizontal: 14,
           }}
         >
-          <InfiniteScrollColumn cards={col1Cards} speed={30} offset={0} />
-          <InfiniteScrollColumn cards={col2Cards} speed={25} offset={-60} />
-        </View>
-      )}
-
-      {/* Fade edges (top/bottom for desktop/tablet, hidden on mobile) */}
-      {!isMobile && (
-        <>
+          <View
+            style={{
+              position: 'absolute',
+              top: -100,
+              right: isTablet ? -54 : -34,
+              width: isTablet ? 440 : 520,
+              height: 1000,
+              transform: 'rotate(-4deg)',
+              flexDirection: 'row',
+              gap: 14,
+            }}
+          >
+            <InfiniteScrollColumn cards={col1Cards} speed={30} offset={0} />
+            <InfiniteScrollColumn cards={col2Cards} speed={25} offset={-60} />
+          </View>
+          {/* Fade edges */}
           <div
             style={{
               position: 'absolute',
               top: 0,
+              left: 0,
               right: 0,
-              width: isTablet ? 480 : 600,
               height: 120,
               zIndex: 2,
               pointerEvents: 'none',
@@ -509,15 +490,15 @@ export function Hero() {
             style={{
               position: 'absolute',
               bottom: 0,
+              left: 0,
               right: 0,
-              width: isTablet ? 480 : 600,
               height: 140,
               zIndex: 2,
               pointerEvents: 'none',
               background: 'linear-gradient(0deg, #FAFAF7 15%, rgba(250, 250, 247, 0))',
             }}
           />
-        </>
+        </View>
       )}
     </View>
   )
