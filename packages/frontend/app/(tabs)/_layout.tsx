@@ -1,9 +1,8 @@
-import { Link, Tabs, useRouter, usePathname } from 'expo-router'
-import { Platform, View, Text, Pressable } from 'react-native'
+import { Link, Tabs, useRouter } from 'expo-router'
+import { Platform, View, Text, Pressable, Image } from 'react-native'
 import { useState } from 'react'
 import { useUser, useThemeContext } from '../../components/contexts'
-import { User } from 'lucide-react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { User, Settings, LogOut } from 'lucide-react-native'
 import SettingsPanel from '../../components/SettingsPanel'
 import Logo from '../../components/ui/Logo'
 
@@ -13,7 +12,6 @@ import Logo from '../../components/ui/Logo'
  */
 export default function TabLayout() {
   const router = useRouter()
-  const pathname = usePathname()
   const { user, logout } = useUser()
   const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
@@ -23,42 +21,15 @@ export default function TabLayout() {
     router.replace('/auth')
   }
 
-  // Custom header with tabs for web
+  // Custom header for web - just the logo
   const HeaderTitle = () => {
     if (Platform.OS !== 'web') {
       return null // Use default title on mobile
     }
 
-    const isActive = (path: string) => pathname === path
-
     return (
-      <View className="flex-row items-center gap-8">
+      <View className="flex-row items-center">
         <Logo size={28} />
-        <View className="flex-row gap-6">
-          <Pressable
-            onPress={() => router.push('/')}
-            className="flex-row items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
-          >
-            {isActive('/') ? (
-              <Ionicons name="compass" size={20} className=" text-primary" />
-            ) : (
-              <Ionicons
-                name="compass-outline"
-                size={20}
-                className=" text-contentStrong dark:text-contentStrong-dark"
-              />
-            )}
-            <Text
-              className={`font-inter ${
-                isActive('/')
-                  ? 'text-primary font-inter-semibold transition-colors duration-300'
-                  : 'text-contentStrong dark:text-contentStrong-dark transition-colors duration-300'
-              }`}
-            >
-              Discover
-            </Text>
-          </Pressable>
-        </View>
       </View>
     )
   }
@@ -93,20 +64,118 @@ export default function TabLayout() {
         </>
       )
     }
+
+    // Mobile: show profile button with popover menu
+    const displayName =
+      user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || ''
+    const profileImage =
+      user?.profileImage || `https://i.pravatar.cc/150?u=${user?.username || 'default'}`
+
+    return (
+      <View style={{ position: 'relative' }}>
+        <Pressable
+          className="mr-4 p-2"
+          onPress={() => setSettingsVisible(!settingsVisible)}
+        >
+          <User size={22} color={isDark ? '#fff' : '#9A3412'} />
+        </Pressable>
+
+        {settingsVisible && (
+          <>
+            {/* Backdrop to close popover */}
+            <Pressable
+              style={{ position: 'absolute', top: -1000, left: -1000, width: 5000, height: 5000, zIndex: 98 }}
+              onPress={() => setSettingsVisible(false)}
+            />
+
+            {/* Popover */}
+            <View
+              style={{
+                position: 'absolute',
+                top: 44,
+                right: 0,
+                width: 220,
+                zIndex: 99,
+                backgroundColor: isDark ? '#171717' : '#fff',
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: isDark ? '#262626' : '#E5E7EB',
+                shadowColor: '#000',
+                shadowOpacity: 0.12,
+                shadowRadius: 16,
+                shadowOffset: { width: 0, height: 8 },
+                elevation: 12,
+                padding: 6,
+              }}
+            >
+              {/* Profile info */}
+              <View className="flex-row items-center px-2.5 py-3" style={{ borderBottomWidth: 1, borderBottomColor: isDark ? '#262626' : '#F0EDE8', marginBottom: 4 }}>
+                <Image
+                  source={{ uri: profileImage }}
+                  className="w-10 h-10 rounded-full mr-3 bg-gray-300"
+                />
+                <View className="flex-1">
+                  <Text className="text-[15px] font-inter-semibold text-content dark:text-content-dark">
+                    {displayName}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Profile */}
+              <Pressable
+                className="flex-row items-center py-2.5 px-3 rounded-[10px]"
+                onPress={() => {
+                  setSettingsVisible(false)
+                  router.push('/settings')
+                }}
+              >
+                <User size={18} color={isDark ? '#fff' : '#57534E'} />
+                <Text className="ml-3 text-[15px] font-inter-medium text-content dark:text-content-dark">
+                  Profile
+                </Text>
+              </Pressable>
+
+              {/* Settings */}
+              <Pressable
+                className="flex-row items-center py-2.5 px-3 rounded-[10px]"
+                onPress={() => {
+                  setSettingsVisible(false)
+                  router.push('/settings/settings')
+                }}
+              >
+                <Settings size={18} color={isDark ? '#fff' : '#57534E'} />
+                <Text className="ml-3 text-[15px] font-inter-medium text-content dark:text-content-dark">
+                  Settings
+                </Text>
+              </Pressable>
+
+              {/* Divider */}
+              <View style={{ height: 1, backgroundColor: isDark ? '#262626' : '#F0EDE8', marginHorizontal: 10, marginVertical: 4 }} />
+
+              {/* Log Out */}
+              <Pressable
+                className="flex-row items-center py-2.5 px-3 rounded-[10px]"
+                onPress={() => {
+                  setSettingsVisible(false)
+                  handleLogout()
+                }}
+              >
+                <LogOut size={18} color="#dc2626" />
+                <Text className="ml-3 text-[15px] font-inter-medium text-red-600 dark:text-red-400">
+                  Log Out
+                </Text>
+              </Pressable>
+            </View>
+          </>
+        )}
+      </View>
+    )
   }
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#9A3412',
-        tabBarInactiveTintColor: '#9CA3AF',
-        tabBarStyle:
-          Platform.OS === 'web'
-            ? { display: 'none' }
-            : {
-                backgroundColor: isDark ? '#171717' : '#fff',
-                borderTopColor: isDark ? '#262626' : '#E5E7EB',
-              },
+        tabBarStyle: { display: 'none' },
         headerStyle: {
           backgroundColor: isDark ? '#171717' : '#fff',
           borderBottomColor: isDark ? '#262626' : '#E5E7EB',
@@ -115,9 +184,6 @@ export default function TabLayout() {
           fontFamily: 'Inter-Bold',
         },
         headerTintColor: isDark ? '#fff' : '#000',
-        tabBarLabelStyle: {
-          fontFamily: 'Inter-Regular',
-        },
         headerTitle: Platform.OS === 'web' ? () => <HeaderTitle /> : undefined,
       }}
     >
@@ -125,7 +191,6 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Discover',
-          tabBarIcon: ({ color }) => <Ionicons name="compass" color={color as any} size={22} />,
           headerRight: () => <HeaderRight />,
         }}
       />
