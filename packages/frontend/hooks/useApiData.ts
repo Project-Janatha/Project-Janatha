@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   fetchCenters,
+  fetchCenter,
   fetchEvent,
   fetchEventsByCenter,
   fetchEventUsers,
@@ -219,6 +220,151 @@ export function useWeekCalendar() {
   const today = now.getDate()
 
   return { weekDays, weekDates, today }
+}
+
+// ── Center detail data ──────────────────────────────────────────────────
+
+export interface CenterDisplay {
+  id: string
+  name: string
+  image: string
+  address: string
+  website: string
+  phone: string
+  upcomingEvents: number
+  pointOfContact: string
+  acharya: string
+}
+
+const SAMPLE_CENTER_DETAILS: Record<string, CenterDisplay> = {
+  '1': {
+    id: '1',
+    name: 'Chinmaya Mission San Jose',
+    image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=400&h=250&fit=crop',
+    address: '10160 Clayton Rd, San Jose, CA 95127',
+    website: 'https://www.cmsj.org/',
+    phone: '+1 408 254 8392',
+    upcomingEvents: 24,
+    pointOfContact: 'Ramesh Ji',
+    acharya: 'Acharya Brahmachari Soham Ji',
+  },
+  '2': {
+    id: '2',
+    name: 'Chinmaya Mission West',
+    image: 'https://images.unsplash.com/photo-1464822759844-d150baec93d5?w=400&h=250&fit=crop',
+    address: '560 Bridgeway, Sausalito, CA 94965',
+    website: 'https://www.chinmayamissionwest.org/',
+    phone: '+1 415 332 2182',
+    upcomingEvents: 18,
+    pointOfContact: 'Priya Ji',
+    acharya: 'Acharya Swami Ishwarananda',
+  },
+  '3': {
+    id: '3',
+    name: 'Chinmaya Mission San Francisco',
+    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=250&fit=crop',
+    address: '631 Irving St, San Francisco, CA 94122',
+    website: 'https://www.chinmayasf.org/',
+    phone: '+1 415 661 8499',
+    upcomingEvents: 15,
+    pointOfContact: 'Anjali Ji',
+    acharya: 'Acharya Swami Tejomayananda',
+  },
+}
+
+const SAMPLE_CENTER_EVENTS: EventDisplay[] = [
+  {
+    id: '1',
+    title: 'Bhagavad Gita Study Circle - Chapter 12',
+    time: 'TODAY \u2022 10:30 AM - 11:30 AM',
+    location: 'Young Museum',
+    attendees: 14,
+    likes: 0,
+    comments: 0,
+  },
+  {
+    id: '2',
+    title: 'Hanuman Chalisa Chanting Marathon',
+    time: 'SUN, 8 PM - 11:49 PM',
+    location: 'Meditation Hall',
+    attendees: 14,
+    likes: 0,
+    comments: 0,
+  },
+  {
+    id: '3',
+    title: 'Yoga and Meditation Session',
+    time: 'TUE, 7 PM - 8:30 PM',
+    location: 'Main Hall',
+    attendees: 8,
+    likes: 2,
+    comments: 1,
+  },
+]
+
+export function useCenterDetail(centerId: string) {
+  const [center, setCenter] = useState<CenterDisplay | null>(null)
+  const [events, setEvents] = useState<EventDisplay[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isLive, setIsLive] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    const load = async () => {
+      try {
+        const [apiCenter, apiEvents] = await Promise.all([
+          fetchCenter(centerId),
+          fetchEventsByCenter(centerId),
+        ])
+        if (!mounted) return
+
+        if (apiCenter?.centerObject) {
+          const obj = apiCenter.centerObject
+          setCenter({
+            id: centerId,
+            name: obj.centerName || 'Unknown Center',
+            image: SAMPLE_CENTER_DETAILS[centerId]?.image || '',
+            address: SAMPLE_CENTER_DETAILS[centerId]?.address || '',
+            website: SAMPLE_CENTER_DETAILS[centerId]?.website || '',
+            phone: SAMPLE_CENTER_DETAILS[centerId]?.phone || '',
+            upcomingEvents: apiEvents.length,
+            pointOfContact: SAMPLE_CENTER_DETAILS[centerId]?.pointOfContact || '',
+            acharya: SAMPLE_CENTER_DETAILS[centerId]?.acharya || '',
+          })
+          setIsLive(true)
+        } else {
+          setCenter(SAMPLE_CENTER_DETAILS[centerId] || null)
+        }
+
+        if (apiEvents.length > 0) {
+          setEvents(apiEvents.map((e) => ({
+            id: e.eventID,
+            title: e.eventObject?.title || e.eventObject?.description || 'Event',
+            time: e.eventObject?.date ? new Date(e.eventObject.date).toLocaleString() : '',
+            location: e.eventObject?.center?.centerName || 'TBD',
+            attendees: e.eventObject?.peopleAttending || 0,
+            likes: 0,
+            comments: 0,
+          })))
+        } else {
+          setEvents(SAMPLE_CENTER_EVENTS)
+        }
+      } catch {
+        if (mounted) {
+          setCenter(SAMPLE_CENTER_DETAILS[centerId] || null)
+          setEvents(SAMPLE_CENTER_EVENTS)
+        }
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    load()
+    return () => { mounted = false }
+  }, [centerId])
+
+  return { center, events, loading, isLive }
 }
 
 export { SAMPLE_ATTENDEES, SAMPLE_MESSAGES, SAMPLE_EVENT_LIST, SAMPLE_CENTERS, SAMPLE_EVENTS }
