@@ -73,7 +73,7 @@ export default function HomeScreen() {
             <Text className="text-content dark:text-content-dark font-inter text-xl font-semibold">
               Your week
             </Text>
-            <SecondaryButton onPress={() => router.push('/explore')}>
+            <SecondaryButton onPress={() => router.push('/events')}>
               See All
             </SecondaryButton>
           </View>
