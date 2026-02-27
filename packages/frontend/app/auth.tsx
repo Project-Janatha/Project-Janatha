@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react'
+import React, { useState, useCallback } from 'react'
 import {
   View,
   Text,
@@ -6,30 +6,22 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Pressable,
-  Image,
-  Animated,
-  Easing,
   TouchableOpacity,
 } from 'react-native'
 import { useRouter } from 'expo-router'
-import { Code, Moon, Sun, ArrowLeft, Monitor } from 'lucide-react-native'
-import { PrimaryButton, IconButton, AuthInput, Card } from '../components/ui'
+import { Code, ArrowLeft } from 'lucide-react-native'
+import { AuthInput } from '../components/ui'
 import { useUser, useThemeContext } from '../components/contexts'
 import { validateEmail, validatePassword } from '../utils'
-import { ThemeSelector, PasswordStrength } from '../components'
+import { PasswordStrength } from '../components'
 import DevPanel from '../components/DevPanel'
-
-const FieldError = memo(({ message }: { message?: string }) => {
-  if (!message) return null
-  return <Text className="text-red-500 text-sm mt-1 ml-1 font-inter">{message}</Text>
-})
 
 type AuthStep = 'initial' | 'login' | 'signup'
 
 export default function AuthScreen() {
   const router = useRouter()
-  const { theme, toggleTheme, themePreference, setThemePreference, isDark } = useThemeContext()
-  const { checkUserExists, login, signup, setUser, loading } = useUser()
+  const { isDark } = useThemeContext()
+  const { checkUserExists, login, signup, loading } = useUser()
 
   const [authStep, setAuthStep] = useState<AuthStep>('initial')
   const [username, setUsername] = useState('')
@@ -37,40 +29,7 @@ export default function AuthScreen() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
-  const [backHover, setBackHover] = useState(false)
   const [showDevPanel, setShowDevPanel] = useState(false)
-
-  const isWeb = Platform.OS === 'web'
-
-  // Theme selector logic (copied from SettingsPanel)
-  const themeOptions = ['light', 'dark', 'system']
-  const optionWidth = 70
-  const indicatorPadding = 8
-  const [selectedIndex, setSelectedIndex] = useState(themeOptions.indexOf(themePreference))
-  const slideAnim = useRef(new Animated.Value(selectedIndex * optionWidth)).current
-  const isMountedRef = useRef(true)
-
-  // Cleanup on unmount
-  useEffect(() => {
-    isMountedRef.current = true
-    return () => {
-      isMountedRef.current = false
-      slideAnim.stopAnimation()
-    }
-  }, [slideAnim])
-
-  // Optimized animation - use smaller duration for faster response
-  useEffect(() => {
-    if (!isMountedRef.current) return
-    const idx = themeOptions.indexOf(themePreference)
-    setSelectedIndex(idx)
-    Animated.timing(slideAnim, {
-      toValue: idx * optionWidth,
-      duration: 150, // Reduced from 100 for smoother animation
-      useNativeDriver: true,
-      easing: Easing.out(Easing.ease), // Better easing function
-    }).start()
-  }, [themePreference, slideAnim])
 
   const handleContinue = useCallback(async () => {
     setErrors({})
@@ -165,16 +124,11 @@ export default function AuthScreen() {
     [authStep, handleLogin, handleSignup, handleContinue]
   )
 
-  const handleDevMode = useCallback(() => {
-    setShowDevPanel(true)
-  }, [])
-
   const handleBack = useCallback(() => {
     setAuthStep('initial')
     setPassword('')
     setConfirmPassword('')
     setErrors({})
-    setBackHover(false)
   }, [])
 
   const isButtonDisabled =
@@ -182,8 +136,6 @@ export default function AuthScreen() {
     (authStep === 'initial' && !username) ||
     (authStep !== 'initial' && !password) ||
     (authStep === 'signup' && !confirmPassword)
-
-  const logoSize = isWeb ? 100 : 80
 
   // Collect error messages to display
   const errorMessages = Object.values(errors).filter(Boolean)
@@ -211,97 +163,78 @@ export default function AuthScreen() {
     >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
-        className="flex-1 bg-background dark:bg-background-dark"
+        className="flex-1 bg-[#FAFAF7] dark:bg-background-dark"
         keyboardShouldPersistTaps="handled"
       >
-        {/* Theme Selector - Fixed at top center */}
-        <View
-          className="fixed left-1/2 -translate-x-1/2 top-6 z-10 w-[226px]"
-          style={{
-            position: 'fixed',
-            left: '50%',
-            transform: [{ translateX: -113 }], // half of 226px
-            top: 24,
-            zIndex: 10,
-            width: 226,
-          }}
-        >
-          <ThemeSelector
-            className="relative flex-row bg-gray-100 dark:bg-neutral-800 rounded-lg p-1"
-            style={{ width: 218 }}
-          />
-        </View>
-
-        {/* Main content - card expands downward, always below the fixed controls */}
+        {/* Main content */}
         <View
           className="flex-1 justify-center items-center w-full px-6"
           style={{
-            marginTop: 80, // ensures card starts below the fixed controls
+            paddingTop: 60,
             paddingBottom: 48,
           }}
         >
-          {/* Card Container */}
-          <Card
-            size="lg"
-            padding={isWeb ? 'lg' : 'md'}
-            className={`w-full ${isWeb ? 'max-w-[380px]' : 'max-w-[380px]'}`}
+          {/* Container */}
+          <View
+            className="w-full"
+            style={{ maxWidth: 400 }}
           >
             {/* Back Button */}
             {authStep !== 'initial' && (
               <TouchableOpacity
                 onPress={handleBack}
                 activeOpacity={0.7}
-                {...(isWeb && {
-                  onMouseEnter: () => setBackHover(true),
-                  onMouseLeave: () => setBackHover(false),
-                })}
-                className={`flex-row items-center gap-2 mb-6 rounded-xl px-3 py-2 transition-colors duration-150 self-start ${
-                  backHover ? 'bg-gray-100 dark:bg-neutral-800' : ''
-                }`}
+                className="flex-row items-center gap-2 mb-6 rounded-xl px-3 py-2 self-start"
                 style={{ alignSelf: 'flex-start' }}
               >
                 <ArrowLeft
                   size={20}
-                  className={backHover ? 'text-primary' : isDark ? 'text-white' : 'text-content'}
+                  className={isDark ? 'text-white' : 'text-content'}
                 />
-                <Text
-                  className={`font-inter font-medium ${
-                    backHover ? 'text-primary' : 'text-content dark:text-content-dark'
-                  }`}
-                >
+                <Text className="font-inter font-medium text-content dark:text-content-dark">
                   Back
                 </Text>
               </TouchableOpacity>
             )}
 
-            {/* Logo & Title */}
-            <View className="items-center mb-8">
-              {isDark ? (
-                <Image
-                  source={require('../assets/images/chinmaya_logo_dark.svg')}
-                  style={{ width: logoSize, height: logoSize }}
-                />
-              ) : (
-                <Image
-                  source={require('../assets/images/chinmaya_logo_light.svg')}
-                  style={{ width: logoSize, height: logoSize }}
-                />
-              )}
+            {/* Janata Wordmark */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 40 }}>
+              <View
+                className="bg-[#1C1917] dark:bg-white"
+                style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Text className="text-white dark:text-[#1C1917]" style={{ fontSize: 14 }}>J</Text>
+              </View>
+              <Text
+                className="text-[#1C1917] dark:text-white"
+                style={{ fontWeight: '600', fontSize: 18 }}
+              >
+                Janata
+              </Text>
+            </View>
 
-              <Text className="text-3xl font-inter font-bold text-content dark:text-content-dark text-center mt-6">
+            {/* Heading & Subtitle */}
+            <View className="mb-8">
+              <Text
+                style={{ fontFamily: '"Inclusive Sans"', fontSize: 36, fontWeight: '400' }}
+                className="text-content dark:text-content-dark"
+              >
                 {authStep === 'login'
-                  ? 'Welcome Back'
+                  ? 'Welcome back.'
                   : authStep === 'signup'
-                  ? 'Create Account'
-                  : 'Get Started'}
+                  ? 'Join the community.'
+                  : 'Welcome.'}
               </Text>
 
-              <Text className="text-base font-inter text-content dark:text-content-dark opacity-70 text-center mt-2">
+              <Text
+                className="text-base font-inter mt-2"
+                style={{ color: '#78716C' }}
+              >
                 {authStep === 'login'
                   ? 'Enter your password to continue'
                   : authStep === 'signup'
-                  ? 'Set up your new account'
-                  : 'Enter your email to continue'}
+                  ? 'Create your account to get started'
+                  : 'Enter your email to get started'}
               </Text>
             </View>
 
@@ -369,11 +302,12 @@ export default function AuthScreen() {
               <Pressable
                 onPress={handleSubmit}
                 disabled={isButtonDisabled}
-                className={`items-center justify-center mt-2 rounded-2xl ${
+                className={`items-center justify-center mt-2 rounded-lg ${
                   isButtonDisabled
                     ? 'bg-primary/40 dark:bg-primary/30'
-                    : 'bg-primary active:bg-primary-press hover:scale-105 hovershadow-md transition-transform duration-150'
-                } py-4 px-8`}
+                    : 'bg-primary active:bg-primary-press'
+                } px-8`}
+                style={{ height: 48 }}
               >
                 <Text className="text-white font-inter font-bold text-md">
                   {loading
@@ -416,7 +350,7 @@ export default function AuthScreen() {
             <Text className="text-content dark:text-content-dark opacity-50 text-sm font-inter mt-8 text-center px-4">
               By continuing, you agree to our Terms of Service and Privacy Policy
             </Text>
-          </Card>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
