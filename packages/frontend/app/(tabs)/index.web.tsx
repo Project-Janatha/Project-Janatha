@@ -1,5 +1,5 @@
 // Discover tab — web desktop layout
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { View, Text, Pressable, useWindowDimensions, ScrollView, TextInput, ActivityIndicator } from 'react-native'
 import {
   MapPin,
@@ -7,14 +7,16 @@ import {
   Building2,
   CheckCircle2,
 } from 'lucide-react-native'
-import { useRouter } from 'expo-router'
-import { useThemeContext } from '../../components/contexts'
+import { useRouter, useLocalSearchParams } from 'expo-router'
+import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge } from '../../components/ui'
 import Map from '../../components/Map'
 import MapPopover from '../../components/MapPopover'
-import { useDiscoverData, type DiscoverFilter } from '../../hooks/useApiData'
+import { useDiscoverData, useEventDetail, useCenterDetail, type DiscoverFilter } from '../../hooks/useApiData'
 import type { MapPoint, EventDisplay, DiscoverCenter } from '../../utils/api'
 import WeekCalendar from '../../components/WeekCalendar'
+import EventDetailPanel from '../../components/web/EventDetailPanel'
+import CenterDetailPanel from '../../components/web/CenterDetailPanel'
 
 const FILTERS: { label: DiscoverFilter }[] = [
   { label: 'All' },
@@ -129,6 +131,89 @@ function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () =
   )
 }
 
+// ─── Detail Panel Wrapper (for side panel) ──────────────
+
+function DetailPanelWrapper({
+  selectedItem,
+  onClose,
+  onEventPress,
+}: {
+  selectedItem: { type: 'event' | 'center'; id: string }
+  onClose: () => void
+  onEventPress: (id: string) => void
+}) {
+  if (selectedItem.type === 'event') {
+    return <EventPanelInner eventId={selectedItem.id} onClose={onClose} />
+  }
+  return <CenterPanelInner centerId={selectedItem.id} onClose={onClose} onEventPress={onEventPress} />
+}
+
+function EventPanelInner({ eventId, onClose }: { eventId: string; onClose: () => void }) {
+  const { user } = useUser()
+  const { event, attendees, messages, loading, toggleRegistration, isToggling } = useEventDetail(eventId)
+
+  const handleToggleRegistration = async () => {
+    if (!user?.username) return
+    try {
+      await toggleRegistration(user.username)
+    } catch {
+      // silently handle
+    }
+  }
+
+  if (loading || !event) {
+    return (
+      <View style={{ width: 440, height: '100%', backgroundColor: '#FFFFFF', borderLeftWidth: 1, borderLeftColor: '#E7E5E4', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#E8862A" />
+      </View>
+    )
+  }
+
+  // Determine if past (compare event date to today)
+  const isPast = event.date ? new Date(event.date + 'T23:59:59') < new Date() : false
+
+  return (
+    <EventDetailPanel
+      event={event}
+      attendees={attendees}
+      messages={messages}
+      isPast={isPast}
+      onClose={onClose}
+      onToggleRegistration={handleToggleRegistration}
+      isToggling={isToggling}
+    />
+  )
+}
+
+function CenterPanelInner({
+  centerId,
+  onClose,
+  onEventPress,
+}: {
+  centerId: string
+  onClose: () => void
+  onEventPress: (id: string) => void
+}) {
+  const { center, events, loading } = useCenterDetail(centerId)
+
+  if (loading || !center) {
+    return (
+      <View style={{ width: 440, height: '100%', backgroundColor: '#FFFFFF', borderLeftWidth: 1, borderLeftColor: '#E7E5E4', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#E8862A" />
+      </View>
+    )
+  }
+
+  return (
+    <CenterDetailPanel
+      center={center}
+      events={events}
+      onClose={onClose}
+      onEventPress={onEventPress}
+    />
+  )
+}
+
 // ─── Mobile Discover (inline for responsive fallback) ───
 
 function MobileDiscoverFallback() {
@@ -193,12 +278,22 @@ export default function DiscoverScreenWeb() {
   const isTablet = width >= 768 && width < 1024
   const panelWidth = isTablet ? 340 : 420
 
-  const router = useRouter()
+  const params = useLocalSearchParams<{ detail?: string; id?: string }>()
   const { isDark } = useThemeContext()
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'center'; id: string } | null>(null)
   const { items, filteredPoints, loading, allEvents, allCenters } = useDiscoverData(activeFilter, searchQuery)
+
+  // Support direct URL navigation (e.g. ?detail=event&id=123)
+  useEffect(() => {
+    if (params.detail && params.id) {
+      setSelectedItem({ type: params.detail as 'event' | 'center', id: params.id })
+    }
+  }, [params.detail, params.id])
+
+  const rightPanelWidth = selectedItem ? 440 : panelWidth
 
   const eventDates = useMemo(
     () => new Set(allEvents.filter((e) => e.date).map((e) => e.date)),
@@ -247,13 +342,9 @@ export default function DiscoverScreenWeb() {
   const handlePopoverView = useCallback(() => {
     if (!clickPopover) return
     const { point } = clickPopover
-    if (point.type === 'center') {
-      router.push(`/center/${point.id}`)
-    } else {
-      router.push(`/events/${point.id}`)
-    }
+    setSelectedItem({ type: point.type === 'center' ? 'center' : 'event', id: point.id })
     setClickPopover(null)
-  }, [clickPopover, router])
+  }, [clickPopover])
 
   // Look up details for popover from hook data (not sample constants)
   const clickEventDetail = useMemo(() => {
@@ -268,13 +359,9 @@ export default function DiscoverScreenWeb() {
 
   const handlePointPress = useCallback(
     (point: MapPoint) => {
-      if (point.type === 'center') {
-        router.push(`/center/${point.id}`)
-      } else {
-        router.push(`/events/${point.id}`)
-      }
+      setSelectedItem({ type: point.type === 'center' ? 'center' : 'event', id: point.id })
     },
-    [router]
+    []
   )
 
   if (isMobile) {
@@ -318,93 +405,101 @@ export default function DiscoverScreenWeb() {
           )}
         </View>
 
-        {/* List Panel */}
-        <View style={{ width: panelWidth }} className="border-l border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
-          {/* Panel Header */}
-          <View style={{ paddingHorizontal: isTablet ? 16 : 20, paddingTop: 20, paddingBottom: 12 }}>
-            <Text className="text-content dark:text-content-dark font-inter-bold text-xl mb-3">
-              Discover
-            </Text>
+        {/* Right Panel — detail view or list */}
+        {selectedItem ? (
+          <DetailPanelWrapper
+            selectedItem={selectedItem}
+            onClose={() => setSelectedItem(null)}
+            onEventPress={(id) => setSelectedItem({ type: 'event', id })}
+          />
+        ) : (
+          <View style={{ width: rightPanelWidth }} className="border-l border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+            {/* Panel Header */}
+            <View style={{ paddingHorizontal: isTablet ? 16 : 20, paddingTop: 20, paddingBottom: 12 }}>
+              <Text className="text-content dark:text-content-dark font-inter-bold text-xl mb-3">
+                Discover
+              </Text>
 
-            {/* Filter Chips */}
+              {/* Filter Chips */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 8 }}
+                style={{ flexGrow: 0 }}
+              >
+                {FILTERS.map((f) => (
+                  <FilterChip
+                    key={f.label}
+                    label={f.label}
+                    active={activeFilter === f.label && !selectedDate}
+                    onPress={() => handleFilterPress(f.label)}
+                  />
+                ))}
+              </ScrollView>
+
+              {/* Search */}
+              <View className="flex-row items-center mt-3 px-3 rounded-xl bg-gray-100 dark:bg-neutral-800" style={{ minHeight: 40 }}>
+                <Search size={16} color="#9CA3AF" />
+                <TextInput
+                  className="flex-1 ml-2 text-sm font-inter text-content dark:text-content-dark outline-none"
+                  placeholder="Search events and centers..."
+                  placeholderTextColor="#9CA3AF"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  style={{ paddingVertical: 8 }}
+                />
+              </View>
+
+              {/* Week Calendar — hidden when Centers filter or searching */}
+              {activeFilter !== 'Centers' && !searchQuery.trim() && (
+                <View className="mt-2">
+                  <WeekCalendar
+                    eventDates={eventDates}
+                    selectedDate={selectedDate}
+                    onSelectDate={setSelectedDate}
+                  />
+                </View>
+              )}
+            </View>
+
+            {/* Loading indicator */}
+            {loading && (
+              <View className="py-4 items-center">
+                <ActivityIndicator size="small" color="#9A3412" />
+              </View>
+            )}
+
+            {/* List */}
             <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8 }}
-              style={{ flexGrow: 0 }}
+              className="flex-1"
+              contentContainerStyle={{ paddingHorizontal: isTablet ? 12 : 16, paddingBottom: 24, gap: 4 }}
+              showsVerticalScrollIndicator={false}
             >
-              {FILTERS.map((f) => (
-                <FilterChip
-                  key={f.label}
-                  label={f.label}
-                  active={activeFilter === f.label && !selectedDate}
-                  onPress={() => handleFilterPress(f.label)}
-                />
-              ))}
+              {!loading && displayItems.length === 0 && (
+                <View className="py-16 items-center">
+                  <Text className="text-gray-400 dark:text-gray-500 font-inter text-sm">
+                    {selectedDate ? 'No events on this day' : 'No results found'}
+                  </Text>
+                </View>
+              )}
+              {displayItems.map((item) =>
+                item.type === 'event' ? (
+                  <EventItem
+                    key={`event-${item.data.id}`}
+                    event={item.data as EventDisplay}
+                    onPress={() => setSelectedItem({ type: 'event', id: item.data.id })}
+                  />
+                ) : (
+                  <CenterItem
+                    key={`center-${item.data.id}`}
+                    center={item.data as DiscoverCenter}
+                    onPress={() => setSelectedItem({ type: 'center', id: item.data.id })}
+                  />
+                )
+              )}
             </ScrollView>
-
-            {/* Search */}
-            <View className="flex-row items-center mt-3 px-3 rounded-xl bg-gray-100 dark:bg-neutral-800" style={{ minHeight: 40 }}>
-              <Search size={16} color="#9CA3AF" />
-              <TextInput
-                className="flex-1 ml-2 text-sm font-inter text-content dark:text-content-dark outline-none"
-                placeholder="Search events and centers..."
-                placeholderTextColor="#9CA3AF"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                style={{ paddingVertical: 8 }}
-              />
-            </View>
-
-            {/* Week Calendar — hidden when Centers filter or searching */}
-            {activeFilter !== 'Centers' && !searchQuery.trim() && (
-              <View className="mt-2">
-                <WeekCalendar
-                  eventDates={eventDates}
-                  selectedDate={selectedDate}
-                  onSelectDate={setSelectedDate}
-                />
-              </View>
-            )}
           </View>
-
-          {/* Loading indicator */}
-          {loading && (
-            <View className="py-4 items-center">
-              <ActivityIndicator size="small" color="#9A3412" />
-            </View>
-          )}
-
-          {/* List */}
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ paddingHorizontal: isTablet ? 12 : 16, paddingBottom: 24, gap: 4 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {!loading && displayItems.length === 0 && (
-              <View className="py-16 items-center">
-                <Text className="text-gray-400 dark:text-gray-500 font-inter text-sm">
-                  {selectedDate ? 'No events on this day' : 'No results found'}
-                </Text>
-              </View>
-            )}
-            {displayItems.map((item) =>
-              item.type === 'event' ? (
-                <EventItem
-                  key={`event-${item.data.id}`}
-                  event={item.data as EventDisplay}
-                  onPress={() => router.push(`/events/${item.data.id}`)}
-                />
-              ) : (
-                <CenterItem
-                  key={`center-${item.data.id}`}
-                  center={item.data as DiscoverCenter}
-                  onPress={() => router.push(`/center/${item.data.id}`)}
-                />
-              )
-            )}
-          </ScrollView>
-        </View>
+        )}
       </View>
     </View>
   )
