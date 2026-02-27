@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, Image, ScrollView, Pressable, Linking } from 'react-native'
-import { MapPin, Globe, Phone, User, Share2, X, ChevronLeft } from 'lucide-react-native'
+import { MapPin, Globe, Phone, User, Share2, ChevronLeft } from 'lucide-react-native'
 import type { CenterDisplay } from '../../hooks/useApiData'
 import type { EventDisplay } from '../../utils/api'
 import { useDetailColors } from '../../hooks/useDetailColors'
@@ -107,22 +107,13 @@ export default function CenterDetailPanel({
             </Text>
           </Pressable>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Pressable
-              onPress={handleShare}
-              style={{ padding: 6 }}
-              accessibilityLabel="Share"
-            >
-              <Share2 size={18} color={colors.iconHeader} />
-            </Pressable>
-            <Pressable
-              onPress={onClose}
-              style={{ padding: 6 }}
-              accessibilityLabel="Close panel"
-            >
-              <X size={18} color={colors.iconHeader} />
-            </Pressable>
-          </View>
+          <Pressable
+            onPress={handleShare}
+            style={{ padding: 6 }}
+            accessibilityLabel="Share"
+          >
+            <Share2 size={18} color={colors.iconHeader} />
+          </Pressable>
         </View>
 
         {/* Title row */}
