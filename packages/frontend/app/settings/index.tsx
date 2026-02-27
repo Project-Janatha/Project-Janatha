@@ -7,10 +7,14 @@ import {
   Pressable,
   Image,
   ActivityIndicator,
+  Alert,
+  Modal,
   Platform,
 } from 'react-native'
-import { Camera } from 'lucide-react-native'
+import { Camera, AlertTriangle } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
+import { useRouter } from 'expo-router'
+import { DestructiveButton } from '../../components/ui'
 
 type ProfileData = {
   name: string
@@ -30,10 +34,13 @@ const PREFERENCE_OPTIONS = [
 ]
 
 export default function Profile() {
-  const { user, updateProfile } = useUser()
+  const { user, deleteAccount, updateProfile } = useUser()
   const { isDark } = useThemeContext()
+  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const isWeb = Platform.OS === 'web'
 
@@ -106,6 +113,23 @@ export default function Profile() {
     setProfileData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true)
+    try {
+      const result = await deleteAccount()
+      if (result.success) {
+        setShowDeleteModal(false)
+        router.replace('/auth')
+      } else {
+        Alert.alert('Error', result.message || 'Failed to delete account')
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete account. Please try again.')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const labelColor = isDark ? '#78716C' : '#A8A29E'
   const textColor = isDark ? '#F5F5F5' : '#1C1917'
   const mutedTextColor = isDark ? '#A8A29E' : '#78716C'
@@ -148,6 +172,45 @@ export default function Profile() {
         <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}>{errors.preferences}</Text>
       )}
     </View>
+  )
+
+  // ─── Shared: Delete confirmation modal ───
+  const DeleteModal = () => (
+    <Modal transparent visible={showDeleteModal} animationType="fade" onRequestClose={() => setShowDeleteModal(false)}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 24 }}>
+        <View style={{ backgroundColor: cardBg, borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, borderWidth: 1, borderColor: '#FECACA' }}>
+          <View style={{ alignItems: 'center', marginBottom: 16 }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: isDark ? 'rgba(220,38,38,0.15)' : '#FEE2E2', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+              <AlertTriangle size={32} color="#DC2626" />
+            </View>
+            <Text style={{ fontFamily: 'Inter-Bold', fontSize: 22, color: textColor, marginBottom: 8 }}>Delete Account?</Text>
+            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor, textAlign: 'center', lineHeight: 22 }}>
+              This action cannot be undone. All your data will be permanently deleted.
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+            <Pressable
+              onPress={() => setShowDeleteModal(false)}
+              disabled={isDeleting}
+              style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: isDark ? '#262626' : '#F3F0ED', alignItems: 'center' }}
+            >
+              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: textColor }}>Cancel</Text>
+            </Pressable>
+            <Pressable
+              onPress={handleDeleteAccount}
+              disabled={isDeleting}
+              style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#DC2626', alignItems: 'center' }}
+            >
+              {isDeleting ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#FFFFFF' }}>Delete Forever</Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
   )
 
   // ─── Field label ───
@@ -271,6 +334,14 @@ export default function Profile() {
           )}
         </View>
 
+        {/* Delete Account */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 32, paddingBottom: 40, marginTop: 'auto' }}>
+          <DestructiveButton onPress={() => setShowDeleteModal(true)}>
+            Delete Account
+          </DestructiveButton>
+        </View>
+
+        <DeleteModal />
       </ScrollView>
     )
   }
@@ -392,7 +463,24 @@ export default function Profile() {
           </Pressable>
         )}
 
+        {/* Danger Zone */}
+        <View
+          style={{
+            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+            padding: 20, paddingHorizontal: 24, borderRadius: 14, borderWidth: 1, borderColor: '#FECACA', marginTop: 12,
+          }}
+        >
+          <View style={{ gap: 3 }}>
+            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#DC2626' }}>Danger Zone</Text>
+            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: labelColor }}>Permanently delete your account and all data</Text>
+          </View>
+          <DestructiveButton onPress={() => setShowDeleteModal(true)}>
+            Delete Account
+          </DestructiveButton>
+        </View>
       </View>
+
+      <DeleteModal />
     </ScrollView>
   )
 }
