@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { View, Text, Image, ScrollView, Pressable, ActivityIndicator } from 'react-native'
-import { MapPin, Users, User, Share2, X, Clock, CheckCircle, Info, ChevronLeft } from 'lucide-react-native'
+import { MapPin, Users, User, Share2, Clock, CheckCircle, Info, ChevronLeft } from 'lucide-react-native'
 import Badge from '../ui/Badge'
 import UnderlineTabBar from '../ui/UnderlineTabBar'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
@@ -181,7 +181,7 @@ function HeaderBar({
         paddingHorizontal: 16,
         paddingTop: 14,
         paddingBottom: 12,
-        borderBottomWidth: 1,
+        borderBottomWidth: isRegistered ? 0 : 1,
         borderBottomColor: colors.border,
         gap: 10,
       }}
@@ -206,24 +206,15 @@ function HeaderBar({
           </Text>
         </Pressable>
 
-        <View className="flex-row items-center" style={{ gap: 4 }}>
-          {!isPast && (
-            <Pressable
-              onPress={() => {}}
-              style={{ padding: 6 }}
-              accessibilityLabel="Share event"
-            >
-              <Share2 size={18} color={colors.iconHeader} />
-            </Pressable>
-          )}
+        {!isPast && (
           <Pressable
-            onPress={onClose}
+            onPress={() => {}}
             style={{ padding: 6 }}
-            accessibilityLabel="Close panel"
+            accessibilityLabel="Share event"
           >
-            <X size={18} color={colors.iconHeader} />
+            <Share2 size={18} color={colors.iconHeader} />
           </Pressable>
-        </View>
+        )}
       </View>
 
       {/* Title row + badge */}

@@ -38,35 +38,42 @@ export default function WeekCalendar({ eventDates, selectedDate, onSelectDate }:
           <Pressable
             key={d.dateStr}
             onPress={() => onSelectDate(isSelected ? null : d.dateStr)}
-            className="items-center gap-1 px-1"
-            style={{ minWidth: 42, minHeight: 44 }}
+            className="items-center px-1"
+            style={{ minWidth: 42 }}
           >
             <Text className="text-[11px] font-inter text-gray-400 dark:text-gray-500">
               {d.dayLetter}
             </Text>
-            <View
-              className={`w-10 h-10 rounded-full items-center justify-center ${
-                isSelected
-                  ? 'bg-primary'
-                  : d.isToday
-                    ? 'border-2 border-primary'
-                    : ''
-              }`}
-            >
-              <Text
-                className={`text-sm font-inter-semibold ${
+            <View style={{ position: 'relative' }}>
+              <View
+                className={`w-10 h-10 rounded-full items-center justify-center ${
                   isSelected
-                    ? 'text-white'
+                    ? 'bg-primary'
                     : d.isToday
-                      ? 'text-primary'
-                      : 'text-content dark:text-content-dark'
+                      ? 'border-2 border-primary'
+                      : ''
                 }`}
               >
-                {d.dayNum}
-              </Text>
+                <Text
+                  className={`text-sm font-inter-semibold ${
+                    isSelected
+                      ? 'text-white'
+                      : d.isToday
+                        ? 'text-primary'
+                        : 'text-content dark:text-content-dark'
+                  }`}
+                >
+                  {d.dayNum}
+                </Text>
+              </View>
+              {/* Event dot — overlaid top-right of number */}
+              {hasEvents && (
+                <View
+                  className="w-2 h-2 rounded-full bg-primary"
+                  style={{ position: 'absolute', top: 2, right: 2 }}
+                />
+              )}
             </View>
-            {/* Event dot */}
-            <View className={`w-1.5 h-1.5 rounded-full ${hasEvents ? 'bg-primary' : 'bg-transparent'}`} />
           </Pressable>
         )
       })}

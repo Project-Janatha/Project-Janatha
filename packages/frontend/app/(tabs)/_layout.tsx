@@ -190,7 +190,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Discover',
+          title: '',
           headerRight: () => <HeaderRight />,
         }}
       />
