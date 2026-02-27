@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, Pressable, useWindowDimensions } from 'react-native'
 import { useRouter } from 'expo-router'
+import Logo from '../ui/Logo'
 
 const NAV_LINKS = ['Features', 'Community', 'About'] as const
 
@@ -28,41 +29,8 @@ export function NavBar() {
       }}
     >
       {/* Left: Logo + Name */}
-      <Pressable
-        onPress={() => router.push('/landing')}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
-      >
-        <View
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 14,
-            backgroundColor: '#1C1917',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text
-            style={{
-              color: '#FFFFFF',
-              fontSize: 14,
-              fontFamily: '"Inclusive Sans", sans-serif',
-              fontWeight: '400',
-            }}
-          >
-            J
-          </Text>
-        </View>
-        <Text
-          style={{
-            fontFamily: '"Inclusive Sans", sans-serif',
-            fontWeight: '600',
-            fontSize: 18,
-            color: '#1C1917',
-          }}
-        >
-          Janata
-        </Text>
+      <Pressable onPress={() => router.push('/landing')}>
+        <Logo size={32} />
       </Pressable>
 
       {/* Right: Links (hidden on mobile) + CTA */}

@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Code, ArrowLeft } from 'lucide-react-native'
-import { AuthInput } from '../components/ui'
+import { AuthInput, Logo } from '../components/ui'
 import { useUser, useThemeContext } from '../components/contexts'
 import { validateEmail, validatePassword } from '../utils'
 import { PasswordStrength } from '../components'
@@ -198,20 +198,7 @@ export default function AuthScreen() {
             )}
 
             {/* Janata Wordmark */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 40 }}>
-              <View
-                className="bg-[#1C1917] dark:bg-white"
-                style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Text className="text-white dark:text-[#1C1917]" style={{ fontSize: 14 }}>J</Text>
-              </View>
-              <Text
-                className="text-[#1C1917] dark:text-white"
-                style={{ fontWeight: '600', fontSize: 18 }}
-              >
-                Janata
-              </Text>
-            </View>
+            <Logo size={32} style={{ marginBottom: 40 }} />
 
             {/* Heading & Subtitle */}
             <View className="mb-8">
