@@ -52,6 +52,8 @@ export interface MapPoint {
 export interface MapProps {
   points?: MapPoint[]
   onPointPress?: (point: MapPoint) => void
+  onPointHover?: (point: MapPoint | null, x?: number, y?: number) => void
+  onPointClick?: (point: MapPoint, x?: number, y?: number) => void
   initialRegion?: Region
   showUserLocation?: boolean
 }

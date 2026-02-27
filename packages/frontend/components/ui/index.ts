@@ -15,6 +15,8 @@ import IconButton from './buttons/IconButton'
 import DestructiveButton from './buttons/DestructiveButton'
 import TabSegment from './TabSegment'
 import Card from './Card'
+import FilterChip from './FilterChip'
+import Badge from './Badge'
 
 export {
   PrimaryButton,
@@ -25,4 +27,6 @@ export {
   DestructiveButton,
   TabSegment,
   Card,
+  FilterChip,
+  Badge,
 }
