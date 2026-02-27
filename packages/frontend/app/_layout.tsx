@@ -1,7 +1,7 @@
 import '@expo/metro-runtime'
 // import '../config/performance'
 // import '../config/devtools'
-import { useEffect, useContext, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActivityIndicator, View, Text } from 'react-native'
 import { useFonts } from 'expo-font'
 import {
@@ -16,8 +16,6 @@ import {
   ThemeProvider as CustomThemeProvider,
   useThemeContext,
 } from '../components/contexts'
-import { IconButton } from '../components/ui'
-import { Share } from 'lucide-react-native'
 import '../globals.css'
 
 export const unstable_settings = {
@@ -149,33 +147,13 @@ function RootLayoutNav() {
         <Stack.Screen
           name="events/[id]"
           options={{
-            headerShown: true,
-            title: 'Event Details',
-            headerBackTitle: '', // Use empty string instead of headerBackTitleVisible
-            headerRight: () => (
-              <IconButton
-                className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
-                onPress={() => {}}
-              >
-                <Share size={20} />
-              </IconButton>
-            ),
+            headerShown: false,
           }}
         />
         <Stack.Screen
           name="center/[id]"
           options={{
-            headerShown: true,
-            title: 'Center Details',
-            headerBackTitle: '', // Use empty string instead of headerBackTitleVisible
-            headerRight: () => (
-              <IconButton
-                className="text-primary bg-white rounded-full p-2 border border-primary mr-3"
-                onPress={() => {}}
-              >
-                <Share size={20} />
-              </IconButton>
-            ),
+            headerShown: false,
           }}
         />
       </Stack>

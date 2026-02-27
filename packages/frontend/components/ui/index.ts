@@ -18,6 +18,7 @@ import Card from './Card'
 import FilterChip from './FilterChip'
 import Badge from './Badge'
 import Logo from './Logo'
+import UnderlineTabBar from './UnderlineTabBar'
 
 export {
   PrimaryButton,
@@ -31,4 +32,5 @@ export {
   FilterChip,
   Badge,
   Logo,
+  UnderlineTabBar,
 }
