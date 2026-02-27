@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { View, Text, Pressable, Platform, useWindowDimensions, ScrollView } from 'react-native'
+import { View, Text, Pressable, Platform, useWindowDimensions, ScrollView, Image } from 'react-native'
 import { useRouter } from 'expo-router'
 
 // Inject CSS keyframes for the infinite scroll animation (web only)
@@ -29,10 +29,17 @@ interface CardData {
   color: string
   icon?: string
   stat?: string
+  image?: any
 }
 
 const CARDS: CardData[] = [
-  { type: 'event', title: 'Geeta Chanting', subtitle: 'Mar 15 · 6:00 PM', color: '#FED7AA' },
+  {
+    type: 'event',
+    title: 'Geeta Chanting',
+    subtitle: 'Mar 15 · 6:00 PM',
+    color: '#FED7AA',
+    image: require('../../assets/images/landing/Swami Chinmayananda.jpg'),
+  },
   { type: 'center', title: 'CM San Jose', subtitle: 'San Jose, CA', color: '#F5F0EB', icon: 'S' },
   { type: 'event', title: 'Youth Retreat', subtitle: 'Apr 2 · 9:00 AM', color: '#BFDBFE' },
   { type: 'map', title: '12 Centers', subtitle: 'Within 50 miles', color: '#E8E4DF' },
@@ -58,15 +65,28 @@ function ScrollCard({ card }: { card: CardData }) {
           boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
         }}
       >
-        <View
-          style={{
-            width: '100%',
-            height: 48,
-            borderRadius: 8,
-            backgroundColor: card.color,
-            marginBottom: 10,
-          }}
-        />
+        {card.image ? (
+          <Image
+            source={card.image}
+            resizeMode="cover"
+            style={{
+              width: '100%',
+              height: 48,
+              borderRadius: 8,
+              marginBottom: 10,
+            }}
+          />
+        ) : (
+          <View
+            style={{
+              width: '100%',
+              height: 48,
+              borderRadius: 8,
+              backgroundColor: card.color,
+              marginBottom: 10,
+            }}
+          />
+        )}
         <Text
           style={{
             fontFamily: 'Inter, sans-serif',
@@ -305,7 +325,8 @@ function HorizontalScrollRow() {
           width: 60,
           height: '100%',
           zIndex: 2,
-          background: 'linear-gradient(to right, #FAFAF7 10%, transparent)',
+          backgroundColor: '#FAFAF7',
+          opacity: 0.9,
         }}
       />
       {/* Right fade edge */}
@@ -317,7 +338,8 @@ function HorizontalScrollRow() {
           width: 60,
           height: '100%',
           zIndex: 2,
-          background: 'linear-gradient(to left, #FAFAF7 10%, transparent)',
+          backgroundColor: '#FAFAF7',
+          opacity: 0.9,
         }}
       />
     </View>
@@ -471,26 +493,28 @@ export function Hero() {
       {/* Fade edges (top/bottom for desktop/tablet, hidden on mobile) */}
       {!isMobile && (
         <>
-          <View
+          <div
             style={{
               position: 'absolute',
               top: 0,
               right: 0,
-              width: 600,
-              height: 160,
+              width: isTablet ? 480 : 600,
+              height: 120,
               zIndex: 2,
-              background: 'linear-gradient(to bottom, #FAFAF7 20%, transparent)',
+              pointerEvents: 'none',
+              background: 'linear-gradient(180deg, #FAFAF7 20%, rgba(250, 250, 247, 0))',
             }}
           />
-          <View
+          <div
             style={{
               position: 'absolute',
               bottom: 0,
               right: 0,
-              width: 600,
-              height: 200,
+              width: isTablet ? 480 : 600,
+              height: 140,
               zIndex: 2,
-              background: 'linear-gradient(to top, #FAFAF7 20%, transparent)',
+              pointerEvents: 'none',
+              background: 'linear-gradient(0deg, #FAFAF7 15%, rgba(250, 250, 247, 0))',
             }}
           />
         </>

@@ -78,7 +78,7 @@ function TabPill({
     <Pressable
       onPress={onPress}
       style={{
-        backgroundColor: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.35)',
+        backgroundColor: isActive ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.28)',
         borderRadius: 100,
         paddingHorizontal: 20,
         paddingVertical: 10,
@@ -87,6 +87,8 @@ function TabPill({
         gap: 8,
         position: 'relative',
         overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: isActive ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.42)',
       }}
     >
       {/* Progress bar underline */}
@@ -120,7 +122,7 @@ function TabPill({
           fontFamily: 'Inter, sans-serif',
           fontWeight: isActive ? '500' : '400',
           fontSize: 14,
-          color: isActive ? '#1C1917' : '#78716C',
+          color: isActive ? '#292524' : '#78716C',
         }}
       >
         {feature.title}
@@ -131,50 +133,38 @@ function TabPill({
 
 // ------- Per-tab Visuals -------
 
-function Popover({
+function Badge({
   label,
-  top,
-  left,
-  right,
-  delay,
   accent,
+  delay,
 }: {
   label: string
-  top?: number
-  left?: number
-  right?: number
-  delay?: number
   accent?: boolean
+  delay?: number
 }) {
   return (
-    <div
-      style={{
-        position: 'absolute',
-        top,
-        left,
-        right,
-        animation: `popIn 0.4s ease-out ${delay || 0}ms both`,
-        zIndex: 10,
-      }}
-    >
+    <div style={{ animation: `popIn 0.4s ease-out ${delay || 0}ms both` }}>
       <View
         style={{
           backgroundColor: accent ? '#C2410C' : '#FFFFFF',
-          paddingHorizontal: 14,
-          paddingVertical: 8,
-          borderRadius: 10,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          borderRadius: 8,
+          boxShadow: accent ? 'none' : '0 2px 8px rgba(0,0,0,0.06)',
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 6,
+          gap: 5,
         }}
       >
+        {accent && (
+          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FED7AA' }} />
+        )}
         <Text
           style={{
             fontFamily: 'Inter, sans-serif',
             fontWeight: '500',
-            fontSize: 12,
-            color: accent ? '#FFFFFF' : '#1C1917',
+            fontSize: 11,
+            color: accent ? '#FFFFFF' : '#57534E',
           }}
         >
           {label}
@@ -184,199 +174,220 @@ function Popover({
   )
 }
 
+function BentoContainer({ children, isMobile }: { children: React.ReactNode; isMobile: boolean }) {
+  return (
+    <View
+      style={{
+        backgroundColor: 'rgba(255,255,255,0.35)',
+        borderRadius: 20,
+        padding: isMobile ? 16 : 24,
+        marginTop: isMobile ? 24 : 40,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.5)',
+      }}
+    >
+      {children}
+    </View>
+  )
+}
+
 function DiscoverVisual({ isMobile }: { isMobile: boolean }) {
   return (
     <div key="discover" style={{ animation: 'fadeSlideIn 0.4s ease-out' }}>
-      <View
-        style={{
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: 24,
-          alignItems: isMobile ? 'stretch' : 'flex-end',
-          justifyContent: 'center',
-          marginTop: isMobile ? 24 : 48,
-          position: 'relative',
-        }}
-      >
-        {/* Map mockup */}
+      <BentoContainer isMobile={isMobile}>
+        {/* Badges row */}
+        {!isMobile && (
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+            <Badge label="Nearest to you" accent delay={200} />
+            <Badge label="342 active members" delay={400} />
+            <Badge label="12 centers nearby" delay={600} />
+          </View>
+        )}
+
         <View
           style={{
-            width: isMobile ? '100%' : 480,
-            height: isMobile ? 220 : 340,
-            borderRadius: 16,
-            backgroundColor: '#FFFFFF',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.06)',
-            overflow: 'hidden',
-            position: 'relative',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? 16 : 20,
+            alignItems: isMobile ? 'stretch' : 'stretch',
           }}
         >
-          {/* Map background */}
-          <View style={{ flex: 1, backgroundColor: '#F3F1EE' }}>
-            {/* Grid lines to suggest a map */}
-            {(isMobile ? [0, 1, 2, 3] : [0, 1, 2, 3, 4, 5]).map((i) => (
-              <View
-                key={`h-${i}`}
-                style={{
-                  position: 'absolute',
-                  top: i * (isMobile ? 50 : 60) + 20,
-                  left: 0,
-                  right: 0,
-                  height: 1,
-                  backgroundColor: '#E7E5E4',
-                  opacity: 0.6,
-                }}
-              />
-            ))}
-            {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-              <View
-                key={`v-${i}`}
-                style={{
-                  position: 'absolute',
-                  left: i * 72 + 30,
-                  top: 0,
-                  bottom: 0,
-                  width: 1,
-                  backgroundColor: '#E7E5E4',
-                  opacity: 0.6,
-                }}
-              />
-            ))}
+          {/* Map mockup */}
+          <View
+            style={{
+              flex: isMobile ? undefined : 1,
+              height: isMobile ? 200 : 300,
+              borderRadius: 14,
+              backgroundColor: '#FFFFFF',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+          >
+            <View style={{ flex: 1, backgroundColor: '#F3F1EE' }}>
+              {(isMobile ? [0, 1, 2, 3] : [0, 1, 2, 3, 4]).map((i) => (
+                <View
+                  key={`h-${i}`}
+                  style={{
+                    position: 'absolute',
+                    top: i * (isMobile ? 50 : 60) + 20,
+                    left: 0,
+                    right: 0,
+                    height: 1,
+                    backgroundColor: '#E7E5E4',
+                    opacity: 0.5,
+                  }}
+                />
+              ))}
+              {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                <View
+                  key={`v-${i}`}
+                  style={{
+                    position: 'absolute',
+                    left: i * 72 + 30,
+                    top: 0,
+                    bottom: 0,
+                    width: 1,
+                    backgroundColor: '#E7E5E4',
+                    opacity: 0.5,
+                  }}
+                />
+              ))}
 
-            {/* Map pins */}
-            <div style={{ animation: 'pulseGlow 2s ease-in-out infinite' }}>
+              <div style={{ animation: 'pulseGlow 2s ease-in-out infinite' }}>
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: isMobile ? 60 : 100,
+                    left: isMobile ? '35%' : '30%',
+                    width: 16,
+                    height: 16,
+                    borderRadius: 8,
+                    backgroundColor: '#C2410C',
+                    borderWidth: 3,
+                    borderColor: '#FFFFFF',
+                  }}
+                />
+              </div>
               <View
                 style={{
                   position: 'absolute',
-                  top: isMobile ? 60 : 100,
-                  left: isMobile ? '35%' : 160,
-                  width: 16,
-                  height: 16,
-                  borderRadius: 8,
+                  top: isMobile ? 100 : 160,
+                  left: isMobile ? '60%' : '55%',
+                  width: 12,
+                  height: 12,
+                  borderRadius: 6,
                   backgroundColor: '#C2410C',
-                  borderWidth: 3,
+                  opacity: 0.6,
+                  borderWidth: 2,
                   borderColor: '#FFFFFF',
                 }}
               />
-            </div>
+              <View
+                style={{
+                  position: 'absolute',
+                  top: isMobile ? 45 : 70,
+                  left: isMobile ? '75%' : '72%',
+                  width: 12,
+                  height: 12,
+                  borderRadius: 6,
+                  backgroundColor: '#C2410C',
+                  opacity: 0.6,
+                  borderWidth: 2,
+                  borderColor: '#FFFFFF',
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  top: isMobile ? 130 : 200,
+                  left: isMobile ? '22%' : '20%',
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  backgroundColor: '#C2410C',
+                  opacity: 0.4,
+                  borderWidth: 2,
+                  borderColor: '#FFFFFF',
+                }}
+              />
+            </View>
+
+            {/* Search bar overlay */}
             <View
               style={{
                 position: 'absolute',
-                top: isMobile ? 110 : 180,
-                left: isMobile ? '60%' : 280,
-                width: 12,
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: '#C2410C',
-                opacity: 0.6,
-                borderWidth: 2,
-                borderColor: '#FFFFFF',
+                top: 14,
+                left: 14,
+                right: 14,
+                height: 38,
+                borderRadius: 10,
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                paddingHorizontal: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
               }}
-            />
-            <View
-              style={{
-                position: 'absolute',
-                top: isMobile ? 50 : 80,
-                left: isMobile ? '75%' : 350,
-                width: 12,
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: '#C2410C',
-                opacity: 0.6,
-                borderWidth: 2,
-                borderColor: '#FFFFFF',
-              }}
-            />
-            <View
-              style={{
-                position: 'absolute',
-                top: isMobile ? 140 : 220,
-                left: isMobile ? '25%' : 120,
-                width: 10,
-                height: 10,
-                borderRadius: 5,
-                backgroundColor: '#C2410C',
-                opacity: 0.4,
-                borderWidth: 2,
-                borderColor: '#FFFFFF',
-              }}
-            />
+            >
+              <View
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: 7,
+                  borderWidth: 2,
+                  borderColor: '#A8A29E',
+                }}
+              />
+              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#A8A29E' }}>
+                Search centers near you...
+              </Text>
+            </View>
           </View>
 
-          {/* Search bar overlay */}
+          {/* Side panel — center detail card */}
           <View
             style={{
-              position: 'absolute',
-              top: 16,
-              left: 16,
-              right: 16,
-              height: 40,
-              borderRadius: 10,
+              width: isMobile ? '100%' : 200,
               backgroundColor: '#FFFFFF',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-              paddingHorizontal: 14,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
+              borderRadius: 14,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+              overflow: 'hidden',
             }}
           >
-            <View
-              style={{
-                width: 16,
-                height: 16,
-                borderRadius: 8,
-                borderWidth: 2,
-                borderColor: '#A8A29E',
-              }}
-            />
-            <Text
-              style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#A8A29E' }}
-            >
-              Search centers near you...
-            </Text>
+            <View style={{ height: isMobile ? 44 : 72, backgroundColor: '#FFF7ED' }} />
+            <View style={{ padding: isMobile ? 12 : 14, gap: 6 }}>
+              <Text
+                style={{
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: '600',
+                  fontSize: 13,
+                  color: '#1C1917',
+                }}
+              >
+                CM San Jose
+              </Text>
+              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
+                San Jose, CA
+              </Text>
+              <View style={{ height: 1, backgroundColor: '#F5F5F4', marginVertical: 3 }} />
+              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
+                5 upcoming events
+              </Text>
+              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
+                342 members
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* Side panel — center detail card */}
-        <View
-          style={{
-            width: isMobile ? '100%' : 220,
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.06)',
-            overflow: 'hidden',
-          }}
-        >
-          <View style={{ height: isMobile ? 48 : 80, backgroundColor: '#FFF7ED' }} />
-          <View style={{ padding: isMobile ? 12 : 16, gap: 8 }}>
-            <Text
-              style={{
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: '600',
-                fontSize: 14,
-                color: '#1C1917',
-              }}
-            >
-              CM San Jose
-            </Text>
-            <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#78716C' }}>
-              San Jose, CA
-            </Text>
-            <View style={{ height: 1, backgroundColor: '#F5F5F4', marginVertical: 4 }} />
-            <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
-              5 upcoming events
-            </Text>
-            <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
-              342 members
-            </Text>
+        {/* Mobile badges at bottom */}
+        {isMobile && (
+          <View style={{ flexDirection: 'row', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
+            <Badge label="Nearest to you" accent delay={200} />
+            <Badge label="342 active members" delay={400} />
           </View>
-        </View>
-
-        {!isMobile && (
-          <>
-            <Popover label="Nearest to you" top={60} left={40} delay={200} accent />
-            <Popover label="342 active members" top={20} right={-10} delay={500} />
-          </>
         )}
-      </View>
+      </BentoContainer>
     </div>
   )
 }
@@ -390,280 +401,153 @@ function EventsVisual({ isMobile }: { isMobile: boolean }) {
 
   return (
     <div key="events" style={{ animation: 'fadeSlideIn 0.4s ease-out' }}>
-      <View
-        style={{
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: 24,
-          justifyContent: 'center',
-          marginTop: isMobile ? 24 : 48,
-          position: 'relative',
-        }}
-      >
-        {/* Event list */}
+      <BentoContainer isMobile={isMobile}>
+        {/* Badges row */}
+        {!isMobile && (
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+            <Badge label="One-tap registration" accent delay={300} />
+            <Badge label="Chapter-by-chapter tracking" delay={500} />
+          </View>
+        )}
+
         <View
           style={{
-            width: isMobile ? '100%' : 380,
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.06)',
-            overflow: 'hidden',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? 16 : 20,
+            alignItems: 'stretch',
           }}
         >
-          {/* Header */}
+          {/* Event list */}
           <View
             style={{
-              paddingHorizontal: 20,
-              paddingVertical: 16,
-              borderBottomWidth: 1,
-              borderBottomColor: '#F5F5F4',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              flex: isMobile ? undefined : 1,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 14,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+              overflow: 'hidden',
             }}
           >
-            <Text
-              style={{
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: '600',
-                fontSize: 15,
-                color: '#1C1917',
-              }}
-            >
-              Upcoming Events
-            </Text>
             <View
               style={{
-                backgroundColor: '#FFF7ED',
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 100,
+                paddingHorizontal: 18,
+                paddingVertical: 14,
+                borderBottomWidth: 1,
+                borderBottomColor: '#F5F5F4',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
               }}
             >
               <Text
                 style={{
                   fontFamily: 'Inter, sans-serif',
                   fontWeight: '600',
-                  fontSize: 11,
-                  color: '#C2410C',
+                  fontSize: 14,
+                  color: '#1C1917',
                 }}
               >
-                3 this week
+                Upcoming Events
               </Text>
-            </View>
-          </View>
-
-          {/* Event items */}
-          {events.map((evt, i) => (
-            <div
-              key={evt.title}
-              style={{ animation: `fadeSlideIn 0.3s ease-out ${200 + i * 150}ms both` }}
-            >
               <View
                 style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 14,
-                  paddingHorizontal: 20,
-                  paddingVertical: 14,
-                  borderBottomWidth: i < events.length - 1 ? 1 : 0,
-                  borderBottomColor: '#F5F5F4',
+                  backgroundColor: '#FFF7ED',
+                  paddingHorizontal: 10,
+                  paddingVertical: 3,
+                  borderRadius: 100,
                 }}
+              >
+                <Text
+                  style={{
+                    fontFamily: 'Inter, sans-serif',
+                    fontWeight: '600',
+                    fontSize: 10,
+                    color: '#C2410C',
+                  }}
+                >
+                  3 this week
+                </Text>
+              </View>
+            </View>
+
+            {events.map((evt, i) => (
+              <div
+                key={evt.title}
+                style={{ animation: `fadeSlideIn 0.3s ease-out ${200 + i * 150}ms both` }}
               >
                 <View
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 10,
-                    backgroundColor: evt.color,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                    paddingHorizontal: 18,
+                    paddingVertical: 12,
+                    borderBottomWidth: i < events.length - 1 ? 1 : 0,
+                    borderBottomColor: '#F5F5F4',
                   }}
-                />
-                <View style={{ flex: 1 }}>
-                  <Text
+                >
+                  <View
                     style={{
-                      fontFamily: 'Inter, sans-serif',
-                      fontWeight: '500',
-                      fontSize: 14,
-                      color: '#1C1917',
-                      marginBottom: 2,
+                      width: 40,
+                      height: 40,
+                      borderRadius: 10,
+                      backgroundColor: evt.color,
                     }}
-                  >
-                    {evt.title}
-                  </Text>
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontFamily: 'Inter, sans-serif',
+                        fontWeight: '500',
+                        fontSize: 13,
+                        color: '#1C1917',
+                        marginBottom: 2,
+                      }}
+                    >
+                      {evt.title}
+                    </Text>
+                    <Text
+                      style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}
+                    >
+                      {evt.time}
+                    </Text>
+                  </View>
                   <Text
-                    style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#78716C' }}
+                    style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#A8A29E' }}
                   >
-                    {evt.time}
+                    {evt.attendees} going
                   </Text>
                 </View>
-                <Text
-                  style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#A8A29E' }}
-                >
-                  {evt.attendees} going
-                </Text>
-              </View>
-            </div>
-          ))}
-        </View>
+              </div>
+            ))}
+          </View>
 
-        {/* Event detail card */}
-        <View
-          style={{
-            width: isMobile ? '100%' : 300,
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.06)',
-            overflow: 'hidden',
-          }}
-        >
-          <View style={{ height: isMobile ? 60 : 100, backgroundColor: '#FFF7ED' }} />
-          <View style={{ padding: isMobile ? 16 : 20, gap: 10 }}>
-            <Text
-              style={{
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: '600',
-                fontSize: isMobile ? 14 : 16,
-                color: '#1C1917',
-              }}
-            >
-              Bhagavad Gita Study
-            </Text>
-            <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#78716C' }}>
-              Chapter 12 — The Yoga of Devotion
-            </Text>
-            <View style={{ height: 1, backgroundColor: '#F5F5F4', marginVertical: 2 }} />
-            <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
-              <View
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: '#22C55E',
-                }}
-              />
-              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#78716C' }}>
-                14 people attending
-              </Text>
-            </View>
-            {/* Register button */}
-            <View
-              style={{
-                backgroundColor: '#C2410C',
-                paddingVertical: 10,
-                borderRadius: 10,
-                alignItems: 'center',
-                marginTop: 6,
-              }}
-            >
+          {/* Event detail card */}
+          <View
+            style={{
+              width: isMobile ? '100%' : 260,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 14,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+              overflow: 'hidden',
+            }}
+          >
+            <View style={{ height: isMobile ? 52 : 80, backgroundColor: '#FFF7ED' }} />
+            <View style={{ padding: isMobile ? 14 : 16, gap: 8 }}>
               <Text
                 style={{
                   fontFamily: 'Inter, sans-serif',
-                  fontWeight: '500',
-                  fontSize: 13,
-                  color: '#FFFFFF',
+                  fontWeight: '600',
+                  fontSize: isMobile ? 13 : 15,
+                  color: '#1C1917',
                 }}
               >
-                Register — Free
+                Bhagavad Gita Study
               </Text>
-            </View>
-          </View>
-        </View>
-
-        {!isMobile && (
-          <>
-            <Popover label="One-tap registration" top={200} right={20} delay={300} accent />
-            <Popover label="Chapter-by-chapter" top={60} right={20} delay={600} />
-          </>
-        )}
-      </View>
-    </div>
-  )
-}
-
-function CommunityVisual({ isMobile }: { isMobile: boolean }) {
-  const members = [
-    { name: 'Arjun K.', role: 'CHYK Leader', color: '#C2410C' },
-    { name: 'Priya S.', role: 'Study Group', color: '#7C3AED' },
-    { name: 'Rohan M.', role: 'Seva Volunteer', color: '#0891B2' },
-    { name: 'Ananya R.', role: 'New Member', color: '#059669' },
-  ]
-
-  return (
-    <div key="community" style={{ animation: 'fadeSlideIn 0.4s ease-out' }}>
-      <View
-        style={{
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: 24,
-          justifyContent: 'center',
-          marginTop: isMobile ? 24 : 48,
-          position: 'relative',
-        }}
-      >
-        {/* Activity feed */}
-        <View
-          style={{
-            width: isMobile ? '100%' : 360,
-            backgroundColor: '#FFFFFF',
-            borderRadius: 16,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.06)',
-            padding: 20,
-            gap: 16,
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: 'Inter, sans-serif',
-              fontWeight: '600',
-              fontSize: 15,
-              color: '#1C1917',
-            }}
-          >
-            Community Activity
-          </Text>
-
-          {members.map((m, i) => (
-            <div
-              key={m.name}
-              style={{ animation: `fadeSlideIn 0.3s ease-out ${200 + i * 150}ms both` }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 18,
-                    backgroundColor: m.color,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: 'Inter, sans-serif',
-                      fontWeight: '600',
-                      fontSize: 14,
-                      color: '#FFFFFF',
-                    }}
-                  >
-                    {m.name[0]}
-                  </Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontFamily: 'Inter, sans-serif',
-                      fontWeight: '500',
-                      fontSize: 13,
-                      color: '#1C1917',
-                    }}
-                  >
-                    {m.name}
-                  </Text>
-                  <Text
-                    style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}
-                  >
-                    {m.role}
-                  </Text>
-                </View>
+              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#78716C' }}>
+                Chapter 12 — The Yoga of Devotion
+              </Text>
+              <View style={{ height: 1, backgroundColor: '#F5F5F4', marginVertical: 2 }} />
+              <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
                 <View
                   style={{
                     width: 7,
@@ -672,71 +556,345 @@ function CommunityVisual({ isMobile }: { isMobile: boolean }) {
                     backgroundColor: '#22C55E',
                   }}
                 />
+                <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
+                  14 people attending
+                </Text>
               </View>
-            </div>
-          ))}
-        </View>
-
-        {/* Stats summary */}
-        <View style={{ width: isMobile ? '100%' : 240, gap: isMobile ? 12 : 16, flexDirection: isMobile ? 'row' : 'column', flexWrap: isMobile ? 'wrap' : undefined }}>
-          {[
-            { value: '1,240', label: 'Active members', sub: 'across 12 centers' },
-            { value: '86', label: 'Events this month', sub: '+12% from last month' },
-            { value: '34', label: 'Study groups', sub: 'currently running' },
-          ].map((stat, i) => (
-            <div
-              key={stat.label}
-              style={{ animation: `popIn 0.4s ease-out ${300 + i * 200}ms both`, flex: isMobile ? '1 1 45%' : undefined }}
-            >
               <View
                 style={{
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: 14,
-                  padding: isMobile ? 14 : 18,
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.05)',
+                  backgroundColor: '#C2410C',
+                  paddingVertical: 9,
+                  borderRadius: 10,
+                  alignItems: 'center',
+                  marginTop: 4,
                 }}
               >
                 <Text
                   style={{
-                    fontFamily: '"Inclusive Sans", sans-serif',
-                    fontWeight: '400',
-                    fontSize: isMobile ? 22 : 28,
-                    color: '#C2410C',
-                    marginBottom: 2,
-                  }}
-                >
-                  {stat.value}
-                </Text>
-                <Text
-                  style={{
                     fontFamily: 'Inter, sans-serif',
-                    fontWeight: '600',
-                    fontSize: isMobile ? 12 : 13,
-                    color: '#1C1917',
-                    marginBottom: 2,
+                    fontWeight: '500',
+                    fontSize: 12,
+                    color: '#FFFFFF',
                   }}
                 >
-                  {stat.label}
+                  Register — Free
                 </Text>
-                {!isMobile && (
-                <Text
-                  style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}
-                >
-                  {stat.sub}
-                </Text>
-                )}
               </View>
-            </div>
-          ))}
+            </View>
+          </View>
         </View>
 
-        {!isMobile && (
-          <>
-            <Popover label="Real-time activity" top={-10} left={40} delay={400} accent />
-            <Popover label="+12% growth" top={100} right={-10} delay={700} />
-          </>
+        {/* Mobile badges at bottom */}
+        {isMobile && (
+          <View style={{ flexDirection: 'row', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
+            <Badge label="One-tap registration" accent delay={300} />
+            <Badge label="Chapter tracking" delay={500} />
+          </View>
         )}
-      </View>
+      </BentoContainer>
+    </div>
+  )
+}
+
+function CommunityVisual({ isMobile }: { isMobile: boolean }) {
+  const people = [
+    { name: 'Arjun K.', role: 'CHYK Leader', tone: '#E7B28B', shirt: '#C2410C' },
+    { name: 'Priya S.', role: 'Study Group', tone: '#DFA487', shirt: '#7C3AED' },
+    { name: 'Rohan M.', role: 'Seva Volunteer', tone: '#CB8F72', shirt: '#0891B2' },
+    { name: 'Ananya R.', role: 'New Member', tone: '#E2AA86', shirt: '#059669' },
+  ]
+
+  return (
+    <div key="community" style={{ animation: 'fadeSlideIn 0.4s ease-out' }}>
+      <BentoContainer isMobile={isMobile}>
+        {/* Badges row */}
+        {!isMobile && (
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+            <Badge label="Real-time activity" accent delay={400} />
+            <Badge label="+12% monthly growth" delay={600} />
+          </View>
+        )}
+
+        <View
+          style={{
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? 16 : 22,
+            alignItems: 'stretch',
+          }}
+        >
+          {/* People collage */}
+          <View
+            style={{
+              flex: isMobile ? undefined : 1.4,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 14,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+              padding: isMobile ? 12 : 18,
+              position: 'relative',
+              minHeight: isMobile ? 330 : 350,
+              overflow: 'hidden',
+            }}
+          >
+            <View
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: '#F8F2EF',
+              }}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: isMobile ? 8 : 12, zIndex: 1 }}>
+              {people.slice(0, 2).map((p, i) => (
+                <div key={p.name} style={{ animation: `fadeSlideIn 0.35s ease-out ${180 + i * 120}ms both`, flex: 1 }}>
+                  <View
+                    style={{
+                      height: isMobile ? 136 : 156,
+                      borderRadius: 12,
+                      backgroundColor: '#EFE7E1',
+                      overflow: 'hidden',
+                      position: 'relative',
+                    }}
+                  >
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: 18,
+                        left: '35%',
+                        width: 42,
+                        height: 42,
+                        borderRadius: 21,
+                        backgroundColor: p.tone,
+                      }}
+                    />
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: 56,
+                        left: '28%',
+                        width: 60,
+                        height: 72,
+                        borderTopLeftRadius: 30,
+                        borderTopRightRadius: 30,
+                        borderBottomLeftRadius: 10,
+                        borderBottomRightRadius: 10,
+                        backgroundColor: p.shirt,
+                      }}
+                    />
+                    <View
+                      style={{
+                        position: 'absolute',
+                        left: 10,
+                        right: 10,
+                        bottom: 10,
+                      }}
+                    >
+                      <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '600', fontSize: 11, color: '#1C1917' }}>
+                        {p.name}
+                      </Text>
+                      <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#57534E' }}>
+                        {p.role}
+                      </Text>
+                    </View>
+                  </View>
+                </div>
+              ))}
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 10, zIndex: 1 }}>
+              {people.slice(2).map((p, i) => (
+                <div key={p.name} style={{ animation: `fadeSlideIn 0.35s ease-out ${420 + i * 120}ms both`, flex: 1 }}>
+                  <View
+                    style={{
+                      height: isMobile ? 136 : 156,
+                      borderRadius: 12,
+                      backgroundColor: '#EFE7E1',
+                      overflow: 'hidden',
+                      position: 'relative',
+                    }}
+                  >
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: 18,
+                        left: '35%',
+                        width: 42,
+                        height: 42,
+                        borderRadius: 21,
+                        backgroundColor: p.tone,
+                      }}
+                    />
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: 56,
+                        left: '28%',
+                        width: 60,
+                        height: 72,
+                        borderTopLeftRadius: 30,
+                        borderTopRightRadius: 30,
+                        borderBottomLeftRadius: 10,
+                        borderBottomRightRadius: 10,
+                        backgroundColor: p.shirt,
+                      }}
+                    />
+                    <View
+                      style={{
+                        position: 'absolute',
+                        left: 10,
+                        right: 10,
+                        bottom: 10,
+                      }}
+                    >
+                      <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '600', fontSize: 11, color: '#1C1917' }}>
+                        {p.name}
+                      </Text>
+                      <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#57534E' }}>
+                        {p.role}
+                      </Text>
+                    </View>
+                  </View>
+                </div>
+              ))}
+            </View>
+
+            <div style={{ animation: 'popIn 0.4s ease-out 500ms both' }}>
+              <View
+                style={{
+                  position: 'absolute',
+                  right: isMobile ? 12 : 18,
+                  top: isMobile ? 16 : 24,
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 10,
+                  paddingHorizontal: 10,
+                  paddingVertical: 8,
+                  boxShadow: '0 8px 22px rgba(0,0,0,0.1)',
+                }}
+              >
+                <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '600', fontSize: 10, color: '#1C1917' }}>
+                  24 new joins
+                </Text>
+                <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#78716C' }}>
+                  this week
+                </Text>
+              </View>
+            </div>
+
+            <div style={{ animation: 'popIn 0.4s ease-out 700ms both' }}>
+              <View
+                style={{
+                  position: 'absolute',
+                  left: isMobile ? 14 : 22,
+                  bottom: isMobile ? 14 : 22,
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 10,
+                  paddingHorizontal: 10,
+                  paddingVertical: 8,
+                  boxShadow: '0 8px 22px rgba(0,0,0,0.1)',
+                }}
+              >
+                <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '600', fontSize: 10, color: '#1C1917' }}>
+                  Seva projects
+                </Text>
+                <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#78716C' }}>
+                  8 active teams
+                </Text>
+              </View>
+            </div>
+          </View>
+
+          {/* Small floating cards */}
+          <View
+            style={{
+              width: isMobile ? '100%' : 200,
+              gap: isMobile ? 12 : 12,
+              flexDirection: isMobile ? 'row' : 'column',
+              flexWrap: isMobile ? 'wrap' : undefined,
+            }}
+          >
+            {[
+              { value: '1,240', label: 'Active members', sub: 'across 12 centers' },
+              { value: '86', label: 'Events this month', sub: '+12% from last month' },
+              { value: '34', label: 'Study groups', sub: 'currently running' },
+            ].map((stat, i) => (
+              <div
+                key={stat.label}
+                style={{
+                  animation: `popIn 0.4s ease-out ${300 + i * 200}ms both`,
+                  flex: isMobile ? '1 1 45%' : undefined,
+                }}
+              >
+                <View
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: 14,
+                    padding: isMobile ? 12 : 14,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: '"Inclusive Sans", sans-serif',
+                      fontWeight: '400',
+                      fontSize: isMobile ? 20 : 26,
+                      color: '#C2410C',
+                      marginBottom: 2,
+                    }}
+                  >
+                    {stat.value}
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: 'Inter, sans-serif',
+                      fontWeight: '600',
+                      fontSize: isMobile ? 11 : 12,
+                      color: '#1C1917',
+                      marginBottom: 2,
+                    }}
+                  >
+                    {stat.label}
+                  </Text>
+                  {!isMobile && (
+                    <Text
+                      style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}
+                    >
+                      {stat.sub}
+                    </Text>
+                  )}
+                </View>
+              </div>
+            ))}
+          </View>
+        </View>
+
+        {/* Mobile badges at bottom */}
+        {isMobile && (
+          <View style={{ flexDirection: 'row', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
+            <Badge label="Real-time activity" accent delay={400} />
+            <Badge label="+12% growth" delay={600} />
+          </View>
+        )}
+      </BentoContainer>
+    </div>
+  )
+}
+
+function EmptyTabVisual({ isMobile, tabKey }: { isMobile: boolean; tabKey: string }) {
+  return (
+    <div key={tabKey} style={{ animation: 'fadeSlideIn 0.35s ease-out' }}>
+      <BentoContainer isMobile={isMobile}>
+        <View
+          style={{
+            height: isMobile ? 220 : 320,
+            borderRadius: 14,
+            backgroundColor: 'rgba(255,255,255,0.45)',
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.65)',
+          }}
+        />
+      </BentoContainer>
     </div>
   )
 }
@@ -781,11 +939,11 @@ export function AppPreview() {
   const renderVisual = () => {
     switch (activeIndex) {
       case 0:
-        return <DiscoverVisual isMobile={isMobile} />
+        return <EmptyTabVisual isMobile={isMobile} tabKey="discover-empty" />
       case 1:
-        return <EventsVisual isMobile={isMobile} />
+        return <EmptyTabVisual isMobile={isMobile} tabKey="events-empty" />
       case 2:
-        return <CommunityVisual isMobile={isMobile} />
+        return <EmptyTabVisual isMobile={isMobile} tabKey="community-empty" />
       default:
         return null
     }
@@ -872,9 +1030,7 @@ export function AppPreview() {
       </div>
 
       {/* Visual for active tab */}
-      <View style={{ position: 'relative', minHeight: isMobile ? 'auto' : 420 }}>
-        {renderVisual()}
-      </View>
+      {renderVisual()}
     </View>
   )
 }

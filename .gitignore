@@ -119,3 +119,7 @@ config/production.json
 
 # Mac/System
 .DS_Store
+packages/frontend/assets/images/landing/
+chinmaya-mission-centers.md
+docs/plans/2026-02-27-auth-page-redesign-design.md
+docs/plans/2026-02-27-auth-page-redesign.md
