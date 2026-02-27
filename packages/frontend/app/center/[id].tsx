@@ -1,349 +1,492 @@
-import React, { useState, useMemo } from 'react'
-import { View, Text, ScrollView, Image, Pressable, Linking, ActivityIndicator } from 'react-native'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import React from 'react'
 import {
-  MapPin,
-  Globe,
-  Phone,
-  Calendar,
-  User,
-  ChevronRight,
-  ChevronLeft,
-} from 'lucide-react-native'
-import { TabSegment, IconButton, SecondaryButton, PrimaryButton, Card } from '../../components/ui'
-import { useCenterDetail, EventDisplay } from '../../hooks/useApiData'
+  View,
+  Text,
+  ScrollView,
+  Image,
+  Pressable,
+  Linking,
+  ActivityIndicator,
+  Share,
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import { ChevronLeft, Share2, MapPin, Globe, Phone, User } from 'lucide-react-native'
+import { useCenterDetail } from '../../hooks/useApiData'
+import type { EventDisplay } from '../../utils/api'
 
-// ── Calendar helpers ──────────────────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────────────
 
-function getMonthGrid(year: number, month: number): (number | null)[][] {
-  const firstDay = new Date(year, month, 1).getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const weeks: (number | null)[][] = []
-  let week: (number | null)[] = new Array(firstDay).fill(null)
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    week.push(day)
-    if (week.length === 7) {
-      weeks.push(week)
-      week = []
-    }
-  }
-  if (week.length > 0) {
-    while (week.length < 7) week.push(null)
-    weeks.push(week)
-  }
-  return weeks
+function formatDateCallout(dateStr: string): { month: string; day: string } {
+  const d = new Date(dateStr + 'T00:00:00')
+  const month = d
+    .toLocaleDateString('en-US', { month: 'short' })
+    .toUpperCase()
+  const day = String(d.getDate())
+  return { month, day }
 }
 
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-]
-
-const EVENT_COLORS = ['bg-red-100', 'bg-blue-100', 'bg-green-100', 'bg-amber-100']
-const EVENT_DOT_COLORS = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-amber-500']
-
-// ── CalendarView component ────────────────────────────────────────────
-
-function CalendarView({
-  events,
-  onEventPress,
-}: {
-  events: EventDisplay[]
-  onEventPress: (event: EventDisplay) => void
-}) {
-  const now = new Date()
-  const [viewYear, setViewYear] = useState(now.getFullYear())
-  const [viewMonth, setViewMonth] = useState(now.getMonth())
-
-  const todayDate = now.getDate()
-  const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth()
-  const weeks = useMemo(() => getMonthGrid(viewYear, viewMonth), [viewYear, viewMonth])
-
-  // Map event index to date for color coding (simple heuristic)
-  const eventDateMap = useMemo(() => {
-    const map: Record<number, number> = {}
-    events.forEach((evt, i) => {
-      // Try to parse a date from the event time string
-      const dateMatch = evt.time.match(/(\d{1,2})/)
-      if (dateMatch) {
-        map[parseInt(dateMatch[1], 10)] = i
-      }
-    })
-    return map
-  }, [events])
-
-  const goToPrevMonth = () => {
-    if (viewMonth === 0) {
-      setViewYear(viewYear - 1)
-      setViewMonth(11)
-    } else {
-      setViewMonth(viewMonth - 1)
-    }
-  }
-
-  const goToNextMonth = () => {
-    if (viewMonth === 11) {
-      setViewYear(viewYear + 1)
-      setViewMonth(0)
-    } else {
-      setViewMonth(viewMonth + 1)
-    }
-  }
-
-  const daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-
-  return (
-    <View className="gap-4">
-      {/* Calendar Header */}
-      <View className="flex-row justify-between items-center px-2">
-        <IconButton onPress={goToPrevMonth}>
-          <ChevronLeft size={16} />
-        </IconButton>
-        <Text className="text-lg font-semibold text-content dark:text-content-dark">
-          {MONTH_NAMES[viewMonth]} {viewYear}
-        </Text>
-        <IconButton onPress={goToNextMonth}>
-          <ChevronRight size={16} />
-        </IconButton>
-      </View>
-
-      {/* Days of week header */}
-      <View className="flex-row justify-between px-2">
-        {daysOfWeek.map((day, index) => (
-          <View key={index} className="w-10 items-center">
-            <Text className="text-sm text-contentStrong dark:text-contentStrong-dark font-medium">
-              {day}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Calendar grid */}
-      <View className="gap-1">
-        {weeks.map((week, weekIndex) => (
-          <View key={weekIndex} className="flex-row justify-between px-2">
-            {week.map((date, dayIndex) => {
-              const eventIdx = date !== null ? eventDateMap[date] : undefined
-              const hasEvent = eventIdx !== undefined
-              const isToday = isCurrentMonth && date === todayDate
-
-              return (
-                <View key={dayIndex} className="w-10 items-center">
-                  {date !== null && (
-                    <Pressable
-                      onPress={() => {
-                        if (hasEvent) onEventPress(events[eventIdx!])
-                      }}
-                      className={`w-9 h-9 rounded-lg justify-center items-center relative ${
-                        isToday
-                          ? 'bg-primary'
-                          : hasEvent
-                          ? EVENT_COLORS[eventIdx! % EVENT_COLORS.length]
-                          : ''
-                      }`}
-                    >
-                      <Text
-                        className={`text-sm ${
-                          isToday
-                            ? 'font-semibold text-white'
-                            : 'font-normal text-content dark:text-content-dark'
-                        }`}
-                      >
-                        {date}
-                      </Text>
-                      {hasEvent && !isToday && (
-                        <View
-                          className={`absolute bottom-0.5 w-1 h-1 rounded-full ${
-                            EVENT_DOT_COLORS[eventIdx! % EVENT_DOT_COLORS.length]
-                          }`}
-                        />
-                      )}
-                    </Pressable>
-                  )}
-                </View>
-              )
-            })}
-          </View>
-        ))}
-      </View>
-
-      {/* Events List */}
-      <View className="gap-3 mt-2">
-        {events.map((event) => (
-          <CenterEventCard key={event.id} event={event} onPress={() => onEventPress(event)} />
-        ))}
-      </View>
-    </View>
-  )
+function formatTimeDisplay(time: string): string {
+  // Extract just the start time portion, e.g. "10:30 AM" from "10:30 AM - 11:30 AM"
+  const parts = time.split(' - ')
+  return parts[0] || time
 }
 
-// ── CenterEventCard component ─────────────────────────────────────────
-
-function CenterEventCard({
-  event,
-  onPress,
-}: {
-  event: EventDisplay
-  onPress: () => void
-}) {
-  return (
-    <Card pressable onPress={onPress} padding="sm" overflowHidden>
-      <View className="gap-2">
-        <Text className="text-sm text-primary font-medium">{event.time}</Text>
-        <Text className="text-sm text-contentStrong dark:text-contentStrong-dark">
-          {event.location}
-        </Text>
-        <Text className="text-base font-semibold text-content dark:text-content-dark leading-tight">
-          {event.title}
-        </Text>
-        <Text className="text-sm text-contentStrong dark:text-contentStrong-dark mt-1">
-          {event.attendees} people
-        </Text>
-      </View>
-    </Card>
-  )
-}
-
-// ── Main page component ───────────────────────────────────────────────
+// ── Main page component ─────────────────────────────────────────────────
 
 export default function CenterDetailPage() {
   const { id } = useLocalSearchParams()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState('Details')
   const { center, events, loading } = useCenterDetail(id as string)
 
   const handleEventPress = (event: EventDisplay) => {
     router.push(`/events/${event.id}`)
   }
 
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: center
+          ? `Check out ${center.name}!`
+          : 'Check out this center!',
+      })
+    } catch {
+      // Share cancelled or failed — no action needed
+    }
+  }
+
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-background dark:bg-background-dark">
-        <ActivityIndicator size="large" color="#ea580c" />
-      </View>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+        edges={['top']}
+      >
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <ActivityIndicator size="large" color="#ea580c" />
+        </View>
+      </SafeAreaView>
     )
   }
 
   if (!center) {
     return (
-      <View className="flex-1 justify-center items-center px-4 bg-background dark:bg-background-dark">
-        <Text className="text-2xl font-semibold text-content dark:text-content-dark mb-4">
-          Center not found
-        </Text>
-        <Pressable onPress={() => router.back()} className="bg-primary rounded-xl px-6 py-3">
-          <Text className="text-white font-semibold">Go Back</Text>
-        </Pressable>
-      </View>
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+        edges={['top']}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingHorizontal: 16,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 22,
+              fontFamily: 'Inter-SemiBold',
+              color: '#1C1917',
+              marginBottom: 16,
+            }}
+          >
+            Center not found
+          </Text>
+          <Pressable
+            onPress={() => router.back()}
+            style={{
+              backgroundColor: '#ea580c',
+              borderRadius: 12,
+              paddingHorizontal: 24,
+              paddingVertical: 12,
+            }}
+          >
+            <Text
+              style={{
+                color: '#FFFFFF',
+                fontFamily: 'Inter-SemiBold',
+                fontSize: 15,
+              }}
+            >
+              Go Back
+            </Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
     )
   }
 
-  const renderDetailsTab = () => (
-    <View className="gap-4">
-      {/* Center Image */}
-      <View className="rounded-xl overflow-hidden shadow">
-        <Image source={{ uri: center.image }} style={{ width: '100%', height: 200 }} />
-      </View>
+  // Parse address into street + city lines
+  const commaIndex = center.address.indexOf(',')
+  const addressLine1 =
+    commaIndex >= 0 ? center.address.slice(0, commaIndex).trim() : center.address
+  const addressLine2 =
+    commaIndex >= 0 ? center.address.slice(commaIndex + 1).trim() : ''
 
-      {/* Center Information */}
-      <View className="gap-3">
-        {/* Address */}
-        <Pressable
-          className="flex-row items-center gap-2"
-          onPress={() => Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(center.address)}`)}
-        >
-          <MapPin size={20} color="#f97316" />
-          <Text className="text-base font-medium text-content dark:text-content-dark flex-1">
-            {center.address}
-          </Text>
-        </Pressable>
-
-        {/* Website */}
-        <Pressable
-          className="flex-row items-center gap-2"
-          onPress={() => Linking.openURL(center.website)}
-        >
-          <Globe size={20} color="#f97316" />
-          <Text className="text-base font-medium text-primary">{center.website}</Text>
-        </Pressable>
-
-        {/* Phone */}
-        <Pressable
-          className="flex-row items-center gap-2"
-          onPress={() => Linking.openURL(`tel:${center.phone}`)}
-        >
-          <Phone size={20} color="#f97316" />
-          <Text className="text-base font-medium text-content dark:text-content-dark">
-            {center.phone}
-          </Text>
-        </Pressable>
-
-        {/* Upcoming Events */}
-        <View className="flex-row items-center gap-2">
-          <Calendar size={20} color="#f97316" />
-          <Text className="text-base font-medium text-content dark:text-content-dark">
-            {center.upcomingEvents} upcoming events
-          </Text>
-        </View>
-
-        {/* Point of Contact */}
-        <View className="flex-row items-center gap-2">
-          <User size={20} color="#f97316" />
-          <View className="flex-1">
-            <Text className="text-sm text-contentStrong dark:text-contentStrong-dark">
-              Point of Contact:
-            </Text>
-            <Text className="text-base font-medium text-content dark:text-content-dark">
-              {center.pointOfContact}
-            </Text>
-          </View>
-        </View>
-
-        {/* Acharya */}
-        {center.acharya && (
-          <View className="gap-1 mt-2">
-            <Text className="text-lg font-semibold text-content dark:text-content-dark">
-              Acharya
-            </Text>
-            <Text className="text-base text-contentStrong dark:text-contentStrong-dark">
-              {center.acharya}
-            </Text>
-          </View>
-        )}
-      </View>
-    </View>
-  )
+  // Strip protocol for website display
+  const displayWebsite = center.website
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '')
 
   return (
-    <ScrollView className="flex-1 bg-background dark:bg-background-dark">
-      <View className="flex-1">
-        {/* Center Name */}
-        <View className="px-4 py-3 bg-background dark:bg-background-dark border-b border-borderColor dark:border-borderColor-dark">
-          <Text className="text-2xl font-bold text-center text-content dark:text-content-dark">
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: '#FFFFFF' }}
+      edges={['top']}
+    >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Custom Navigation Bar ─────────────────────────────────── */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+          }}
+        >
+          <Pressable
+            onPress={() => router.back()}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+            hitSlop={8}
+          >
+            <ChevronLeft size={22} color="#1C1917" />
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Inter-Medium',
+                color: '#1C1917',
+              }}
+            >
+              Back
+            </Text>
+          </Pressable>
+          <Pressable onPress={handleShare} hitSlop={8}>
+            <Share2 size={22} color="#1C1917" />
+          </Pressable>
+        </View>
+
+        {/* ── Hero Image ────────────────────────────────────────────── */}
+        {center.image ? (
+          <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+            <Image
+              source={{ uri: center.image }}
+              style={{
+                width: '100%',
+                height: 220,
+                borderRadius: 16,
+              }}
+              resizeMode="cover"
+            />
+          </View>
+        ) : null}
+
+        {/* ── Title Section ─────────────────────────────────────────── */}
+        <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
+          <Text
+            style={{
+              fontSize: 26,
+              fontFamily: 'Inter-Bold',
+              color: '#1C1917',
+              marginBottom: 4,
+            }}
+          >
             {center.name}
           </Text>
+          {center.acharya ? (
+            <Text
+              style={{
+                fontSize: 14,
+                fontFamily: 'Inter-Regular',
+                color: '#78716C',
+              }}
+            >
+              Resident Acharya: {center.acharya}
+            </Text>
+          ) : null}
         </View>
 
-        {/* Tab Navigation */}
-        <View className="bg-background dark:bg-background-dark px-4 py-2">
-          <TabSegment
-            options={[
-              { value: 'Details', label: 'Details' },
-              { value: 'Events', label: 'Events' },
-            ]}
-            value={activeTab}
-            onValueChange={setActiveTab}
-            variant="subtle"
-          />
+        {/* ── Meta Rows ─────────────────────────────────────────────── */}
+        <View style={{ paddingHorizontal: 16, gap: 16 }}>
+          {/* Address */}
+          {center.address ? (
+            <Pressable
+              onPress={() =>
+                Linking.openURL(
+                  `https://maps.google.com/?q=${encodeURIComponent(center.address)}`
+                )
+              }
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+            >
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  backgroundColor: '#F5F5F4',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <MapPin size={20} color="#E8862A" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontFamily: 'Inter-Medium',
+                    color: '#1C1917',
+                  }}
+                >
+                  {addressLine1}
+                </Text>
+                {addressLine2 ? (
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontFamily: 'Inter-Regular',
+                      color: '#78716C',
+                    }}
+                  >
+                    {addressLine2}
+                  </Text>
+                ) : null}
+              </View>
+            </Pressable>
+          ) : null}
+
+          {/* Website */}
+          {center.website ? (
+            <Pressable
+              onPress={() => Linking.openURL(center.website)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+            >
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  backgroundColor: '#F5F5F4',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Globe size={20} color="#E8862A" />
+              </View>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontFamily: 'Inter-Medium',
+                  color: '#E8862A',
+                  flex: 1,
+                }}
+              >
+                {displayWebsite}
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {/* Phone */}
+          {center.phone ? (
+            <Pressable
+              onPress={() => Linking.openURL(`tel:${center.phone}`)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+            >
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  backgroundColor: '#F5F5F4',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Phone size={20} color="#E8862A" />
+              </View>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontFamily: 'Inter-Medium',
+                  color: '#1C1917',
+                }}
+              >
+                {center.phone}
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {/* Acharya / Point of Contact */}
+          {center.acharya ? (
+            <View
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+            >
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  backgroundColor: '#F5F5F4',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <User size={20} color="#E8862A" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontFamily: 'Inter-Medium',
+                    color: '#1C1917',
+                  }}
+                >
+                  {center.acharya}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    fontFamily: 'Inter-Regular',
+                    color: '#78716C',
+                  }}
+                >
+                  Resident Acharya
+                </Text>
+              </View>
+            </View>
+          ) : null}
         </View>
 
-        <View className="px-4 gap-4 pb-8">
-          {activeTab === 'Details' && renderDetailsTab()}
-          {activeTab === 'Events' && (
-            <CalendarView events={events} onEventPress={handleEventPress} />
-          )}
-        </View>
-      </View>
-    </ScrollView>
+        {/* ── Upcoming Events Section ───────────────────────────────── */}
+        {events.length > 0 ? (
+          <View style={{ marginTop: 24 }}>
+            {/* Divider */}
+            <View
+              style={{
+                height: 1,
+                backgroundColor: '#E7E5E4',
+                marginHorizontal: 16,
+                marginBottom: 16,
+              }}
+            />
+
+            {/* Section header */}
+            <Text
+              style={{
+                fontSize: 11,
+                fontFamily: 'Inter-Medium',
+                color: '#A8A29E',
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+                paddingHorizontal: 16,
+                marginBottom: 12,
+              }}
+            >
+              UPCOMING EVENTS
+            </Text>
+
+            {/* Event cards */}
+            <View style={{ paddingHorizontal: 16, gap: 10 }}>
+              {events.map((event) => {
+                const { month, day } = formatDateCallout(event.date)
+                const timeDisplay = formatTimeDisplay(event.time)
+
+                return (
+                  <Pressable
+                    key={event.id}
+                    onPress={() => handleEventPress(event)}
+                    style={{
+                      flexDirection: 'row',
+                      backgroundColor: '#F5F5F4',
+                      borderRadius: 10,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {/* Date callout */}
+                    <View
+                      style={{
+                        width: 64,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingVertical: 14,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontFamily: 'Inter-SemiBold',
+                          color: '#E8862A',
+                          letterSpacing: 0.5,
+                        }}
+                      >
+                        {month}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 22,
+                          fontFamily: 'Inter-SemiBold',
+                          color: '#1C1917',
+                        }}
+                      >
+                        {day}
+                      </Text>
+                    </View>
+
+                    {/* Vertical divider */}
+                    <View
+                      style={{
+                        width: 1,
+                        backgroundColor: '#E7E5E4',
+                        marginVertical: 10,
+                      }}
+                    />
+
+                    {/* Event info */}
+                    <View
+                      style={{
+                        flex: 1,
+                        paddingHorizontal: 12,
+                        paddingVertical: 14,
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          fontFamily: 'Inter-SemiBold',
+                          color: '#1C1917',
+                          marginBottom: 3,
+                        }}
+                        numberOfLines={1}
+                      >
+                        {event.title}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontFamily: 'Inter-Regular',
+                          color: '#78716C',
+                        }}
+                        numberOfLines={1}
+                      >
+                        {timeDisplay}
+                        {event.attendees > 0
+                          ? ` · ${event.attendees} attending`
+                          : ''}
+                      </Text>
+                    </View>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </View>
+        ) : null}
+      </ScrollView>
+    </SafeAreaView>
   )
 }
