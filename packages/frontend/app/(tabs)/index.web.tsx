@@ -157,7 +157,7 @@ export default function HomeScreenWeb() {
                 <Text className="text-content dark:text-content-dark font-inter text-2xl font-bold">
                   Upcoming Events
                 </Text>
-                <SecondaryButton onPress={() => router.push('/explore')}>
+                <SecondaryButton onPress={() => router.push('/events')}>
                   See All
                 </SecondaryButton>
               </View>
