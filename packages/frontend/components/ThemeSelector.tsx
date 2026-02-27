@@ -1,36 +1,19 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { Animated, View, Text, Pressable } from 'react-native'
+import React from 'react'
+import { View, Text, Pressable, Platform } from 'react-native'
 import { Sun, Moon, Monitor } from 'lucide-react-native'
 import { useThemeContext } from './contexts'
 
-export default function ThemeSelector({ style, className }) {
+const isNative = Platform.OS !== 'web'
+
+export default function ThemeSelector({ style, className }: { style?: any; className?: string }) {
   const { themePreference, setThemePreference, isDark } = useThemeContext()
   const themeOptions = ['light', 'dark', 'system']
   const optionWidth = 70
-  const indicatorPadding = 8
-  const [selectedIndex, setSelectedIndex] = useState(themeOptions.indexOf(themePreference))
-  const slideAnim = useRef(new Animated.Value(selectedIndex * optionWidth)).current
-  const isMountedRef = useRef(true)
 
-  // Cleanup on unmount
-  useEffect(() => {
-    isMountedRef.current = true
-    return () => {
-      isMountedRef.current = false
-      slideAnim.stopAnimation()
-    }
-  }, [slideAnim])
-
-  useEffect(() => {
-    if (!isMountedRef.current) return
-    const idx = themeOptions.indexOf(themePreference)
-    setSelectedIndex(idx)
-    Animated.timing(slideAnim, {
-      toValue: idx * optionWidth,
-      duration: 100,
-      useNativeDriver: true,
-    }).start()
-  }, [themePreference, slideAnim])
+  // Native: instant switch, Web: could animate but keeping simple for now
+  const handlePress = (option: 'light' | 'dark' | 'system') => {
+    setThemePreference(option)
+  }
 
   return (
     <View
@@ -38,60 +21,54 @@ export default function ThemeSelector({ style, className }) {
         className || ''
       }`}
       style={{
-        width: optionWidth * themeOptions.length + indicatorPadding,
+        width: optionWidth * themeOptions.length + 8,
         ...(style || {}),
       }}
     >
-      {/* Sliding indicator */}
-      <Animated.View
-        style={{
-          position: 'absolute',
-          top: 4,
-          left: 4,
-          width: optionWidth - 8 + indicatorPadding,
-          height: 32,
-          borderRadius: 6,
-          backgroundColor: isDark ? '#3f3f46' : '#e5e7eb',
-          transform: [{ translateX: slideAnim }],
-        }}
-      />
-      {/* Theme options */}
-      {themeOptions.map((option, idx) => (
-        <Pressable
-          key={option}
-          onPress={() => setThemePreference(option as 'light' | 'dark' | 'system')}
-          className="flex-row items-center justify-center gap-1 py-2 px-3 rounded-md z-10"
-          style={{ width: optionWidth }}
-        >
-          {option === 'light' && (
-            <Sun
-              size={14}
-              color={themePreference === option ? '#f97316' : isDark ? '#fff' : '#000'}
-            />
-          )}
-          {option === 'dark' && (
-            <Moon
-              size={14}
-              color={themePreference === option ? '#f97316' : isDark ? '#fff' : '#000'}
-            />
-          )}
-          {option === 'system' && (
-            <Monitor
-              size={14}
-              color={themePreference === option ? '#f97316' : isDark ? '#fff' : '#000'}
-            />
-          )}
-          <Text
-            className={`text-xs font-inter ${
-              themePreference === option
-                ? 'text-primary font-inter-semibold'
-                : 'text-gray-700 dark:text-white'
-            }`}
+      {themeOptions.map((option) => {
+        const isSelected = themePreference === option
+        return (
+          <Pressable
+            key={option}
+            onPress={() => handlePress(option)}
+            className="flex-row items-center justify-center gap-1 py-2 px-3 rounded-md"
+            style={{ 
+              width: optionWidth,
+              backgroundColor: isSelected 
+                ? (isDark ? '#3f3f46' : '#e5e7eb') 
+                : 'transparent',
+            }}
           >
-            {option === 'system' ? 'Auto' : option.charAt(0).toUpperCase() + option.slice(1)}
-          </Text>
-        </Pressable>
-      ))}
+            {option === 'light' && (
+              <Sun
+                size={14}
+                color={isSelected ? '#f97316' : isDark ? '#fff' : '#000'}
+              />
+            )}
+            {option === 'dark' && (
+              <Moon
+                size={14}
+                color={isSelected ? '#f97316' : isDark ? '#fff' : '#000'}
+              />
+            )}
+            {option === 'system' && (
+              <Monitor
+                size={14}
+                color={isSelected ? '#f97316' : isDark ? '#fff' : '#000'}
+              />
+            )}
+            <Text
+              className={`text-xs font-inter ${
+                isSelected
+                  ? 'text-primary font-inter-semibold'
+                  : 'text-gray-700 dark:text-white'
+              }`}
+            >
+              {option === 'system' ? 'Auto' : option.charAt(0).toUpperCase() + option.slice(1)}
+            </Text>
+          </Pressable>
+        )
+      })}
     </View>
   )
 }
