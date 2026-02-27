@@ -5,6 +5,7 @@ import { useUser, useThemeContext } from '../../components/contexts'
 import { User } from 'lucide-react-native'
 import { Ionicons } from '@expo/vector-icons'
 import SettingsPanel from '../../components/SettingsPanel'
+import Logo from '../../components/ui/Logo'
 
 /**
  * TabLayout Component - The main layout for the tab-based navigation.
@@ -32,9 +33,7 @@ export default function TabLayout() {
 
     return (
       <View className="flex-row items-center gap-8">
-        <Text className="text-xl font-inter-bold text-content dark:text-content-dark">
-          Chinmaya Janata
-        </Text>
+        <Logo size={28} />
         <View className="flex-row gap-6">
           <Pressable
             onPress={() => router.push('/')}
