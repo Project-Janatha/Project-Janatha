@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   fetchCenters,
   fetchCenter,
@@ -9,10 +9,20 @@ import {
   getUserEvents,
   centersToMapPoints,
   eventsToMapPoints,
+  centersToDiscoverCenters,
   MapPoint,
   CenterData,
   EventData,
+  EventDisplay,
+  DiscoverCenter,
+  DiscoverItem,
+  DiscoverFilter,
+  DISCOVER_SAMPLE_EVENTS,
+  DISCOVER_SAMPLE_CENTERS,
 } from '../utils/api'
+
+export type { DiscoverFilter }
+export type { EventDisplay } from '../utils/api'
 
 // ── Sample data (fallback when API returns empty) ──────────────────────
 
@@ -28,27 +38,12 @@ const SAMPLE_EVENTS: MapPoint[] = [
   { id: 'evt-3', type: 'event', name: 'Yoga and Meditation Session', latitude: 37.7849, longitude: -122.4094 },
 ]
 
-export interface EventDisplay {
-  id: string
-  title: string
-  time: string
-  location: string
-  address?: string
-  attendees: number
-  likes: number
-  comments: number
-  description?: string
-  pointOfContact?: string
-  image?: string
-  isRegistered?: boolean
-  centerName?: string
-}
-
 const SAMPLE_EVENT_LIST: EventDisplay[] = [
   {
     id: '1',
     title: 'Bhagavad Gita Study Circle - Chapter 12',
-    time: 'TODAY \u2022 10:30 AM - 11:30 AM',
+    date: new Date().toISOString().split('T')[0],
+    time: '10:30 AM - 11:30 AM',
     location: 'Chinmaya Mission San Jose',
     address: '10160 Clayton Rd, San Jose, CA 95127',
     attendees: 14,
@@ -61,7 +56,8 @@ const SAMPLE_EVENT_LIST: EventDisplay[] = [
   {
     id: '2',
     title: 'Hanuman Chalisa Chanting Marathon',
-    time: 'SUN, 8 PM - 11:49 PM',
+    date: new Date().toISOString().split('T')[0],
+    time: '8:00 PM - 11:00 PM',
     location: 'Chinmaya Mission West',
     address: '299 Juanita Way, Sausalito, CA 94965',
     attendees: 14,
@@ -74,7 +70,8 @@ const SAMPLE_EVENT_LIST: EventDisplay[] = [
   {
     id: '3',
     title: 'Yoga and Meditation Session',
-    time: 'SAT, 9 AM - 10:30 AM',
+    date: new Date().toISOString().split('T')[0],
+    time: '9:00 AM - 10:30 AM',
     location: 'Chinmaya Mission San Francisco',
     address: '1 Sansome St, San Francisco, CA 94104',
     attendees: 8,
@@ -95,9 +92,35 @@ const SAMPLE_ATTENDEES = [
 ]
 
 const SAMPLE_MESSAGES = [
-  { author: 'Jessica Chlen', timestamp: '3:30PM \u00b7 19 August 2025', text: 'Thank you everyone who could attend!', image: 'https://i.pravatar.cc/100?img=5' },
-  { author: 'Jessica Chlen', timestamp: '9:20AM \u00b7 18 August 2025', text: 'We will be meeting on the 14th floor.', image: 'https://i.pravatar.cc/100?img=5' },
+  { author: 'Jessica Chlen', timestamp: '3:30PM · 19 August 2025', text: 'Thank you everyone who could attend!', image: 'https://i.pravatar.cc/100?img=5' },
+  { author: 'Jessica Chlen', timestamp: '9:20AM · 18 August 2025', text: 'We will be meeting on the 14th floor.', image: 'https://i.pravatar.cc/100?img=5' },
 ]
+
+// ── Helper: transform API EventData into EventDisplay ──────────────────
+
+function apiEventToDisplay(e: EventData, username?: string): EventDisplay {
+  const obj = e.eventObject
+  const dateStr = obj?.date ? new Date(obj.date).toISOString().split('T')[0] : ''
+  const timeStr = obj?.date
+    ? new Date(obj.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+    : ''
+
+  return {
+    id: e.eventID,
+    title: obj?.title || obj?.description || 'Event',
+    date: dateStr,
+    time: timeStr,
+    location: obj?.center?.centerName || 'TBD',
+    latitude: obj?.location?.latitude,
+    longitude: obj?.location?.longitude,
+    attendees: obj?.peopleAttending || obj?.usersAttending?.length || 0,
+    likes: 0,
+    comments: 0,
+    description: obj?.description,
+    isRegistered: username ? (obj?.usersAttending || []).includes(username) : false,
+    centerId: e.centerID,
+  }
+}
 
 // ── Hooks ──────────────────────────────────────────────────────────────
 
@@ -116,8 +139,18 @@ export function useMapPoints() {
         const centerPoints = centersToMapPoints(centers)
 
         if (centerPoints.length > 0) {
-          // Real data available - use it
-          setPoints([...centerPoints])
+          // Also try to fetch events for each center
+          const allEventPoints: MapPoint[] = []
+          for (const center of centers) {
+            try {
+              const events = await fetchEventsByCenter(center.centerID)
+              allEventPoints.push(...eventsToMapPoints(events))
+            } catch {
+              // Skip events for this center on error
+            }
+          }
+
+          setPoints([...centerPoints, ...allEventPoints])
           setIsLive(true)
         }
         // else: keep sample data
@@ -136,11 +169,44 @@ export function useMapPoints() {
 
 export function useEventList() {
   const [events, setEvents] = useState<EventDisplay[]>(SAMPLE_EVENT_LIST)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
 
-  // Events will be populated from real API once backend has data
-  // For now, returns sample events
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        const centers = await fetchCenters()
+        if (!mounted) return
+
+        const allEvents: EventDisplay[] = []
+        for (const center of centers) {
+          try {
+            const events = await fetchEventsByCenter(center.centerID)
+            allEvents.push(...events.map((e) => apiEventToDisplay(e)))
+          } catch {
+            // Skip
+          }
+        }
+
+        if (allEvents.length > 0 && mounted) {
+          // Sort: registered first, then by date
+          allEvents.sort((a, b) => {
+            if (a.isRegistered !== b.isRegistered) return a.isRegistered ? -1 : 1
+            return a.date.localeCompare(b.date)
+          })
+          setEvents(allEvents)
+          setIsLive(true)
+        }
+      } catch {
+        // Keep sample data
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    load()
+    return () => { mounted = false }
+  }, [])
 
   return { events, loading, isLive }
 }
@@ -167,9 +233,11 @@ export function useEventDetail(eventId: string) {
           const obj = apiEvent.eventObject
           const attending = obj.usersAttending || []
           setUsersAttending(attending)
+          const dateStr = obj.date ? new Date(obj.date).toISOString().split('T')[0] : ''
           setEvent({
             id: eventId,
             title: obj.title || obj.description || 'Event',
+            date: dateStr,
             time: obj.date ? new Date(obj.date).toLocaleString() : '',
             location: obj.center?.centerName || 'TBD',
             address: '',
@@ -314,7 +382,8 @@ const SAMPLE_CENTER_EVENTS: EventDisplay[] = [
   {
     id: '1',
     title: 'Bhagavad Gita Study Circle - Chapter 12',
-    time: 'TODAY \u2022 10:30 AM - 11:30 AM',
+    date: new Date().toISOString().split('T')[0],
+    time: '10:30 AM - 11:30 AM',
     location: 'Young Museum',
     attendees: 14,
     likes: 0,
@@ -323,7 +392,8 @@ const SAMPLE_CENTER_EVENTS: EventDisplay[] = [
   {
     id: '2',
     title: 'Hanuman Chalisa Chanting Marathon',
-    time: 'SUN, 8 PM - 11:49 PM',
+    date: new Date().toISOString().split('T')[0],
+    time: '8:00 PM - 11:00 PM',
     location: 'Meditation Hall',
     attendees: 14,
     likes: 0,
@@ -332,7 +402,8 @@ const SAMPLE_CENTER_EVENTS: EventDisplay[] = [
   {
     id: '3',
     title: 'Yoga and Meditation Session',
-    time: 'TUE, 7 PM - 8:30 PM',
+    date: new Date().toISOString().split('T')[0],
+    time: '7:00 PM - 8:30 PM',
     location: 'Main Hall',
     attendees: 8,
     likes: 2,
@@ -376,15 +447,7 @@ export function useCenterDetail(centerId: string) {
         }
 
         if (apiEvents.length > 0) {
-          setEvents(apiEvents.map((e) => ({
-            id: e.eventID,
-            title: e.eventObject?.title || e.eventObject?.description || 'Event',
-            time: e.eventObject?.date ? new Date(e.eventObject.date).toLocaleString() : '',
-            location: e.eventObject?.center?.centerName || 'TBD',
-            attendees: e.eventObject?.peopleAttending || 0,
-            likes: 0,
-            comments: 0,
-          })))
+          setEvents(apiEvents.map((e) => apiEventToDisplay(e)))
         } else {
           setEvents(SAMPLE_CENTER_EVENTS)
         }
@@ -424,14 +487,7 @@ export function useMyEvents(username: string | undefined) {
 
       if (apiEvents.length > 0) {
         setEvents(apiEvents.map((e) => ({
-          id: e.eventID,
-          title: e.eventObject?.title || e.eventObject?.description || 'Event',
-          time: e.eventObject?.date ? new Date(e.eventObject.date).toLocaleString() : '',
-          location: e.eventObject?.center?.centerName || 'TBD',
-          attendees: e.eventObject?.peopleAttending || 0,
-          likes: 0,
-          comments: 0,
-          description: e.eventObject?.description,
+          ...apiEventToDisplay(e, username),
           isRegistered: true,
         })))
         setIsLive(true)
@@ -449,6 +505,145 @@ export function useMyEvents(username: string | undefined) {
   useEffect(() => { load() }, [load])
 
   return { events, loading, isLive, refetch: load }
+}
+
+// ── Discover hooks ──────────────────────────────────────────────────
+
+export function useCenterList() {
+  const [centers, setCenters] = useState<DiscoverCenter[]>(DISCOVER_SAMPLE_CENTERS)
+  const [loading, setLoading] = useState(true)
+  const [isLive, setIsLive] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        const apiCenters = await fetchCenters()
+        if (!mounted) return
+
+        const discoverCenters = centersToDiscoverCenters(apiCenters)
+        if (discoverCenters.length > 0) {
+          setCenters(discoverCenters)
+          setIsLive(true)
+        }
+      } catch {
+        // Keep sample data
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    load()
+    return () => { mounted = false }
+  }, [])
+
+  return { centers, loading, isLive }
+}
+
+export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
+  const [allEvents, setAllEvents] = useState<EventDisplay[]>(DISCOVER_SAMPLE_EVENTS)
+  const [allCenters, setAllCenters] = useState<DiscoverCenter[]>(DISCOVER_SAMPLE_CENTERS)
+  const [loading, setLoading] = useState(true)
+  const [isLive, setIsLive] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        const apiCenters = await fetchCenters()
+        if (!mounted) return
+
+        const discoverCenters = centersToDiscoverCenters(apiCenters)
+        if (discoverCenters.length > 0) {
+          setAllCenters(discoverCenters)
+        }
+
+        // Fetch events for each center
+        const fetchedEvents: EventDisplay[] = []
+        for (const center of apiCenters) {
+          try {
+            const events = await fetchEventsByCenter(center.centerID)
+            fetchedEvents.push(...events.map((e) => apiEventToDisplay(e)))
+          } catch {
+            // Skip
+          }
+        }
+
+        if (fetchedEvents.length > 0 && mounted) {
+          setAllEvents(fetchedEvents)
+          setIsLive(true)
+        }
+      } catch {
+        // Keep sample data
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    load()
+    return () => { mounted = false }
+  }, [])
+
+  const items = useMemo<DiscoverItem[]>(() => {
+    const query = searchQuery.toLowerCase().trim()
+
+    let result: DiscoverItem[] = []
+
+    if (filter === 'Centers') {
+      result = allCenters.map((c) => ({ type: 'center' as const, data: c }))
+    } else if (filter === 'Going') {
+      const goingEvents = allEvents.filter((e) => e.isRegistered)
+      const memberCenters = allCenters.filter((c) => c.isMember)
+      result = [
+        ...goingEvents.map((e) => ({ type: 'event' as const, data: e })),
+        ...memberCenters.map((c) => ({ type: 'center' as const, data: c })),
+      ]
+    } else {
+      // All: registered events first, then others, then centers
+      const registered = allEvents.filter((e) => e.isRegistered)
+      const unregistered = allEvents.filter((e) => !e.isRegistered)
+
+      result = [
+        ...registered.map((e) => ({ type: 'event' as const, data: e })),
+        ...unregistered.map((e) => ({ type: 'event' as const, data: e })),
+        ...allCenters.map((c) => ({ type: 'center' as const, data: c })),
+      ]
+    }
+
+    // Apply search query
+    if (query) {
+      result = result.filter((item) => {
+        if (item.type === 'event') {
+          return (
+            item.data.title.toLowerCase().includes(query) ||
+            item.data.location.toLowerCase().includes(query)
+          )
+        }
+        return (
+          item.data.name.toLowerCase().includes(query) ||
+          (item.data.address?.toLowerCase().includes(query) ?? false)
+        )
+      })
+    }
+
+    return result
+  }, [allEvents, allCenters, filter, searchQuery])
+
+  // Map points from current data
+  const filteredPoints = useMemo<MapPoint[]>(() => {
+    const centerPoints: MapPoint[] = allCenters
+      .map((c) => ({ id: c.id, type: 'center' as const, name: c.name, latitude: c.latitude, longitude: c.longitude }))
+    const eventPoints: MapPoint[] = allEvents
+      .filter((e) => e.latitude && e.longitude)
+      .map((e) => ({ id: e.id, type: 'event' as const, name: e.title, latitude: e.latitude!, longitude: e.longitude! }))
+
+    const allPoints = [...centerPoints, ...eventPoints]
+
+    if (filter === 'Centers') {
+      return allPoints.filter((p) => p.type === 'center')
+    }
+    return allPoints
+  }, [allCenters, allEvents, filter])
+
+  return { items, filteredPoints, loading, isLive, allEvents, allCenters }
 }
 
 export { SAMPLE_ATTENDEES, SAMPLE_MESSAGES, SAMPLE_EVENT_LIST, SAMPLE_CENTERS, SAMPLE_EVENTS }

@@ -27,6 +27,8 @@ export interface MapPoint {
 export interface MapProps {
   points?: MapPoint[]
   onPointPress?: (point: MapPoint) => void
+  onPointHover?: (point: MapPoint | null, x?: number, y?: number) => void
+  onPointClick?: (point: MapPoint, x?: number, y?: number) => void
   initialCenter?: [number, number]
   initialZoom?: number
   showUserLocation?: boolean
@@ -168,6 +170,8 @@ const MapComponent = memo<MapProps>(
   ({
     points = [],
     onPointPress,
+    onPointHover,
+    onPointClick,
     initialCenter,
     initialZoom = DEFAULT_ZOOM,
     showUserLocation = false,
@@ -191,10 +195,29 @@ const MapComponent = memo<MapProps>(
     const handleMarkerClick = useCallback(
       (point: MapPoint) => (e: any) => {
         e.originalEvent?.stopPropagation()
-        onPointPress?.(point)
+        const screenX = e.originalEvent?.clientX ?? 0
+        const screenY = e.originalEvent?.clientY ?? 0
+        if (onPointClick) {
+          onPointClick(point, screenX, screenY)
+        } else {
+          onPointPress?.(point)
+        }
       },
-      [onPointPress]
+      [onPointPress, onPointClick]
     )
+
+    const handleMarkerMouseEnter = useCallback(
+      (point: MapPoint) => (e: any) => {
+        const screenX = e.originalEvent?.clientX ?? 0
+        const screenY = e.originalEvent?.clientY ?? 0
+        onPointHover?.(point, screenX, screenY)
+      },
+      [onPointHover]
+    )
+
+    const handleMarkerMouseLeave = useCallback(() => {
+      onPointHover?.(null)
+    }, [onPointHover])
 
     const validPoints = useMemo(
       () => points.filter((point) => isValidCoordinate(point.latitude, point.longitude)),
@@ -223,10 +246,12 @@ const MapComponent = memo<MapProps>(
               className={`w-[30px] h-[30px] rounded-[50%_50%_50%_0] -rotate-45 border-2 border-white shadow-[0_2px_4px_rgba(0,0,0,0.3)] cursor-pointer
                 ${point.type === 'center' ? 'bg-red-500' : 'bg-blue-500'}`}
               title={point.name}
+              onMouseEnter={handleMarkerMouseEnter(point) as any}
+              onMouseLeave={handleMarkerMouseLeave as any}
             />
           </Marker>
         )),
-      [validPoints, handleMarkerClick]
+      [validPoints, handleMarkerClick, handleMarkerMouseEnter, handleMarkerMouseLeave]
     )
 
     return (

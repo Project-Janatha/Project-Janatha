@@ -1,9 +1,8 @@
 import { Link, Tabs, useRouter, usePathname } from 'expo-router'
 import { Platform, View, Text, Pressable } from 'react-native'
-import { useContext, useState } from 'react'
+import { useState } from 'react'
 import { useUser, useThemeContext } from '../../components/contexts'
-import { GhostButton, DestructiveButton } from '../../components/ui'
-import { Compass, User, Settings, LogOut } from 'lucide-react-native'
+import { User } from 'lucide-react-native'
 import { Ionicons } from '@expo/vector-icons'
 import SettingsPanel from '../../components/SettingsPanel'
 
@@ -42,10 +41,10 @@ export default function TabLayout() {
             className="flex-row items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
           >
             {isActive('/') ? (
-              <Ionicons name="home" size={20} className=" text-primary" />
+              <Ionicons name="compass" size={20} className=" text-primary" />
             ) : (
               <Ionicons
-                name="home-outline"
+                name="compass-outline"
                 size={20}
                 className=" text-contentStrong dark:text-contentStrong-dark"
               />
@@ -57,30 +56,7 @@ export default function TabLayout() {
                   : 'text-contentStrong dark:text-contentStrong-dark transition-colors duration-300'
               }`}
             >
-              Home
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => router.push('/explore')}
-            className="flex-row items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
-          >
-            {isActive('/explore') ? (
-              <Ionicons name="compass" size={20} className=" text-primary" />
-            ) : (
-              <Ionicons
-                name="compass-outline"
-                size={20}
-                className=" text-contentStrong dark:text-contentStrong-dark"
-              />
-            )}
-            <Text
-              className={`font-inter ${
-                isActive('/explore')
-                  ? 'text-primary font-inter-semibold'
-                  : 'text-contentStrong dark:text-contentStrong-dark'
-              }`}
-            >
-              Explore
+              Discover
             </Text>
           </Pressable>
         </View>
@@ -149,17 +125,16 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <Ionicons name="home" color={color as any} size={20} />,
+          title: 'Discover',
+          tabBarIcon: ({ color }) => <Ionicons name="compass" color={color as any} size={22} />,
           headerRight: () => <HeaderRight />,
         }}
       />
+      {/* Explore tab disabled: merged into unified Discover tab (B3 design) */}
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <Ionicons name="compass" color={color as any} size={24} />,
-          headerRight: () => <HeaderRight />,
+          href: null, // Hide from tab bar and navigation
         }}
       />
     </Tabs>

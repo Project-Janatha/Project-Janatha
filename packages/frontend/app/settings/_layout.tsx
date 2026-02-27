@@ -43,23 +43,12 @@ export default function SettingsLayout() {
             className="flex-row items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
           >
             <Ionicons
-              name="home-outline"
-              size={20}
-              className="text-contentStrong dark:text-contentStrong-dark"
-            />
-            <Text className="font-inter text-contentStrong dark:text-contentStrong-dark">Home</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => router.push('/explore')}
-            className="flex-row items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
-          >
-            <Ionicons
               name="compass-outline"
               size={20}
               className="text-contentStrong dark:text-contentStrong-dark"
             />
             <Text className="font-inter text-contentStrong dark:text-contentStrong-dark">
-              Explore
+              Discover
             </Text>
           </Pressable>
         </View>
