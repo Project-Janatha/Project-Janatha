@@ -90,10 +90,9 @@ function RootLayoutNav() {
     const inLandingPage = pathname === '/landing'
 
     if (!isAuthenticated) {
-      // User is NOT authenticated
+      // User is NOT authenticated — show landing page by default
       if (!inAuthGroup && !inLandingPage) {
-        // Redirect to Auth if not already there (landing page is public)
-        router.replace('/auth')
+        router.replace('/landing')
       }
     } else {
       // User IS authenticated
