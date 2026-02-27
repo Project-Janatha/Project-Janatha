@@ -1,13 +1,14 @@
 // This is the mobile/native layout
 import React, { Suspense } from 'react'
 import { View, Text, ScrollView, Pressable, Platform, ActivityIndicator } from 'react-native'
-import { MapPin, ChevronRight, ThumbsUp, MessageCircle } from 'lucide-react-native'
+import { MapPin, ChevronRight } from 'lucide-react-native'
 import { useUser } from '../../components/contexts'
 import { SecondaryButton, Card } from '../../components/ui'
 import { MapPreview } from '../../components'
 import { useRouter } from 'expo-router'
 import { useMapPoints, useEventList, useWeekCalendar } from '../../hooks/useApiData'
 import { MapPoint } from '../../utils/api'
+import { EventCard } from '../../components/EventCard'
 
 // Lazy load Map to avoid loading heavy web dependencies on mobile web
 const Map = React.lazy(() => import('../../components/Map'))
@@ -27,7 +28,7 @@ export default function HomeScreen() {
     }
   }
 
-  const handleEventPress = (event: (typeof events)[0]) => {
+  const handleEventPress = (event: { id: string }) => {
     router.push(`/events/${event.id}`)
   }
 
@@ -107,40 +108,7 @@ export default function HomeScreen() {
         {/* Events List */}
         <View className="gap-3 mt-4">
           {events.map((event) => (
-            <Card
-              key={event.id}
-              pressable
-              onPress={() => handleEventPress(event)}
-              padding="sm"
-            >
-              <View className="gap-2">
-                <Text className="font-inter text-sm text-primary font-medium">{event.time}</Text>
-                <Text className="text-content dark:text-content-dark font-inter text-sm">
-                  {event.location}
-                </Text>
-                <Text className="text-content dark:text-content-dark font-inter text-lg font-semibold leading-tight">
-                  {event.title}
-                </Text>
-                <Text className="text-content dark:text-content-dark text-sm mt-1">
-                  {event.attendees} people
-                </Text>
-              </View>
-
-              <View className="flex-row justify-end gap-4 pt-2">
-                <View className="flex-row items-center gap-1">
-                  <ThumbsUp size={16} color="#a1a1aa" />
-                  <Text className="text-content dark:text-content-dark font-inter text-sm">
-                    {event.likes}
-                  </Text>
-                </View>
-                <View className="flex-row items-center gap-1">
-                  <MessageCircle size={16} color="#a1a1aa" />
-                  <Text className="text-content dark:text-content-dark font-inter text-sm">
-                    {event.comments}
-                  </Text>
-                </View>
-              </View>
-            </Card>
+            <EventCard key={event.id} event={event} onPress={handleEventPress} variant="compact" />
           ))}
         </View>
       </View>
