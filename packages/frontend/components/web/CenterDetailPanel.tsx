@@ -1,9 +1,8 @@
 import React from 'react'
 import { View, Text, Image, ScrollView, Pressable, Linking } from 'react-native'
-import { MapPin, Globe, Phone, User, Share2, X, ChevronLeft } from 'lucide-react-native'
+import { MapPin, Globe, Phone, User, Share2, X } from 'lucide-react-native'
 import type { CenterDisplay } from '../../hooks/useApiData'
 import type { EventDisplay } from '../../utils/api'
-import { useDetailColors } from '../../hooks/useDetailColors'
 
 // ── Props ────────────────────────────────────────────────────────────────
 
@@ -33,8 +32,6 @@ export default function CenterDetailPanel({
   onClose,
   onEventPress,
 }: CenterDetailPanelProps) {
-  const colors = useDetailColors()
-
   const handleShare = async () => {
     if (center.website) {
       try {
@@ -71,71 +68,65 @@ export default function CenterDetailPanel({
       style={{
         width: 440,
         height: '100%',
-        backgroundColor: colors.panelBg,
+        backgroundColor: '#FFFFFF',
         borderLeftWidth: 1,
-        borderLeftColor: colors.border,
+        borderLeftColor: '#E7E5E4',
         flexDirection: 'column',
       }}
     >
       {/* ── Header bar ──────────────────────────────────────────── */}
       <View
         style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           paddingHorizontal: 16,
-          paddingTop: 14,
-          paddingBottom: 12,
+          paddingVertical: 14,
           borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-          gap: 10,
+          borderBottomColor: '#E7E5E4',
         }}
       >
-        {/* Top row: back + share/close */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Pressable
-            onPress={onClose}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 2, padding: 2 }}
-            accessibilityLabel="Close panel"
-          >
-            <ChevronLeft size={20} color={colors.iconHeader} />
-            <Text
-              style={{
-                fontFamily: 'Inter-Regular',
-                fontSize: 14,
-                color: colors.iconHeader,
-              }}
-            >
-              Back
-            </Text>
-          </Pressable>
-
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Pressable
-              onPress={handleShare}
-              style={{ padding: 6 }}
-              accessibilityLabel="Share"
-            >
-              <Share2 size={18} color={colors.iconHeader} />
-            </Pressable>
-            <Pressable
-              onPress={onClose}
-              style={{ padding: 6 }}
-              accessibilityLabel="Close panel"
-            >
-              <X size={18} color={colors.iconHeader} />
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Title row */}
         <Text
           style={{
-            fontFamily: 'Inter-Bold',
-            fontSize: 20,
-            color: colors.text,
-            lineHeight: 26,
+            fontFamily: 'Inter-Medium',
+            fontSize: 11,
+            color: '#A8A29E',
+            letterSpacing: 0.5,
+            textTransform: 'uppercase',
           }}
         >
-          {center.name}
+          Center Details
         </Text>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Pressable
+            onPress={handleShare}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              backgroundColor: '#F5F5F4',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Share2 size={16} color="#78716C" />
+          </Pressable>
+
+          <Pressable
+            onPress={onClose}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              backgroundColor: '#F5F5F4',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <X size={16} color="#78716C" />
+          </Pressable>
+        </View>
       </View>
 
       {/* ── Scrollable content ──────────────────────────────────── */}
@@ -149,14 +140,26 @@ export default function CenterDetailPanel({
 
         {/* Content area */}
         <View style={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: 32 }}>
-          {/* Point of contact subtitle */}
+          {/* Title */}
+          <Text
+            style={{
+              fontFamily: 'Inter-SemiBold',
+              fontSize: 22,
+              color: '#1C1917',
+              lineHeight: 28,
+            }}
+          >
+            {center.name}
+          </Text>
+
+          {/* Subtitle — "Established" or point of contact as subtitle */}
           {center.pointOfContact ? (
             <Text
               style={{
                 fontFamily: 'Inter-Regular',
                 fontSize: 13,
-                color: colors.textSecondary,
-                marginBottom: 16,
+                color: '#78716C',
+                marginTop: 4,
               }}
             >
               Point of Contact: {center.pointOfContact}
@@ -164,7 +167,7 @@ export default function CenterDetailPanel({
           ) : null}
 
           {/* ── Meta rows ────────────────────────────────────────── */}
-          <View style={{ gap: 16 }}>
+          <View style={{ marginTop: 20, gap: 16 }}>
             {/* Address */}
             {center.address ? (
               <Pressable
@@ -176,7 +179,7 @@ export default function CenterDetailPanel({
                     width: 32,
                     height: 32,
                     borderRadius: 8,
-                    backgroundColor: colors.iconBoxBg,
+                    backgroundColor: '#F5F5F4',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
@@ -189,7 +192,7 @@ export default function CenterDetailPanel({
                     style={{
                       fontFamily: 'Inter-Medium',
                       fontSize: 14,
-                      color: colors.text,
+                      color: '#1C1917',
                       lineHeight: 20,
                     }}
                   >
@@ -210,7 +213,7 @@ export default function CenterDetailPanel({
                     width: 32,
                     height: 32,
                     borderRadius: 8,
-                    backgroundColor: colors.iconBoxBg,
+                    backgroundColor: '#F5F5F4',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
@@ -244,7 +247,7 @@ export default function CenterDetailPanel({
                     width: 32,
                     height: 32,
                     borderRadius: 8,
-                    backgroundColor: colors.iconBoxBg,
+                    backgroundColor: '#F5F5F4',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
@@ -256,7 +259,7 @@ export default function CenterDetailPanel({
                   style={{
                     fontFamily: 'Inter-Medium',
                     fontSize: 14,
-                    color: colors.text,
+                    color: '#1C1917',
                     lineHeight: 20,
                     flex: 1,
                   }}
@@ -274,7 +277,7 @@ export default function CenterDetailPanel({
                     width: 32,
                     height: 32,
                     borderRadius: 8,
-                    backgroundColor: colors.iconBoxBg,
+                    backgroundColor: '#F5F5F4',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
@@ -287,7 +290,7 @@ export default function CenterDetailPanel({
                     style={{
                       fontFamily: 'Inter-Medium',
                       fontSize: 14,
-                      color: colors.text,
+                      color: '#1C1917',
                       lineHeight: 20,
                     }}
                   >
@@ -297,7 +300,7 @@ export default function CenterDetailPanel({
                     style={{
                       fontFamily: 'Inter-Regular',
                       fontSize: 13,
-                      color: colors.textSecondary,
+                      color: '#78716C',
                       lineHeight: 18,
                       marginTop: 2,
                     }}
@@ -312,14 +315,23 @@ export default function CenterDetailPanel({
           {/* ── Upcoming Events Section ──────────────────────────── */}
           {events.length > 0 && (
             <View style={{ marginTop: 24 }}>
+              {/* Divider */}
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: '#E7E5E4',
+                }}
+              />
+
               {/* Section label */}
               <Text
                 style={{
                   fontFamily: 'Inter-Medium',
                   fontSize: 11,
-                  color: colors.textMuted,
+                  color: '#A8A29E',
                   letterSpacing: 0.5,
                   textTransform: 'uppercase',
+                  marginTop: 20,
                   marginBottom: 12,
                 }}
               >
@@ -337,7 +349,7 @@ export default function CenterDetailPanel({
                       style={{
                         flexDirection: 'row',
                         alignItems: 'center',
-                        backgroundColor: colors.cardBg,
+                        backgroundColor: '#F5F5F4',
                         borderRadius: 8,
                         paddingVertical: 12,
                         paddingHorizontal: 14,
@@ -367,7 +379,7 @@ export default function CenterDetailPanel({
                           style={{
                             fontFamily: 'Inter-SemiBold',
                             fontSize: 22,
-                            color: colors.text,
+                            color: '#1C1917',
                             lineHeight: 28,
                           }}
                         >
@@ -379,7 +391,7 @@ export default function CenterDetailPanel({
                       <View
                         style={{
                           width: 1,
-                          backgroundColor: colors.border,
+                          backgroundColor: '#D6D3D1',
                           alignSelf: 'stretch',
                           marginHorizontal: 12,
                         }}
@@ -391,7 +403,7 @@ export default function CenterDetailPanel({
                           style={{
                             fontFamily: 'Inter-SemiBold',
                             fontSize: 14,
-                            color: colors.text,
+                            color: '#1C1917',
                             lineHeight: 20,
                           }}
                           numberOfLines={2}
@@ -402,7 +414,7 @@ export default function CenterDetailPanel({
                           style={{
                             fontFamily: 'Inter-Regular',
                             fontSize: 12,
-                            color: colors.textSecondary,
+                            color: '#78716C',
                             lineHeight: 16,
                             marginTop: 2,
                           }}
