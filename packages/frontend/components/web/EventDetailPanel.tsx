@@ -1,70 +1,8 @@
 import React, { useState } from 'react'
 import { View, Text, Image, ScrollView, Pressable, ActivityIndicator } from 'react-native'
-import { MapPin, Users, User, Share2, X, Clock, CheckCircle, Info, ChevronLeft } from 'lucide-react-native'
+import { MapPin, Users, User, Share2, X, Clock, CheckCircle, Info } from 'lucide-react-native'
 import Badge from '../ui/Badge'
 import UnderlineTabBar from '../ui/UnderlineTabBar'
-import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
-
-// ---------------------------------------------------------------------------
-// Date helpers
-// ---------------------------------------------------------------------------
-
-/** Format date + time into "In X hours, 2/27 7:45 PM PST" or "3 days ago, 2/24 7:45 PM PST" */
-function formatRelativeDateTime(dateStr: string, timeStr: string): string {
-  // Parse the start time from the time string (e.g. "10:30 AM - 11:30 AM" → "10:30 AM")
-  const startTime = timeStr.split(' - ')[0] || timeStr
-
-  // Build a full Date object
-  const match = startTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
-  let eventDate: Date
-  if (match) {
-    let hours = parseInt(match[1], 10)
-    const minutes = parseInt(match[2], 10)
-    const ampm = match[3].toUpperCase()
-    if (ampm === 'PM' && hours !== 12) hours += 12
-    if (ampm === 'AM' && hours === 12) hours = 0
-    eventDate = new Date(dateStr + 'T00:00:00')
-    eventDate.setHours(hours, minutes, 0, 0)
-  } else {
-    eventDate = new Date(dateStr + 'T12:00:00')
-  }
-
-  const now = new Date()
-  const diffMs = eventDate.getTime() - now.getTime()
-  const absDiffMs = Math.abs(diffMs)
-  const isFuture = diffMs > 0
-
-  // Relative part
-  let relative: string
-  const minutes = Math.floor(absDiffMs / 60000)
-  const hours = Math.floor(absDiffMs / 3600000)
-  const days = Math.floor(absDiffMs / 86400000)
-
-  if (minutes < 1) {
-    relative = 'Now'
-  } else if (minutes < 60) {
-    relative = isFuture ? `In ${minutes}m` : `${minutes}m ago`
-  } else if (hours < 24) {
-    relative = isFuture ? `In ${hours}h` : `${hours}h ago`
-  } else if (days < 7) {
-    relative = isFuture ? `In ${days}d` : `${days}d ago`
-  } else {
-    relative = isFuture ? `In ${days}d` : `${days}d ago`
-  }
-
-  // Absolute part — "2/27 7:45 PM PST"
-  const month = eventDate.getMonth() + 1
-  const day = eventDate.getDate()
-  const timeFormatted = eventDate.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZoneName: 'short',
-  })
-  const absolute = `${month}/${day} ${timeFormatted}`
-
-  if (relative === 'Now') return `Now · ${absolute}`
-  return `${relative} · ${absolute}`
-}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -113,11 +51,9 @@ type EventDetailPanelProps = {
 function MetaIcon({
   icon: Icon,
   color,
-  colors,
 }: {
   icon: React.ElementType
   color: string
-  colors: DetailColors
 }) {
   return (
     <View
@@ -125,7 +61,7 @@ function MetaIcon({
         width: 32,
         height: 32,
         borderRadius: 8,
-        backgroundColor: colors.iconBoxBg,
+        backgroundColor: '#F5F5F4',
         alignItems: 'center',
         justifyContent: 'center',
       }}
@@ -136,7 +72,7 @@ function MetaIcon({
 }
 
 /** Small overlapping avatar stack (max 3 shown) */
-function AvatarStack({ attendees, colors }: { attendees: Attendee[]; colors: DetailColors }) {
+function AvatarStack({ attendees }: { attendees: Attendee[] }) {
   const shown = attendees.slice(0, 3)
   return (
     <View className="flex-row" style={{ marginLeft: 4 }}>
@@ -149,7 +85,7 @@ function AvatarStack({ attendees, colors }: { attendees: Attendee[]; colors: Det
             height: 24,
             borderRadius: 12,
             borderWidth: 2,
-            borderColor: colors.avatarBorder,
+            borderColor: '#FFFFFF',
             marginLeft: i === 0 ? 0 : -8,
           }}
         />
@@ -163,88 +99,52 @@ function AvatarStack({ attendees, colors }: { attendees: Attendee[]; colors: Det
 // ---------------------------------------------------------------------------
 
 function HeaderBar({
-  title,
   isPast,
-  isRegistered,
   onClose,
-  colors,
 }: {
-  title: string
   isPast?: boolean
-  isRegistered?: boolean
   onClose: () => void
-  colors: DetailColors
 }) {
   return (
     <View
+      className="flex-row items-center"
       style={{
         paddingHorizontal: 16,
-        paddingTop: 14,
-        paddingBottom: 12,
+        paddingVertical: 14,
         borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-        gap: 10,
+        borderBottomColor: '#E7E5E4',
       }}
     >
-      {/* Top row: back + share/close */}
-      <View className="flex-row items-center" style={{ justifyContent: 'space-between' }}>
+      <Text
+        style={{
+          flex: 1,
+          fontFamily: 'Inter-Medium',
+          fontSize: 11,
+          color: '#A8A29E',
+          letterSpacing: 0.5,
+          textTransform: 'uppercase',
+        }}
+      >
+        Event Details
+      </Text>
+
+      {!isPast && (
         <Pressable
-          onPress={onClose}
-          className="flex-row items-center"
-          style={{ gap: 2, padding: 2 }}
-          accessibilityLabel="Close panel"
+          onPress={() => {}}
+          style={{ padding: 4, marginRight: 8 }}
+          accessibilityLabel="Share event"
         >
-          <ChevronLeft size={20} color={colors.iconHeader} />
-          <Text
-            style={{
-              fontFamily: 'Inter-Regular',
-              fontSize: 14,
-              color: colors.iconHeader,
-            }}
-          >
-            Back
-          </Text>
+          <Share2 size={18} color="#78716C" />
         </Pressable>
+      )}
 
-        <View className="flex-row items-center" style={{ gap: 4 }}>
-          {!isPast && (
-            <Pressable
-              onPress={() => {}}
-              style={{ padding: 6 }}
-              accessibilityLabel="Share event"
-            >
-              <Share2 size={18} color={colors.iconHeader} />
-            </Pressable>
-          )}
-          <Pressable
-            onPress={onClose}
-            style={{ padding: 6 }}
-            accessibilityLabel="Close panel"
-          >
-            <X size={18} color={colors.iconHeader} />
-          </Pressable>
-        </View>
-      </View>
-
-      {/* Title row + badge */}
-      <View className="flex-row items-start" style={{ gap: 10 }}>
-        <Text
-          style={{
-            flex: 1,
-            fontFamily: 'Inter-Bold',
-            fontSize: 20,
-            color: colors.text,
-            lineHeight: 26,
-          }}
-        >
-          {title}
-        </Text>
-        {isRegistered && (
-          <View style={{ marginTop: 3 }}>
-            <Badge label="Going" variant="going" />
-          </View>
-        )}
-      </View>
+      <Pressable
+        onPress={onClose}
+        style={{ padding: 4 }}
+        accessibilityLabel="Close panel"
+      >
+        <X size={18} color="#78716C" />
+      </Pressable>
     </View>
   )
 }
@@ -298,6 +198,64 @@ function HeroImage({
 }
 
 // ---------------------------------------------------------------------------
+// Compact summary row (registered state)
+// ---------------------------------------------------------------------------
+
+function CompactSummary({
+  event,
+}: {
+  event: EventDetailPanelProps['event']
+}) {
+  return (
+    <View
+      className="flex-row items-center"
+      style={{
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E7E5E4',
+      }}
+    >
+      {event.image && (
+        <Image
+          source={{ uri: event.image }}
+          style={{
+            width: 52,
+            height: 52,
+            borderRadius: 8,
+            marginRight: 12,
+          }}
+          resizeMode="cover"
+        />
+      )}
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text
+          style={{
+            fontFamily: 'Inter-SemiBold',
+            fontSize: 16,
+            color: '#1C1917',
+          }}
+          numberOfLines={1}
+        >
+          {event.title}
+        </Text>
+        <Text
+          style={{
+            fontFamily: 'Inter-Regular',
+            fontSize: 12,
+            color: '#78716C',
+          }}
+        >
+          {event.date} {event.time}
+        </Text>
+      </View>
+      <View style={{ marginLeft: 8 }}>
+        <Badge label="Going" variant="going" />
+      </View>
+    </View>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Meta rows section
 // ---------------------------------------------------------------------------
 
@@ -305,14 +263,12 @@ function MetaSection({
   event,
   attendees,
   isPast,
-  colors,
 }: {
   event: EventDetailPanelProps['event']
   attendees: Attendee[]
   isPast?: boolean
-  colors: DetailColors
 }) {
-  const iconColor = isPast ? colors.textMuted : '#E8862A'
+  const iconColor = isPast ? '#A8A29E' : '#E8862A'
   const attendLabel = isPast
     ? `${event.attendees} attended`
     : `${event.attendees} attending`
@@ -321,13 +277,13 @@ function MetaSection({
     <View style={{ gap: 16 }}>
       {/* Location row */}
       <View className="flex-row" style={{ gap: 12, alignItems: 'flex-start' }}>
-        <MetaIcon icon={MapPin} color={iconColor} colors={colors} />
+        <MetaIcon icon={MapPin} color={iconColor} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text
             style={{
               fontFamily: 'Inter-Medium',
               fontSize: 14,
-              color: colors.text,
+              color: '#1C1917',
             }}
           >
             {event.location}
@@ -337,7 +293,7 @@ function MetaSection({
               style={{
                 fontFamily: 'Inter-Regular',
                 fontSize: 13,
-                color: colors.textSecondary,
+                color: '#78716C',
               }}
             >
               {event.address}
@@ -348,28 +304,28 @@ function MetaSection({
 
       {/* Attendees row */}
       <View className="flex-row items-center" style={{ gap: 12 }}>
-        <MetaIcon icon={Users} color={iconColor} colors={colors} />
+        <MetaIcon icon={Users} color={iconColor} />
         <Text
           style={{
             fontFamily: 'Inter-Medium',
             fontSize: 14,
-            color: colors.text,
+            color: '#1C1917',
           }}
         >
           {attendLabel}
         </Text>
-        <AvatarStack attendees={attendees} colors={colors} />
+        <AvatarStack attendees={attendees} />
       </View>
 
       {/* Point of contact row */}
       {event.pointOfContact && (
         <View className="flex-row items-center" style={{ gap: 12 }}>
-          <MetaIcon icon={User} color={iconColor} colors={colors} />
+          <MetaIcon icon={User} color={iconColor} />
           <Text
             style={{
               fontFamily: 'Inter-Medium',
               fontSize: 14,
-              color: colors.text,
+              color: '#1C1917',
             }}
           >
             Contact: {event.pointOfContact}
@@ -384,7 +340,7 @@ function MetaSection({
 // About section
 // ---------------------------------------------------------------------------
 
-function AboutSection({ description, colors }: { description?: string; colors: DetailColors }) {
+function AboutSection({ description }: { description?: string }) {
   if (!description) return null
   return (
     <View style={{ gap: 12 }}>
@@ -392,7 +348,7 @@ function AboutSection({ description, colors }: { description?: string; colors: D
         style={{
           fontFamily: 'Inter-Medium',
           fontSize: 11,
-          color: colors.textMuted,
+          color: '#A8A29E',
           letterSpacing: 0.5,
           textTransform: 'uppercase',
         }}
@@ -403,7 +359,7 @@ function AboutSection({ description, colors }: { description?: string; colors: D
         style={{
           fontFamily: 'Inter-Regular',
           fontSize: 14,
-          color: colors.textSecondary,
+          color: '#78716C',
           lineHeight: 20,
         }}
       >
@@ -417,11 +373,11 @@ function AboutSection({ description, colors }: { description?: string; colors: D
 // "You attended" banner (past state)
 // ---------------------------------------------------------------------------
 
-function AttendedBanner({ count, colors }: { count: number; colors: DetailColors }) {
+function AttendedBanner({ count }: { count: number }) {
   return (
     <View
       style={{
-        backgroundColor: colors.attendedBg,
+        backgroundColor: '#ECFDF5',
         borderRadius: 8,
         padding: 12,
         paddingHorizontal: 16,
@@ -460,14 +416,14 @@ function AttendedBanner({ count, colors }: { count: number; colors: DetailColors
 // People tab content
 // ---------------------------------------------------------------------------
 
-function PeopleTab({ attendees, colors }: { attendees: Attendee[]; colors: DetailColors }) {
+function PeopleTab({ attendees }: { attendees: Attendee[] }) {
   return (
     <View style={{ paddingHorizontal: 24, paddingTop: 16 }}>
       <Text
         style={{
           fontFamily: 'Inter-Medium',
           fontSize: 13,
-          color: colors.textSecondary,
+          color: '#78716C',
           marginBottom: 12,
         }}
       >
@@ -490,7 +446,7 @@ function PeopleTab({ attendees, colors }: { attendees: Attendee[]; colors: Detai
                 style={{
                   fontFamily: 'Inter-Medium',
                   fontSize: 14,
-                  color: colors.text,
+                  color: '#1C1917',
                 }}
               >
                 {a.name}
@@ -499,7 +455,7 @@ function PeopleTab({ attendees, colors }: { attendees: Attendee[]; colors: Detai
                 style={{
                   fontFamily: 'Inter-Regular',
                   fontSize: 12,
-                  color: colors.textSecondary,
+                  color: '#78716C',
                 }}
               >
                 {a.subtitle}
@@ -519,7 +475,7 @@ function PeopleTab({ attendees, colors }: { attendees: Attendee[]; colors: Detai
 // Messages tab content
 // ---------------------------------------------------------------------------
 
-function MessagesTab({ messages, colors }: { messages: Message[]; colors: DetailColors }) {
+function MessagesTab({ messages }: { messages: Message[] }) {
   return (
     <View style={{ paddingHorizontal: 24, paddingTop: 16, gap: 20 }}>
       {/* Notice banner */}
@@ -549,7 +505,7 @@ function MessagesTab({ messages, colors }: { messages: Message[]; colors: Detail
               style={{
                 fontFamily: 'Inter-SemiBold',
                 fontSize: 14,
-                color: colors.text,
+                color: '#1C1917',
                 flex: 1,
               }}
             >
@@ -559,7 +515,7 @@ function MessagesTab({ messages, colors }: { messages: Message[]; colors: Detail
               style={{
                 fontFamily: 'Inter-Regular',
                 fontSize: 12,
-                color: colors.textMuted,
+                color: '#A8A29E',
               }}
             >
               {m.timestamp}
@@ -569,7 +525,7 @@ function MessagesTab({ messages, colors }: { messages: Message[]; colors: Detail
           {/* Message bubble */}
           <View
             style={{
-              backgroundColor: colors.cardBg,
+              backgroundColor: '#F5F5F4',
               borderTopLeftRadius: 4,
               borderTopRightRadius: 16,
               borderBottomLeftRadius: 16,
@@ -582,7 +538,7 @@ function MessagesTab({ messages, colors }: { messages: Message[]; colors: Detail
               style={{
                 fontFamily: 'Inter-Regular',
                 fontSize: 14,
-                color: colors.text,
+                color: '#1C1917',
                 lineHeight: 20,
               }}
             >
@@ -603,45 +559,63 @@ function DefaultContent({
   event,
   attendees,
   isPast,
-  colors,
 }: {
   event: EventDetailPanelProps['event']
   attendees: Attendee[]
   isPast?: boolean
-  colors: DetailColors
 }) {
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, gap: 20 }}
+      contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24 }}
       showsVerticalScrollIndicator={false}
     >
+      {/* Title & date */}
+      <Text
+        style={{
+          fontFamily: 'Inter-SemiBold',
+          fontSize: 22,
+          color: '#1C1917',
+        }}
+      >
+        {event.title}
+      </Text>
+      <Text
+        style={{
+          fontFamily: 'Inter-Regular',
+          fontSize: 13,
+          color: '#78716C',
+          marginTop: 4,
+        }}
+      >
+        {event.date} {event.time}
+      </Text>
+
       {/* Attended banner (past state) */}
       {isPast && (
-        <AttendedBanner count={event.attendees} colors={colors} />
+        <View style={{ marginTop: 20 }}>
+          <AttendedBanner count={event.attendees} />
+        </View>
       )}
-
-      {/* Date & time */}
-      <View className="flex-row items-center" style={{ gap: 12 }}>
-        <MetaIcon icon={Clock} color={isPast ? colors.textMuted : '#E8862A'} colors={colors} />
-        <Text
-          style={{
-            fontFamily: 'Inter-Medium',
-            fontSize: 14,
-            color: colors.text,
-          }}
-        >
-          {formatRelativeDateTime(event.date, event.time)}
-        </Text>
-      </View>
 
       {/* Meta rows */}
-      <MetaSection event={event} attendees={attendees} isPast={isPast} colors={colors} />
+      <View style={{ marginTop: 20 }}>
+        <MetaSection event={event} attendees={attendees} isPast={isPast} />
+      </View>
+
+      {/* Divider */}
+      {event.description && (
+        <View
+          style={{
+            height: 1,
+            backgroundColor: '#E7E5E4',
+            marginVertical: 20,
+          }}
+        />
+      )}
 
       {/* About */}
-      {event.description && (
-        <AboutSection description={event.description} colors={colors} />
-      )}
+      <AboutSection description={event.description} />
     </ScrollView>
   )
 }
@@ -654,24 +628,20 @@ function RegisteredContent({
   event,
   attendees,
   messages,
-  colors,
 }: {
   event: EventDetailPanelProps['event']
   attendees: Attendee[]
   messages: Message[]
-  colors: DetailColors
 }) {
   const [activeTab, setActiveTab] = useState('Details')
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ paddingTop: 8 }}>
-        <UnderlineTabBar
-          tabs={['Details', 'People', 'Messages']}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-      </View>
+      <UnderlineTabBar
+        tabs={['Details', 'People', 'Messages']}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -686,31 +656,22 @@ function RegisteredContent({
               gap: 20,
             }}
           >
-            {/* Date & time */}
-            <View className="flex-row items-center" style={{ gap: 12 }}>
-              <MetaIcon icon={Clock} color="#E8862A" colors={colors} />
-              <Text
-                style={{
-                  fontFamily: 'Inter-Medium',
-                  fontSize: 14,
-                  color: colors.text,
-                }}
-              >
-                {formatRelativeDateTime(event.date, event.time)}
-              </Text>
-            </View>
-
-            <MetaSection event={event} attendees={attendees} colors={colors} />
+            <MetaSection event={event} attendees={attendees} />
             {event.description && (
-              <AboutSection description={event.description} colors={colors} />
+              <>
+                <View
+                  style={{ height: 1, backgroundColor: '#E7E5E4' }}
+                />
+                <AboutSection description={event.description} />
+              </>
             )}
           </View>
         )}
 
-        {activeTab === 'People' && <PeopleTab attendees={attendees} colors={colors} />}
+        {activeTab === 'People' && <PeopleTab attendees={attendees} />}
 
         {activeTab === 'Messages' && (
-          <MessagesTab messages={messages} colors={colors} />
+          <MessagesTab messages={messages} />
         )}
       </ScrollView>
     </View>
@@ -726,13 +687,11 @@ function ActionBar({
   isPast,
   onToggleRegistration,
   isToggling,
-  colors,
 }: {
   isRegistered?: boolean
   isPast?: boolean
   onToggleRegistration: () => void
   isToggling: boolean
-  colors: DetailColors
 }) {
   if (isPast) return null
 
@@ -741,9 +700,9 @@ function ActionBar({
       <View
         style={{
           borderTopWidth: 1,
-          borderTopColor: colors.border,
+          borderTopColor: '#E7E5E4',
           padding: 16,
-          backgroundColor: colors.panelBg,
+          backgroundColor: '#FFFFFF',
         }}
       >
         <Pressable
@@ -752,20 +711,22 @@ function ActionBar({
           style={{
             height: 48,
             borderRadius: 10,
-            backgroundColor: 'rgba(239,68,68,0.1)',
+            borderWidth: 1,
+            borderColor: '#E7E5E4',
+            backgroundColor: '#FFFFFF',
             alignItems: 'center',
             justifyContent: 'center',
             opacity: isToggling ? 0.6 : 1,
           }}
         >
           {isToggling ? (
-            <ActivityIndicator size="small" color="#EF4444" />
+            <ActivityIndicator size="small" color="#1C1917" />
           ) : (
             <Text
               style={{
                 fontFamily: 'Inter-Medium',
                 fontSize: 15,
-                color: '#EF4444',
+                color: '#1C1917',
               }}
             >
               Cancel Registration
@@ -780,9 +741,9 @@ function ActionBar({
     <View
       style={{
         borderTopWidth: 1,
-        borderTopColor: colors.border,
+        borderTopColor: '#E7E5E4',
         padding: 16,
-        backgroundColor: colors.panelBg,
+        backgroundColor: '#FFFFFF',
       }}
     >
       <Pressable
@@ -815,7 +776,7 @@ function ActionBar({
         style={{
           fontFamily: 'Inter-Regular',
           fontSize: 12,
-          color: colors.textMuted,
+          color: '#A8A29E',
           textAlign: 'center',
           marginTop: 8,
         }}
@@ -839,7 +800,6 @@ export default function EventDetailPanel({
   onToggleRegistration,
   isToggling,
 }: EventDetailPanelProps) {
-  const colors = useDetailColors()
   const isRegistered = event.isRegistered && !isPast
 
   return (
@@ -847,17 +807,19 @@ export default function EventDetailPanel({
       style={{
         width: 440,
         height: '100%',
-        backgroundColor: colors.panelBg,
+        backgroundColor: '#FFFFFF',
         borderLeftWidth: 1,
-        borderLeftColor: colors.border,
+        borderLeftColor: '#E7E5E4',
         flexDirection: 'column',
       }}
     >
       {/* Header */}
-      <HeaderBar title={event.title} isPast={isPast} isRegistered={isRegistered} onClose={onClose} colors={colors} />
+      <HeaderBar isPast={isPast} onClose={onClose} />
 
-      {/* Hero image (non-registered only) */}
-      {!isRegistered && (
+      {/* Hero / compact summary */}
+      {isRegistered ? (
+        <CompactSummary event={event} />
+      ) : (
         <HeroImage
           uri={event.image}
           isPast={isPast}
@@ -871,14 +833,12 @@ export default function EventDetailPanel({
           event={event}
           attendees={attendees}
           messages={messages}
-          colors={colors}
         />
       ) : (
         <DefaultContent
           event={event}
           attendees={attendees}
           isPast={isPast}
-          colors={colors}
         />
       )}
 
@@ -888,7 +848,6 @@ export default function EventDetailPanel({
         isPast={isPast}
         onToggleRegistration={onToggleRegistration}
         isToggling={isToggling}
-        colors={colors}
       />
     </View>
   )
