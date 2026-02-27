@@ -1,16 +1,21 @@
 import React, { useState } from 'react'
 import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Alert } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { TabSegment, SecondaryButton, PrimaryButton } from '../../components/ui'
-import {
-  MapPin,
-  Clock,
-  Users,
-  Info,
-  MessageCircle,
-} from 'lucide-react-native'
+import { ChevronLeft, Share2, MapPin, Users, User, CheckCircle, Info } from 'lucide-react-native'
 import { useEventDetail } from '../../hooks/useApiData'
 import { useUser } from '../../components/contexts'
+import { Badge, UnderlineTabBar } from '../../components/ui'
+import { useDetailColors } from '../../hooks/useDetailColors'
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+
+/** Format an ISO date string like "Saturday, March 15" */
+function formatDate(iso: string): string {
+  if (!iso) return ''
+  const d = new Date(iso + 'T12:00:00') // noon to avoid timezone issues
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+}
 
 export default function EventDetailPage() {
   const { id } = useLocalSearchParams()
@@ -20,6 +25,7 @@ export default function EventDetailPage() {
   const { event, attendees, messages, loading, toggleRegistration, isToggling } = useEventDetail(
     id as string
   )
+  const colors = useDetailColors()
 
   const handleToggleRegistration = async () => {
     if (!user?.username) return
@@ -30,144 +36,429 @@ export default function EventDetailPage() {
     }
   }
 
+  // ── Loading state ────────────────────────────────────────────────────
+
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-background dark:bg-background-dark">
-        <ActivityIndicator size="large" color="#ea580c" />
-      </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#E8862A" />
+        </View>
+      </SafeAreaView>
     )
   }
+
+  // ── Not-found state ──────────────────────────────────────────────────
 
   if (!event) {
     return (
-      <View className="flex-1 justify-center items-center px-4 bg-background dark:bg-background-dark">
-        <Text className="text-2xl font-semibold mb-4 text-content dark:text-content-dark">
-          Event not found
-        </Text>
-        <SecondaryButton onPress={() => router.back()} className="mt-4">
-          Go Back
-        </SecondaryButton>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}>
+          <Text style={{ fontSize: 22, fontFamily: 'Inter-SemiBold', color: colors.text, marginBottom: 16 }}>
+            Event not found
+          </Text>
+          <Pressable onPress={() => router.back()} style={{ marginTop: 8 }}>
+            <Text style={{ fontSize: 16, fontFamily: 'Inter-Medium', color: '#E8862A' }}>Go Back</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  // ── Derived state ────────────────────────────────────────────────────
+
+  const isPast = event.date ? new Date(event.date + 'T23:59:59') < new Date() : false
+  const isRegistered = !!event.isRegistered
+  const iconColor = isPast ? colors.textMuted : '#E8862A'
+
+  // ── Shared header ────────────────────────────────────────────────────
+
+  const renderHeader = () => (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 }}>
+      <Pressable onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <ChevronLeft size={22} color={colors.text} />
+        <Text style={{ fontSize: 16, fontFamily: 'Inter-Regular', color: colors.text }}>Back</Text>
+      </Pressable>
+      <Pressable onPress={() => {}} hitSlop={8}>
+        <Share2 size={22} color={colors.text} />
+      </Pressable>
+    </View>
+  )
+
+  // ── Meta row component ───────────────────────────────────────────────
+
+  const MetaRow = ({
+    icon,
+    primary,
+    secondary,
+    right,
+  }: {
+    icon: React.ReactNode
+    primary: string
+    secondary?: string
+    right?: React.ReactNode
+  }) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16 }}>
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          backgroundColor: colors.iconBoxBg,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        {icon}
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: 15, fontFamily: 'Inter-Medium', color: colors.text }}>{primary}</Text>
+        {secondary ? (
+          <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: colors.textSecondary }}>{secondary}</Text>
+        ) : null}
+      </View>
+      {right}
+    </View>
+  )
+
+  // ── Avatar stack (3 overlapping circles) ─────────────────────────────
+
+  const AvatarStack = () => {
+    const shown = attendees.slice(0, 3)
+    return (
+      <View style={{ flexDirection: 'row' }}>
+        {shown.map((a, i) => (
+          <Image
+            key={i}
+            source={{ uri: a.image }}
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 12,
+              borderWidth: 2,
+              borderColor: colors.avatarBorder,
+              marginLeft: i === 0 ? 0 : -8,
+            }}
+          />
+        ))}
       </View>
     )
   }
 
-  const renderDetailsTab = () => (
-    <View className="gap-4">
-      {/* Event Image */}
-      {event.image && (
-        <View className="rounded-xl overflow-hidden shadow">
-          <Image source={{ uri: event.image }} style={{ width: '100%', height: 200 }} />
-        </View>
-      )}
+  // ────────────────────────────────────────────────────────────────────
+  // DEFAULT (UNREGISTERED) + PAST STATE
+  // ────────────────────────────────────────────────────────────────────
 
-      {/* Event Information */}
-      <View className="gap-3">
-        {/* Time */}
-        <View className="flex-row items-center gap-2">
-          <Clock size={20} color="#f97316" />
-          <Text className="text-base font-medium text-content dark:text-content-dark">
-            {event.time}
-          </Text>
-        </View>
+  if (!isRegistered) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
+        {renderHeader()}
 
-        {/* Location */}
-        <View className="flex-row items-center gap-2">
-          <MapPin size={20} color="#f97316" />
-          <View className="flex-1">
-            <Text className="text-base font-medium text-content dark:text-content-dark">
-              {event.location}
-            </Text>
-            {event.address && (
-              <Text className="text-sm text-contentStrong dark:text-contentStrong-dark">
-                {event.address}
-              </Text>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: isPast ? 40 : 120 }}>
+          {/* Hero image */}
+          <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
+            {event.image ? (
+              <View style={{ borderRadius: 16, overflow: 'hidden', height: 220 }}>
+                <Image
+                  source={{ uri: event.image }}
+                  style={{ width: '100%', height: 220, opacity: isPast ? 0.75 : 1 }}
+                />
+                {isPast && (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: 'rgba(0,0,0,0.15)',
+                    }}
+                  />
+                )}
+                {/* Badge overlay */}
+                <View style={{ position: 'absolute', bottom: 16, left: 16 }}>
+                  <Badge label={isPast ? 'Past Event' : 'Upcoming'} variant={isPast ? 'past' : 'upcoming'} />
+                </View>
+              </View>
+            ) : (
+              <View
+                style={{
+                  borderRadius: 16,
+                  height: 220,
+                  backgroundColor: colors.iconBoxBg,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <View style={{ position: 'absolute', bottom: 16, left: 16 }}>
+                  <Badge label={isPast ? 'Past Event' : 'Upcoming'} variant={isPast ? 'past' : 'upcoming'} />
+                </View>
+              </View>
             )}
           </View>
-        </View>
 
-        {/* Attendees */}
-        <View className="flex-row items-center gap-2">
-          <Users size={20} color="#f97316" />
-          <Text className="text-base font-medium text-content dark:text-content-dark">
-            {event.attendees} People Going
-          </Text>
-        </View>
+          {/* Title */}
+          <View style={{ paddingHorizontal: 16, marginBottom: 4 }}>
+            <Text style={{ fontSize: 26, fontFamily: 'Inter-Bold', color: colors.text }}>
+              {event.title}
+            </Text>
+          </View>
 
-        {/* Point of Contact */}
-        {event.pointOfContact && (
-          <View className="flex-row items-center gap-2">
-            <Info size={20} color="#f97316" />
-            <View className="flex-1">
-              <Text className="text-sm text-contentStrong dark:text-contentStrong-dark">
-                Point of Contact:
-              </Text>
-              <Text className="text-base font-medium text-content dark:text-content-dark">
-                {event.pointOfContact}
-              </Text>
+          {/* Date / time */}
+          <View style={{ paddingHorizontal: 16, marginBottom: 20 }}>
+            <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.textSecondary }}>
+              {formatDate(event.date)}
+              {event.time ? ` · ${event.time}` : ''}
+            </Text>
+          </View>
+
+          {/* Attended banner (past only) */}
+          {isPast && (
+            <View
+              style={{
+                marginHorizontal: 16,
+                marginBottom: 20,
+                backgroundColor: colors.attendedBg,
+                borderRadius: 10,
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+              }}
+            >
+              <CheckCircle size={20} color="#059669" />
+              <View>
+                <Text style={{ fontSize: 15, fontFamily: 'Inter-SemiBold', color: '#059669' }}>
+                  You attended this event
+                </Text>
+                {event.attendees > 1 && (
+                  <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: '#059669' }}>
+                    Along with {event.attendees - 1} others
+                  </Text>
+                )}
+              </View>
             </View>
+          )}
+
+          {/* Meta rows */}
+          <View style={{ gap: 16 }}>
+            {/* Location */}
+            <MetaRow
+              icon={<MapPin size={20} color={iconColor} />}
+              primary={event.location}
+              secondary={event.address}
+            />
+
+            {/* Attendees */}
+            <MetaRow
+              icon={<Users size={20} color={iconColor} />}
+              primary={`${event.attendees} ${isPast ? 'attended' : 'attending'}`}
+              right={<AvatarStack />}
+            />
+
+            {/* Point of contact */}
+            {event.pointOfContact && (
+              <MetaRow
+                icon={<User size={20} color={iconColor} />}
+                primary={`Contact: ${event.pointOfContact}`}
+              />
+            )}
+          </View>
+
+          {/* Divider */}
+          <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 16, marginTop: 24, marginBottom: 16 }} />
+
+          {/* About */}
+          <View style={{ paddingHorizontal: 16 }}>
+            <Text
+              style={{
+                fontSize: 11,
+                fontFamily: 'Inter-Medium',
+                color: colors.textMuted,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                marginBottom: 8,
+              }}
+            >
+              About
+            </Text>
+            <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.textSecondary, lineHeight: 20 }}>
+              {event.description || 'No description provided.'}
+            </Text>
+          </View>
+        </ScrollView>
+
+        {/* Sticky CTA — only for non-past events */}
+        {!isPast && (
+          <View
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: colors.panelBg,
+              paddingHorizontal: 16,
+              paddingTop: 12,
+              paddingBottom: 28,
+            }}
+          >
+            <Pressable
+              onPress={handleToggleRegistration}
+              disabled={isToggling}
+              style={{
+                height: 52,
+                borderRadius: 12,
+                backgroundColor: '#E8862A',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              {isToggling ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={{ fontSize: 16, fontFamily: 'Inter-SemiBold', color: '#FFFFFF' }}>
+                  Attend Event
+                </Text>
+              )}
+            </Pressable>
+            <Text
+              style={{
+                fontSize: 12,
+                fontFamily: 'Inter-Regular',
+                color: colors.textMuted,
+                textAlign: 'center',
+                marginTop: 8,
+              }}
+            >
+              Free · No registration required
+            </Text>
           </View>
         )}
+      </SafeAreaView>
+    )
+  }
 
-        {/* Description */}
-        {event.description && (
-          <View className="gap-1 mt-2">
-            <Text className="text-lg font-semibold text-content dark:text-content-dark">
-              About this event
-            </Text>
-            <Text className="text-base text-contentStrong dark:text-contentStrong-dark leading-tight">
-              {event.description}
-            </Text>
+  // ────────────────────────────────────────────────────────────────────
+  // REGISTERED STATE (with tabs)
+  // ────────────────────────────────────────────────────────────────────
+
+  const renderDetailsTab = () => (
+    <View style={{ gap: 16, paddingTop: 16 }}>
+      {/* Hero image */}
+      <View style={{ paddingHorizontal: 16 }}>
+        {event.image ? (
+          <View style={{ borderRadius: 16, overflow: 'hidden', height: 220 }}>
+            <Image source={{ uri: event.image }} style={{ width: '100%', height: 220 }} />
+            <View style={{ position: 'absolute', bottom: 16, left: 16 }}>
+              <Badge label="Upcoming" variant="upcoming" />
+            </View>
+          </View>
+        ) : (
+          <View
+            style={{
+              borderRadius: 16,
+              height: 220,
+              backgroundColor: colors.iconBoxBg,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <View style={{ position: 'absolute', bottom: 16, left: 16 }}>
+              <Badge label="Upcoming" variant="upcoming" />
+            </View>
           </View>
         )}
       </View>
 
-      {/* Registration Status and Action Button */}
-      {event.isRegistered ? (
-        <View className="gap-2 mt-4">
-          <Text className="text-base text-green-600 dark:text-green-400 font-medium">
-            You are registered for this event!
-          </Text>
-          <SecondaryButton onPress={handleToggleRegistration} disabled={isToggling} className="mt-2">
-            {isToggling ? <ActivityIndicator size="small" color="#ea580c" /> : 'Cancel Registration'}
-          </SecondaryButton>
-        </View>
-      ) : (
-        <PrimaryButton onPress={handleToggleRegistration} disabled={isToggling} className="mt-4">
-          {isToggling ? <ActivityIndicator size="small" color="#ffffff" /> : 'Attend Event'}
-        </PrimaryButton>
+      {/* Date / time */}
+      <View style={{ paddingHorizontal: 16 }}>
+        <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.textSecondary }}>
+          {formatDate(event.date)}
+          {event.time ? ` · ${event.time}` : ''}
+        </Text>
+      </View>
+
+      {/* Meta rows */}
+      <MetaRow
+        icon={<MapPin size={20} color="#E8862A" />}
+        primary={event.location}
+        secondary={event.address}
+      />
+      <MetaRow
+        icon={<Users size={20} color="#E8862A" />}
+        primary={`${event.attendees} attending`}
+        right={<AvatarStack />}
+      />
+      {event.pointOfContact && (
+        <MetaRow
+          icon={<User size={20} color="#E8862A" />}
+          primary={`Contact: ${event.pointOfContact}`}
+        />
       )}
+
+      {/* Divider */}
+      <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 16 }} />
+
+      {/* About */}
+      <View style={{ paddingHorizontal: 16 }}>
+        <Text
+          style={{
+            fontSize: 11,
+            fontFamily: 'Inter-Medium',
+            color: colors.textMuted,
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+            marginBottom: 8,
+          }}
+        >
+          About
+        </Text>
+        <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.textSecondary, lineHeight: 20 }}>
+          {event.description || 'No description provided.'}
+        </Text>
+      </View>
     </View>
   )
 
   const renderPeopleTab = () => (
-    <View className="gap-3">
+    <View style={{ paddingTop: 16, paddingHorizontal: 16 }}>
+      <Text style={{ fontSize: 13, fontFamily: 'Inter-Medium', color: colors.textSecondary, marginBottom: 12 }}>
+        {event.attendees} people attending
+      </Text>
+
       {attendees.length > 0 ? (
         attendees.map((attendee, index) => (
           <View
             key={index}
-            className="bg-muted/20 dark:bg-muted-dark/20 rounded-xl shadow p-4 flex-row items-center gap-3 mb-2"
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: 14,
+              gap: 12,
+            }}
           >
             <Image
               source={{ uri: attendee.image }}
-              style={{ width: 48, height: 48, borderRadius: 24 }}
-              className="mr-3"
+              style={{ width: 42, height: 42, borderRadius: 21 }}
             />
-            <View className="flex-1">
-              <Text className="text-base font-medium text-content dark:text-content-dark">
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontFamily: 'Inter-Medium', color: colors.text }}>
                 {attendee.name}
               </Text>
               {attendee.subtitle ? (
-                <Text className="text-sm text-contentStrong dark:text-contentStrong-dark">
+                <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: colors.textSecondary }}>
                   {attendee.subtitle}
                 </Text>
               ) : null}
             </View>
+            {index === 0 && <Badge label="HOST" variant="host" />}
           </View>
         ))
       ) : (
-        <View className="items-center py-8">
-          <Users size={48} color="#888" />
-          <Text className="text-base text-contentStrong dark:text-contentStrong-dark mt-3">
+        <View style={{ alignItems: 'center', paddingVertical: 32 }}>
+          <Users size={48} color={colors.textMuted} />
+          <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.textSecondary, marginTop: 12 }}>
             No attendees yet
           </Text>
         </View>
@@ -176,44 +467,54 @@ export default function EventDetailPage() {
   )
 
   const renderMessagesTab = () => (
-    <View className="gap-3">
+    <View style={{ paddingTop: 16, paddingHorizontal: 16, gap: 20 }}>
+      {/* Info banner */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Info size={16} color="#E8862A" />
+        <Text style={{ fontSize: 13, fontFamily: 'Inter-Regular', color: '#E8862A' }}>
+          Only the host can post messages
+        </Text>
+      </View>
+
       {messages.length > 0 ? (
-        <>
-          <View className="bg-muted/20 dark:bg-muted-dark/20 rounded-xl shadow p-4 mb-2">
-            <Text className="text-sm text-contentStrong dark:text-contentStrong-dark text-center">
-              Only the host can post messages
-            </Text>
-          </View>
-          {messages.map((message, index) => (
-            <View
-              key={index}
-              className="bg-muted/20 dark:bg-muted-dark/20 rounded-xl shadow p-4 flex-row gap-3 mb-2"
-            >
+        messages.map((message, index) => (
+          <View key={index} style={{ gap: 6 }}>
+            {/* Author line */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Image
                 source={{ uri: message.image }}
-                style={{ width: 36, height: 36, borderRadius: 18 }}
-                className="mr-3"
+                style={{ width: 30, height: 30, borderRadius: 15 }}
               />
-              <View className="flex-1">
-                <View className="flex-row justify-between items-center mb-2">
-                  <Text className="text-base font-medium text-content dark:text-content-dark">
-                    {message.author}
-                  </Text>
-                  <Text className="text-sm text-contentStrong dark:text-contentStrong-dark">
-                    {message.timestamp}
-                  </Text>
-                </View>
-                <Text className="text-base text-content dark:text-content-dark leading-tight">
-                  {message.text}
-                </Text>
-              </View>
+              <Text style={{ fontSize: 14, fontFamily: 'Inter-SemiBold', color: colors.text }}>
+                {message.author}
+              </Text>
+              <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: colors.textMuted }}>
+                {message.timestamp}
+              </Text>
             </View>
-          ))}
-        </>
+
+            {/* Message bubble */}
+            <View
+              style={{
+                backgroundColor: colors.cardBg,
+                borderTopLeftRadius: 4,
+                borderTopRightRadius: 16,
+                borderBottomLeftRadius: 16,
+                borderBottomRightRadius: 16,
+                padding: 12,
+                marginLeft: 38,
+              }}
+            >
+              <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.text, lineHeight: 20 }}>
+                {message.text}
+              </Text>
+            </View>
+          </View>
+        ))
       ) : (
-        <View className="items-center py-8">
-          <MessageCircle size={48} color="#888" />
-          <Text className="text-base text-contentStrong dark:text-contentStrong-dark mt-3">
+        <View style={{ alignItems: 'center', paddingVertical: 32 }}>
+          <Info size={48} color={colors.textMuted} />
+          <Text style={{ fontSize: 14, fontFamily: 'Inter-Regular', color: colors.textSecondary, marginTop: 12 }}>
             No messages yet
           </Text>
         </View>
@@ -222,43 +523,94 @@ export default function EventDetailPage() {
   )
 
   return (
-    <ScrollView className="flex-1 bg-background dark:bg-background-dark">
-      <View className="flex-1">
-        {/* Event Title */}
-        <View className="px-4 py-3 bg-background dark:bg-background-dark border-b border-borderColor dark:border-borderColor-dark">
-          <Text className="text-2xl font-bold text-center text-content dark:text-content-dark">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
+      {renderHeader()}
+
+      {/* Compact summary */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingBottom: 12,
+          gap: 12,
+        }}
+      >
+        {event.image ? (
+          <Image
+            source={{ uri: event.image }}
+            style={{ width: 48, height: 48, borderRadius: 8 }}
+          />
+        ) : (
+          <View
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 8,
+              backgroundColor: colors.iconBoxBg,
+            }}
+          />
+        )}
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 16, fontFamily: 'Inter-SemiBold', color: colors.text }} numberOfLines={1}>
             {event.title}
           </Text>
+          <Text style={{ fontSize: 12, fontFamily: 'Inter-Regular', color: colors.textSecondary }}>
+            {formatDate(event.date)}
+            {event.time ? ` · ${event.time}` : ''}
+          </Text>
         </View>
-
-        {/* Tab Navigation - Only show if registered */}
-        {event.isRegistered && (
-          <View className="bg-background dark:bg-background-dark px-4 py-2">
-            <TabSegment
-              options={[
-                { value: 'Details', label: 'Details' },
-                { value: 'People', label: 'People' },
-                { value: 'Messages', label: 'Messages' },
-              ]}
-              value={activeTab}
-              onValueChange={setActiveTab}
-              variant="subtle"
-            />
-          </View>
-        )}
-
-        <View className="px-4 gap-4 pb-8">
-          {!event.isRegistered ? (
-            renderDetailsTab()
-          ) : (
-            <>
-              {activeTab === 'Details' && renderDetailsTab()}
-              {activeTab === 'People' && renderPeopleTab()}
-              {activeTab === 'Messages' && renderMessagesTab()}
-            </>
-          )}
-        </View>
+        <Badge label="Going" variant="going" />
       </View>
-    </ScrollView>
+
+      {/* Tab bar */}
+      <UnderlineTabBar
+        tabs={['Details', 'People', 'Messages']}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
+
+      {/* Tab content */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 120 }}>
+        {activeTab === 'Details' && renderDetailsTab()}
+        {activeTab === 'People' && renderPeopleTab()}
+        {activeTab === 'Messages' && renderMessagesTab()}
+      </ScrollView>
+
+      {/* Cancel registration CTA */}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: colors.panelBg,
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: 28,
+        }}
+      >
+        <Pressable
+          onPress={handleToggleRegistration}
+          disabled={isToggling}
+          style={{
+            height: 52,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: colors.border,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {isToggling ? (
+            <ActivityIndicator size="small" color={colors.text} />
+          ) : (
+            <Text style={{ fontSize: 16, fontFamily: 'Inter-Medium', color: colors.text }}>
+              Cancel Registration
+            </Text>
+          )}
+        </Pressable>
+      </View>
+    </SafeAreaView>
   )
 }
