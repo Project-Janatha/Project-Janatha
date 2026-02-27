@@ -6,6 +6,7 @@ import {
   fetchEventsByCenter,
   fetchEventUsers,
   updateEvent,
+  getUserEvents,
   centersToMapPoints,
   eventsToMapPoints,
   MapPoint,
@@ -402,6 +403,52 @@ export function useCenterDetail(centerId: string) {
   }, [centerId])
 
   return { center, events, loading, isLive }
+}
+
+// ── My Events hook ──────────────────────────────────────────────────
+
+export function useMyEvents(username: string | undefined) {
+  const [events, setEvents] = useState<EventDisplay[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isLive, setIsLive] = useState(false)
+
+  const load = useCallback(async () => {
+    if (!username) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+
+    try {
+      const apiEvents = await getUserEvents(username)
+
+      if (apiEvents.length > 0) {
+        setEvents(apiEvents.map((e) => ({
+          id: e.eventID,
+          title: e.eventObject?.title || e.eventObject?.description || 'Event',
+          time: e.eventObject?.date ? new Date(e.eventObject.date).toLocaleString() : '',
+          location: e.eventObject?.center?.centerName || 'TBD',
+          attendees: e.eventObject?.peopleAttending || 0,
+          likes: 0,
+          comments: 0,
+          description: e.eventObject?.description,
+          isRegistered: true,
+        })))
+        setIsLive(true)
+      } else {
+        // Fallback to sample registered events
+        setEvents(SAMPLE_EVENT_LIST.filter((e) => e.isRegistered))
+      }
+    } catch {
+      setEvents(SAMPLE_EVENT_LIST.filter((e) => e.isRegistered))
+    } finally {
+      setLoading(false)
+    }
+  }, [username])
+
+  useEffect(() => { load() }, [load])
+
+  return { events, loading, isLive, refetch: load }
 }
 
 export { SAMPLE_ATTENDEES, SAMPLE_MESSAGES, SAMPLE_EVENT_LIST, SAMPLE_CENTERS, SAMPLE_EVENTS }
