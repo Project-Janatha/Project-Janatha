@@ -14,12 +14,12 @@ import {
 import {
   MapPin,
   Search,
-  CheckCircle2,
   Building2,
+  Users,
 } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 import { useThemeContext } from '../../components/contexts'
-import { FilterChip, Badge } from '../../components/ui'
+import { Badge, UnderlineTabBar } from '../../components/ui'
 import { useDiscoverData, type DiscoverFilter } from '../../hooks/useApiData'
 import type { EventDisplay, DiscoverCenter } from '../../utils/api'
 import WeekCalendar from '../../components/WeekCalendar'
@@ -48,6 +48,38 @@ function isToday(dateStr: string): boolean {
   return dateStr === today.toISOString().split('T')[0]
 }
 
+// ── Placeholder avatar dots for attendee count ──────────
+
+const AVATAR_COLORS = ['#E8862A', '#78716C', '#A8A29E', '#D6D3D1']
+
+function AttendeeAvatars({ count }: { count: number }) {
+  if (count <= 0) return null
+  const shown = Math.min(count, 4)
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+      <View style={{ flexDirection: 'row' }}>
+        {Array.from({ length: shown }).map((_, i) => (
+          <View
+            key={i}
+            style={{
+              width: 16,
+              height: 16,
+              borderRadius: 8,
+              backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
+              marginLeft: i === 0 ? 0 : -5,
+              borderWidth: 1.5,
+              borderColor: 'white',
+            }}
+          />
+        ))}
+      </View>
+      <Text className="text-stone-400 dark:text-stone-500 font-inter text-xs">
+        {count} going
+      </Text>
+    </View>
+  )
+}
+
 // ─── Event Item ─────────────────────────────────────────
 
 function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => void }) {
@@ -64,20 +96,13 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
       }`}
     >
       {/* Date pill */}
-      <View className="relative">
-        <View className="w-12 h-14 rounded-xl items-center justify-center bg-gray-100 dark:bg-neutral-800">
-          <Text className="text-[10px] font-inter-semibold text-gray-500 dark:text-gray-400">
-            {month}
-          </Text>
-          <Text className="text-base font-inter-bold text-content dark:text-content-dark">
-            {day}
-          </Text>
-        </View>
-        {event.isRegistered && (
-          <View className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 items-center justify-center border-2 border-white dark:border-neutral-900">
-            <CheckCircle2 size={10} color="#fff" />
-          </View>
-        )}
+      <View className="w-12 h-14 rounded-xl items-center justify-center bg-stone-100 dark:bg-neutral-800">
+        <Text className="text-[10px] font-inter-semibold" style={{ color: '#E8862A' }}>
+          {month}
+        </Text>
+        <Text className="text-base font-inter-bold text-content dark:text-content-dark">
+          {day}
+        </Text>
       </View>
 
       {/* Content */}
@@ -88,19 +113,17 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
           </Text>
           {event.isRegistered && <Badge label="Going" variant="going" />}
         </View>
-        <Text className="text-gray-500 dark:text-gray-400 font-inter text-sm">
+        <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm">
           {todayLabel ? 'Today' : month + ' ' + day}
           {event.time ? ' · ' + event.time : ''}
         </Text>
         <View className="flex-row items-center gap-1 mt-0.5">
-          <MapPin size={12} color="#9CA3AF" />
-          <Text className="text-gray-500 dark:text-gray-400 font-inter text-xs" numberOfLines={1}>
+          <MapPin size={12} color="#E8862A" />
+          <Text className="text-stone-500 dark:text-stone-400 font-inter text-xs flex-1" numberOfLines={1}>
             {event.location}
           </Text>
-          <Text className="text-gray-400 dark:text-gray-500 font-inter text-xs ml-2">
-            {event.attendees} going
-          </Text>
         </View>
+        <AttendeeAvatars count={event.attendees} />
       </View>
     </Pressable>
   )
@@ -131,7 +154,7 @@ function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () =
           </Text>
           {center.isMember && <Badge label="Member" variant="member" />}
         </View>
-        <Text className="text-gray-500 dark:text-gray-400 font-inter text-sm">
+        <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm">
           Center{center.distanceMi != null ? ` · ${center.distanceMi} mi` : ''}
         </Text>
         {center.eventCount != null && center.eventCount > 0 && (
@@ -268,7 +291,7 @@ export default function DiscoverScreen() {
       <View style={StyleSheet.absoluteFill}>
         <Suspense
           fallback={
-            <View className="flex-1 justify-center items-center bg-gray-100 dark:bg-neutral-800">
+            <View className="flex-1 justify-center items-center bg-stone-100 dark:bg-neutral-800">
               <ActivityIndicator size="large" color="#9A3412" />
             </View>
           }
@@ -306,39 +329,31 @@ export default function DiscoverScreen() {
               />
             </View>
 
-            {/* Filter Chips */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
-              style={{ flexGrow: 0, marginBottom: 8 }}
-            >
-              {FILTERS.map((f) => (
-                <FilterChip
-                  key={f.label}
-                  label={f.label}
-                  active={activeFilter === f.label && !selectedDate}
-                  onPress={() => handleFilterPress(f.label)}
-                />
-              ))}
-            </ScrollView>
-
             {/* Search Input */}
             <View
-              className="flex-row items-center mx-4 mt-1 mb-2 px-3 rounded-xl"
+              className="flex-row items-center mx-4 mb-2 px-3 rounded-xl"
               style={{
-                minHeight: 44,
+                minHeight: 40,
                 backgroundColor: isDark ? '#262626' : '#F3F4F6',
               }}
             >
               <Search size={16} color="#9CA3AF" />
               <TextInput
                 className="flex-1 ml-2 text-sm font-inter"
-                style={{ color: isDark ? '#E5E7EB' : '#1F2937', paddingVertical: 10 }}
+                style={{ color: isDark ? '#E5E7EB' : '#1F2937', paddingVertical: 8 }}
                 placeholder="Search events and centers..."
                 placeholderTextColor="#9CA3AF"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
+              />
+            </View>
+
+            {/* Filter tabs — underline style */}
+            <View style={{ marginBottom: 4 }}>
+              <UnderlineTabBar
+                tabs={FILTERS.map((f) => f.label)}
+                activeTab={selectedDate ? '' : activeFilter}
+                onTabChange={(tab) => handleFilterPress(tab as DiscoverFilter)}
               />
             </View>
 
@@ -368,7 +383,7 @@ export default function DiscoverScreen() {
           >
             {!loading && displayItems.length === 0 && (
               <View className="py-12 items-center">
-                <Text className="text-gray-400 dark:text-gray-500 font-inter text-sm">
+                <Text className="text-stone-400 dark:text-stone-500 font-inter text-sm">
                   {selectedDate ? 'No events on this day' : 'No results found'}
                 </Text>
               </View>
@@ -422,8 +437,8 @@ const styles = StyleSheet.create({
   },
   handleRow: {
     alignItems: 'center',
-    paddingTop: 10,
-    paddingBottom: 12,
+    paddingTop: 8,
+    paddingBottom: 6,
   },
   handle: {
     width: 40,
