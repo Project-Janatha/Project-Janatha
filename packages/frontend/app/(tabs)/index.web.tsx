@@ -1,23 +1,17 @@
 // This is the web desktop layout
-import React, { useContext } from 'react'
-import { View, Text, Pressable, useWindowDimensions, ScrollView } from 'react-native'
-import { ThumbsUp, MessageCircle, MapPin, ChevronRight } from 'lucide-react-native'
+import React from 'react'
+import { View, Text, useWindowDimensions, ScrollView } from 'react-native'
+import { ThumbsUp, MessageCircle, MapPin } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
 import { useUser } from '../../components/contexts'
 import { SecondaryButton, Card } from '../../components/ui'
 import Map from '../../components/Map'
 import { useRouter } from 'expo-router'
+import { useMapPoints, useEventList, useWeekCalendar } from '../../hooks/useApiData'
+import { MapPoint } from '../../utils/api'
 
 // Import mobile component for responsive fallback
 import MobileHome from './index'
-
-type MapPoint = {
-  id: string
-  type: 'center' | 'event'
-  name: string
-  latitude: number
-  longitude: number
-}
 
 export default function HomeScreenWeb() {
   const { width } = useWindowDimensions()
@@ -30,123 +24,39 @@ export default function HomeScreenWeb() {
 
   const { user } = useUser()
   const router = useRouter()
-
-  const mapPoints: MapPoint[] = [
-    {
-      id: '1',
-      type: 'center',
-      name: 'Chinmaya Mission San Jose',
-      latitude: 37.2431,
-      longitude: -121.7831,
-    },
-    {
-      id: '2',
-      type: 'center',
-      name: 'Chinmaya Mission West',
-      latitude: 37.8599,
-      longitude: -122.4856,
-    },
-    {
-      id: '3',
-      type: 'center',
-      name: 'Chinmaya Mission San Francisco',
-      latitude: 37.7749,
-      longitude: -122.4194,
-    },
-    {
-      id: '4',
-      type: 'event',
-      name: 'Bhagavad Gita Study Circle',
-      latitude: 37.2631,
-      longitude: -121.8031,
-    },
-    {
-      id: '5',
-      type: 'event',
-      name: 'Hanuman Chalisa Chanting',
-      latitude: 37.8699,
-      longitude: -122.4756,
-    },
-    {
-      id: '6',
-      type: 'event',
-      name: 'Yoga and Meditation Session',
-      latitude: 37.7849,
-      longitude: -122.4094,
-    },
-  ]
+  const { points: mapPoints } = useMapPoints()
+  const { events } = useEventList()
+  const { weekDays, weekDates, today } = useWeekCalendar()
 
   const handlePointPress = (point: MapPoint) => {
     if (point.type === 'center') {
       router.push(`/center/${point.id}`)
-      Toast.show({
-        type: 'info',
-        text1: point.name,
-        text2: 'Viewing center details',
-      })
     } else if (point.type === 'event') {
       router.push(`/events/${point.id}`)
-      Toast.show({
-        type: 'info',
-        text1: point.name,
-        text2: 'Viewing event details',
-      })
     }
   }
 
-  const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-  const weekDates = [18, 19, 20, 21, 22, 23, 24]
-  const today = 19
-
-  const events = [
-    {
-      id: 1,
-      time: 'TODAY • 10:30 AM - 11:30 AM',
-      location: 'Young Museum',
-      title: 'Bhagavad Gita Study Circle - Chapter 12',
-      attendees: 14,
-      likes: 0,
-      comments: 0,
-    },
-    {
-      id: 2,
-      time: 'SUN, 8 PM - 11:49 PM',
-      location: 'Meditation Hall',
-      title: 'Hanuman Chalisa Chanting Marathon',
-      attendees: 14,
-      likes: 0,
-      comments: 0,
-    },
-  ]
-
   const handleEventPress = (event: (typeof events)[0]) => {
     router.push(`/events/${event.id}`)
-    Toast.show({
-      type: 'success',
-      text1: 'Event Selected',
-      text2: event.title,
-    })
   }
 
   // Desktop layout: Two-column layout with map container and scrollable content panel
   return (
     <View className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-row h-full px-12 py-8 gap-8">
-        {/* Left Side - Map Container (40%) - Card-styled container with rounded corners and border */}
+        {/* Left Side - Map Container (40%) */}
         <Card size="lg" overflowHidden className="flex-[4]">
           <Map points={mapPoints} onPointPress={handlePointPress} />
         </Card>
-        {/* Right Side - Scrollable Content Panel (60%) - Calendar and events list */}
+        {/* Right Side - Scrollable Content Panel (60%) */}
         <View className="flex-[6]">
           <ScrollView
             className="flex-1 px-2"
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 24 }}
           >
-            {/* Your Week Section */}
+            {/* Calendar Week View */}
             <View className="mb-6">
-
-              {/* Calendar Week View */}
               <Card padding="md">
                 <View className="flex-row justify-between">
                   {weekDays.map((day, index) => (
@@ -183,16 +93,7 @@ export default function HomeScreenWeb() {
                 <Text className="text-content dark:text-content-dark font-inter text-2xl font-bold">
                   Upcoming Events
                 </Text>
-                <SecondaryButton
-                  onPress={() => {
-                    router.push('/events' as any)
-                    Toast.show({
-                      type: 'info',
-                      text1: 'All Events',
-                      text2: 'Viewing all upcoming events',
-                    })
-                  }}
-                >
+                <SecondaryButton onPress={() => router.push('/explore')}>
                   See All
                 </SecondaryButton>
               </View>

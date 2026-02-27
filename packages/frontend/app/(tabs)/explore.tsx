@@ -1,10 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { View, TextInput, Pressable, Text } from 'react-native'
-import { IconButton } from '../../components/ui'
 import {
   Search,
-  SlidersHorizontal,
-  Locate,
   MapPin,
   Calendar,
   LayoutGrid,
@@ -12,72 +9,37 @@ import {
 import { useRouter } from 'expo-router'
 import { useThemeContext } from '../../components/contexts'
 import Map from '../../components/Map.web'
+import { useMapPoints } from '../../hooks/useApiData'
+import { MapPoint } from '../../utils/api'
 
-/**
- * ExploreScreen Component
- * @return {JSX.Element} A ExploreScreen component that displays a map with a search bar overlay and filter options.
- */
 export default function ExploreScreen() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const router = useRouter()
   const { isDark } = useThemeContext()
+  const { points: mapPoints } = useMapPoints()
 
-  // Map points data - centers and events
-  const mapPoints = [
-    {
-      id: '1',
-      type: 'center' as const,
-      name: 'Chinmaya Mission San Jose',
-      latitude: 37.2431,
-      longitude: -121.7831,
-    },
-    {
-      id: '2',
-      type: 'center' as const,
-      name: 'Chinmaya Mission West',
-      latitude: 37.8599,
-      longitude: -122.4856,
-    },
-    {
-      id: '3',
-      type: 'center' as const,
-      name: 'Chinmaya Mission San Francisco',
-      latitude: 37.7749,
-      longitude: -122.4194,
-    },
-    {
-      id: '4',
-      type: 'event' as const,
-      name: 'Bhagavad Gita Study Circle',
-      latitude: 37.2631,
-      longitude: -121.8031,
-    },
-    {
-      id: '5',
-      type: 'event' as const,
-      name: 'Hanuman Chalisa Marathon',
-      latitude: 37.8699,
-      longitude: -122.4756,
-    },
-    {
-      id: '6',
-      type: 'event' as const,
-      name: 'Yoga Session',
-      latitude: 37.7849,
-      longitude: -122.4094,
-    },
-  ]
+  // Filter points based on active filter and search query
+  const filteredPoints = useMemo(() => {
+    let filtered = mapPoints
 
-  // Filter points based on active filter
-  const filteredPoints = mapPoints.filter((point) => {
-    if (activeFilter === 'All') return true
-    if (activeFilter === 'Centers') return point.type === 'center'
-    if (activeFilter === 'Events') return point.type === 'event'
-    return true
-  })
+    // Filter by type
+    if (activeFilter === 'Centers') {
+      filtered = filtered.filter((p) => p.type === 'center')
+    } else if (activeFilter === 'Events') {
+      filtered = filtered.filter((p) => p.type === 'event')
+    }
 
-  const handlePointPress = (point: any) => {
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter((p) => p.name.toLowerCase().includes(query))
+    }
+
+    return filtered
+  }, [mapPoints, activeFilter, searchQuery])
+
+  const handlePointPress = (point: MapPoint) => {
     if (point.type === 'center') {
       router.push(`/center/${point.id}`)
     } else if (point.type === 'event') {
@@ -85,40 +47,15 @@ export default function ExploreScreen() {
     }
   }
 
-  const handleLocateUser = () => {
-    // Location centering is now handled internally by the Map component
-    // Users can click the location button on the map itself
-  }
-
   const getFilterIcon = (filter: string) => {
+    const color = activeFilter === filter ? '#ffffff' : (isDark ? '#d4d4d8' : '#3f3f46')
     switch (filter) {
       case 'All':
-        return (
-          <LayoutGrid
-            size={14}
-            className={`${
-              activeFilter === filter ? 'text-background' : 'text-content dark:text-content-dark'
-            }`}
-          />
-        )
+        return <LayoutGrid size={14} color={color} />
       case 'Centers':
-        return (
-          <MapPin
-            size={14}
-            className={`${
-              activeFilter === filter ? 'text-background' : 'text-content dark:text-content-dark'
-            }`}
-          />
-        )
+        return <MapPin size={14} color={color} />
       case 'Events':
-        return (
-          <Calendar
-            size={14}
-            className={`${
-              activeFilter === filter ? 'text-background' : 'text-content dark:text-content-dark'
-            }`}
-          />
-        )
+        return <Calendar size={14} color={color} />
       default:
         return null
     }
@@ -131,22 +68,19 @@ export default function ExploreScreen() {
 
       {/* Search and Filter Controls - Overlay on top */}
       <View className="absolute top-4 left-4 right-4 z-10 flex-row gap-2 items-center">
-        {/* Search Bar - 60% of available width */}
+        {/* Search Bar */}
         <View className="flex-[6] flex-row items-center px-3 py-2 mr-4 rounded-full shadow-lg bg-white dark:bg-neutral-900 border border-borderColor dark:border-borderColor-dark">
           <Search size={18} color="#9CA3AF" />
           <TextInput
             className="flex-1 bg-transparent text-sm px-2 font-inter outline-none focus:outline-none text-content dark:text-content-dark"
-            placeholder="Search..."
+            placeholder="Search centers and events..."
             placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-          {/* <IconButton>
-            <SlidersHorizontal size={16} color="#9CA3AF" />
-          </IconButton> */}
         </View>
 
-        {/* Filter Chips - 40% of available width */}
+        {/* Filter Chips */}
         <View className="flex-[4] flex-row gap-2">
           {['All', 'Centers', 'Events'].map((filter) => (
             <Pressable
