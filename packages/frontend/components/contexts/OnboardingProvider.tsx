@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from 'react'
 import { router } from 'expo-router'
+import { useUser } from './UserContext'
 
 interface OnboardingContextType {
   currentStep: number
@@ -10,6 +11,8 @@ interface OnboardingContextType {
   centerID: string
   phoneNumber: string
   interests: string[]
+  isSubmitting: boolean
+  submitError: string | null
   goToNextStep: () => void
   goToPreviousStep: () => void
   completeOnboarding: () => void
@@ -24,6 +27,7 @@ interface OnboardingContextType {
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined)
 
 export default function OnboardingProvider({ children }: { children: React.ReactNode }) {
+  const { user, setUser, authenticatedFetch } = useUser()
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 5 // Total form steps (not including Complete screen)
 
@@ -33,6 +37,8 @@ export default function OnboardingProvider({ children }: { children: React.React
   const [centerID, setCenterID] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [interests, setInterests] = useState<string[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const goToNextStep = () => {
     // Allow incrementing past totalSteps to show Complete screen
@@ -45,9 +51,36 @@ export default function OnboardingProvider({ children }: { children: React.React
     }
   }
 
-  const completeOnboarding = () => {
-    // Logic to mark onboarding as complete (e.g., update user profile, local storage, etc.)
-    router.replace('/')
+  const completeOnboarding = async () => {
+    setIsSubmitting(true)
+    setSubmitError(null)
+
+    try {
+      const response = await authenticatedFetch('/api/auth/complete-onboarding', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: user?.username,
+          firstName,
+          lastName,
+          dateOfBirth: birthdate?.toISOString() || null,
+          centerID,
+          profileComplete: true,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        throw new Error(data.message || 'Failed to complete onboarding')
+      }
+
+      // Update UserContext so the route guard redirects to home
+      setUser({ ...user!, firstName, lastName, centerID, profileComplete: true })
+      router.replace('/')
+    } catch (error: any) {
+      setSubmitError(error.message || 'Something went wrong. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const value = {
@@ -59,6 +92,8 @@ export default function OnboardingProvider({ children }: { children: React.React
     centerID,
     phoneNumber,
     interests,
+    isSubmitting,
+    submitError,
     goToNextStep,
     goToPreviousStep,
     completeOnboarding,
