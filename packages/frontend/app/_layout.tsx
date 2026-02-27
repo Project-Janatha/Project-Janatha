@@ -134,14 +134,6 @@ function RootLayoutNav() {
         {/* Registering onboarding explicitly ensures stable navigation */}
         <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen
-          name="profile"
-          options={{
-            headerShown: false,
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
-          }}
-        />
-        <Stack.Screen
           name="settings"
           options={{ headerShown: true }} // Explicitly show for settings
         />
