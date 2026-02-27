@@ -14,7 +14,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ChevronLeft, Share2, MapPin, Globe, Phone, User } from 'lucide-react-native'
 import { useCenterDetail } from '../../hooks/useApiData'
 import type { EventDisplay } from '../../utils/api'
-import { useDetailColors } from '../../hooks/useDetailColors'
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -60,13 +59,13 @@ export default function CenterDetailPage() {
   if (loading) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: colors.panelBg }}
+        style={{ flex: 1, backgroundColor: '#FFFFFF' }}
         edges={['top']}
       >
         <View
           style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
         >
-          <ActivityIndicator size="large" color="#E8862A" />
+          <ActivityIndicator size="large" color="#ea580c" />
         </View>
       </SafeAreaView>
     )
@@ -75,7 +74,7 @@ export default function CenterDetailPage() {
   if (!center) {
     return (
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: colors.panelBg }}
+        style={{ flex: 1, backgroundColor: '#FFFFFF' }}
         edges={['top']}
       >
         <View
@@ -90,7 +89,7 @@ export default function CenterDetailPage() {
             style={{
               fontSize: 22,
               fontFamily: 'Inter-SemiBold',
-              color: colors.text,
+              color: '#1C1917',
               marginBottom: 16,
             }}
           >
@@ -99,7 +98,7 @@ export default function CenterDetailPage() {
           <Pressable
             onPress={() => router.back()}
             style={{
-              backgroundColor: '#E8862A',
+              backgroundColor: '#ea580c',
               borderRadius: 12,
               paddingHorizontal: 24,
               paddingVertical: 12,
@@ -134,7 +133,7 @@ export default function CenterDetailPage() {
 
   return (
     <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.panelBg }}
+      style={{ flex: 1, backgroundColor: '#FFFFFF' }}
       edges={['top']}
     >
       <ScrollView
@@ -157,19 +156,19 @@ export default function CenterDetailPage() {
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
             hitSlop={8}
           >
-            <ChevronLeft size={22} color={colors.text} />
+            <ChevronLeft size={22} color="#1C1917" />
             <Text
               style={{
                 fontSize: 16,
                 fontFamily: 'Inter-Medium',
-                color: colors.text,
+                color: '#1C1917',
               }}
             >
               Back
             </Text>
           </Pressable>
           <Pressable onPress={handleShare} hitSlop={8}>
-            <Share2 size={22} color={colors.text} />
+            <Share2 size={22} color="#1C1917" />
           </Pressable>
         </View>
 
@@ -194,7 +193,7 @@ export default function CenterDetailPage() {
             style={{
               fontSize: 26,
               fontFamily: 'Inter-Bold',
-              color: colors.text,
+              color: '#1C1917',
               marginBottom: 4,
             }}
           >
@@ -205,7 +204,7 @@ export default function CenterDetailPage() {
               style={{
                 fontSize: 14,
                 fontFamily: 'Inter-Regular',
-                color: colors.textSecondary,
+                color: '#78716C',
               }}
             >
               Resident Acharya: {center.acharya}
@@ -230,7 +229,7 @@ export default function CenterDetailPage() {
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  backgroundColor: colors.iconBoxBg,
+                  backgroundColor: '#F5F5F4',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -242,7 +241,7 @@ export default function CenterDetailPage() {
                   style={{
                     fontSize: 15,
                     fontFamily: 'Inter-Medium',
-                    color: colors.text,
+                    color: '#1C1917',
                   }}
                 >
                   {addressLine1}
@@ -252,7 +251,7 @@ export default function CenterDetailPage() {
                     style={{
                       fontSize: 13,
                       fontFamily: 'Inter-Regular',
-                      color: colors.textSecondary,
+                      color: '#78716C',
                     }}
                   >
                     {addressLine2}
@@ -273,7 +272,7 @@ export default function CenterDetailPage() {
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  backgroundColor: colors.iconBoxBg,
+                  backgroundColor: '#F5F5F4',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -304,7 +303,7 @@ export default function CenterDetailPage() {
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  backgroundColor: colors.iconBoxBg,
+                  backgroundColor: '#F5F5F4',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -315,7 +314,7 @@ export default function CenterDetailPage() {
                 style={{
                   fontSize: 15,
                   fontFamily: 'Inter-Medium',
-                  color: colors.text,
+                  color: '#1C1917',
                 }}
               >
                 {center.phone}
@@ -333,7 +332,7 @@ export default function CenterDetailPage() {
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  backgroundColor: colors.iconBoxBg,
+                  backgroundColor: '#F5F5F4',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
@@ -345,7 +344,7 @@ export default function CenterDetailPage() {
                   style={{
                     fontSize: 15,
                     fontFamily: 'Inter-Medium',
-                    color: colors.text,
+                    color: '#1C1917',
                   }}
                 >
                   {center.acharya}
@@ -354,7 +353,7 @@ export default function CenterDetailPage() {
                   style={{
                     fontSize: 13,
                     fontFamily: 'Inter-Regular',
-                    color: colors.textSecondary,
+                    color: '#78716C',
                   }}
                 >
                   Resident Acharya
@@ -371,7 +370,7 @@ export default function CenterDetailPage() {
             <View
               style={{
                 height: 1,
-                backgroundColor: colors.border,
+                backgroundColor: '#E7E5E4',
                 marginHorizontal: 16,
                 marginBottom: 16,
               }}
@@ -382,7 +381,7 @@ export default function CenterDetailPage() {
               style={{
                 fontSize: 11,
                 fontFamily: 'Inter-Medium',
-                color: colors.textMuted,
+                color: '#A8A29E',
                 letterSpacing: 1,
                 textTransform: 'uppercase',
                 paddingHorizontal: 16,
@@ -404,7 +403,7 @@ export default function CenterDetailPage() {
                     onPress={() => handleEventPress(event)}
                     style={{
                       flexDirection: 'row',
-                      backgroundColor: colors.cardBg,
+                      backgroundColor: '#F5F5F4',
                       borderRadius: 10,
                       overflow: 'hidden',
                     }}
@@ -432,7 +431,7 @@ export default function CenterDetailPage() {
                         style={{
                           fontSize: 22,
                           fontFamily: 'Inter-SemiBold',
-                          color: colors.text,
+                          color: '#1C1917',
                         }}
                       >
                         {day}
@@ -443,7 +442,7 @@ export default function CenterDetailPage() {
                     <View
                       style={{
                         width: 1,
-                        backgroundColor: colors.border,
+                        backgroundColor: '#E7E5E4',
                         marginVertical: 10,
                       }}
                     />
@@ -461,7 +460,7 @@ export default function CenterDetailPage() {
                         style={{
                           fontSize: 14,
                           fontFamily: 'Inter-SemiBold',
-                          color: colors.text,
+                          color: '#1C1917',
                           marginBottom: 3,
                         }}
                         numberOfLines={1}
@@ -472,7 +471,7 @@ export default function CenterDetailPage() {
                         style={{
                           fontSize: 12,
                           fontFamily: 'Inter-Regular',
-                          color: colors.textSecondary,
+                          color: '#78716C',
                         }}
                         numberOfLines={1}
                       >
