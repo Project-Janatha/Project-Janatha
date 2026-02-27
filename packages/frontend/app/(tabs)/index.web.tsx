@@ -9,7 +9,7 @@ import {
 } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useThemeContext, useUser } from '../../components/contexts'
-import { FilterChip, Badge } from '../../components/ui'
+import { FilterChip, Badge, UnderlineTabBar } from '../../components/ui'
 import Map from '../../components/Map'
 import MapPopover from '../../components/MapPopover'
 import { useDiscoverData, useEventDetail, useCenterDetail, type DiscoverFilter } from '../../hooks/useApiData'
@@ -473,26 +473,9 @@ export default function DiscoverScreenWeb() {
         ) : (
           <View style={{ width: rightPanelWidth }} className="border-l border-stone-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
             {/* Panel Header */}
-            <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 }}>
-              {/* Heading + Filter Chips — compact single row */}
-              <View className="flex-row items-center" style={{ gap: 10, marginBottom: 8 }}>
-                <Text className="text-content dark:text-content-dark font-inter-bold text-xl" style={{ flexShrink: 0 }}>
-                  Discover
-                </Text>
-                <View className="flex-row items-center" style={{ gap: 8 }}>
-                  {FILTERS.map((f) => (
-                    <FilterChip
-                      key={f.label}
-                      label={f.label}
-                      active={activeFilter === f.label && !selectedDate}
-                      onPress={() => handleFilterPress(f.label)}
-                    />
-                  ))}
-                </View>
-              </View>
-
+            <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 0 }}>
               {/* Search */}
-              <View className="flex-row items-center mt-3 px-3 rounded-xl bg-stone-100 dark:bg-neutral-800" style={{ minHeight: 40 }}>
+              <View className="flex-row items-center px-3 rounded-xl bg-stone-100 dark:bg-neutral-800" style={{ minHeight: 40 }}>
                 <Search size={16} color="#9CA3AF" />
                 <TextInput
                   className="flex-1 ml-2 text-sm font-inter text-content dark:text-content-dark outline-none"
@@ -503,18 +486,27 @@ export default function DiscoverScreenWeb() {
                   style={{ paddingVertical: 8 }}
                 />
               </View>
-
-              {/* Week Calendar — hidden when Centers filter or searching */}
-              {activeFilter !== 'Centers' && !searchQuery.trim() && (
-                <View className="mt-2">
-                  <WeekCalendar
-                    eventDates={eventDates}
-                    selectedDate={selectedDate}
-                    onSelectDate={setSelectedDate}
-                  />
-                </View>
-              )}
             </View>
+
+            {/* Filter tabs */}
+            <View style={{ paddingTop: 8, marginBottom: 12 }}>
+              <UnderlineTabBar
+                tabs={FILTERS.map((f) => f.label)}
+                activeTab={selectedDate ? '' : activeFilter}
+                onTabChange={(tab) => handleFilterPress(tab as DiscoverFilter)}
+              />
+            </View>
+
+            {/* Week Calendar — hidden when Centers filter or searching */}
+            {activeFilter !== 'Centers' && !searchQuery.trim() && (
+              <View style={{ paddingHorizontal: 20, paddingTop: 4 }}>
+                <WeekCalendar
+                  eventDates={eventDates}
+                  selectedDate={selectedDate}
+                  onSelectDate={setSelectedDate}
+                />
+              </View>
+            )}
 
             {/* Loading indicator */}
             {loading && (
