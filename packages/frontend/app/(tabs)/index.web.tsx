@@ -1,24 +1,30 @@
 // Discover tab — web desktop layout
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import { View, Text, Pressable, useWindowDimensions, ScrollView, TextInput, ActivityIndicator } from 'react-native'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import {
-  MapPin,
-  Search,
-  Building2,
-  Users,
-} from 'lucide-react-native'
+  View,
+  Text,
+  Pressable,
+  useWindowDimensions,
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+} from 'react-native'
+import { MapPin, Search, Building2, Users } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar } from '../../components/ui'
 import Map from '../../components/Map'
 import MapPopover from '../../components/MapPopover'
 import LeafletView from '../../components/LeafletView'
-import { useDiscoverData, useEventDetail, useCenterDetail, type DiscoverFilter } from '../../hooks/useApiData'
+import { useDiscoverData, type DiscoverFilter } from '../../hooks/useApiData'
 import type { MapPoint, EventDisplay, DiscoverCenter } from '../../utils/api'
 import WeekCalendar from '../../components/WeekCalendar'
-import EventDetailPanel from '../../components/web/EventDetailPanel'
-import CenterDetailPanel from '../../components/web/CenterDetailPanel'
-import { useDetailColors } from '../../hooks/useDetailColors'
+
+const isMobileDevice = () => {
+  if (typeof window === 'undefined') return false
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
 
 const FILTERS: { label: DiscoverFilter }[] = [
   { label: 'All' },
@@ -63,9 +69,7 @@ function AttendeeAvatars({ count }: { count: number }) {
           />
         ))}
       </View>
-      <Text className="text-stone-400 dark:text-stone-500 font-inter text-xs">
-        {count} going
-      </Text>
+      <Text className="text-stone-400 dark:text-stone-500 font-inter text-xs">{count} going</Text>
     </View>
   )
 }
@@ -89,15 +93,16 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
         <Text className="text-[10px] font-inter-semibold" style={{ color: '#E8862A' }}>
           {month}
         </Text>
-        <Text className="text-lg font-inter-bold text-content dark:text-content-dark">
-          {day}
-        </Text>
+        <Text className="text-lg font-inter-bold text-content dark:text-content-dark">{day}</Text>
       </View>
 
       {/* Content */}
       <View className="flex-1 gap-1">
         <View className="flex-row items-center gap-2">
-          <Text className="text-content dark:text-content-dark font-inter-semibold text-base leading-tight flex-1" numberOfLines={2}>
+          <Text
+            className="text-content dark:text-content-dark font-inter-semibold text-base leading-tight flex-1"
+            numberOfLines={2}
+          >
             {event.title}
           </Text>
           {event.isRegistered && <Badge label="Going" variant="going" />}
@@ -108,7 +113,10 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
         </Text>
         <View className="flex-row items-center gap-1.5">
           <MapPin size={12} color="#E8862A" />
-          <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm flex-1" numberOfLines={1}>
+          <Text
+            className="text-stone-500 dark:text-stone-400 font-inter text-sm flex-1"
+            numberOfLines={1}
+          >
             {event.location}
           </Text>
         </View>
@@ -127,9 +135,7 @@ function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () =
     <Pressable
       onPress={onPress}
       className={`flex-row gap-4 p-4 rounded-2xl active:opacity-80 border border-transparent hover:border-stone-200 dark:hover:border-neutral-700 ${
-        center.isMember
-          ? 'bg-orange-50/80 dark:bg-orange-950/20'
-          : 'bg-white dark:bg-neutral-900'
+        center.isMember ? 'bg-orange-50/80 dark:bg-orange-950/20' : 'bg-white dark:bg-neutral-900'
       }`}
     >
       {/* Icon pill */}
@@ -140,7 +146,10 @@ function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () =
       {/* Content */}
       <View className="flex-1 gap-1">
         <View className="flex-row items-center gap-2">
-          <Text className="text-content dark:text-content-dark font-inter-semibold text-base leading-tight flex-1" numberOfLines={1}>
+          <Text
+            className="text-content dark:text-content-dark font-inter-semibold text-base leading-tight flex-1"
+            numberOfLines={1}
+          >
             {center.name}
           </Text>
           {center.isMember && <Badge label="Member" variant="member" />}
@@ -172,12 +181,15 @@ function DetailPanelWrapper({
   if (selectedItem.type === 'event') {
     return <EventPanelInner eventId={selectedItem.id} onClose={onClose} />
   }
-  return <CenterPanelInner centerId={selectedItem.id} onClose={onClose} onEventPress={onEventPress} />
+  return (
+    <CenterPanelInner centerId={selectedItem.id} onClose={onClose} onEventPress={onEventPress} />
+  )
 }
 
 function EventPanelInner({ eventId, onClose }: { eventId: string; onClose: () => void }) {
   const { user } = useUser()
-  const { event, attendees, messages, loading, toggleRegistration, isToggling } = useEventDetail(eventId)
+  const { event, attendees, messages, loading, toggleRegistration, isToggling } =
+    useEventDetail(eventId)
   const colors = useDetailColors()
 
   const handleToggleRegistration = async () => {
@@ -191,7 +203,17 @@ function EventPanelInner({ eventId, onClose }: { eventId: string; onClose: () =>
 
   if (loading || !event) {
     return (
-      <View style={{ width: 440, height: '100%', backgroundColor: colors.panelBg, borderLeftWidth: 1, borderLeftColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+      <View
+        style={{
+          width: 440,
+          height: '100%',
+          backgroundColor: colors.panelBg,
+          borderLeftWidth: 1,
+          borderLeftColor: colors.border,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
         <ActivityIndicator size="large" color="#E8862A" />
       </View>
     )
@@ -227,7 +249,17 @@ function CenterPanelInner({
 
   if (loading || !center) {
     return (
-      <View style={{ width: 440, height: '100%', backgroundColor: colors.panelBg, borderLeftWidth: 1, borderLeftColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+      <View
+        style={{
+          width: 440,
+          height: '100%',
+          backgroundColor: colors.panelBg,
+          borderLeftWidth: 1,
+          borderLeftColor: colors.border,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
         <ActivityIndicator size="large" color="#E8862A" />
       </View>
     )
@@ -266,10 +298,7 @@ function MobileDiscoverFallback() {
     <View className="flex-1 bg-background dark:bg-background-dark">
       {/* Map section — 75% height */}
       <View style={{ flex: 3, position: 'relative' }}>
-        <Map
-          points={filteredPoints}
-          onPointPress={handlePointPress}
-        />
+        <Map points={filteredPoints} onPointPress={handlePointPress} />
 
         {/* Filter + search overlay on top of map */}
         <View
@@ -285,10 +314,18 @@ function MobileDiscoverFallback() {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
             {FILTERS.map((f) => (
-              <FilterChip key={f.label} label={f.label} active={activeFilter === f.label} onPress={() => setActiveFilter(f.label)} />
+              <FilterChip
+                key={f.label}
+                label={f.label}
+                active={activeFilter === f.label}
+                onPress={() => setActiveFilter(f.label)}
+              />
             ))}
           </View>
-          <View className="flex-row items-center px-3 rounded-xl bg-white/90 dark:bg-neutral-900/90" style={{ minHeight: 40, backdropFilter: 'blur(8px)' } as any}>
+          <View
+            className="flex-row items-center px-3 rounded-xl bg-white/90 dark:bg-neutral-900/90"
+            style={{ minHeight: 40, backdropFilter: 'blur(8px)' } as any}
+          >
             <Search size={16} color="#9CA3AF" />
             <TextInput
               className="flex-1 ml-2 text-sm font-inter text-content dark:text-content-dark outline-none"
@@ -303,14 +340,20 @@ function MobileDiscoverFallback() {
       </View>
 
       {/* List section — 25% height */}
-      <View style={{ flex: 1, borderTopWidth: 1 }} className="border-stone-200 dark:border-neutral-700">
+      <View
+        style={{ flex: 1, borderTopWidth: 1 }}
+        className="border-stone-200 dark:border-neutral-700"
+      >
         {loading && (
           <View className="py-3 items-center">
             <ActivityIndicator size="small" color="#9A3412" />
           </View>
         )}
 
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 16, gap: 4 }}>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 16, gap: 4 }}
+        >
           {!loading && items.length === 0 && (
             <View className="py-8 items-center">
               <Text className="text-stone-400 font-inter text-sm">No results found</Text>
@@ -318,9 +361,17 @@ function MobileDiscoverFallback() {
           )}
           {items.map((item) =>
             item.type === 'event' ? (
-              <EventItem key={`event-${item.data.id}`} event={item.data as EventDisplay} onPress={() => router.push(`/events/${item.data.id}`)} />
+              <EventItem
+                key={`event-${item.data.id}`}
+                event={item.data as EventDisplay}
+                onPress={() => router.push(`/events/${item.data.id}`)}
+              />
             ) : (
-              <CenterItem key={`center-${item.data.id}`} center={item.data as DiscoverCenter} onPress={() => router.push(`/center/${item.data.id}`)} />
+              <CenterItem
+                key={`center-${item.data.id}`}
+                center={item.data as DiscoverCenter}
+                onPress={() => router.push(`/center/${item.data.id}`)}
+              />
             )
           )}
         </ScrollView>
@@ -331,25 +382,30 @@ function MobileDiscoverFallback() {
 
 // ─── Desktop Discover Screen ────────────────────────────
 
-const isMobileDevice = () => {
-  if (typeof window === 'undefined') return false
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-}
-
 // Lazy load native component for mobile device redirect
 const MobileHome = React.lazy(() => import('./index'))
 
 export default function DiscoverScreenWeb() {
   const { width } = useWindowDimensions()
+  const [isMobile, setIsMobile] = useState(false)
   const [isDeviceMobile, setIsDeviceMobile] = useState(false)
+  const [viewState, setViewState] = useState({
+    longitude: -122.4194,
+    latitude: 37.7749,
+    zoom: 10,
+  })
 
   useEffect(() => {
-    setIsDeviceMobile(isMobileDevice())
-  }, [])
+    const deviceMobile = isMobileDevice()
+    setIsDeviceMobile(deviceMobile)
+    setIsMobile(deviceMobile || width < 768)
+  }, [width])
 
-  const params = useLocalSearchParams<{ detail?: string; id?: string }>()
+  const isTablet = width >= 768 && width < 1024
+  const panelWidth = isTablet ? 340 : 420
 
   // Show native experience for mobile devices (maplibre crashes on mobile web)
+  // For narrow windows, also use native or show a message to use app
   if (isDeviceMobile) {
     return (
       <React.Suspense fallback={<View className="flex-1 bg-background dark:bg-background-dark" />}>
@@ -358,14 +414,18 @@ export default function DiscoverScreenWeb() {
     )
   }
 
-  const isMobile = width < 768
-  const isTablet = width >= 768 && width < 1024
+  const router = useRouter()
   const { isDark } = useThemeContext()
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'center'; id: string } | null>(null)
-  const { items, filteredPoints, loading, allEvents, allCenters } = useDiscoverData(activeFilter, searchQuery)
+  const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'center'; id: string } | null>(
+    null
+  )
+  const { items, filteredPoints, loading, allEvents, allCenters } = useDiscoverData(
+    activeFilter,
+    searchQuery
+  )
 
   // Support direct URL navigation (e.g. ?detail=event&id=123)
   useEffect(() => {
@@ -439,12 +499,9 @@ export default function DiscoverScreenWeb() {
     return allCenters.find((c) => c.id === clickPopover.point.id)
   }, [clickPopover, allCenters])
 
-  const handlePointPress = useCallback(
-    (point: MapPoint) => {
-      setSelectedItem({ type: point.type === 'center' ? 'center' : 'event', id: point.id })
-    },
-    []
-  )
+  const handlePointPress = useCallback((point: MapPoint) => {
+    setSelectedItem({ type: point.type === 'center' ? 'center' : 'event', id: point.id })
+  }, [])
 
   if (isMobile) {
     return <MobileDiscoverFallback />
@@ -495,11 +552,17 @@ export default function DiscoverScreenWeb() {
             onEventPress={(id) => setSelectedItem({ type: 'event', id })}
           />
         ) : (
-          <View style={{ width: rightPanelWidth }} className="border-l border-stone-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+          <View
+            style={{ width: rightPanelWidth }}
+            className="border-l border-stone-200 dark:border-neutral-800 bg-white dark:bg-neutral-900"
+          >
             {/* Panel Header */}
             <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 0 }}>
               {/* Search */}
-              <View className="flex-row items-center px-3 rounded-xl bg-stone-100 dark:bg-neutral-800" style={{ minHeight: 40 }}>
+              <View
+                className="flex-row items-center px-3 rounded-xl bg-stone-100 dark:bg-neutral-800"
+                style={{ minHeight: 40 }}
+              >
                 <Search size={16} color="#9CA3AF" />
                 <TextInput
                   className="flex-1 ml-2 text-sm font-inter text-content dark:text-content-dark outline-none"
