@@ -114,6 +114,12 @@ nano .env
 
 Copy from `.env.example` and fill in values.
 
+Minimum required secrets (do not leave blank):
+- `JWT_SECRET`
+- `SESSION_SECRET`
+- `CORS_ORIGIN` (comma-separated list of allowed frontend origins, no `*`)
+- `CORS_ALLOW_NO_ORIGIN` (`true` only if you need to allow native/mobile clients without an Origin header)
+
 ### Step 5: Deploy
 
 ```bash
@@ -157,5 +163,5 @@ docker-compose restart
 
 - The PM2 ecosystem config is in `infrastructure/pm2/ecosystem.config.js`
 - Use IAM roles instead of hardcoding AWS credentials
-- Update `CORS_ORIGIN` in `.env` to your domain
+- Update `CORS_ORIGIN` in `.env` to your domain(s). Do not use `*`.
 - Consider setting up CloudWatch for monitoring

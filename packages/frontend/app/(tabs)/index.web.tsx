@@ -12,6 +12,7 @@ import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar } from '../../components/ui'
 import Map from '../../components/Map'
 import MapPopover from '../../components/MapPopover'
+import LeafletView from '../../components/LeafletView'
 import { useDiscoverData, useEventDetail, useCenterDetail, type DiscoverFilter } from '../../hooks/useApiData'
 import type { MapPoint, EventDisplay, DiscoverCenter } from '../../utils/api'
 import WeekCalendar from '../../components/WeekCalendar'
@@ -330,12 +331,35 @@ function MobileDiscoverFallback() {
 
 // ─── Desktop Discover Screen ────────────────────────────
 
+const isMobileDevice = () => {
+  if (typeof window === 'undefined') return false
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
+// Lazy load native component for mobile device redirect
+const MobileHome = React.lazy(() => import('./index'))
+
 export default function DiscoverScreenWeb() {
   const { width } = useWindowDimensions()
-  const isMobile = width < 768
-  const isTablet = width >= 768 && width < 1024
+  const [isDeviceMobile, setIsDeviceMobile] = useState(false)
+
+  useEffect(() => {
+    setIsDeviceMobile(isMobileDevice())
+  }, [])
 
   const params = useLocalSearchParams<{ detail?: string; id?: string }>()
+
+  // Show native experience for mobile devices (maplibre crashes on mobile web)
+  if (isDeviceMobile) {
+    return (
+      <React.Suspense fallback={<View className="flex-1 bg-background dark:bg-background-dark" />}>
+        <MobileHome />
+      </React.Suspense>
+    )
+  }
+
+  const isMobile = width < 768
+  const isTablet = width >= 768 && width < 1024
   const { isDark } = useThemeContext()
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')

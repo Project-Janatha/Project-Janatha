@@ -14,16 +14,6 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ]
 
-config.resolver.disableHierarchicalLookup = true
-
-// Add blockList to prevent Metro from crawling .git or nested node_modules
-config.resolver.blockList = [
-  // Exclude the .git folder
-  /\.git\/.*/,
-  // Exclude nested node_modules to prevent circular references or deep scans
-  /.*\/node_modules\/.*\/node_modules\/.*/,
-]
-
 module.exports = withNativeWind(config, {
   input: './globals.css',
   projectRoot: projectRoot,
