@@ -19,7 +19,7 @@ export function useWebFonts() {
       const checkFonts = async () => {
         try {
           // Check if our main font is loaded
-          const isLoaded = document.fonts.check('16px AnekLatin-Regular')
+          const isLoaded = document.fonts.check('16px Inter')
           if (isLoaded) {
             setLoaded(true)
             return

@@ -49,8 +49,12 @@ router.get('/auth/verify', authMethods.isAuthenticated, (req, res) => {
     user: req.user,
   })
 })
-router.post('/auth/complete-onboarding', authMethods.completeOnboarding)
-router.put('/auth/update-profile', authMethods.updateProfile)
+router.post(
+  '/auth/complete-onboarding',
+  authMethods.isAuthenticated,
+  authMethods.completeOnboarding
+)
+router.put('/auth/update-profile', authMethods.isAuthenticated, authMethods.updateProfile)
 router.delete('/auth/delete-account', authMethods.isAuthenticated, authMethods.deleteAccount)
 
 // Legacy auth routes (for backward compatibility)

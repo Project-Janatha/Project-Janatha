@@ -2,7 +2,7 @@
 FROM node:20-slim AS frontend-builder
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json ./
 COPY packages/frontend/package.json ./packages/frontend/
 COPY packages/backend/package.json ./packages/backend/
 
@@ -27,7 +27,7 @@ WORKDIR /app
 # Install Nginx and debugging tools
 RUN apt-get update && apt-get install -y nginx procps curl && rm -rf /var/lib/apt/lists/*
 
-COPY package.json package-lock.json ./
+COPY package.json ./
 COPY packages/backend/package.json ./packages/backend/
 
 RUN npm install --production --legacy-peer-deps

@@ -1,5 +1,5 @@
 /**
- * SearchBar.tsx
+ * UserContext.tsx
  *
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
  * @author Abhiram Ramachandran
@@ -21,22 +21,21 @@ import React, {
   useMemo,
   useCallback,
 } from 'react'
-import { Platform } from 'react-native'
-import { getStoredToken, setStoredToken, removeStoredToken } from '../utils/tokenStorage'
-
-export interface User {
-  username: string
-  firstName?: string
-  lastName?: string
-  email?: string
-  centerID?: string
-  profileComplete?: boolean
-  profileImage?: string
-}
+import { getStoredToken, removeStoredToken } from '../utils/tokenStorage'
+import {
+  clearOnboardingComplete,
+  getOnboardingComplete,
+  setOnboardingComplete,
+} from '../utils/onboardingStorage'
+import { authService } from '../../src/auth/authService'
+import { API_BASE_URL, API_TIMEOUTS } from '../../src/config/api'
+import type { AuthStatus, User, UpdateProfileRequest } from '../../src/auth/types'
 
 interface UserContextType {
   user: User | null
   loading: boolean
+  authStatus: AuthStatus
+  onboardingComplete: boolean
   login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>
   signup: (username: string, password: string) => Promise<{ success: boolean; message?: string }>
   logout: () => Promise<void>
@@ -45,7 +44,8 @@ interface UserContextType {
   getToken: () => Promise<string | null>
   authenticatedFetch: (endpoint: string, options?: RequestInit) => Promise<Response>
   deleteAccount: () => Promise<{ success: boolean; message?: string }>
-  updateProfile: (updates: Partial<User>) => Promise<{ success: boolean; message?: string }>
+  updateProfile: (updates: UpdateProfileRequest) => Promise<{ success: boolean; message?: string }>
+  setDevSession: (user: User, onboardingComplete: boolean) => Promise<void>
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -58,326 +58,195 @@ export const useUser = () => {
   return context
 }
 
+const resolveEndpointUrl = (endpoint: string): string => {
+  if (/^https?:\/\//i.test(endpoint)) return endpoint
+
+  const normalizedBase = API_BASE_URL.replace(/\/+$/, '')
+  if (endpoint.startsWith('/api/')) {
+    return `${normalizedBase}${endpoint.replace(/^\/api/, '')}`
+  }
+  if (endpoint.startsWith('/')) {
+    return `${normalizedBase}${endpoint}`
+  }
+  return `${normalizedBase}/${endpoint}`
+}
+
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('booting')
+  const [onboardingComplete, setOnboardingCompleteState] = useState(false)
+  const loading = authStatus === 'booting'
 
-  // Base URL for your API - ALWAYS use EC2 instance (backend does NOT run locally)
-  const API_URL = 'https://app.chinmayajanata.org'
+  const login = useCallback(async (username: string, password: string) => {
+    const result = await authService.login(username, password)
+    if (!result.success) {
+      return { success: false, message: result.message }
+    }
 
-  // Memoize login function to prevent recreation
-  const login = useCallback(
-    async (username: string, password: string) => {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+    setUser(result.user || null)
+    setAuthStatus('authenticated')
+    return { success: true }
+  }, [])
 
-      try {
-        const response = await fetch(`${API_URL}/api/auth/authenticate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
-          signal: controller.signal,
-          credentials: 'include', // <--- Added to fix CORS/Cookies
-        })
+  const signup = useCallback(async (username: string, password: string) => {
+    const result = await authService.signup(username, password)
+    if (!result.success || !result.user) {
+      return { success: false, message: result.message || 'Signup failed. Please try again.' }
+    }
 
-        clearTimeout(timeoutId)
-        const data = await response.json()
-
-        if (response.ok && data.token) {
-          await setStoredToken(data.token)
-          setUser(data.user)
-          return { success: true }
-        } else {
-          return { success: false, message: data.message || 'Invalid credentials' }
-        }
-      } catch (error: any) {
-        clearTimeout(timeoutId)
-
-        if (error.name === 'AbortError') {
-          return { success: false, message: 'Request timeout. Please check your connection.' }
-        }
-        return { success: false, message: 'Network error. Please try again.' }
-      }
-    },
-    [API_URL, setUser]
-  )
-
-  const signup = useCallback(
-    async (username: string, password: string) => {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
-
-      try {
-        const response = await fetch(`${API_URL}/api/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password }),
-          signal: controller.signal,
-          credentials: 'include', // <--- Added
-        })
-
-        clearTimeout(timeoutId)
-        const data = await response.json()
-
-        if (response.ok) {
-          // Auto-login after signup
-          const loginResult = await login(username, password)
-          if (!loginResult.success) {
-            throw new Error('Signup succeeded but login failed. Please try logging in.')
-          }
-          return { success: true }
-        } else {
-          return { success: false, message: data.message || 'Signup failed. Please try again.' }
-        }
-      } catch (error: any) {
-        clearTimeout(timeoutId)
-
-        if (error.name === 'AbortError') {
-          return { success: false, message: 'Request timeout. Please check your connection.' }
-        }
-        return { success: false, message: error.message || 'Network error. Please try again.' }
-      }
-    },
-    [API_URL, login]
-  )
+    setUser(result.user)
+    setAuthStatus('authenticated')
+    return { success: true }
+  }, [])
 
   const logout = useCallback(async () => {
-    try {
-      // Optional: Call backend to blacklist token
-      const token = await getStoredToken()
-      if (token) {
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout for logout
+    await authService.logout()
+    await clearOnboardingComplete()
+    setUser(null)
+    setAuthStatus('unauthenticated')
+    setOnboardingCompleteState(false)
+  }, [])
 
-        try {
-          await fetch(`${API_URL}/api/auth/deauthenticate`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            signal: controller.signal,
-            credentials: 'include', // <--- Added
-          })
-          clearTimeout(timeoutId)
-        } catch (fetchError) {
-          clearTimeout(timeoutId)
-          // Ignore logout errors, still clear local state
-        }
-      }
-    } catch (error) {
-      // Logout error
-    } finally {
-      // Always clear local state
-      await removeStoredToken()
-      setUser(null)
+  const checkUserExists = useCallback(async (username: string) => {
+    const result = await authService.checkUserExists(username)
+    if (!result.success || typeof result.existence !== 'boolean') {
+      throw new Error(result.message || 'Failed to check user existence')
     }
-  }, [API_URL])
+    return result.existence
+  }, [])
 
-  const checkUserExists = useCallback(
-    async (username: string) => {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+  const authenticatedFetch = useCallback(async (endpoint: string, options: RequestInit = {}) => {
+    const token = await getStoredToken()
+    if (!token) {
+      throw new Error('No authentication token found')
+    }
 
-      try {
-        const response = await fetch(`${API_URL}/api/userExistence`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username }),
-          signal: controller.signal,
-          credentials: 'include', // <--- Added
-        })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUTS.standard)
 
-        clearTimeout(timeoutId)
-
-        if (!response.ok) {
-          throw new Error('Failed to check user existence')
-        }
-
-        const data = await response.json()
-        return data.existence
-      } catch (error: any) {
-        clearTimeout(timeoutId)
-
-        if (error.name === 'AbortError') {
-          throw new Error('Request timeout. Please check your connection.')
-        }
-        throw new Error('Failed to connect to server. Please try again.')
-      }
-    },
-    [API_URL]
-  )
-
-  /**
-   * Make an authenticated API request with JWT token
-   * @param endpoint - API endpoint (e.g., '/api/users/profile')
-   * @param options - Fetch options (method, body, etc.)
-   * @returns Response from the API
-   */
-  const authenticatedFetch = useCallback(
-    async (endpoint: string, options: RequestInit = {}) => {
-      const token = await getStoredToken()
-      if (!token) {
-        throw new Error('No authentication token found')
-      }
-
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout for API calls
-
-      try {
-        const headers = {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          ...options.headers,
-        }
-
-        const response = await fetch(`${API_URL}${endpoint}`, {
-          ...options,
-          headers,
-          signal: controller.signal,
-          credentials: 'include', // <--- Added
-        })
-
-        clearTimeout(timeoutId)
-
-        // Handle token expiration
-        if (response.status === 401 || response.status === 403) {
-          await removeStoredToken()
-          setUser(null)
-          throw new Error('Session expired. Please login again.')
-        }
-
-        return response
-      } catch (error: any) {
-        clearTimeout(timeoutId)
-
-        if (error.name === 'AbortError') {
-          throw new Error('Request timeout. Please check your connection.')
-        }
-        throw error
-      }
-    },
-    [API_URL]
-  )
-
-  const deleteAccount = useCallback(async () => {
     try {
-      const response = await authenticatedFetch('/api/auth/delete-account', {
-        method: 'DELETE',
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...(options.headers || {}),
+      }
+
+      const response = await fetch(resolveEndpointUrl(endpoint), {
+        ...options,
+        headers,
+        signal: controller.signal,
+        credentials: 'include',
       })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        // Clear local state
+      if (response.status === 401 || response.status === 403) {
         await removeStoredToken()
         setUser(null)
-        return { success: true, message: 'Account deleted successfully' }
-      } else {
-        return { success: false, message: data.message || 'Failed to delete account' }
+        setAuthStatus('unauthenticated')
+        throw new Error('Session expired. Please login again.')
       }
+
+      return response
     } catch (error: any) {
-      console.error('Delete account error:', error)
-      return { success: false, message: error.message || 'Network error. Please try again.' }
-    }
-  }, [authenticatedFetch])
-
-  const updateProfile = useCallback(async (data: Partial<User>) => {
-    try {
-      // Optimistic update
-      setUser((prev) => (prev ? { ...prev, ...data } : null))
-
-      const token = await getStoredToken()
-      const response = await fetch(`${API_URL}/api/users/profile`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-        credentials: 'include', // <--- Added
-      })
-
-      if (!response.ok) throw new Error('Failed to update profile')
-
-      const updatedUser = await response.json()
-      setUser(updatedUser)
-      return updatedUser
-    } catch (error) {
-      console.error('Update profile error:', error)
+      if (error?.name === 'AbortError') {
+        throw new Error('Request timeout. Please check your connection.')
+      }
       throw error
+    } finally {
+      clearTimeout(timeoutId)
     }
   }, [])
 
-  // Check for token on app load
+  const deleteAccount = useCallback(async () => {
+    const result = await authService.deleteAccount()
+    if (!result.success) {
+      return { success: false, message: result.message || 'Failed to delete account' }
+    }
+
+    await clearOnboardingComplete()
+    setUser(null)
+    setAuthStatus('unauthenticated')
+    setOnboardingCompleteState(false)
+    return { success: true, message: result.message || 'Account deleted successfully' }
+  }, [])
+
+  const updateProfile = useCallback(async (updates: UpdateProfileRequest) => {
+    setUser((prev) => (prev ? { ...prev, ...updates } : null))
+
+    const result = await authService.updateProfile(updates)
+    if (!result.success || !result.user) {
+      return { success: false, message: result.message || 'Failed to update profile' }
+    }
+
+    setUser(result.user)
+    if (updates.profileComplete || result.user.profileComplete) {
+      await setOnboardingComplete(true)
+      setOnboardingCompleteState(true)
+    }
+    return { success: true }
+  }, [])
+
+  const setDevSession = useCallback(async (devUser: User, completed: boolean) => {
+    setUser(devUser)
+    setAuthStatus('authenticated')
+    setOnboardingCompleteState(!!completed)
+    if (completed) {
+      await setOnboardingComplete(true)
+    } else {
+      await clearOnboardingComplete()
+    }
+  }, [])
+
   useEffect(() => {
     let isMounted = true
-    const controller = new AbortController()
-    let timeoutId: NodeJS.Timeout | null = null
 
     const loadUser = async () => {
       try {
         const token = await getStoredToken()
         if (!isMounted) return
 
-        if (token) {
-          // Verify token validity with backend
-          timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
-
-          try {
-            const response = await fetch(`${API_URL}/api/auth/verify`, {
-              method: 'GET',
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-              signal: controller.signal,
-              credentials: 'include', // <--- Added
-            })
-
-            if (timeoutId) clearTimeout(timeoutId)
-
-            if (!isMounted) return
-
-            if (response.ok) {
-              const data = await response.json()
-              setUser(data.user)
-            } else {
-              // Token invalid, clear it
-              await removeStoredToken()
-            }
-          } catch (verifyError: any) {
-            if (timeoutId) clearTimeout(timeoutId)
-            if (!isMounted) return
-
-            // If timeout or network error, clear token
-            if (verifyError.name === 'AbortError') {
-              // Token verification timeout - clearing token
-            }
-            await removeStoredToken()
-          }
+        if (!token) {
+          setUser(null)
+          setAuthStatus('unauthenticated')
+          return
         }
-      } catch (error) {
+
+        const session = await authService.bootstrapSession()
         if (!isMounted) return
-        // Failed to load user session
-      } finally {
-        if (isMounted) {
-          setLoading(false)
+
+        setUser(session.user)
+        setAuthStatus(session.authStatus)
+
+        const storedOnboarding = await getOnboardingComplete()
+        const derivedComplete =
+          session.user?.profileComplete === true ||
+          (!!session.user?.firstName && !!session.user?.lastName && !!session.user?.email)
+        const finalComplete = storedOnboarding || derivedComplete
+        setOnboardingCompleteState(finalComplete)
+        if (derivedComplete && !storedOnboarding) {
+          await setOnboardingComplete(true)
         }
+      } catch {
+        if (!isMounted) return
+        await removeStoredToken()
+        setUser(null)
+        setAuthStatus('unauthenticated')
+        setOnboardingCompleteState(false)
       }
     }
+
     loadUser()
 
     return () => {
       isMounted = false
-      controller.abort()
-      if (timeoutId) clearTimeout(timeoutId)
     }
-  }, [API_URL])
+  }, [])
 
-  // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(
     () => ({
       user,
       loading,
+      authStatus,
+      onboardingComplete,
       login,
       signup,
       logout,
@@ -387,10 +256,13 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       authenticatedFetch,
       deleteAccount,
       updateProfile,
+      setDevSession,
     }),
     [
       user,
       loading,
+      authStatus,
+      onboardingComplete,
       login,
       signup,
       logout,
@@ -398,6 +270,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       authenticatedFetch,
       deleteAccount,
       updateProfile,
+      setDevSession,
     ]
   )
 

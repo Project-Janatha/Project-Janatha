@@ -14,7 +14,12 @@
 import * as db from '../database/dynamoHelpers.js'
 import bcrypt from 'bcryptjs'
 const { hash, compare } = bcrypt // Change compareSync to compare
-import { generateToken, verifyToken } from '../utils/jwt.js'
+import {
+  generateToken,
+  verifyToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from '../utils/jwt.js'
 import { v4 as uuidv4 } from 'uuid'
 import jwt from 'jsonwebtoken'
 import user from '../profiles/user.js'
@@ -23,6 +28,12 @@ import location from '../location/location.js'
 import constants from '../constants.js'
 
 const SALT_ROUNDS = 10
+
+const sanitizeUser = (userData) => {
+  if (!userData) return null
+  const { password, ...safeUser } = userData
+  return safeUser
+}
 
 /**
  * Checks if a user is authenticated. Acts as middleware.
@@ -33,14 +44,18 @@ const SALT_ROUNDS = 10
 async function isAuthenticated(req, res, next) {
   const authHeader = req.headers.authorization
   if (authHeader) {
-    const token = authHeader.split(' ')[1]
+    const parts = authHeader.split(' ')
+    const token = parts.length > 1 ? parts[1] : parts[0]
+    if (!token) {
+      return res.status(401).json({ message: 'Authorization header missing' })
+    }
     const decoded = verifyToken(token)
     if (decoded) {
       // Fetch full user data from database
       try {
         const userData = await db.getUserByUsername(decoded.username)
         if (userData) {
-          req.user = userData
+          req.user = sanitizeUser(userData)
           next()
         } else {
           res.status(403).json({ message: 'User not found' })
@@ -74,9 +89,10 @@ function isUserAdmin(req) {
 const register = async (req, res) => {
   try {
     const { username, password } = req.body
+    const normalizedUsername = typeof username === 'string' ? username.trim().toLowerCase() : ''
 
     // Validate input
-    if (!username || !password) {
+    if (!normalizedUsername || !password) {
       return res.status(400).json({ message: 'Username and password are required' })
     }
 
@@ -85,15 +101,15 @@ const register = async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await db.getUserByUsername(username)
-    if (existingUser && existingUser.exists) {
+    const existingUser = await db.getUserByUsername(normalizedUsername)
+    if (existingUser) {
       return res.status(409).json({ message: 'Username already exists' })
     }
 
     // Hash password with better error handling
     let hashedPassword
     try {
-      console.log('Hashing password for user:', username)
+      console.log('Hashing password for user:', normalizedUsername)
       const saltRounds = 10
       hashedPassword = await hash(password, saltRounds)
       console.log('Password hashed successfully')
@@ -107,17 +123,26 @@ const register = async (req, res) => {
 
     // Create user
     const newUser = {
-      username,
+      username: normalizedUsername,
       password: hashedPassword,
       createdAt: new Date().toISOString(),
       // Add other default fields
     }
 
-    await db.createUser(newUser)
+    const created = await db.createUser(newUser)
+    if (!created?.success) {
+      const message =
+        created?.error === 'User already exists'
+          ? 'Username already exists'
+          : 'Failed to create user'
+      return res.status(created?.error === 'User already exists' ? 409 : 500).json({
+        message,
+      })
+    }
 
     return res.status(201).json({
       message: 'User registered successfully',
-      username,
+      username: normalizedUsername,
     })
   } catch (error) {
     console.error('Registration error:', error)
@@ -135,17 +160,18 @@ const register = async (req, res) => {
  */
 async function authenticate(req, res) {
   const { username, password } = req.body
+  const normalizedUsername = typeof username === 'string' ? username.trim().toLowerCase() : ''
 
-  if (!username || !password) {
+  if (!normalizedUsername || !password) {
     return res.status(400).json({ message: 'Username and password are required.' })
   }
 
   try {
-    console.log('Authenticating user:', username)
-    const user = await db.getUserByUsername(username)
+    console.log('Authenticating user:', normalizedUsername)
+    const user = await db.getUserByUsername(normalizedUsername)
 
     if (!user) {
-      console.log('User not found:', username)
+      console.log('User not found:', normalizedUsername)
       return res.status(401).json({ message: 'Invalid credentials' }) // Don't reveal user doesn't exist
     }
 
@@ -160,10 +186,13 @@ async function authenticate(req, res) {
 
     console.log('Authentication successful for user:', username)
     const token = generateToken(user)
+    const refreshToken = generateRefreshToken(user)
+    const safeUser = sanitizeUser(user)
     return res.status(200).json({
       message: 'Authentication successful!',
-      user: user,
+      user: safeUser,
       token: token,
+      refreshToken: refreshToken,
     })
   } catch (err) {
     console.error('Authentication error:', err)
@@ -180,7 +209,8 @@ async function deauthenticate(req, res) {
  */
 async function checkUserExistence(username) {
   try {
-    const user = await db.getUserByUsername(username)
+    const normalizedUsername = typeof username === 'string' ? username.trim().toLowerCase() : ''
+    const user = await db.getUserByUsername(normalizedUsername)
     return !!user
   } catch (err) {
     console.error('Check user existence error:', err)
@@ -364,15 +394,16 @@ async function getAllCenters() {
  * Called after user completes all onboarding steps
  */
 async function completeOnboarding(req, res) {
-  const { userId, firstName, lastName, dateOfBirth, centerID, profileComplete } = req.body
+  const { firstName, lastName, dateOfBirth, centerID, profileComplete, phoneNumber, interests } =
+    req.body
 
-  if (!userId) {
-    return res.status(400).json({ message: 'User ID is required' })
+  if (!req.user?.id) {
+    return res.status(401).json({ message: 'Unauthorized' })
   }
 
   try {
     // Get existing user
-    const user = await db.getUserById(userId)
+    const user = await db.getUserById(req.user.id)
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' })
@@ -380,19 +411,21 @@ async function completeOnboarding(req, res) {
 
     // Update user with onboarding data
     const updates = {
-      firstName: firstName || '',
-      lastName: lastName || '',
-      dateOfBirth: dateOfBirth || null,
-      centerID: centerID || null,
-      profileComplete: profileComplete || false,
+      ...(firstName !== undefined ? { firstName } : {}),
+      ...(lastName !== undefined ? { lastName } : {}),
+      ...(dateOfBirth !== undefined ? { dateOfBirth } : {}),
+      ...(centerID !== undefined ? { centerID } : {}),
+      ...(profileComplete !== undefined ? { profileComplete } : {}),
+      ...(phoneNumber !== undefined ? { phoneNumber } : {}),
+      ...(interests !== undefined ? { interests } : {}),
     }
 
-    const result = await db.updateUser(userId, updates)
+    const result = await db.updateUser(req.user.id, updates)
 
     if (result.success) {
       return res.status(200).json({
         message: 'Profile completed successfully',
-        user: result.user,
+        user: sanitizeUser(result.user),
       })
     } else {
       return res.status(500).json({
@@ -410,19 +443,38 @@ async function completeOnboarding(req, res) {
  * Update user profile (partial update during onboarding)
  */
 async function updateProfile(req, res) {
-  const { userId, ...updates } = req.body
+  const {
+    firstName,
+    lastName,
+    email,
+    centerID,
+    profileComplete,
+    profileImage,
+    phoneNumber,
+    interests,
+  } = req.body
 
-  if (!userId) {
-    return res.status(400).json({ message: 'User ID is required' })
+  if (!req.user?.id) {
+    return res.status(401).json({ message: 'Unauthorized' })
   }
 
   try {
-    const result = await db.updateUser(userId, updates)
+    const updates = {
+      ...(firstName !== undefined ? { firstName } : {}),
+      ...(lastName !== undefined ? { lastName } : {}),
+      ...(email !== undefined ? { email } : {}),
+      ...(centerID !== undefined ? { centerID } : {}),
+      ...(profileComplete !== undefined ? { profileComplete } : {}),
+      ...(profileImage !== undefined ? { profileImage } : {}),
+      ...(phoneNumber !== undefined ? { phoneNumber } : {}),
+      ...(interests !== undefined ? { interests } : {}),
+    }
+    const result = await db.updateUser(req.user.id, updates)
 
     if (result.success) {
       return res.status(200).json({
         message: 'Profile updated',
-        user: result.user,
+        user: sanitizeUser(result.user),
       })
     } else {
       return res.status(500).json({
@@ -485,4 +537,8 @@ export default {
   completeOnboarding,
   updateProfile,
   deleteAccount,
+  generateToken,
+  verifyToken,
+  generateRefreshToken,
+  verifyRefreshToken,
 }

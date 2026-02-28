@@ -35,25 +35,42 @@ console.log('Entering init')
 const app = express()
 console.log('Entering usages')
 
-// AGGRESSIVE CORS - Debug version
-app.use((req, res, next) => {
-  console.log('Incoming request:', req.method, req.url)
-  console.log('Origin:', req.headers.origin)
-  next()
-})
+const isProduction = process.env.NODE_ENV === 'production'
+const allowNoOrigin = process.env.CORS_ALLOW_NO_ORIGIN === 'true'
+const rawCorsOrigins = process.env.CORS_ORIGIN || ''
+const configuredOrigins = rawCorsOrigins
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
+const devFallbackOrigins = [
+  'http://localhost:3000',
+  'http://localhost:19006',
+  'http://localhost:8081',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:19006',
+  'http://127.0.0.1:8081',
+]
+
+const allowedOrigins =
+  configuredOrigins.length > 0 ? configuredOrigins : isProduction ? [] : devFallbackOrigins
+
+if (allowedOrigins.includes('*')) {
+  throw new Error('CORS_ORIGIN cannot include "*" when credentials are enabled.')
+}
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      console.log('CORS check for origin:', origin)
-      // Always allow requests with no origin
       if (!origin) {
-        console.log('No origin - allowing')
+        return callback(null, allowNoOrigin)
+      }
+
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true)
       }
-      // Allow everything in development
-      console.log('Allowing origin:', origin)
-      return callback(null, true)
+
+      return callback(new Error('Not allowed by CORS'))
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -63,25 +80,6 @@ app.use(
     optionsSuccessStatus: 204,
   })
 )
-
-// Additional manual CORS headers as backup
-app.use((req, res, next) => {
-  const origin = req.headers.origin
-  if (origin) {
-    res.header('Access-Control-Allow-Origin', origin)
-  }
-  res.header('Access-Control-Allow-Credentials', 'true')
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, X-Requested-With, Accept, Origin'
-  )
-
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(204)
-  }
-  next()
-})
 
 //Middleware
 app.use(express.json())

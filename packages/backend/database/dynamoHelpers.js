@@ -62,14 +62,33 @@ export async function createUser(userItem) {
  */
 export async function getUserByUsername(username) {
   try {
-    const command = new QueryCommand({
-      TableName: constants.USERS_TABLE,
-      IndexName: 'username-index',
-      KeyConditionExpression: 'username = :u',
-      ExpressionAttributeValues: { ':u': username.toLowerCase() },
-    })
-    const result = await constants.docClient.send(command)
-    return result.Items && result.Items.length > 0 ? result.Items[0] : null
+    const normalized = username.toLowerCase()
+    try {
+      const command = new QueryCommand({
+        TableName: constants.USERS_TABLE,
+        IndexName: 'username-index',
+        KeyConditionExpression: 'username = :u',
+        ExpressionAttributeValues: { ':u': normalized },
+      })
+      const result = await constants.docClient.send(command)
+      return result.Items && result.Items.length > 0 ? result.Items[0] : null
+    } catch (err) {
+      // If the GSI is missing or misconfigured, fall back to a scan.
+      const name = err?.name || 'UnknownError'
+      const message = err?.message || ''
+      console.warn('Username index query failed; falling back to scan.', name, message)
+    }
+
+    const scan = await constants.docClient.send(
+      new ScanCommand({
+        TableName: constants.USERS_TABLE,
+        FilterExpression: '#u = :u OR #e = :u',
+        ExpressionAttributeNames: { '#u': 'username', '#e': 'email' },
+        ExpressionAttributeValues: { ':u': normalized },
+        Limit: 1,
+      })
+    )
+    return scan.Items && scan.Items.length > 0 ? scan.Items[0] : null
   } catch (err) {
     console.error('Error retrieving user:', err)
     return null
