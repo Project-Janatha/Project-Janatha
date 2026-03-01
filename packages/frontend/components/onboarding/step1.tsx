@@ -49,7 +49,7 @@ export default function StepOne() {
               <Text className="text-4xl font-inter font-bold text-content dark:text-content-dark text-center">
                 Welcome to Janata!
               </Text>
-              <Text className="text-lg font-inter text-content/70 dark:text-content-dark/70 text-center">
+              <Text className="text-lg font-inter text-stone-500 dark:text-stone-400 text-center">
                 Enter your name to get started with your journey.
               </Text>
             </View>

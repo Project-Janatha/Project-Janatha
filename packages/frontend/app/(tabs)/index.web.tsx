@@ -1,6 +1,5 @@
 // Discover tab — web desktop layout
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import {
   View,
   Text,
@@ -12,14 +11,18 @@ import {
 } from 'react-native'
 import { MapPin, Search, Building2, Users } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
+const params = useLocalSearchParams<{ detail?: string; id?: string }>()
 import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar } from '../../components/ui'
 import Map from '../../components/Map'
 import MapPopover from '../../components/MapPopover'
 import LeafletView from '../../components/LeafletView'
-import { useDiscoverData, type DiscoverFilter } from '../../hooks/useApiData'
+import { useDiscoverData, useEventDetail, useCenterDetail, type DiscoverFilter } from '../../hooks/useApiData'
 import type { MapPoint, EventDisplay, DiscoverCenter } from '../../utils/api'
 import WeekCalendar from '../../components/WeekCalendar'
+import EventDetailPanel from '../../components/web/EventDetailPanel'
+import CenterDetailPanel from '../../components/web/CenterDetailPanel'
+import { useDetailColors } from '../../hooks/useDetailColors'
 
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false
