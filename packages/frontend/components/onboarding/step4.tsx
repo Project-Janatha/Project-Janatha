@@ -40,7 +40,7 @@ export default function Step4() {
               <Text className="text-4xl font-inter font-bold text-content dark:text-content-dark text-center mb-3">
                 What are your interests?
               </Text>
-              <Text className="text-lg font-inter text-content/70 dark:text-content-dark/70 text-center">
+              <Text className="text-lg font-inter text-stone-500 dark:text-stone-400 text-center">
                 Select topics that interest you to personalize your experience.
               </Text>
             </View>
@@ -56,12 +56,12 @@ export default function Step4() {
                     className={`px-6 py-3.5 rounded-full border-2 ${
                       isSelected
                         ? 'bg-primary border-primary shadow-lg'
-                        : 'bg-muted/50 dark:bg-muted-dark/10 border-transparent shadow-sm'
-                    } hover:scale-105 active:scale-95 transition-all duration-150`}
+                        : 'bg-stone-100 dark:bg-stone-800 border-transparent shadow-sm'
+                    }`}
                   >
                     <Text
                       className={`font-inter font-semibold text-base ${
-                        isSelected ? 'text-white' : 'text-content/80 dark:text-content-dark/80'
+                        isSelected ? 'text-white' : 'text-stone-600 dark:text-stone-300'
                       }`}
                     >
                       {option}

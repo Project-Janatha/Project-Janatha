@@ -11,19 +11,24 @@ import {
 } from 'react-native'
 import { MapPin, Search, Building2, Users } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
-const params = useLocalSearchParams<{ detail?: string; id?: string }>()
 import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar } from '../../components/ui'
 import Map from '../../components/Map'
 import MapPopover from '../../components/MapPopover'
 import LeafletView from '../../components/LeafletView'
-import { useDiscoverData, useEventDetail, useCenterDetail, type DiscoverFilter } from '../../hooks/useApiData'
-import type { MapPoint, EventDisplay, DiscoverCenter } from '../../utils/api'
-import WeekCalendar from '../../components/WeekCalendar'
+import {
+  useDiscoverData,
+  useEventDetail,
+  useCenterDetail,
+  type DiscoverFilter,
+} from '../../hooks/useApiData'
 import EventDetailPanel from '../../components/web/EventDetailPanel'
 import CenterDetailPanel from '../../components/web/CenterDetailPanel'
 import { useDetailColors } from '../../hooks/useDetailColors'
+import type { MapPoint, EventDisplay, DiscoverCenter } from '../../utils/api'
+import { WeekCalendar } from '../../components'
 
+const params = useLocalSearchParams<{ detail?: string; id?: string }>()
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)

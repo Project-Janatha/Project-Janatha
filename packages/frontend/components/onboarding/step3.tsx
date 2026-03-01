@@ -149,7 +149,7 @@ export default function Step3() {
               <Text className="text-4xl font-inter font-bold text-content dark:text-content-dark text-center mb-3">
                 Choose your center
               </Text>
-              <Text className="text-lg font-inter text-content/70 dark:text-content-dark/70 text-center">
+              <Text className="text-lg font-inter text-stone-500 dark:text-stone-400 text-center">
                 Enter your zip code or city to see nearby centers.
               </Text>
             </View>
@@ -157,7 +157,7 @@ export default function Step3() {
             {/* Search Input */}
             <View className="w-full max-w-md self-center relative">
               <TextInput
-                className={`w-full text-content dark:text-content-dark font-inter rounded-xl px-4 py-4 text-base bg-muted/50 dark:bg-muted-dark/10 border-2 outline-none ${
+                className={`w-full text-content dark:text-content-dark font-inter rounded-xl px-4 py-4 text-base bg-stone-100 dark:bg-stone-800 border-2 outline-none ${
                   focusedField ? 'border-primary' : 'border-transparent'
                 } placeholder:text-gray-400 dark:placeholder:text-gray-500`}
                 placeholder="Zip code or city name"
@@ -221,7 +221,7 @@ export default function Step3() {
                                 </View>
                               )}
                             </View>
-                            <Text className="text-sm font-inter text-content/60 dark:text-content-dark/60">
+                            <Text className="text-sm font-inter text-stone-500 dark:text-stone-400">
                               {center.distance.toFixed(1)} miles away
                             </Text>
                           </View>

@@ -66,7 +66,7 @@ export default function StepOne() {
                 </View>
               )}
               <TextInput
-                className={`text-content dark:text-content-dark w-full max-w-md font-inter rounded-xl px-4 py-4 text-base bg-muted/50 dark:bg-muted-dark/10 border-2 outline-none ${
+                className={`text-content dark:text-content-dark w-full max-w-md font-inter rounded-xl px-4 py-4 text-base bg-stone-100 dark:bg-stone-800 border-2 outline-none ${
                   focusedField === 'first' ? 'border-primary' : 'border-transparent'
                 } placeholder:text-gray-400 dark:placeholder:text-gray-500`}
                 placeholder="First Name"
@@ -80,7 +80,7 @@ export default function StepOne() {
                 autoCorrect={false}
               />
               <TextInput
-                className={`text-content dark:text-content-dark w-full max-w-md font-inter rounded-xl px-4 py-4 text-base bg-muted/50 dark:bg-muted-dark/10 border-2 outline-none ${
+                className={`text-content dark:text-content-dark w-full max-w-md font-inter rounded-xl px-4 py-4 text-base bg-stone-100 dark:bg-stone-800 border-2 outline-none ${
                   focusedField === 'last' ? 'border-primary' : 'border-transparent'
                 } placeholder:text-gray-400 dark:placeholder:text-gray-500`}
                 placeholder="Last Name"
@@ -105,8 +105,8 @@ export default function StepOne() {
             className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8
               ${
                 !firstName.trim() || !lastName.trim()
-                  ? 'bg-primary/50'
-                  : 'bg-primary active:bg-primary-press hover:scale-105 active:scale-95 transition-all duration-150'
+                  ? 'bg-orange-300'
+                  : 'bg-primary active:bg-primary-press'
               }
             `}
           >

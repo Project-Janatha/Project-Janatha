@@ -21,12 +21,12 @@ function Select({ label, value, options, onChange, className }) {
         {/* This is the "select" box */}
         <Listbox.Button
           aria-label={label}
-          className="relative w-full font-inter text-base bg-muted/50 dark:bg-muted-dark/10 text-content dark:text-content-dark py-3 px-4 rounded-lg border-2 border-transparent focus:border-primary outline-none text-left"
+          className="relative w-full font-inter text-base bg-stone-100 dark:bg-stone-800 text-content dark:text-content-dark py-3 px-4 rounded-lg border-2 border-transparent focus:border-primary outline-none text-left"
         >
           <span className="block truncate">{selectedOption?.label}</span>
           {/* A basic arrow. Replace with an SVG icon for best results. */}
           <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-            <ChevronDown className="text-content/50 dark:text-content-dark/50 ml-3" />
+            <ChevronDown className="text-stone-400 dark:text-stone-500 ml-3" />
           </span>
         </Listbox.Button>
 

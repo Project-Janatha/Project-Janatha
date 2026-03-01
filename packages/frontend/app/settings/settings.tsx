@@ -59,7 +59,7 @@ export default function Settings() {
           <Text className="text-3xl font-inter font-bold text-content dark:text-content-dark mb-1">
             Settings
           </Text>
-          <Text className="text-base font-inter text-content/60 dark:text-content-dark/60">
+          <Text className="text-base font-inter text-stone-500 dark:text-stone-400">
             Manage your app preferences
           </Text>
         </View>
@@ -72,8 +72,8 @@ export default function Settings() {
               Appearance
             </Text>
           </View>
-          <View className="bg-muted/10 dark:bg-muted-dark/10 rounded-2xl p-5">
-            <Text className="text-sm font-inter text-content/60 dark:text-content-dark/60 mb-3">
+          <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl p-5">
+            <Text className="text-sm font-inter text-stone-500 dark:text-stone-400 mb-3">
               Choose your preferred theme
             </Text>
             <ThemeSelector />
@@ -88,14 +88,14 @@ export default function Settings() {
               Notifications
             </Text>
           </View>
-          <View className="bg-muted/10 dark:bg-muted-dark/10 rounded-2xl overflow-hidden">
+          <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl overflow-hidden">
             {/* Push Notifications */}
             <View className="flex-row items-center justify-between p-5 border-b border-muted/20 dark:border-muted-dark/20">
               <View className="flex-1 mr-4">
                 <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
                   Push Notifications
                 </Text>
-                <Text className="text-sm font-inter text-content/60 dark:text-content-dark/60 mt-0.5">
+                <Text className="text-sm font-inter text-stone-500 dark:text-stone-400 mt-0.5">
                   Get notified about events and updates
                 </Text>
               </View>
@@ -113,7 +113,7 @@ export default function Settings() {
                 <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
                   Email Notifications
                 </Text>
-                <Text className="text-sm font-inter text-content/60 dark:text-content-dark/60 mt-0.5">
+                <Text className="text-sm font-inter text-stone-500 dark:text-stone-400 mt-0.5">
                   Receive weekly event digests via email
                 </Text>
               </View>
@@ -131,7 +131,7 @@ export default function Settings() {
                 <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
                   Event Reminders
                 </Text>
-                <Text className="text-sm font-inter text-content/60 dark:text-content-dark/60 mt-0.5">
+                <Text className="text-sm font-inter text-stone-500 dark:text-stone-400 mt-0.5">
                   Get reminded before events you're attending
                 </Text>
               </View>
@@ -153,7 +153,7 @@ export default function Settings() {
               Privacy
             </Text>
           </View>
-          <View className="bg-muted/10 dark:bg-muted-dark/10 rounded-2xl overflow-hidden">
+          <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl overflow-hidden">
             <Pressable
               className="flex-row items-center justify-between p-5 border-b border-muted/20 dark:border-muted-dark/20 active:opacity-70"
               onPress={() => Linking.openURL('https://chinmayajanata.org/privacy')}
@@ -183,12 +183,12 @@ export default function Settings() {
               About
             </Text>
           </View>
-          <View className="bg-muted/10 dark:bg-muted-dark/10 rounded-2xl overflow-hidden">
+          <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl overflow-hidden">
             <View className="flex-row items-center justify-between p-5 border-b border-muted/20 dark:border-muted-dark/20">
               <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
                 Version
               </Text>
-              <Text className="text-sm font-inter text-content/60 dark:text-content-dark/60">
+              <Text className="text-sm font-inter text-stone-500 dark:text-stone-400">
                 1.0.0
               </Text>
             </View>
@@ -196,7 +196,7 @@ export default function Settings() {
               <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
                 Chinmaya Janata
               </Text>
-              <Text className="text-sm font-inter text-content/60 dark:text-content-dark/60">
+              <Text className="text-sm font-inter text-stone-500 dark:text-stone-400">
                 Chinmaya Mission
               </Text>
             </View>
