@@ -15,7 +15,7 @@ import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar } from '../../components/ui'
 import Map from '../../components/Map'
 import MapPopover from '../../components/MapPopover'
-import LeafletView from '../../components/LeafletView'
+// import LeafletView from '../../components/LeafletView'
 import {
   useDiscoverData,
   useEventDetail,
@@ -28,7 +28,6 @@ import { useDetailColors } from '../../hooks/useDetailColors'
 import type { MapPoint, EventDisplay, DiscoverCenter } from '../../utils/api'
 import { WeekCalendar } from '../../components'
 
-const params = useLocalSearchParams<{ detail?: string; id?: string }>()
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -434,6 +433,8 @@ export default function DiscoverScreenWeb() {
     activeFilter,
     searchQuery
   )
+
+  const params = useLocalSearchParams<{ detail?: string; id?: string }>()
 
   // Support direct URL navigation (e.g. ?detail=event&id=123)
   useEffect(() => {

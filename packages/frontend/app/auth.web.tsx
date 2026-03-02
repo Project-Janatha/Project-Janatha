@@ -5,9 +5,10 @@ import { validateEmail, validatePassword } from '../utils'
 import PasswordStrength from '../components/PasswordStrength'
 import { ImageCarousel } from '../components/auth/ImageCarousel'
 import DevPanel from '../components/DevPanel'
-import swamiChinmayanandaJpg from '../assets/images/landing/Swami Chinmayananda.jpg'
-import swamiChinmayanandaAlt from '../assets/images/landing/Swami Chinmayananda (1).jpg'
-import swamiChinmayanandaOption2 from '../assets/images/landing/Swami Chinmayananda Option 2.jpeg'
+// Image imports - update paths based on actual asset location
+const swamiChinmayanandaJpg = 'https://via.placeholder.com/600x800?text=Swami+Chinmayananda+1'
+const swamiChinmayanandaAlt = 'https://via.placeholder.com/600x800?text=Swami+Chinmayananda+2'
+const swamiChinmayanandaOption2 = 'https://via.placeholder.com/600x800?text=Swami+Chinmayananda+3'
 import Logo from '../components/ui/Logo'
 
 // Inject CSS for placeholder and hover styles (web only)
@@ -213,22 +214,26 @@ export default function AuthScreen() {
   // --- Heading and subtitle per step ---
 
   const heading =
-    authStep === 'login' ? 'Welcome back.' : authStep === 'signup' ? 'Join the community.' : 'Welcome.'
+    authStep === 'login'
+      ? 'Welcome back.'
+      : authStep === 'signup'
+        ? 'Join the community.'
+        : 'Welcome.'
 
   const subtitle =
     authStep === 'login'
       ? 'Enter your password to continue'
       : authStep === 'signup'
-      ? 'Create your account to get started'
-      : 'Enter your email to get started'
+        ? 'Create your account to get started'
+        : 'Enter your email to get started'
 
   const buttonText = loading
     ? 'Please wait...'
     : authStep === 'login'
-    ? 'Sign In'
-    : authStep === 'signup'
-    ? 'Create Account'
-    : 'Continue'
+      ? 'Sign In'
+      : authStep === 'signup'
+        ? 'Create Account'
+        : 'Continue'
   const isNarrowWeb = viewportWidth < 1024
 
   return (
@@ -338,7 +343,10 @@ export default function AuthScreen() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+          >
             {/* Email input */}
             <input
               className="auth-input"
