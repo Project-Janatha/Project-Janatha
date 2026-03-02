@@ -9,7 +9,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "build": "npx expo export --platform web"
+    "build": "npx expo export --platform web",
+    "postinstall": "node -e \"const fs=require('fs'); const p='../../node_modules/react-native-css-interop/dist/css-to-rn/parseDeclaration.js'; const c=fs.readFileSync(p,'utf8'); if(!c.includes('!aspectRatio.ratio')){fs.writeFileSync(p,c.replace('function parseAspectRatio(aspectRatio) {\\n    if (aspectRatio.auto) {\\n        return \\\"auto\\\";\\n    }\\n    else {','function parseAspectRatio(aspectRatio) {\\n    if (aspectRatio.auto) {\\n        return \\\"auto\\\";\\n    }\\n    else if (!aspectRatio.ratio || !Array.isArray(aspectRatio.ratio)) {\\n        return \\\"auto\\\";\\n    }\\n    else {'))}\""
   },
   "repository": {
     "type": "git",
@@ -44,7 +45,7 @@
     "lucide-react-native": "^0.545.0",
     "mapbox-gl": "^3.15.0",
     "maplibre-gl": "^4.7.1",
-    "nativewind": "^4.2.1",
+    "nativewind": "^4.2.2",
     "react": "19.1.0",
     "react-datepicker": "^8.9.0",
     "react-dom": "19.1.0",

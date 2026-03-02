@@ -31,7 +31,7 @@ export default function Step4() {
               <Text className="text-4xl font-inter font-bold text-content dark:text-content-dark text-center mb-3">
                 Just one last thing
               </Text>
-              <Text className="text-lg font-inter text-content/70 dark:text-content-dark/70 text-center">
+              <Text className="text-lg font-inter text-stone-500 dark:text-stone-400 text-center">
                 Choose what kind of member you are
               </Text>
             </View>
@@ -47,8 +47,8 @@ export default function Step4() {
                     className={`w-full px-5 py-5 rounded-2xl border-2 ${
                       isSelected
                         ? 'bg-primary border-primary shadow-lg'
-                        : 'bg-muted/50 dark:bg-muted-dark/10 border-transparent shadow-sm'
-                    } hover:scale-[1.02] active:scale-95 transition-all duration-150`}
+                        : 'bg-stone-100 dark:bg-stone-800 border-transparent shadow-sm'
+                    }`}
                   >
                     <Text
                       className={`font-inter font-bold text-lg mb-1.5 ${
@@ -59,7 +59,7 @@ export default function Step4() {
                     </Text>
                     <Text
                       className={`font-inter text-sm leading-relaxed ${
-                        isSelected ? 'text-white/90' : 'text-content/60 dark:text-content-dark/60'
+                        isSelected ? 'text-white' : 'text-stone-500 dark:text-stone-400'
                       }`}
                     >
                       {option.description}

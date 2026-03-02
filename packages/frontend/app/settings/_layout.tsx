@@ -63,7 +63,7 @@ export default function SettingsLayout() {
         <View className="flex-1 flex-row">
           {/* Sidebar - web only */}
           {Platform.OS === 'web' && (
-            <View className="w-64 border-r border-muted/20 dark:border-muted-dark/20 bg-muted/5 dark:bg-muted-dark/5">
+            <View className="w-64 border-r border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900">
               <View className="p-6 border-b border-muted/20 dark:border-muted-dark/20">
                 <View className="flex-row items-center justify-between mb-2">
                   <Text className="text-2xl font-inter font-bold text-content dark:text-content-dark">
@@ -83,13 +83,13 @@ export default function SettingsLayout() {
                       className={`flex-row items-center gap-3 px-4 py-3 rounded-xl mb-1 ${
                         isActive
                           ? 'bg-primary shadow-sm'
-                          : 'bg-transparent hover:bg-muted/30 dark:hover:bg-muted-dark/20'
+                          : 'bg-transparent hover:bg-stone-100 dark:hover:bg-stone-800'
                       }`}
                     >
                       <Icon
                         size={20}
                         className={
-                          isActive ? 'text-white' : 'text-content/60 dark:text-content-dark/60'
+                          isActive ? 'text-white' : 'text-stone-500 dark:text-stone-400'
                         }
                       />
                       <Text

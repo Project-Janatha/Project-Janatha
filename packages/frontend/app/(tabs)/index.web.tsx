@@ -1,6 +1,5 @@
 // Discover tab — web desktop layout
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import {
   View,
   Text,
@@ -16,10 +15,18 @@ import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar } from '../../components/ui'
 import Map from '../../components/Map'
 import MapPopover from '../../components/MapPopover'
-import LeafletView from '../../components/LeafletView'
-import { useDiscoverData, type DiscoverFilter } from '../../hooks/useApiData'
+// import LeafletView from '../../components/LeafletView'
+import {
+  useDiscoverData,
+  useEventDetail,
+  useCenterDetail,
+  type DiscoverFilter,
+} from '../../hooks/useApiData'
+import EventDetailPanel from '../../components/web/EventDetailPanel'
+import CenterDetailPanel from '../../components/web/CenterDetailPanel'
+import { useDetailColors } from '../../hooks/useDetailColors'
 import type { MapPoint, EventDisplay, DiscoverCenter } from '../../utils/api'
-import WeekCalendar from '../../components/WeekCalendar'
+import { WeekCalendar } from '../../components'
 
 const isMobileDevice = () => {
   if (typeof window === 'undefined') return false
@@ -426,6 +433,8 @@ export default function DiscoverScreenWeb() {
     activeFilter,
     searchQuery
   )
+
+  const params = useLocalSearchParams<{ detail?: string; id?: string }>()
 
   // Support direct URL navigation (e.g. ?detail=event&id=123)
   useEffect(() => {
