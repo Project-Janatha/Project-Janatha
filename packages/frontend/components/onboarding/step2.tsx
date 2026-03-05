@@ -20,7 +20,7 @@ export default function Step2() {
               <Text className="text-4xl font-inter font-bold text-content dark:text-content-dark text-center">
                 When's your birthday?
               </Text>
-              <Text className="text-lg font-inter text-content/70 dark:text-content-dark/70 text-center">
+              <Text className="text-lg font-inter text-stone-500 dark:text-stone-400 text-center">
                 We'll use this to personalize your experience.
               </Text>
             </View>
@@ -38,8 +38,8 @@ export default function Step2() {
             className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8
               ${
                 !isDateSelected
-                  ? 'bg-primary/50'
-                  : 'bg-primary active:bg-primary-press hover:scale-105 active:scale-95 transition-transform duration-150'
+                  ? 'bg-orange-300'
+                  : 'bg-primary active:bg-primary-press'
               }
             `}
           >

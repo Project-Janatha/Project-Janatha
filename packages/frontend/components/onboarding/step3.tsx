@@ -149,7 +149,7 @@ export default function Step3() {
               <Text className="text-4xl font-inter font-bold text-content dark:text-content-dark text-center mb-3">
                 Choose your center
               </Text>
-              <Text className="text-lg font-inter text-content/70 dark:text-content-dark/70 text-center">
+              <Text className="text-lg font-inter text-stone-500 dark:text-stone-400 text-center">
                 Enter your zip code or city to see nearby centers.
               </Text>
             </View>
@@ -157,7 +157,7 @@ export default function Step3() {
             {/* Search Input */}
             <View className="w-full max-w-md self-center relative">
               <TextInput
-                className={`w-full text-content dark:text-content-dark font-inter rounded-xl px-4 py-4 text-base bg-muted/50 dark:bg-muted-dark/10 border-2 outline-none ${
+                className={`w-full text-content dark:text-content-dark font-inter rounded-xl px-4 py-4 text-base bg-stone-100 dark:bg-stone-800 border-2 outline-none ${
                   focusedField ? 'border-primary' : 'border-transparent'
                 } placeholder:text-gray-400 dark:placeholder:text-gray-500`}
                 placeholder="Zip code or city name"
@@ -185,7 +185,7 @@ export default function Step3() {
               {/* Suggestions Dropdown */}
               {showSuggestions && nearbyCenters.length > 0 && (
                 <View
-                  className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-neutral-800 rounded-xl border-2 border-muted/50 dark:border-muted-dark/10 overflow-hidden shadow-xl"
+                  className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-neutral-800 rounded-xl border-2 border-stone-300 dark:border-stone-600 overflow-hidden shadow-xl"
                   style={{ zIndex: 50 }}
                 >
                   <ScrollView style={{ maxHeight: 240 }}>
@@ -195,10 +195,10 @@ export default function Step3() {
                         onPress={() => handleSelectCenter(center)}
                         className={`px-5 py-4 hover:scale-[1.02] active:scale-95 transition-transform duration-150 ${
                           index !== nearbyCenters.length - 1
-                            ? 'border-b border-muted/20 dark:border-muted-dark/20'
+                            ? 'border-b border-stone-200 dark:border-stone-700'
                             : ''
                         } ${
-                          selectedCenter?.id === center.id ? 'bg-primary/10 dark:bg-primary/20' : ''
+                          selectedCenter?.id === center.id ? 'bg-orange-50 dark:bg-orange-950' : ''
                         }`}
                       >
                         <View className="flex-row justify-between items-center gap-3">
@@ -221,7 +221,7 @@ export default function Step3() {
                                 </View>
                               )}
                             </View>
-                            <Text className="text-sm font-inter text-content/60 dark:text-content-dark/60">
+                            <Text className="text-sm font-inter text-stone-500 dark:text-stone-400">
                               {center.distance.toFixed(1)} miles away
                             </Text>
                           </View>
@@ -255,7 +255,7 @@ export default function Step3() {
             className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8 transition-transform duration-150 ${
               selectedCenter
                 ? 'bg-primary active:bg-primary-press hover:scale-105 active:scale-95'
-                : 'bg-primary/50'
+                : 'bg-orange-300'
             }`}
           >
             <Text className="text-white font-inter font-semibold text-base">Continue</Text>

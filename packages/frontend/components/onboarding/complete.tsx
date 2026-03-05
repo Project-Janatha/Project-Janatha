@@ -63,7 +63,7 @@ export default function Complete() {
               <Text className="text-4xl font-inter font-bold text-content dark:text-content-dark text-center mb-4 tracking-tight">
                 Welcome to Janata!
               </Text>
-              <Text className="text-lg font-inter text-content/60 dark:text-content-dark/60 text-center max-w-md leading-relaxed px-4">
+              <Text className="text-lg font-inter text-stone-500 dark:text-stone-400 text-center max-w-md leading-relaxed px-4">
                 Begin your spiritual journey now
               </Text>
             </View>
