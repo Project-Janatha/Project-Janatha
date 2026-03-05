@@ -126,7 +126,7 @@ export default function BirthdatePicker({ value, onChange }) {
   }
 
   return (
-    <View className="p-4 w-[480px]">
+    <View className="p-4 w-full max-w-[480px]">
       <View className="flex-row justify-between space-x-2">
         {/* Month */}
         <Select
