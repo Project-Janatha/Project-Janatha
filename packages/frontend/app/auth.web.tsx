@@ -5,10 +5,10 @@ import { validateEmail, validatePassword } from '../utils'
 import PasswordStrength from '../components/PasswordStrength'
 import { ImageCarousel } from '../components/auth/ImageCarousel'
 import DevPanel from '../components/DevPanel'
-// Image imports - update paths based on actual asset location
-const swamiChinmayanandaJpg = 'https://via.placeholder.com/600x800?text=Swami+Chinmayananda+1'
-const swamiChinmayanandaAlt = 'https://via.placeholder.com/600x800?text=Swami+Chinmayananda+2'
-const swamiChinmayanandaOption2 = 'https://via.placeholder.com/600x800?text=Swami+Chinmayananda+3'
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const swamiChinmayanandaJpg = require('../assets/images/landing/Swami Chinmayananda.jpg')
+const swamiChinmayanandaAlt = require('../assets/images/landing/Swami Chinmayananda (1).jpg')
+const swamiChinmayanandaOption2 = require('../assets/images/landing/Swami Chinmayananda Option 2.jpeg')
 import Logo from '../components/ui/Logo'
 
 // Inject CSS for placeholder and hover styles (web only)
