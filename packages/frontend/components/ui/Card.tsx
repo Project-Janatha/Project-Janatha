@@ -1,1 +1,1 @@
-export { default, type CardProps } from './Card.native'
+export { default, type CardProps } from './Card.web'

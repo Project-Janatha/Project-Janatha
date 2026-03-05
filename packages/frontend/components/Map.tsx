@@ -1,1 +1,1 @@
-export { default, type MapProps, type MapPoint } from './Map.native'
+export { default, type MapProps, type MapPoint } from './Map.web'

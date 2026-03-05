@@ -1,1 +1,1 @@
-export { default } from './ThemeSelector.native'
+export { default } from './ThemeSelector.web'

@@ -1,1 +1,1 @@
-export { default } from './AuthInput.native'
+export { default } from './AuthInput.web'

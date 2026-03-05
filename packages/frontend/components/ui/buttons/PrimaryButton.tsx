@@ -1,1 +1,1 @@
-export { default } from './PrimaryButton.native'
+export { default } from './PrimaryButton.web'
