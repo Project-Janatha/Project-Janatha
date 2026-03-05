@@ -19,7 +19,10 @@ export default function AuthInput({ secureTextEntry, onChangeText, ...props }) {
       onChangeText={handleChangeText}
       style={{
         fontSize: 16,
-        fontFamily: 'Inter-Regular',
+        fontFamily:
+          secureTextEntry && hasText
+            ? 'Verdana'
+            : 'Inter-Regular',
         letterSpacing: secureTextEntry ? 0.125 : 0,
       }}
       {...props}
