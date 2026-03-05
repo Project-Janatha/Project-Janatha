@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, Text, Pressable } from 'react-native'
+import { View, Text, Pressable, Platform } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker'
 
 interface BirthdatePickerProps {
@@ -12,8 +12,11 @@ export default function BirthdatePicker({ value, onChange }: BirthdatePickerProp
   const [show, setShow] = useState(false)
 
   const handleChange = (event: any, selectedDate?: Date) => {
-    setShow(false)
-    
+    // On Android, the picker closes automatically
+    if (Platform.OS === 'android') {
+      setShow(false)
+    }
+
     if (selectedDate) {
       setDate(selectedDate)
       onChange(selectedDate)
@@ -29,25 +32,12 @@ export default function BirthdatePicker({ value, onChange }: BirthdatePickerProp
   }
 
   return (
-    <View style={{ padding: 16 }}>
+    <View className="p-4">
       <Pressable
         onPress={() => setShow(true)}
-        style={{
-          backgroundColor: '#e5e5e5',
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-          borderRadius: 8,
-          borderWidth: 2,
-          borderColor: 'transparent',
-        }}
+        className="bg-muted/50 dark:bg-muted-dark/10 py-3 px-4 rounded-lg border-2 border-transparent active:border-primary"
       >
-        <Text
-          style={{
-            fontFamily: 'Inter',
-            fontSize: 16,
-            color: '#3f3f46',
-          }}
-        >
+        <Text className="font-inter text-base text-content dark:text-content-dark">
           {formatDate(date)}
         </Text>
       </Pressable>
@@ -57,35 +47,23 @@ export default function BirthdatePicker({ value, onChange }: BirthdatePickerProp
           <DateTimePicker
             value={date}
             mode="date"
-            display="spinner"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             onChange={handleChange}
             maximumDate={new Date()}
             minimumDate={new Date(1900, 0, 1)}
           />
-          
-          <Pressable
-            onPress={() => setShow(false)}
-            style={{
-              backgroundColor: '#f97316',
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 8,
-              marginTop: 8,
-              alignItems: 'center',
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: 'Inter',
-                fontSize: 16,
-                color: '#ffffff',
-                fontWeight: '600',
-                textAlign: 'center',
-              }}
+
+          {/* iOS needs a done button */}
+          {Platform.OS === 'ios' && (
+            <Pressable
+              onPress={() => setShow(false)}
+              className="bg-primary py-3 px-4 rounded-lg mt-2"
             >
-              Done
-            </Text>
-          </Pressable>
+              <Text className="font-inter text-base text-white text-center font-semibold">
+                Done
+              </Text>
+            </Pressable>
+          )}
         </View>
       )}
     </View>
