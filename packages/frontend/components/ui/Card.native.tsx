@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Pressable, ViewProps, PressableProps } from 'react-native'
+import { View, Pressable } from 'react-native'
 
 export interface CardProps {
   children: React.ReactNode
@@ -23,35 +23,26 @@ export default function Card({
   onPress,
   ...props
 }: CardProps) {
-  const borderRadius = size === 'lg' ? 24 : 16
-  const paddingValue = {
-    sm: 16,
-    md: 24,
-    lg: 32,
-    none: 0,
+  const baseClasses = 'bg-card dark:bg-card-dark border border-borderColor dark:border-borderColor-dark'
+  const sizeClasses = size === 'lg' ? 'rounded-3xl' : 'rounded-2xl'
+  const paddingClasses = {
+    sm: 'p-4',
+    md: 'p-6',
+    lg: 'p-8',
+    none: '',
   }[padding]
 
-  const containerStyle: any = {
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#e5e5e5',
-    borderRadius,
-    overflow: overflowHidden ? 'hidden' : 'visible',
-  }
-  
-  if (paddingValue > 0) {
-    containerStyle.padding = paddingValue
-  }
+  const overflowClass = overflowHidden ? 'overflow-hidden' : ''
+  const activeClasses = pressable ? 'active:scale-[0.98]' : ''
+
+  const combinedClasses = `${baseClasses} ${sizeClasses} ${paddingClasses} ${overflowClass} ${activeClasses} ${className}`.trim()
 
   if (pressable && onPress) {
     return (
       <Pressable
         onPress={onPress}
-        style={({ pressed }: any) => [
-          containerStyle,
-          pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
-        ]}
-        {...props}
+        className={combinedClasses}
+        {...(props as any)}
       >
         {children}
       </Pressable>
@@ -59,7 +50,7 @@ export default function Card({
   }
 
   return (
-    <View style={containerStyle} {...props}>
+    <View className={combinedClasses} {...(props as any)}>
       {children}
     </View>
   )
