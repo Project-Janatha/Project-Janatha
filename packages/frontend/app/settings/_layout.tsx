@@ -64,7 +64,7 @@ export default function SettingsLayout() {
           {/* Sidebar - web only */}
           {Platform.OS === 'web' && (
             <View className="w-64 border-r border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900">
-              <View className="p-6 border-b border-muted/20 dark:border-muted-dark/20">
+              <View className="p-6 border-b border-stone-200 dark:border-stone-700">
                 <View className="flex-row items-center justify-between mb-2">
                   <Text className="text-2xl font-inter font-bold text-content dark:text-content-dark">
                     Settings

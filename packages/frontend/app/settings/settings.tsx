@@ -90,7 +90,7 @@ export default function Settings() {
           </View>
           <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl overflow-hidden">
             {/* Push Notifications */}
-            <View className="flex-row items-center justify-between p-5 border-b border-muted/20 dark:border-muted-dark/20">
+            <View className="flex-row items-center justify-between p-5 border-b border-stone-200 dark:border-stone-700">
               <View className="flex-1 mr-4">
                 <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
                   Push Notifications
@@ -108,7 +108,7 @@ export default function Settings() {
             </View>
 
             {/* Email Notifications */}
-            <View className="flex-row items-center justify-between p-5 border-b border-muted/20 dark:border-muted-dark/20">
+            <View className="flex-row items-center justify-between p-5 border-b border-stone-200 dark:border-stone-700">
               <View className="flex-1 mr-4">
                 <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
                   Email Notifications
@@ -155,7 +155,7 @@ export default function Settings() {
           </View>
           <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl overflow-hidden">
             <Pressable
-              className="flex-row items-center justify-between p-5 border-b border-muted/20 dark:border-muted-dark/20 active:opacity-70"
+              className="flex-row items-center justify-between p-5 border-b border-stone-200 dark:border-stone-700 active:opacity-70"
               onPress={() => Linking.openURL('https://chinmayajanata.org/privacy')}
             >
               <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
@@ -184,7 +184,7 @@ export default function Settings() {
             </Text>
           </View>
           <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl overflow-hidden">
-            <View className="flex-row items-center justify-between p-5 border-b border-muted/20 dark:border-muted-dark/20">
+            <View className="flex-row items-center justify-between p-5 border-b border-stone-200 dark:border-stone-700">
               <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
                 Version
               </Text>

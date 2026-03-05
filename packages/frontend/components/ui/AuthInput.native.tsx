@@ -11,7 +11,7 @@ export default function AuthInput({ secureTextEntry, onChangeText, ...props }) {
 
   return (
     <TextInput
-      className={`w-full font-inter rounded-lg px-4 py-3 min-h-[48px] bg-muted/50 dark:bg-muted-dark/10 focus:border-primary focus:outline-none placeholder:text-gray-400 dark:placeholder:text-gray-400 ${
+      className={`w-full font-inter rounded-lg px-4 py-3 min-h-[48px] bg-stone-100 dark:bg-stone-800 focus:border-primary focus:outline-none placeholder:text-gray-400 dark:placeholder:text-gray-400 ${
         hasText ? 'text-content dark:text-content-dark' : ''
       }`}
       placeholderTextColor="#9ca3af"

@@ -15,7 +15,6 @@ import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar } from '../../components/ui'
 import Map from '../../components/Map'
 import MapPopover from '../../components/MapPopover'
-// import LeafletView from '../../components/LeafletView'
 import {
   useDiscoverData,
   useEventDetail,

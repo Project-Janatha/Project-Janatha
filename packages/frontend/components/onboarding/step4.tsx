@@ -90,7 +90,7 @@ export default function Step4() {
             className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8 transition-transform duration-150 ${
               interests.length > 0
                 ? 'bg-primary active:bg-primary-press hover:scale-105 active:scale-95'
-                : 'bg-primary/50'
+                : 'bg-orange-300'
             }`}
           >
             <Text className="text-white font-inter font-semibold text-base">Continue</Text>
