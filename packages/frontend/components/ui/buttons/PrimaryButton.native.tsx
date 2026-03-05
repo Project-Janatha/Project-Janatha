@@ -6,6 +6,7 @@ interface PrimaryButtonProps {
   onPress?: () => void
   disabled?: boolean
   style?: any
+  className?: string
 }
 
 export default function PrimaryButton({
@@ -13,6 +14,7 @@ export default function PrimaryButton({
   onPress,
   disabled,
   style,
+  ...props
 }: PrimaryButtonProps) {
   const handlePress = () => {
     if (!disabled && onPress) {
@@ -24,29 +26,11 @@ export default function PrimaryButton({
     <Pressable
       onPress={handlePress}
       disabled={disabled}
-      style={[
-        {
-          backgroundColor: '#f97316',
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-          borderRadius: 9999,
-          opacity: disabled ? 0.5 : 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
-        style,
-      ]}
+      className="bg-primary px-4 py-3 rounded-full active:bg-primary-press disabled:opacity-50"
+      style={style}
+      {...props}
     >
-      <Text
-        style={{
-          color: '#171717',
-          fontFamily: 'Inter',
-          fontSize: 16,
-          textAlign: 'center',
-        }}
-      >
-        {children}
-      </Text>
+      <Text className="text-backgroundStrong font-inter text-base text-center">{children}</Text>
     </Pressable>
   )
 }

@@ -5,6 +5,7 @@ interface PrimaryButtonProps {
   onPress?: () => void
   disabled?: boolean
   style?: any
+  className?: string
 }
 
 export default function PrimaryButton({
@@ -28,27 +29,10 @@ export default function PrimaryButton({
       type="button"
       onClick={handleClick}
       disabled={disabled}
-      style={{
-        backgroundColor: '#f97316',
-        padding: '12px 16px',
-        borderRadius: '9999px',
-        border: 'none',
-        outline: 'none',
-        opacity: disabled ? 0.5 : 1,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        width: '100%',
-        ...style,
-      }}
+      className="bg-primary px-4 py-3 rounded-full active:bg-primary-press disabled:opacity-50 cursor-pointer w-full"
+      style={{ border: 'none', outline: 'none', ...style }}
     >
-      <span
-        style={{
-          color: '#171717',
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-          fontSize: 16,
-          textAlign: 'center',
-          display: 'block',
-        }}
-      >
+      <span className="text-backgroundStrong font-inter text-base text-center block">
         {children}
       </span>
     </button>
