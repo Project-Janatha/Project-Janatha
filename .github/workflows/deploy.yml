@@ -4,74 +4,115 @@ on:
   push:
     branches:
       - main
-      - aws-migration
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-
-      - name: Build Docker image
-        run: docker-compose build
-
-      - name: Save Docker image
-        run: |
-          docker save project-janatha-app:latest | gzip > janatha-app.tar.gz
-
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build frontend
+        run: |
+          cd packages/frontend
+          npx expo export --platform web --output-dir dist --clear
+          cd ../..
+          mkdir -p dist
+          cp -r packages/frontend/dist/* dist/
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker buildx create --name mybuilder --use 2>/dev/null || true
+          docker buildx inspect mybuilder --bootstrap
+          docker buildx build --platform linux/amd64 \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            -t $ECR_REGISTRY/chinmaya-janata:$IMAGE_TAG \
+            -t $ECR_REGISTRY/chinmaya-janata:latest \
+            --push .
 
       - name: Create SSH key file
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > ec2-key.pem
           chmod 600 ec2-key.pem
 
-      - name: Copy files to EC2
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-        run: |
-          scp -i ec2-key.pem -o StrictHostKeyChecking=no \
-            docker-compose.yml ubuntu@$EC2_HOST:/home/ubuntu/project-janatha/
-          scp -i ec2-key.pem -o StrictHostKeyChecking=no \
-            nginx.conf ubuntu@$EC2_HOST:/home/ubuntu/project-janatha/
-          scp -i ec2-key.pem -o StrictHostKeyChecking=no \
-            janatha-app.tar.gz ubuntu@$EC2_HOST:/home/ubuntu/project-janatha/
-
       - name: Deploy on EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
+          ECR_IMAGE: ${{ steps.login-ecr.outputs.registry }}/chinmaya-janata:${{ github.sha }}
+          AWS_REGION: us-east-1
         run: |
           ssh -i ec2-key.pem -o StrictHostKeyChecking=no ubuntu@$EC2_HOST << 'ENDSSH'
-            cd /home/ubuntu/project-janatha
-            docker load < janatha-app.tar.gz
+            set -e
+            cd /home/ubuntu/chinmaya-janata
+            
+            echo "$AWS_ACCESS_KEY_ID" > .aws_access_key_id
+            echo "$AWS_SECRET_ACCESS_KEY" > .aws_secret_access_key
+            
+            export AWS_ACCESS_KEY_ID=$(cat .aws_access_key_id)
+            export AWS_SECRET_ACCESS_KEY=$(cat .aws_secret_access_key)
+            export AWS_REGION=us-east-1
+            
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY >/dev/null 2>&1 || true
+            
+            echo "Pulling image..."
+            docker pull $ECR_IMAGE
+            
+            echo "Stopping existing containers..."
             docker-compose down || true
+            
+            # Update ECR_IMAGE in .env
+            sed -i "s|ECR_IMAGE=.*|ECR_IMAGE=$ECR_IMAGE|" .env
+            
+            echo "Starting new containers..."
             docker-compose up -d
-            rm janatha-app.tar.gz
+            
+            echo "Waiting for containers to start..."
+            sleep 5
+            
+            echo "Checking container status..."
             docker-compose ps
+            
+            echo "Recent logs:"
+            docker-compose logs --tail=30
+            
+            rm -f .aws_access_key_id .aws_secret_access_key
+            
+            echo "✅ Deployment complete!"
           ENDSSH
 
       - name: Cleanup
         if: always()
         run: |
           rm -f ec2-key.pem
-          rm -f janatha-app.tar.gz
 
       - name: Notify deployment status
         if: success()

@@ -151,16 +151,48 @@ fi
 
 require_env_vars ECR_REPO AWS_REGION CORS_ORIGIN
 
+# Get current AWS credentials and export for Docker
+export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-$(aws configure get aws_access_key_id)}"
+export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-$(aws configure get aws_secret_access_key)}"
+export AWS_SESSION_TOKEN="${AWS_SESSION_TOKEN:-}"
+
+if [ -z "${AWS_ACCESS_KEY_ID}" ]; then
+    echo -e "${RED}❌ Error: AWS credentials not found. Run 'aws configure' first.${NC}"
+    exit 1
+fi
+
+# Build frontend locally first
+echo -e "\n${YELLOW}🏗️  Building frontend locally...${NC}"
+cd "$PROJECT_ROOT/packages/frontend"
+npx expo export --platform web --output-dir dist --clear
+cd "$PROJECT_ROOT"
+
+# Copy dist to expected location for Docker
+mkdir -p dist
+cp -r packages/frontend/dist/* dist/
+
 if [ -z "${IMAGE_TAG:-}" ]; then
     IMAGE_TAG="$(date +%Y%m%d%H%M%S)"
 fi
 ECR_IMAGE="${ECR_REPO}:${IMAGE_TAG}"
 
 echo -e "\n${YELLOW}🔐 Logging in to ECR...${NC}"
-aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REPO" >/dev/null
+aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REPO" >/dev/null 2>&1
 
-echo -e "\n${YELLOW}📦 Building & pushing Docker image (linux/amd64)...${NC}"
-docker buildx build --platform linux/amd64 -t "$ECR_IMAGE" --push .
+echo -e "\n${YELLOW}📦 Building Docker image (linux/amd64)...${NC}"
+
+# Create a custom builder with AWS credentials
+docker buildx create --name mybuilder --use 2>/dev/null || true
+docker buildx inspect mybuilder --bootstrap
+
+# Use docker buildx with explicit platform
+docker buildx build --platform linux/amd64 \
+    --build-arg BUILDKIT_INLINE_CACHE=1 \
+    -t "$ECR_IMAGE" \
+    --push .
+
+echo -e "\n${YELLOW}📤 Pushing Docker image to ECR...${NC}"
+docker push "$ECR_IMAGE"
 
 echo -e "\n${YELLOW}📤 Copying files to EC2...${NC}"
 ssh -i "$EC2_KEY" "$EC2_USER@$EC2_HOST" "mkdir -p $DEPLOY_DIR"
