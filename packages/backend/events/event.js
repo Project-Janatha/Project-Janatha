@@ -1,6 +1,6 @@
 /**
  * event.js
- * 
+ *
  * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
  * Author: Sahanav Sai Ramesh
  * Date Authored: August 30, 2025
@@ -8,7 +8,6 @@
  * All the methods concerning an event.
  */
 import location from '../location/location.js';
-import center from '../profiles/center.js';
 import user from '../profiles/user.js';
 import constants from '../constants.js';
 import store from './eventStorage.js';
@@ -22,19 +21,24 @@ class Event{
    * Constructs an event.
    * @param {location.Location} loc The location of the Event.
    * @param {Date} date The Date at which the Event takes place.
-   * @param {string} cen The Center ID of the Center with which the Event is affiliated.
+   * @param {string} cen The centerID (UUID string) of the center with which the Event is affiliated.
    */
   constructor(loc, date, cen)
   {
-    this.location = loc;
-    this.date = date;
-    this.center = cen;
-    this.endorsers = []; //An array of strings containing all the event endorser usernames. Must have status of greater than constants.SEVAK
-    this.id = 0; //TODO make a method for this. A number that represents the unique ID of this event.
-    this.tier = 0; //The calculated tier of the event.
-    this.peopleAttending = 0; //A number that represents how many people are going to the event.
-    this.usersAttending = []; 
-    this.description = "";
+    this.location = loc || new location.Location(0, 0);
+    this.date = date || new Date();
+    this.centerID = cen || null; // Store only the ID, not the full center object
+    this.endorsers = []; // Array of endorser usernames
+    this.id = 0;
+    this.tier = 0;
+    this.peopleAttending = 0;
+    this.usersAttending = [];
+    this.description = '';
+    this.title = '';
+    this.address = '';
+    this.pointOfContact = '';
+    this.image = '';
+    this.endDate = null;
   }
   /**
    * Adds an endorser to this event.
@@ -50,11 +54,7 @@ class Event{
   }
   /**
    * Calculates the Tier of an event in accordance with the Tier Ranking system.
-   * The Tier Ranking System does the following:
-   * Takes the sum of all this.endorsers.points*this.endorsers.verificationLevel
-   * Adds to it the amount of people within the event multiplied by the numerical ranking constants.NORMAL_USER.
-   * Multiplies it by the 1 + amount of people with numerical ranking constants.BRAHMACHARI or above.
-   * 
+   *
    * @returns {number} The tier of the event.
    */
   calculateTier()
@@ -63,18 +63,17 @@ class Event{
     let brahmachariAndAbove = 0;
     for(let i = 0; i < this.endorsers.length; i++)
     {
-      tier += this.endorsers[i].points*this.endorsers.verificationLevel;
+      tier += this.endorsers[i].points * this.endorsers[i].verificationLevel;
       if(this.endorsers[i].verificationLevel >= constants.BRAHMACHARI)
       {
         brahmachariAndAbove++;
       }
     }
-    brahmachariAndAbove;
-    tier += this.peopleAttending*constants.NORMAL_USER;
-    tier *= brahmachariAndAbove+1;
+    tier += this.peopleAttending * constants.NORMAL_USER;
+    tier *= brahmachariAndAbove + 1;
     tier /= constants.TIER_DESCALE;
+    this.tier = tier;
     return tier;
-    
   }
   /**
    * Sets the description of this Event.
@@ -85,56 +84,81 @@ class Event{
     this.description = desc;
   }
   /**
-   * Turns this Event object into JSON.
-   * 
+   * Turns this Event object into flat JSON (no nested eventObject wrapper).
+   * Stores only centerID, not the full embedded center object.
+   *
    * @returns {JSON} This Event as JSON.
    */
   toJSON()
   {
-    let endorserJSON = [];
-    for(i in this.endorsers)
-    {
-      endorserJSON += this.endorsers[i].toJSON();
+    const endorserJSON = [];
+    for (let i = 0; i < this.endorsers.length; i++) {
+      if (this.endorsers[i] && typeof this.endorsers[i].toJSON === 'function') {
+        endorserJSON.push(this.endorsers[i].toJSON());
+      } else {
+        endorserJSON.push(this.endorsers[i]);
+      }
     }
     return {
       'location': this.location.toJSON(),
-      'date': this.date.toISOString(),
-      'center': this.center.toJSON(),
+      'date': this.date instanceof Date ? this.date.toISOString() : this.date,
+      'centerID': this.centerID,
       'endorsers': endorserJSON,
       'id': this.id,
       'tier': this.tier,
       'peopleAttending': this.peopleAttending,
       'usersAttending': this.usersAttending,
-      'description': this.description
+      'description': this.description,
+      'title': this.title,
+      'address': this.address,
+      'pointOfContact': this.pointOfContact,
+      'image': this.image,
+      'endDate': this.endDate instanceof Date ? this.endDate.toISOString() : this.endDate,
     };
   }
-/**
- * Builds this object from JSON data.
- * @param {JSON} data The data from which the Event should be built.
- */
+  /**
+   * Builds this object from flat JSON data (or legacy nested eventObject).
+   * @param {JSON} data The data from which the Event should be built.
+   */
   buildFromJSON(data)
   {
-    let loc = new location.Location(0,0);
-    loc.buildFromJSON(data.location);
+    // Support both flat top-level fields and legacy nested eventObject
+    const src = data.eventObject || data;
+    const loc = new location.Location(0, 0);
+    loc.buildFromJSON(src.location || {});
     this.location = loc;
-    this.date = new Date(data.date);
-    this.center = data.center;
-    this.endorsers = data.endorsers;
-    this.id = parseInt(data.id);
-    this.tier = parseInt(data.tier);
-    this.peopleAttending = parseInt(data.peopleAttending);
-    this.usersAttending = data.usersAttending;
-    this.description = data.description;
+    this.date = src.date ? new Date(src.date) : new Date();
+    // Normalize center: accept centerID string or extract from embedded center object
+    if (src.centerID) {
+      this.centerID = src.centerID;
+    } else if (src.center && typeof src.center === 'object' && src.center.centerID) {
+      this.centerID = src.center.centerID;
+    } else if (src.center && typeof src.center === 'string') {
+      this.centerID = src.center;
+    } else {
+      this.centerID = null;
+    }
+    this.endorsers = src.endorsers || [];
+    this.id = src.id !== undefined ? src.id : 0;
+    this.tier = src.tier !== undefined ? parseFloat(src.tier) : 0;
+    this.peopleAttending = src.peopleAttending !== undefined ? parseInt(src.peopleAttending) : 0;
+    this.usersAttending = src.usersAttending || [];
+    this.description = src.description || '';
+    this.title = src.title || '';
+    this.address = src.address || '';
+    this.pointOfContact = src.pointOfContact || '';
+    this.image = src.image || '';
+    this.endDate = src.endDate ? new Date(src.endDate) : null;
   }
   /**
    * Assigns a new unique ID to this object.
-   * 
+   *
    * @returns The ID assigned.
    */
   assignID()
   {
     let me = Math.round(Math.random()*constants.EVENT_ID_VARIABILITY);
-    while(!store.checkEventUniqueness(id))
+    while(!store.checkEventUniqueness(me))
     {
       me = Math.round(Math.random()*constants.EVENT_ID_VARIABILITY);
     }
@@ -163,7 +187,7 @@ class Event{
       return null;
     })();
   }
-    /**
+  /**
    * Adds an event to the user.
    * @param {user.User} u The User to add.
    * @returns {user.User | null} The User with the event added

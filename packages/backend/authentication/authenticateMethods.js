@@ -228,10 +228,9 @@ async function getUserByUsername(username) {
     if (!existing) {
       return null
     }
-    let constructedUser = new user.User(username)
-    if (existing.userObject) {
-      constructedUser.buildFromJSON(existing.userObject)
-    }
+    let constructedUser = new user.User(username, true)
+    // buildFromJSON handles both flat records and legacy nested userObject
+    constructedUser.buildFromJSON(existing)
     return constructedUser
   } catch (err) {
     console.error('Get user by username error:', err)
@@ -244,15 +243,14 @@ async function getUserByUsername(username) {
  * @param {user.User} user The user to update the user data with.
  * @returns {boolean} A boolean representing if the operation was successful.
  */
-async function updateUserData(username, user) {
+async function updateUserData(username, userObj) {
   try {
     const existing = await db.getUserByUsername(username)
     if (!existing) {
       return false
     }
-    const updates = {
-      userObject: user.toJSON(),
-    }
+    // Write flat top-level fields — no more nested userObject wrapper
+    const updates = typeof userObj.toJSON === 'function' ? userObj.toJSON() : userObj
     const result = await db.updateUser(existing.id, updates)
     return result.success
   } catch (err) {
@@ -289,10 +287,9 @@ async function getCenterByCenterID(centerID) {
       return null
     }
 
-    const c = new center.Center(new location.Location(0, 0), 'Hello World!')
-    if (dbCenter.centerObject) {
-      c.buildFromJSON(dbCenter.centerObject)
-    }
+    const c = new center.Center(new location.Location(0, 0), '')
+    // buildFromJSON handles both flat records and legacy nested centerObject
+    c.buildFromJSON(dbCenter)
     return c
   } catch (err) {
     console.error('Get center by ID error:', err)
@@ -317,9 +314,10 @@ async function storeCenter(centerID, centerObject) {
       return false
     }
 
+    // Write flat top-level fields — no more nested centerObject wrapper
     const centerData = {
       centerID: centerID,
-      centerObject: centerObject.toJSON(),
+      ...centerObject.toJSON(),
     }
 
     const result = await db.createCenter(centerData)
@@ -342,9 +340,8 @@ async function updateCenter(centerID, centerObject) {
       return false
     }
 
-    const updates = {
-      centerObject: centerObject.toJSON(),
-    }
+    // Write flat top-level fields — no more nested centerObject wrapper
+    const updates = centerObject.toJSON()
 
     const result = await db.updateCenter(centerID, updates)
     return result.success
@@ -394,7 +391,7 @@ async function getAllCenters() {
  * Called after user completes all onboarding steps
  */
 async function completeOnboarding(req, res) {
-  const { firstName, lastName, dateOfBirth, centerID, profileComplete, phoneNumber, interests } =
+  const { firstName, lastName, dateOfBirth, centerID, profileComplete, phoneNumber, interests, bio, profileImage } =
     req.body
 
   if (!req.user?.id) {
@@ -418,6 +415,8 @@ async function completeOnboarding(req, res) {
       ...(profileComplete !== undefined ? { profileComplete } : {}),
       ...(phoneNumber !== undefined ? { phoneNumber } : {}),
       ...(interests !== undefined ? { interests } : {}),
+      ...(bio !== undefined ? { bio } : {}),
+      ...(profileImage !== undefined ? { profileImage } : {}),
     }
 
     const result = await db.updateUser(req.user.id, updates)

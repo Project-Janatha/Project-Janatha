@@ -444,6 +444,99 @@ export async function getAllEvents() {
   }
 }
 
+// Message-related DynamoDB helper functions
+
+/**
+ * Creates a new message in the Messages table.
+ * @param {Object} messageItem - Must include eventID, authorUsername, text, and optionally image.
+ * @returns {{success: boolean, messageID?: string, error?: string}}
+ */
+export async function createMessage(messageItem) {
+  try {
+    if (!messageItem.messageID) {
+      messageItem.messageID = uuidv4()
+    }
+    const now = new Date().toISOString()
+    await constants.docClient.send(
+      new PutCommand({
+        TableName: constants.MESSAGES_TABLE,
+        Item: {
+          ...messageItem,
+          createdAt: now,
+          timestamp: now,
+        },
+        ConditionExpression: 'attribute_not_exists(messageID)',
+      })
+    )
+    return { success: true, messageID: messageItem.messageID }
+  } catch (err) {
+    console.error('Error creating message:', err)
+    return { success: false, error: err.message }
+  }
+}
+
+/**
+ * Gets all messages for an event, sorted by createdAt ascending.
+ * @param {string} eventID
+ * @returns {Array}
+ */
+export async function getMessagesByEventId(eventID) {
+  try {
+    const command = new QueryCommand({
+      TableName: constants.MESSAGES_TABLE,
+      IndexName: 'eventID-index',
+      KeyConditionExpression: 'eventID = :eid',
+      ExpressionAttributeValues: { ':eid': eventID },
+    })
+    const result = await constants.docClient.send(command)
+    const items = result.Items || []
+    items.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''))
+    return items
+  } catch (err) {
+    console.error('Error getting messages by event:', err)
+    return []
+  }
+}
+
+/**
+ * Deletes a message by messageID.
+ * @param {string} messageID
+ * @returns {{success: boolean, error?: string}}
+ */
+export async function deleteMessage(messageID) {
+  try {
+    await constants.docClient.send(
+      new DeleteCommand({
+        TableName: constants.MESSAGES_TABLE,
+        Key: { messageID },
+      })
+    )
+    return { success: true }
+  } catch (err) {
+    console.error('Error deleting message:', err)
+    return { success: false, error: err.message }
+  }
+}
+
+/**
+ * Gets a single message by messageID.
+ * @param {string} messageID
+ * @returns {Object | null}
+ */
+export async function getMessageById(messageID) {
+  try {
+    const command = new GetCommand({
+      TableName: constants.MESSAGES_TABLE,
+      Key: { messageID },
+    })
+    const result = await constants.docClient.send(command)
+    return result.Item || null
+  } catch (err) {
+    console.error('Error retrieving message:', err)
+    return null
+  }
+}
+
 // Default export for backward compatibility
 export default {
   createUser,
@@ -462,4 +555,8 @@ export default {
   deleteCenter,
   getAllCenters,
   getAllEvents,
+  createMessage,
+  getMessagesByEventId,
+  deleteMessage,
+  getMessageById,
 }

@@ -28,7 +28,7 @@ import fs from 'fs'
 console.log('Fs')
 //Constants
 console.log('Constants')
-const PORT = 8008
+const PORT = process.env.PORT || 8008
 
 //App init
 console.log('Entering init')

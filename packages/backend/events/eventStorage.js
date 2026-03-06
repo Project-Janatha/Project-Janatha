@@ -23,15 +23,16 @@ import center from '../profiles/center.js'
  */
 async function storeEvent(eventToStore) {
   try {
-    const existing = await db.getEventById(eventToStore.id)
+    const eventID = String(eventToStore.id)
+    const existing = await db.getEventById(eventID)
     if (existing) {
       return false
     }
 
     const eventData = {
-      eventID: eventToStore.id,
-      eventObject: eventToStore.toJSON(),
-      centerID: eventToStore.center?.centerID || null,
+      eventID: eventID,
+      ...eventToStore.toJSON(),
+      id: eventID, // store as string — avoids Number.MAX_SAFE_INTEGER violation
     }
 
     const result = await db.createEvent(eventData)
@@ -48,16 +49,15 @@ async function storeEvent(eventToStore) {
  */
 async function updateEvent(eventObject) {
   try {
-    const existing = await db.getEventById(eventObject.id)
+    const eventID = String(eventObject.id)
+    const existing = await db.getEventById(eventID)
     if (!existing) {
       return false
     }
 
-    const updates = {
-      eventObject: eventObject.toJSON(),
-    }
+    const updates = { ...eventObject.toJSON(), id: eventID }
 
-    const result = await db.updateEvent(eventObject.id, updates)
+    const result = await db.updateEvent(eventID, updates)
     return result.success
   } catch (err) {
     console.error('Update event error:', err)
@@ -72,7 +72,7 @@ async function updateEvent(eventObject) {
  */
 async function checkEventUniqueness(id) {
   try {
-    const event = await db.getEventById(id)
+    const event = await db.getEventById(String(id))
     return !event
   } catch (err) {
     console.error('Check event uniqueness error:', err)
@@ -86,7 +86,7 @@ async function checkEventUniqueness(id) {
  */
 async function getEventByID(id) {
   try {
-    const doc = await db.getEventById(id)
+    const doc = await db.getEventById(String(id))
     return doc || null
   } catch (err) {
     console.error('Get event by ID error:', err)
@@ -100,7 +100,7 @@ async function getEventByID(id) {
  */
 async function removeEventByID(id) {
   try {
-    const result = await db.deleteEvent(id)
+    const result = await db.deleteEvent(String(id))
     return result.success
   } catch (err) {
     console.error('Remove event by ID error:', err)
