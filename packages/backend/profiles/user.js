@@ -28,8 +28,9 @@ class User {
       this.firstName = ''
       this.lastName = ''
       this.dateOfBirth = null // Stored as a Date object.
-      this.profilePictureURL = this.getDefaultAvatar()
-      this.center = -1
+      this.profileImage = this.getDefaultAvatar()
+      this.centerID = -1
+      this.centerMemberships = [] // List of centerIDs the user has joined
       this.points = 0
       this.isVerified = false
       this.verificationLevel = constants.NORMAL_USER
@@ -37,6 +38,11 @@ class User {
       this.isActive = false
       this.id = ''
       this.events = []
+      this.email = ''
+      this.profileComplete = false
+      this.phoneNumber = ''
+      this.interests = []
+      this.bio = ''
     } else {
       console.error('User does not exist!')
       this.exists = false
@@ -77,12 +83,12 @@ class User {
     return true
   }
   /**
-   * Sets the center.
-   * @param {number} centerId The center ID of the center.
+   * Sets the home center.
+   * @param {string} centerId The center ID of the center.
    * @returns {boolean} A boolean representing success.
    */
   setCenter(centerId) {
-    center = centerId
+    this.centerID = centerId
     return true
   }
   /**
@@ -112,7 +118,7 @@ class User {
     this.isActive = false
   }
   /**
-   * Turns this User into JSON.
+   * Turns this User into JSON (flat — all fields at top level, no nested userObject).
    *
    * @returns {JSON} The user represented as JSON.
    */
@@ -122,8 +128,9 @@ class User {
       firstName: this.firstName,
       lastName: this.lastName,
       dateOfBirth: this.dateOfBirth,
-      profilePictureURL: this.profilePictureURL,
-      center: this.center,
+      profileImage: this.profileImage,
+      centerID: this.centerID,
+      centerMemberships: this.centerMemberships,
       points: this.points,
       isVerified: this.isVerified,
       verificationLevel: this.verificationLevel,
@@ -131,6 +138,11 @@ class User {
       isActive: this.isActive,
       id: this.id,
       events: this.events,
+      email: this.email,
+      profileComplete: this.profileComplete,
+      phoneNumber: this.phoneNumber,
+      interests: this.interests,
+      bio: this.bio,
     }
   }
   /**
@@ -142,29 +154,38 @@ class User {
     return JSON.stringify(this.toJSON())
   }
   /**
-   * Builds this user from JSON.
+   * Builds this user from a flat DynamoDB record (or legacy nested userObject).
    * @param {JSON} data The JSON from which to build the user.
    */
   buildFromJSON(data) {
-    if (data.exists) {
-      this.username = data.username
-      this.firstName = data.firstName
-      this.lastName = data.lastName
-      this.dateOfBirth = data.dateOfBirth
-      this.profilePictureURL = data.profilePictureURL
-      this.center = data.center
-      this.points = data.points
-      this.isVerified = data.isVerified
-      this.verificationLevel = data.verificationLevel
-      this.exists = data.exists
-      this.isActive = data.isActive
-      this.id = data.id
-      this.events = data.events
+    // Support both flat top-level fields and legacy nested userObject
+    const src = data.userObject || data
+    if (src.exists !== false) {
+      this.username = src.username || this.username
+      this.firstName = src.firstName || ''
+      this.lastName = src.lastName || ''
+      this.dateOfBirth = src.dateOfBirth || null
+      // Support legacy profilePictureURL field name
+      this.profileImage = src.profileImage || src.profilePictureURL || this.getDefaultAvatar()
+      // Support legacy 'center' field name
+      this.centerID = src.centerID !== undefined ? src.centerID : (src.center !== undefined ? src.center : -1)
+      this.centerMemberships = src.centerMemberships || []
+      this.points = src.points || 0
+      this.isVerified = src.isVerified || false
+      this.verificationLevel = src.verificationLevel || constants.NORMAL_USER
+      this.exists = src.exists !== undefined ? src.exists : true
+      this.isActive = src.isActive || false
+      this.id = src.id || ''
+      this.events = src.events || []
+      this.email = src.email || ''
+      this.profileComplete = src.profileComplete || false
+      this.phoneNumber = src.phoneNumber || ''
+      this.interests = src.interests || []
+      this.bio = src.bio || ''
     }
   }
   /**
    * Retrieves the unique user ID from users.db and sets this User's ID to that.
-   * NOTE: This method may have to be changed with the classic variability method used in Center and Event based on how testing and deployment flows.
    * @returns {boolean | string} A boolean representing the success of this operation, or the ID fetched.
    */
   async retrieveID() {

@@ -19,3 +19,8 @@ amplifytools.xcconfig
 .secret-*
 **.sample
 #amplify-do-not-edit-end
+
+# Local environment files — never commit these
+.env
+.env.local
+.env.*.local
