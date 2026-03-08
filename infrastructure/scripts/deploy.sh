@@ -8,6 +8,16 @@ cd "$PROJECT_ROOT"
 echo "🚀 Starting deployment to EC2..."
 echo "📁 Project root: $PROJECT_ROOT"
 
+# Load .env.deploy if it exists
+if [ -f ".env.deploy" ]; then
+    echo "📋 Loading config from .env.deploy..."
+    while IFS='=' read -r key value; do
+        if [[ -n "$key" && ! "$key" =~ ^# ]]; then
+            export "$key=$value"
+        fi
+    done < <(rg -N "^[A-Za-z_][A-Za-z0-9_]*=.+$" ".env.deploy")
+fi
+
 EC2_HOST="${EC2_HOST:-}"
 EC2_USER="${EC2_USER:-ubuntu}"
 EC2_KEY="${EC2_KEY:-$HOME/.ssh/janata-ec2.pem}"
@@ -19,8 +29,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 if [ -z "$EC2_HOST" ]; then
-    echo -e "${RED}❌ Error: EC2_HOST environment variable is not set${NC}"
-    echo "Usage: EC2_HOST=your-ec2-ip.compute.amazonaws.com npm run deploy"
+    echo -e "${RED}❌ Error: EC2_HOST is not set${NC}"
+    echo "Set it in .env.deploy or as an environment variable"
     exit 1
 fi
 
@@ -129,7 +139,17 @@ echo -e "${GREEN}✓${NC} SSH connection successful"
 ECR_REPO="${ECR_REPO:-}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
 
-require_env_vars ECR_REPO AWS_REGION JWT_SECRET SESSION_SECRET CORS_ORIGIN
+# Auto-generate secrets if not set
+if [ -z "${JWT_SECRET:-}" ]; then
+    JWT_SECRET=$(generate_secret)
+    echo -e "${YELLOW}⚠️  JWT_SECRET not set, generated new secret${NC}"
+fi
+if [ -z "${SESSION_SECRET:-}" ]; then
+    SESSION_SECRET=$(generate_secret)
+    echo -e "${YELLOW}⚠️  SESSION_SECRET not set, generated new secret${NC}"
+fi
+
+require_env_vars ECR_REPO AWS_REGION CORS_ORIGIN
 
 if [ -z "${IMAGE_TAG:-}" ]; then
     IMAGE_TAG="$(date +%Y%m%d%H%M%S)"
