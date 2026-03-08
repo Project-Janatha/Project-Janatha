@@ -37,6 +37,7 @@ const __dirname = dirname(__filename)
 const USERS_TABLE = process.env.USERS_TABLE || 'ChinmayaJanata-Users'
 const EVENTS_TABLE = process.env.EVENTS_TABLE || 'ChinmayaJanata-Events'
 const CENTERS_TABLE = process.env.CENTERS_TABLE || 'ChinmayaJanata-Centers'
+const MESSAGES_TABLE = process.env.MESSAGES_TABLE || 'ChinmayaJanata-Messages'
 
 //Admin constants
 const ADMIN_NAME = 'Brahman'
@@ -66,6 +67,7 @@ export default {
   USERS_TABLE,
   EVENTS_TABLE,
   CENTERS_TABLE,
+  MESSAGES_TABLE,
   ADMIN_NAME,
   ADMIN_CUTOFF,
   NORMAL_USER,
