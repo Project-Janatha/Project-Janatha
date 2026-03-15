@@ -1,7 +1,8 @@
 import React from 'react'
-import { View, Text, Image, type ViewStyle } from 'react-native'
+import { View, Image, type ViewStyle } from 'react-native'
 
-const logoImage = require('../../assets/images/logo.png')
+const logoIcon = require('../../assets/images/logo.png')
+const logoWithText = require('../../assets/images/logo_with_text.png')
 
 interface LogoProps {
   showText?: boolean
@@ -10,31 +11,38 @@ interface LogoProps {
   style?: ViewStyle
 }
 
+const LOGO_WITH_TEXT_ASPECT_RATIO = 3.65
+
 export default function Logo({
   showText = true,
   size = 32,
-  color = '#E8862A',
+  color,
   style,
 }: LogoProps) {
+  if (showText) {
+    return (
+      <View style={[{ flexDirection: 'row', alignItems: 'center' }, style]}>
+        <Image
+          source={logoWithText}
+          style={{
+            height: size,
+            width: size * LOGO_WITH_TEXT_ASPECT_RATIO,
+          }}
+          resizeMode="contain"
+          {...(color ? { tintColor: color } : {})}
+        />
+      </View>
+    )
+  }
+
   return (
-    <View style={[{ flexDirection: 'row', alignItems: 'center', gap: size * 0.3 }, style]}>
+    <View style={[{ flexDirection: 'row', alignItems: 'center' }, style]}>
       <Image
-        source={logoImage}
+        source={logoIcon}
         style={{ width: size, height: size }}
         resizeMode="contain"
+        {...(color ? { tintColor: color } : {})}
       />
-      {showText && (
-        <Text
-          style={{
-            fontFamily: '"Inclusive Sans", sans-serif',
-            fontWeight: '400',
-            fontSize: size * 0.56,
-            color,
-          }}
-        >
-          Janata
-        </Text>
-      )}
     </View>
   )
 }
