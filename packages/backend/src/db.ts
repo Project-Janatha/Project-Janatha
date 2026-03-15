@@ -1,0 +1,465 @@
+/**
+ * db.ts
+ *
+ * Om Sri Chinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
+ *
+ * D1 database access layer with typed query helpers.
+ * All functions take a D1Database instance so the module is stateless
+ * and works naturally with CF Workers request-scoped bindings.
+ */
+import type {
+  UserRow,
+  CenterRow,
+  EventRow,
+  EventAttendeeRow,
+  EventEndorserRow,
+} from './types'
+
+// ═══════════════════════════════════════════════════════════════════════
+// USERS
+// ═══════════════════════════════════════════════════════════════════════
+
+export async function createUser(
+  db: D1Database,
+  user: Pick<UserRow, 'id' | 'username' | 'password'> & Partial<UserRow>,
+): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const now = new Date().toISOString()
+    await db
+      .prepare(
+        `INSERT INTO users (id, username, password, email, first_name, last_name,
+          date_of_birth, phone_number, profile_image, center_id, points,
+          is_verified, verification_level, is_active, profile_complete,
+          interests, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)`,
+      )
+      .bind(
+        user.id,
+        user.username.toLowerCase(),
+        user.password,
+        user.email ?? null,
+        user.first_name ?? '',
+        user.last_name ?? '',
+        user.date_of_birth ?? null,
+        user.phone_number ?? null,
+        user.profile_image ?? null,
+        user.center_id ?? null,
+        user.points ?? 0,
+        user.is_verified ?? 0,
+        user.verification_level ?? 45,
+        user.is_active ?? 0,
+        user.profile_complete ?? 0,
+        user.interests ?? null,
+        now,
+        now,
+      )
+      .run()
+    return { success: true, id: user.id }
+  } catch (err: any) {
+    if (err?.message?.includes('UNIQUE constraint failed')) {
+      return { success: false, error: 'User already exists' }
+    }
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+
+export async function getUserByUsername(
+  db: D1Database,
+  username: string,
+): Promise<UserRow | null> {
+  const normalized = username.trim().toLowerCase()
+  const result = await db
+    .prepare('SELECT * FROM users WHERE username = ?1')
+    .bind(normalized)
+    .first<UserRow>()
+  return result ?? null
+}
+
+export async function getUserById(
+  db: D1Database,
+  userId: string,
+): Promise<UserRow | null> {
+  const result = await db
+    .prepare('SELECT * FROM users WHERE id = ?1')
+    .bind(userId)
+    .first<UserRow>()
+  return result ?? null
+}
+
+export async function updateUser(
+  db: D1Database,
+  userId: string,
+  updates: Partial<Omit<UserRow, 'id' | 'created_at'>>,
+): Promise<{ success: boolean; error?: string }> {
+  const fields = Object.keys(updates).filter((k) => k !== 'id' && k !== 'created_at')
+  if (fields.length === 0) return { success: true }
+
+  // Always update updated_at
+  const allFields = [...fields, 'updated_at']
+  const setClauses = allFields.map((f, i) => `${f} = ?${i + 2}`).join(', ')
+  const values = [
+    ...fields.map((f) => (updates as Record<string, any>)[f]),
+    new Date().toISOString(),
+  ]
+
+  try {
+    await db
+      .prepare(`UPDATE users SET ${setClauses} WHERE id = ?1`)
+      .bind(userId, ...values)
+      .run()
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+
+export async function deleteUser(
+  db: D1Database,
+  userId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await db.prepare('DELETE FROM users WHERE id = ?1').bind(userId).run()
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CENTERS
+// ═══════════════════════════════════════════════════════════════════════
+
+export async function createCenter(
+  db: D1Database,
+  center: Pick<CenterRow, 'id' | 'name' | 'latitude' | 'longitude'> & Partial<CenterRow>,
+): Promise<{ success: boolean; centerID?: string; error?: string }> {
+  try {
+    const now = new Date().toISOString()
+    await db
+      .prepare(
+        `INSERT INTO centers (id, name, latitude, longitude, address, member_count, is_verified, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`,
+      )
+      .bind(
+        center.id,
+        center.name,
+        center.latitude,
+        center.longitude,
+        center.address ?? null,
+        center.member_count ?? 0,
+        center.is_verified ?? 0,
+        now,
+        now,
+      )
+      .run()
+    return { success: true, centerID: center.id }
+  } catch (err: any) {
+    if (err?.message?.includes('UNIQUE constraint failed')) {
+      return { success: false, error: 'Center already exists' }
+    }
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+
+export async function getCenterById(
+  db: D1Database,
+  centerId: string,
+): Promise<CenterRow | null> {
+  const result = await db
+    .prepare('SELECT * FROM centers WHERE id = ?1')
+    .bind(centerId)
+    .first<CenterRow>()
+  return result ?? null
+}
+
+export async function getAllCenters(db: D1Database): Promise<CenterRow[]> {
+  const result = await db.prepare('SELECT * FROM centers ORDER BY name').all<CenterRow>()
+  return result.results ?? []
+}
+
+export async function updateCenter(
+  db: D1Database,
+  centerId: string,
+  updates: Partial<Omit<CenterRow, 'id' | 'created_at'>>,
+): Promise<{ success: boolean; error?: string }> {
+  const fields = Object.keys(updates).filter((k) => k !== 'id' && k !== 'created_at')
+  if (fields.length === 0) return { success: true }
+
+  const allFields = [...fields, 'updated_at']
+  const setClauses = allFields.map((f, i) => `${f} = ?${i + 2}`).join(', ')
+  const values = [
+    ...fields.map((f) => (updates as Record<string, any>)[f]),
+    new Date().toISOString(),
+  ]
+
+  try {
+    await db
+      .prepare(`UPDATE centers SET ${setClauses} WHERE id = ?1`)
+      .bind(centerId, ...values)
+      .run()
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+
+export async function deleteCenter(
+  db: D1Database,
+  centerId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await db.prepare('DELETE FROM centers WHERE id = ?1').bind(centerId).run()
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// EVENTS
+// ═══════════════════════════════════════════════════════════════════════
+
+export async function createEvent(
+  db: D1Database,
+  event: Pick<EventRow, 'id' | 'title' | 'date' | 'latitude' | 'longitude'> &
+    Partial<EventRow>,
+): Promise<{ success: boolean; eventID?: string; error?: string }> {
+  try {
+    const now = new Date().toISOString()
+    await db
+      .prepare(
+        `INSERT INTO events (id, title, description, date, latitude, longitude, address,
+          center_id, tier, people_attending, point_of_contact, image, category,
+          created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)`,
+      )
+      .bind(
+        event.id,
+        event.title ?? '',
+        event.description ?? '',
+        event.date,
+        event.latitude,
+        event.longitude,
+        event.address ?? null,
+        event.center_id ?? null,
+        event.tier ?? 0,
+        event.people_attending ?? 0,
+        event.point_of_contact ?? null,
+        event.image ?? null,
+        event.category ?? null,
+        now,
+        now,
+      )
+      .run()
+    return { success: true, eventID: event.id }
+  } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+
+export async function getEventById(
+  db: D1Database,
+  eventId: string,
+): Promise<EventRow | null> {
+  const result = await db
+    .prepare('SELECT * FROM events WHERE id = ?1')
+    .bind(eventId)
+    .first<EventRow>()
+  return result ?? null
+}
+
+export async function getAllEvents(db: D1Database): Promise<EventRow[]> {
+  const result = await db
+    .prepare('SELECT * FROM events ORDER BY date DESC')
+    .all<EventRow>()
+  return result.results ?? []
+}
+
+export async function getEventsByCenterId(
+  db: D1Database,
+  centerId: string,
+): Promise<EventRow[]> {
+  const result = await db
+    .prepare('SELECT * FROM events WHERE center_id = ?1 ORDER BY date DESC')
+    .bind(centerId)
+    .all<EventRow>()
+  return result.results ?? []
+}
+
+export async function updateEvent(
+  db: D1Database,
+  eventId: string,
+  updates: Partial<Omit<EventRow, 'id' | 'created_at'>>,
+): Promise<{ success: boolean; error?: string }> {
+  const fields = Object.keys(updates).filter((k) => k !== 'id' && k !== 'created_at')
+  if (fields.length === 0) return { success: true }
+
+  const allFields = [...fields, 'updated_at']
+  const setClauses = allFields.map((f, i) => `${f} = ?${i + 2}`).join(', ')
+  const values = [
+    ...fields.map((f) => (updates as Record<string, any>)[f]),
+    new Date().toISOString(),
+  ]
+
+  try {
+    await db
+      .prepare(`UPDATE events SET ${setClauses} WHERE id = ?1`)
+      .bind(eventId, ...values)
+      .run()
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+
+export async function deleteEvent(
+  db: D1Database,
+  eventId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await db.prepare('DELETE FROM events WHERE id = ?1').bind(eventId).run()
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// EVENT ATTENDEES
+// ═══════════════════════════════════════════════════════════════════════
+
+export async function addEventAttendee(
+  db: D1Database,
+  eventId: string,
+  userId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const now = new Date().toISOString()
+    await db.batch([
+      db
+        .prepare(
+          'INSERT OR IGNORE INTO event_attendees (event_id, user_id, created_at) VALUES (?1, ?2, ?3)',
+        )
+        .bind(eventId, userId, now),
+      db
+        .prepare(
+          `UPDATE events SET people_attending = (
+            SELECT COUNT(*) FROM event_attendees WHERE event_id = ?1
+          ), updated_at = ?2 WHERE id = ?1`,
+        )
+        .bind(eventId, now),
+    ])
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+
+export async function removeEventAttendee(
+  db: D1Database,
+  eventId: string,
+  userId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const now = new Date().toISOString()
+    await db.batch([
+      db
+        .prepare('DELETE FROM event_attendees WHERE event_id = ?1 AND user_id = ?2')
+        .bind(eventId, userId),
+      db
+        .prepare(
+          `UPDATE events SET people_attending = (
+            SELECT COUNT(*) FROM event_attendees WHERE event_id = ?1
+          ), updated_at = ?2 WHERE id = ?1`,
+        )
+        .bind(eventId, now),
+    ])
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+
+export async function isUserAttending(
+  db: D1Database,
+  eventId: string,
+  userId: string,
+): Promise<boolean> {
+  const result = await db
+    .prepare(
+      'SELECT 1 FROM event_attendees WHERE event_id = ?1 AND user_id = ?2',
+    )
+    .bind(eventId, userId)
+    .first()
+  return result !== null
+}
+
+export async function getEventAttendees(
+  db: D1Database,
+  eventId: string,
+): Promise<UserRow[]> {
+  const result = await db
+    .prepare(
+      `SELECT u.* FROM users u
+       JOIN event_attendees ea ON ea.user_id = u.id
+       WHERE ea.event_id = ?1
+       ORDER BY ea.created_at`,
+    )
+    .bind(eventId)
+    .all<UserRow>()
+  return result.results ?? []
+}
+
+export async function getUserEvents(
+  db: D1Database,
+  userId: string,
+): Promise<EventRow[]> {
+  const result = await db
+    .prepare(
+      `SELECT e.* FROM events e
+       JOIN event_attendees ea ON ea.event_id = e.id
+       WHERE ea.user_id = ?1
+       ORDER BY e.date DESC`,
+    )
+    .bind(userId)
+    .all<EventRow>()
+  return result.results ?? []
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// EVENT ENDORSERS
+// ═══════════════════════════════════════════════════════════════════════
+
+export async function addEventEndorser(
+  db: D1Database,
+  eventId: string,
+  userId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await db
+      .prepare(
+        'INSERT OR IGNORE INTO event_endorsers (event_id, user_id, created_at) VALUES (?1, ?2, ?3)',
+      )
+      .bind(eventId, userId, new Date().toISOString())
+      .run()
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+
+export async function getEventEndorsers(
+  db: D1Database,
+  eventId: string,
+): Promise<UserRow[]> {
+  const result = await db
+    .prepare(
+      `SELECT u.* FROM users u
+       JOIN event_endorsers ee ON ee.user_id = u.id
+       WHERE ee.event_id = ?1
+       ORDER BY ee.created_at`,
+    )
+    .bind(eventId)
+    .all<UserRow>()
+  return result.results ?? []
+}

@@ -112,6 +112,10 @@ export function ImageCarousel({ images, interval = 15000 }: ImageCarouselProps) 
       <img
         src={shuffledImages[firstSlotIndex]}
         alt=""
+        loading="eager"
+        decoding="async"
+        width={800}
+        height={1200}
         style={{
           position: 'absolute',
           inset: 0,
@@ -127,6 +131,10 @@ export function ImageCarousel({ images, interval = 15000 }: ImageCarouselProps) 
       <img
         src={shuffledImages[secondSlotIndex]}
         alt=""
+        loading="lazy"
+        decoding="async"
+        width={800}
+        height={1200}
         style={{
           position: 'absolute',
           inset: 0,

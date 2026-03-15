@@ -1,5 +1,5 @@
 // Discover tab — web desktop layout
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect, useRef, lazy, Suspense } from 'react'
 import {
   View,
   Text,
@@ -9,11 +9,11 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native'
-import { MapPin, Search, Building2, Users } from 'lucide-react-native'
+import { MapPin, Search, Building2, Users, ChevronUp } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar } from '../../components/ui'
-import Map from '../../components/Map'
+const Map = lazy(() => import('../../components/Map'))
 import MapPopover from '../../components/MapPopover'
 import {
   useDiscoverData,
@@ -26,11 +26,6 @@ import CenterDetailPanel from '../../components/web/CenterDetailPanel'
 import { useDetailColors } from '../../hooks/useDetailColors'
 import type { MapPoint, EventDisplay, DiscoverCenter } from '../../utils/api'
 import { WeekCalendar } from '../../components'
-
-const isMobileDevice = () => {
-  if (typeof window === 'undefined') return false
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-}
 
 const FILTERS: { label: DiscoverFilter }[] = [
   { label: 'All' },
@@ -93,6 +88,7 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
           ? 'bg-orange-50/80 dark:bg-orange-950/20'
           : 'bg-white dark:bg-neutral-900'
       }`}
+      style={{ minHeight: 72 }}
     >
       {/* Date pill */}
       <View className="w-[52px] h-[60px] rounded-xl items-center justify-center bg-stone-100 dark:bg-neutral-800">
@@ -143,6 +139,7 @@ function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () =
       className={`flex-row gap-4 p-4 rounded-2xl active:opacity-80 border border-transparent hover:border-stone-200 dark:hover:border-neutral-700 ${
         center.isMember ? 'bg-orange-50/80 dark:bg-orange-950/20' : 'bg-white dark:bg-neutral-900'
       }`}
+      style={{ minHeight: 72 }}
     >
       {/* Icon pill */}
       <View className="w-[52px] h-[60px] rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center">
@@ -281,13 +278,101 @@ function CenterPanelInner({
   )
 }
 
-// ─── Mobile Discover (map + list vertical layout) ───────
+// ─── Mobile Discover (map + CSS bottom sheet) ──────────
+
+type SheetSnap = 'collapsed' | 'mid' | 'expanded'
 
 function MobileDiscoverFallback() {
   const router = useRouter()
+  const { isDark } = useThemeContext()
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
-  const { items, filteredPoints, loading } = useDiscoverData(activeFilter, searchQuery)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const { items, filteredPoints, loading, allEvents } = useDiscoverData(activeFilter, searchQuery)
+
+  // Bottom sheet state
+  const [sheetSnap, setSheetSnap] = useState<SheetSnap>('mid')
+  const [sheetTranslateY, setSheetTranslateY] = useState<number | null>(null)
+  const dragStartY = useRef(0)
+  const dragStartTranslate = useRef(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Sheet snap positions (percentage from top of container)
+  const getSnapPositions = useCallback(() => {
+    const h = containerRef.current?.clientHeight || window.innerHeight
+    return {
+      expanded: 56, // 56px from top (below status bar area)
+      mid: h * 0.55, // 55% down
+      collapsed: h - 80, // 80px from bottom (just the handle + peek)
+    }
+  }, [])
+
+  const getSnapY = useCallback(
+    (snap: SheetSnap) => {
+      const positions = getSnapPositions()
+      return positions[snap]
+    },
+    [getSnapPositions]
+  )
+
+  const currentTranslateY = sheetTranslateY ?? getSnapY(sheetSnap)
+
+  // Touch handlers for bottom sheet drag
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      dragStartY.current = e.touches[0].clientY
+      dragStartTranslate.current = currentTranslateY
+    },
+    [currentTranslateY]
+  )
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      const dy = e.touches[0].clientY - dragStartY.current
+      const positions = getSnapPositions()
+      const next = Math.max(
+        positions.expanded,
+        Math.min(positions.collapsed, dragStartTranslate.current + dy)
+      )
+      setSheetTranslateY(next)
+    },
+    [getSnapPositions]
+  )
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (sheetTranslateY === null) return
+      const positions = getSnapPositions()
+      const velocity =
+        e.changedTouches[0].clientY - dragStartY.current > 0 ? 1 : -1
+
+      // Snap to nearest position, biased by velocity
+      let snapTo: SheetSnap
+      const distToExpanded = Math.abs(sheetTranslateY - positions.expanded)
+      const distToMid = Math.abs(sheetTranslateY - positions.mid)
+      const distToCollapsed = Math.abs(sheetTranslateY - positions.collapsed)
+
+      if (velocity > 0 && Math.abs(e.changedTouches[0].clientY - dragStartY.current) > 40) {
+        // Swiped down fast
+        snapTo = sheetSnap === 'expanded' ? 'mid' : 'collapsed'
+      } else if (
+        velocity < 0 &&
+        Math.abs(e.changedTouches[0].clientY - dragStartY.current) > 40
+      ) {
+        // Swiped up fast
+        snapTo = sheetSnap === 'collapsed' ? 'mid' : 'expanded'
+      } else {
+        // Position-based snap
+        const minDist = Math.min(distToExpanded, distToMid, distToCollapsed)
+        snapTo =
+          minDist === distToExpanded ? 'expanded' : minDist === distToMid ? 'mid' : 'collapsed'
+      }
+
+      setSheetSnap(snapTo)
+      setSheetTranslateY(null)
+    },
+    [sheetTranslateY, sheetSnap, getSnapPositions]
+  )
 
   const handlePointPress = useCallback(
     (point: MapPoint) => {
@@ -300,125 +385,195 @@ function MobileDiscoverFallback() {
     [router]
   )
 
-  return (
-    <View className="flex-1 bg-background dark:bg-background-dark">
-      {/* Map section — 75% height */}
-      <View style={{ flex: 3, position: 'relative' }}>
-        <Map points={filteredPoints} onPointPress={handlePointPress} />
+  const handleFilterPress = useCallback((f: DiscoverFilter) => {
+    setActiveFilter(f)
+    setSelectedDate(null)
+  }, [])
 
-        {/* Filter + search overlay on top of map */}
-        <View
+  const eventDates = useMemo(
+    () => new Set(allEvents.filter((e) => e.date).map((e) => e.date)),
+    [allEvents]
+  )
+
+  const displayItems = useMemo(() => {
+    if (!selectedDate) return items
+    return items.filter(
+      (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
+    )
+  }, [items, selectedDate])
+
+  const isExpanded = sheetSnap === 'expanded' && sheetTranslateY === null
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Map — full bleed behind the sheet */}
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+        <Suspense fallback={<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#E8862A" /></View>}>
+          <Map points={filteredPoints} onPointPress={handlePointPress} />
+        </Suspense>
+      </View>
+
+      {/* Bottom Sheet */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          top: currentTranslateY,
+          transition: sheetTranslateY !== null ? 'none' : 'top 0.3s cubic-bezier(0.25, 1, 0.5, 1)',
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 10,
+        }}
+      >
+        <div
           style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            paddingHorizontal: 12,
-            paddingTop: 12,
-            paddingBottom: 8,
+            flex: 1,
+            backgroundColor: isDark ? '#171717' : '#FFFFFF',
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            boxShadow: '0 -4px 20px rgba(0,0,0,0.12)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            {FILTERS.map((f) => (
-              <FilterChip
-                key={f.label}
-                label={f.label}
-                active={activeFilter === f.label}
-                onPress={() => setActiveFilter(f.label)}
-              />
-            ))}
-          </View>
-          <View
-            className="flex-row items-center px-3 rounded-xl bg-white/90 dark:bg-neutral-900/90"
-            style={{ minHeight: 40, backdropFilter: 'blur(8px)' } as any}
+          {/* Drag Handle Zone */}
+          <div
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{
+              touchAction: 'none',
+              cursor: 'grab',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+            }}
           >
-            <Search size={16} color="#9CA3AF" />
-            <TextInput
-              className="flex-1 ml-2 text-sm font-inter text-content dark:text-content-dark outline-none"
-              placeholder="Search..."
-              placeholderTextColor="#9CA3AF"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              style={{ paddingVertical: 8 }}
-            />
-          </View>
-        </View>
-      </View>
+            {/* Handle bar */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                paddingTop: 10,
+                paddingBottom: 8,
+              }}
+            >
+              <div
+                style={{
+                  width: 40,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: isDark ? '#525252' : '#D1D5DB',
+                }}
+              />
+            </div>
 
-      {/* List section — 25% height */}
-      <View
-        style={{ flex: 1, borderTopWidth: 1 }}
-        className="border-stone-200 dark:border-neutral-700"
-      >
-        {loading && (
-          <View className="py-3 items-center">
-            <ActivityIndicator size="small" color="#9A3412" />
-          </View>
-        )}
+            {/* Search */}
+            <View
+              className="flex-row items-center mx-3 mb-2 px-3 rounded-xl"
+              style={{
+                minHeight: 44,
+                backgroundColor: isDark ? '#262626' : '#F3F4F6',
+              }}
+            >
+              <Search size={16} color="#9CA3AF" />
+              <TextInput
+                className="flex-1 ml-2 text-sm font-inter"
+                style={{
+                  color: isDark ? '#E5E7EB' : '#1F2937',
+                  paddingVertical: 10,
+                  fontSize: 16,
+                }}
+                placeholder="Search events and centers..."
+                placeholderTextColor="#9CA3AF"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
 
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 16, gap: 4 }}
-        >
-          {!loading && items.length === 0 && (
-            <View className="py-8 items-center">
-              <Text className="text-stone-400 font-inter text-sm">No results found</Text>
+            {/* Filter tabs */}
+            <View style={{ marginBottom: 4 }}>
+              <UnderlineTabBar
+                tabs={FILTERS.map((f) => f.label)}
+                activeTab={selectedDate ? '' : activeFilter}
+                onTabChange={(tab) => handleFilterPress(tab as DiscoverFilter)}
+              />
+            </View>
+
+            {/* Week Calendar */}
+            {activeFilter !== 'Centers' && !searchQuery.trim() && (
+              <View style={{ paddingHorizontal: 12, paddingTop: 4 }}>
+                <WeekCalendar
+                  eventDates={eventDates}
+                  selectedDate={selectedDate}
+                  onSelectDate={setSelectedDate}
+                />
+              </View>
+            )}
+          </div>
+
+          {/* Loading indicator */}
+          {loading && (
+            <View className="py-3 items-center">
+              <ActivityIndicator size="small" color="#9A3412" />
             </View>
           )}
-          {items.map((item) =>
-            item.type === 'event' ? (
-              <EventItem
-                key={`event-${item.data.id}`}
-                event={item.data as EventDisplay}
-                onPress={() => router.push(`/events/${item.data.id}`)}
-              />
-            ) : (
-              <CenterItem
-                key={`center-${item.data.id}`}
-                center={item.data as DiscoverCenter}
-                onPress={() => router.push(`/center/${item.data.id}`)}
-              />
-            )
-          )}
-        </ScrollView>
-      </View>
-    </View>
+
+          {/* Scrollable list */}
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 32, gap: 4 }}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={isExpanded}
+          >
+            {!loading && displayItems.length === 0 && (
+              <View className="py-12 items-center">
+                <Text className="text-stone-400 dark:text-stone-500 font-inter text-sm">
+                  {selectedDate ? 'No events on this day' : 'No results found'}
+                </Text>
+              </View>
+            )}
+            {displayItems.map((item) =>
+              item.type === 'event' ? (
+                <EventItem
+                  key={`event-${item.data.id}`}
+                  event={item.data as EventDisplay}
+                  onPress={() => router.push(`/events/${item.data.id}`)}
+                />
+              ) : (
+                <CenterItem
+                  key={`center-${item.data.id}`}
+                  center={item.data as DiscoverCenter}
+                  onPress={() => router.push(`/center/${item.data.id}`)}
+                />
+              )
+            )}
+          </ScrollView>
+        </div>
+      </div>
+    </div>
   )
 }
 
 // ─── Desktop Discover Screen ────────────────────────────
 
-// Lazy load native component for mobile device redirect
-const MobileHome = React.lazy(() => import('./index'))
-
 export default function DiscoverScreenWeb() {
   const { width } = useWindowDimensions()
-  const [isMobile, setIsMobile] = useState(false)
-  const [isDeviceMobile, setIsDeviceMobile] = useState(false)
-  const [viewState, setViewState] = useState({
-    longitude: -122.4194,
-    latitude: 37.7749,
-    zoom: 10,
-  })
-
-  useEffect(() => {
-    const deviceMobile = isMobileDevice()
-    setIsDeviceMobile(deviceMobile)
-    setIsMobile(deviceMobile || width < 768)
-  }, [width])
-
+  const isMobile = width < 768
   const isTablet = width >= 768 && width < 1024
   const panelWidth = isTablet ? 340 : 420
-
-  // Show native experience for mobile devices (maplibre crashes on mobile web)
-  // For narrow windows, also use native or show a message to use app
-  if (isDeviceMobile) {
-    return (
-      <React.Suspense fallback={<View className="flex-1 bg-background dark:bg-background-dark" />}>
-        <MobileHome />
-      </React.Suspense>
-    )
-  }
 
   const router = useRouter()
   const { isDark } = useThemeContext()
@@ -520,12 +675,14 @@ export default function DiscoverScreenWeb() {
       <View className="flex-row flex-1">
         {/* Map Panel */}
         <View className="flex-1 relative">
-          <Map
-            points={filteredPoints}
-            onPointPress={handlePointPress}
-            onPointHover={handlePointHover}
-            onPointClick={handlePointClick}
-          />
+          <Suspense fallback={<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#E8862A" /></View>}>
+            <Map
+              points={filteredPoints}
+              onPointPress={handlePointPress}
+              onPointHover={handlePointHover}
+              onPointClick={handlePointClick}
+            />
+          </Suspense>
 
           {/* Hover popover */}
           {hoverPopover && !clickPopover && (

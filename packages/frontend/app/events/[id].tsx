@@ -140,7 +140,7 @@ function HeaderBar({
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Pressable
           onPress={onBack}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 2, padding: 2 }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8, minHeight: 44, minWidth: 44 }}
         >
           <ChevronLeft size={20} color={colors.iconHeader} />
           <Text
@@ -155,7 +155,7 @@ function HeaderBar({
         </Pressable>
 
         {!isPast && (
-          <Pressable onPress={() => {}} style={{ padding: 6 }}>
+          <Pressable onPress={() => {}} style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
             <Share2 size={18} color={colors.iconHeader} />
           </Pressable>
         )}
@@ -434,7 +434,7 @@ export default function EventDetailPage() {
           <Text style={{ fontSize: 22, fontFamily: 'Inter-SemiBold', color: colors.text, marginBottom: 16 }}>
             Event not found
           </Text>
-          <Pressable onPress={() => router.back()} style={{ marginTop: 8 }}>
+          <Pressable onPress={() => router.back()} style={{ marginTop: 8, minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 16, fontFamily: 'Inter-Medium', color: '#E8862A' }}>Go Back</Text>
           </Pressable>
         </View>

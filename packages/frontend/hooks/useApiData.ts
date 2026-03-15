@@ -5,7 +5,8 @@ import {
   fetchEvent,
   fetchEventsByCenter,
   fetchEventUsers,
-  updateEvent,
+  attendEvent,
+  unattendEvent,
   getUserEvents,
   centersToMapPoints,
   eventsToMapPoints,
@@ -24,102 +25,125 @@ import {
 export type { DiscoverFilter }
 export type { EventDisplay } from '../utils/api'
 
-// ── Sample data (fallback when API returns empty) ──────────────────────
+// ── Sample data (fallback when API returns empty, dev only) ────────────
 
-const SAMPLE_CENTERS: MapPoint[] = [
-  { id: '1', type: 'center', name: 'Chinmaya Mission San Jose', latitude: 37.2431, longitude: -121.7831 },
-  { id: '2', type: 'center', name: 'Chinmaya Mission West', latitude: 37.8599, longitude: -122.4856 },
-  { id: '3', type: 'center', name: 'Chinmaya Mission San Francisco', latitude: 37.7749, longitude: -122.4194 },
-]
+const SAMPLE_CENTERS: MapPoint[] = __DEV__
+  ? [
+      { id: '1', type: 'center', name: 'Chinmaya Mission San Jose', latitude: 37.2431, longitude: -121.7831 },
+      { id: '2', type: 'center', name: 'Chinmaya Mission West', latitude: 37.8599, longitude: -122.4856 },
+      { id: '3', type: 'center', name: 'Chinmaya Mission San Francisco', latitude: 37.7749, longitude: -122.4194 },
+    ]
+  : []
 
-const SAMPLE_EVENTS: MapPoint[] = [
-  { id: 'evt-1', type: 'event', name: 'Bhagavad Gita Study Circle', latitude: 37.2631, longitude: -121.8031 },
-  { id: 'evt-2', type: 'event', name: 'Hanuman Chalisa Chanting', latitude: 37.8699, longitude: -122.4756 },
-  { id: 'evt-3', type: 'event', name: 'Yoga and Meditation Session', latitude: 37.7849, longitude: -122.4094 },
-]
+const SAMPLE_EVENTS: MapPoint[] = __DEV__
+  ? [
+      { id: 'evt-1', type: 'event', name: 'Bhagavad Gita Study Circle', latitude: 37.2631, longitude: -121.8031 },
+      { id: 'evt-2', type: 'event', name: 'Hanuman Chalisa Chanting', latitude: 37.8699, longitude: -122.4756 },
+      { id: 'evt-3', type: 'event', name: 'Yoga and Meditation Session', latitude: 37.7849, longitude: -122.4094 },
+    ]
+  : []
 
-const SAMPLE_EVENT_LIST: EventDisplay[] = [
-  {
-    id: '1',
-    title: 'Bhagavad Gita Study Circle - Chapter 12',
-    date: new Date().toISOString().split('T')[0],
-    time: '10:30 AM - 11:30 AM',
-    location: 'Chinmaya Mission San Jose',
-    address: '10160 Clayton Rd, San Jose, CA 95127',
-    attendees: 14,
-    likes: 0,
-    comments: 0,
-    description: 'Join us for an in-depth study of Chapter 12 of the Bhagavad Gita, focusing on Bhakti Yoga and the path of devotion.',
-    pointOfContact: 'Ramesh Ji',
-    isRegistered: true,
-  },
-  {
-    id: '2',
-    title: 'Hanuman Chalisa Chanting Marathon',
-    date: new Date().toISOString().split('T')[0],
-    time: '8:00 PM - 11:00 PM',
-    location: 'Chinmaya Mission West',
-    address: '299 Juanita Way, Sausalito, CA 94965',
-    attendees: 14,
-    likes: 0,
-    comments: 0,
-    description: 'Join us for a powerful chanting session of the Hanuman Chalisa.',
-    pointOfContact: 'Priya Devi',
-    isRegistered: false,
-  },
-  {
-    id: '3',
-    title: 'Yoga and Meditation Session',
-    date: new Date().toISOString().split('T')[0],
-    time: '9:00 AM - 10:30 AM',
-    location: 'Chinmaya Mission San Francisco',
-    address: '1 Sansome St, San Francisco, CA 94104',
-    attendees: 8,
-    likes: 0,
-    comments: 0,
-    description: 'Weekly yoga and meditation practice for beginners and advanced practitioners.',
-    pointOfContact: 'Anil Kumar',
-    isRegistered: false,
-  },
-]
+const SAMPLE_EVENT_LIST: EventDisplay[] = __DEV__
+  ? [
+      {
+        id: '1',
+        title: 'Bhagavad Gita Study Circle - Chapter 12',
+        date: new Date().toISOString().split('T')[0],
+        time: '10:30 AM - 11:30 AM',
+        location: 'Chinmaya Mission San Jose',
+        address: '10160 Clayton Rd, San Jose, CA 95127',
+        attendees: 14,
+        likes: 0,
+        comments: 0,
+        description: 'Join us for an in-depth study of Chapter 12 of the Bhagavad Gita, focusing on Bhakti Yoga and the path of devotion.',
+        pointOfContact: 'Ramesh Ji',
+        isRegistered: true,
+      },
+      {
+        id: '2',
+        title: 'Hanuman Chalisa Chanting Marathon',
+        date: new Date().toISOString().split('T')[0],
+        time: '8:00 PM - 11:00 PM',
+        location: 'Chinmaya Mission West',
+        address: '299 Juanita Way, Sausalito, CA 94965',
+        attendees: 14,
+        likes: 0,
+        comments: 0,
+        description: 'Join us for a powerful chanting session of the Hanuman Chalisa.',
+        pointOfContact: 'Priya Devi',
+        isRegistered: false,
+      },
+      {
+        id: '3',
+        title: 'Yoga and Meditation Session',
+        date: new Date().toISOString().split('T')[0],
+        time: '9:00 AM - 10:30 AM',
+        location: 'Chinmaya Mission San Francisco',
+        address: '1 Sansome St, San Francisco, CA 94104',
+        attendees: 8,
+        likes: 0,
+        comments: 0,
+        description: 'Weekly yoga and meditation practice for beginners and advanced practitioners.',
+        pointOfContact: 'Anil Kumar',
+        isRegistered: false,
+      },
+    ]
+  : []
 
-const SAMPLE_ATTENDEES = [
-  { name: 'Theresa Hebert', subtitle: 'Design manager @Setproduct', image: 'https://i.pravatar.cc/100?img=1' },
-  { name: 'Jessica Chlen', subtitle: 'Chief Design Officer', image: 'https://i.pravatar.cc/100?img=5' },
-  { name: 'Diana Shelton', subtitle: 'Senior UX designer', image: 'https://i.pravatar.cc/100?img=9' },
-  { name: 'Annie Huy Long', subtitle: 'Digital designer & Motion expert', image: 'https://i.pravatar.cc/100?img=16' },
-  { name: 'Morgan Melendez', subtitle: 'Community Organizer', image: 'https://i.pravatar.cc/100?img=20' },
-]
+const SAMPLE_ATTENDEES = __DEV__
+  ? [
+      { name: 'Theresa Hebert', subtitle: 'Design manager @Setproduct', image: 'https://i.pravatar.cc/100?img=1' },
+      { name: 'Jessica Chlen', subtitle: 'Chief Design Officer', image: 'https://i.pravatar.cc/100?img=5' },
+      { name: 'Diana Shelton', subtitle: 'Senior UX designer', image: 'https://i.pravatar.cc/100?img=9' },
+      { name: 'Annie Huy Long', subtitle: 'Digital designer & Motion expert', image: 'https://i.pravatar.cc/100?img=16' },
+      { name: 'Morgan Melendez', subtitle: 'Community Organizer', image: 'https://i.pravatar.cc/100?img=20' },
+    ]
+  : []
 
-const SAMPLE_MESSAGES = [
-  { author: 'Jessica Chlen', timestamp: '3:30PM · 19 August 2025', text: 'Thank you everyone who could attend!', image: 'https://i.pravatar.cc/100?img=5' },
-  { author: 'Jessica Chlen', timestamp: '9:20AM · 18 August 2025', text: 'We will be meeting on the 14th floor.', image: 'https://i.pravatar.cc/100?img=5' },
-]
+const SAMPLE_MESSAGES = __DEV__
+  ? [
+      { author: 'Jessica Chlen', timestamp: '3:30PM · 19 August 2025', text: 'Thank you everyone who could attend!', image: 'https://i.pravatar.cc/100?img=5' },
+      { author: 'Jessica Chlen', timestamp: '9:20AM · 18 August 2025', text: 'We will be meeting on the 14th floor.', image: 'https://i.pravatar.cc/100?img=5' },
+    ]
+  : []
 
 // ── Helper: transform API EventData into EventDisplay ──────────────────
 
-function apiEventToDisplay(e: EventData, username?: string): EventDisplay {
-  const obj = e.eventObject
-  const dateStr = obj?.date ? new Date(obj.date).toISOString().split('T')[0] : ''
-  const timeStr = obj?.date
-    ? new Date(obj.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+function apiEventToDisplay(e: EventData, _username?: string): EventDisplay {
+  const dateStr = e.date ? new Date(e.date).toISOString().split('T')[0] : ''
+  const timeStr = e.date
+    ? new Date(e.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
     : ''
 
   return {
     id: e.eventID,
-    title: obj?.title || obj?.description || 'Event',
+    title: e.title || e.description || 'Event',
     date: dateStr,
     time: timeStr,
-    location: obj?.center?.centerName || 'TBD',
-    latitude: obj?.location?.latitude,
-    longitude: obj?.location?.longitude,
-    attendees: obj?.peopleAttending || obj?.usersAttending?.length || 0,
+    location: e.address || 'TBD',
+    address: e.address ?? undefined,
+    latitude: e.latitude,
+    longitude: e.longitude,
+    attendees: e.peopleAttending || 0,
     likes: 0,
     comments: 0,
-    description: obj?.description,
-    isRegistered: username ? (obj?.usersAttending || []).includes(username) : false,
-    centerId: e.centerID,
+    description: e.description || undefined,
+    pointOfContact: e.pointOfContact ?? undefined,
+    image: e.image ?? undefined,
+    isRegistered: false, // Determined per-user at call site if needed
+    centerId: e.centerID ?? undefined,
   }
+}
+
+// ── Helper: fetch all events across centers in parallel ────────────────
+
+async function fetchAllEventsFromCenters(centers: CenterData[]): Promise<EventData[]> {
+  const results = await Promise.all(
+    centers.map((c) =>
+      fetchEventsByCenter(c.centerID).catch(() => [] as EventData[]),
+    ),
+  )
+  return results.flat()
 }
 
 // ── Hooks ──────────────────────────────────────────────────────────────
@@ -139,18 +163,11 @@ export function useMapPoints() {
         const centerPoints = centersToMapPoints(centers)
 
         if (centerPoints.length > 0) {
-          // Also try to fetch events for each center
-          const allEventPoints: MapPoint[] = []
-          for (const center of centers) {
-            try {
-              const events = await fetchEventsByCenter(center.centerID)
-              allEventPoints.push(...eventsToMapPoints(events))
-            } catch {
-              // Skip events for this center on error
-            }
-          }
+          const allEvents = await fetchAllEventsFromCenters(centers)
+          if (!mounted) return
 
-          setPoints([...centerPoints, ...allEventPoints])
+          const eventPoints = eventsToMapPoints(allEvents)
+          setPoints([...centerPoints, ...eventPoints])
           setIsLive(true)
         }
         // else: keep sample data
@@ -179,17 +196,12 @@ export function useEventList() {
         const centers = await fetchCenters()
         if (!mounted) return
 
-        const allEvents: EventDisplay[] = []
-        for (const center of centers) {
-          try {
-            const events = await fetchEventsByCenter(center.centerID)
-            allEvents.push(...events.map((e) => apiEventToDisplay(e)))
-          } catch {
-            // Skip
-          }
-        }
+        const allApiEvents = await fetchAllEventsFromCenters(centers)
+        if (!mounted) return
 
-        if (allEvents.length > 0 && mounted) {
+        const allEvents = allApiEvents.map((e) => apiEventToDisplay(e))
+
+        if (allEvents.length > 0) {
           // Sort: registered first, then by date
           allEvents.sort((a, b) => {
             if (a.isRegistered !== b.isRegistered) return a.isRegistered ? -1 : 1
@@ -218,55 +230,40 @@ export function useEventDetail(eventId: string) {
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
   const [isToggling, setIsToggling] = useState(false)
-  const [usersAttending, setUsersAttending] = useState<string[]>([])
+  const [isRegistered, setIsRegistered] = useState(false)
 
   useEffect(() => {
     let mounted = true
 
     const load = async () => {
       try {
-        // Try to fetch from backend
         const apiEvent = await fetchEvent(eventId)
         if (!mounted) return
 
-        if (apiEvent?.eventObject) {
-          const obj = apiEvent.eventObject
-          const attending = obj.usersAttending || []
-          setUsersAttending(attending)
-          const dateStr = obj.date ? new Date(obj.date).toISOString().split('T')[0] : ''
-          setEvent({
-            id: eventId,
-            title: obj.title || obj.description || 'Event',
-            date: dateStr,
-            time: obj.date ? new Date(obj.date).toLocaleString() : '',
-            location: obj.center?.centerName || 'TBD',
-            address: '',
-            attendees: obj.peopleAttending || attending.length,
-            likes: 0,
-            comments: 0,
-            description: obj.description,
-            isRegistered: false,
-          })
+        if (apiEvent) {
+          const display = apiEventToDisplay(apiEvent)
+          setEvent(display)
           setIsLive(true)
 
           // Fetch real attendees
           const users = await fetchEventUsers(eventId)
           if (users.length > 0 && mounted) {
-            setAttendees(users.map((u: any) => ({
-              name: u.firstName ? `${u.firstName} ${u.lastName || ''}` : u.username,
+            setAttendees(users.map((u) => ({
+              name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
               subtitle: '',
               image: u.profileImage || `https://i.pravatar.cc/100?u=${u.username}`,
             })))
           }
-        } else {
-          // Use sample data
+        } else if (__DEV__) {
+          // Use sample data in dev
           const sample = SAMPLE_EVENT_LIST.find((e) => e.id === eventId) || SAMPLE_EVENT_LIST[0]
-          setEvent(sample)
+          if (sample) setEvent(sample)
         }
       } catch {
-        // Fallback to sample
-        const sample = SAMPLE_EVENT_LIST.find((e) => e.id === eventId) || SAMPLE_EVENT_LIST[0]
-        if (mounted) setEvent(sample)
+        if (__DEV__ && mounted) {
+          const sample = SAMPLE_EVENT_LIST.find((e) => e.id === eventId) || SAMPLE_EVENT_LIST[0]
+          if (sample) setEvent(sample)
+        }
       } finally {
         if (mounted) setLoading(false)
       }
@@ -276,37 +273,36 @@ export function useEventDetail(eventId: string) {
     return () => { mounted = false }
   }, [eventId])
 
-  const toggleRegistration = useCallback(async (username: string) => {
+  const toggleRegistration = useCallback(async (_username: string) => {
     if (!event) return
     setIsToggling(true)
 
     try {
-      const isCurrentlyRegistered = usersAttending.includes(username)
-      const newAttending = isCurrentlyRegistered
-        ? usersAttending.filter((u) => u !== username)
-        : [...usersAttending, username]
+      const currentlyRegistered = isRegistered
 
-      await updateEvent({
-        id: eventId,
-        eventObject: { usersAttending: newAttending },
-      })
-
-      setUsersAttending(newAttending)
-      setEvent((prev) =>
-        prev
-          ? {
-              ...prev,
-              isRegistered: !isCurrentlyRegistered,
-              attendees: newAttending.length,
-            }
-          : null
-      )
+      if (currentlyRegistered) {
+        const result = await unattendEvent(eventId)
+        setIsRegistered(false)
+        setEvent((prev) =>
+          prev
+            ? { ...prev, isRegistered: false, attendees: result.peopleAttending }
+            : null,
+        )
+      } else {
+        const result = await attendEvent(eventId)
+        setIsRegistered(true)
+        setEvent((prev) =>
+          prev
+            ? { ...prev, isRegistered: true, attendees: result.peopleAttending }
+            : null,
+        )
+      }
     } catch (error) {
       throw error
     } finally {
       setIsToggling(false)
     }
-  }, [event, eventId, usersAttending])
+  }, [event, eventId, isRegistered])
 
   return { event, attendees, messages, loading, isLive, toggleRegistration, isToggling }
 }
@@ -342,74 +338,78 @@ export interface CenterDisplay {
   acharya: string
 }
 
-const SAMPLE_CENTER_DETAILS: Record<string, CenterDisplay> = {
-  '1': {
-    id: '1',
-    name: 'Chinmaya Mission San Jose',
-    image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=400&h=250&fit=crop',
-    address: '10160 Clayton Rd, San Jose, CA 95127',
-    website: 'https://www.cmsj.org/',
-    phone: '+1 408 254 8392',
-    upcomingEvents: 24,
-    pointOfContact: 'Ramesh Ji',
-    acharya: 'Acharya Brahmachari Soham Ji',
-  },
-  '2': {
-    id: '2',
-    name: 'Chinmaya Mission West',
-    image: 'https://images.unsplash.com/photo-1464822759844-d150baec93d5?w=400&h=250&fit=crop',
-    address: '560 Bridgeway, Sausalito, CA 94965',
-    website: 'https://www.chinmayamissionwest.org/',
-    phone: '+1 415 332 2182',
-    upcomingEvents: 18,
-    pointOfContact: 'Priya Ji',
-    acharya: 'Acharya Swami Ishwarananda',
-  },
-  '3': {
-    id: '3',
-    name: 'Chinmaya Mission San Francisco',
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=250&fit=crop',
-    address: '631 Irving St, San Francisco, CA 94122',
-    website: 'https://www.chinmayasf.org/',
-    phone: '+1 415 661 8499',
-    upcomingEvents: 15,
-    pointOfContact: 'Anjali Ji',
-    acharya: 'Acharya Swami Tejomayananda',
-  },
-}
+const SAMPLE_CENTER_DETAILS: Record<string, CenterDisplay> = __DEV__
+  ? {
+      '1': {
+        id: '1',
+        name: 'Chinmaya Mission San Jose',
+        image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=400&h=250&fit=crop',
+        address: '10160 Clayton Rd, San Jose, CA 95127',
+        website: 'https://www.cmsj.org/',
+        phone: '+1 408 254 8392',
+        upcomingEvents: 24,
+        pointOfContact: 'Ramesh Ji',
+        acharya: 'Acharya Brahmachari Soham Ji',
+      },
+      '2': {
+        id: '2',
+        name: 'Chinmaya Mission West',
+        image: 'https://images.unsplash.com/photo-1464822759844-d150baec93d5?w=400&h=250&fit=crop',
+        address: '560 Bridgeway, Sausalito, CA 94965',
+        website: 'https://www.chinmayamissionwest.org/',
+        phone: '+1 415 332 2182',
+        upcomingEvents: 18,
+        pointOfContact: 'Priya Ji',
+        acharya: 'Acharya Swami Ishwarananda',
+      },
+      '3': {
+        id: '3',
+        name: 'Chinmaya Mission San Francisco',
+        image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=250&fit=crop',
+        address: '631 Irving St, San Francisco, CA 94122',
+        website: 'https://www.chinmayasf.org/',
+        phone: '+1 415 661 8499',
+        upcomingEvents: 15,
+        pointOfContact: 'Anjali Ji',
+        acharya: 'Acharya Swami Tejomayananda',
+      },
+    }
+  : {}
 
-const SAMPLE_CENTER_EVENTS: EventDisplay[] = [
-  {
-    id: '1',
-    title: 'Bhagavad Gita Study Circle - Chapter 12',
-    date: new Date().toISOString().split('T')[0],
-    time: '10:30 AM - 11:30 AM',
-    location: 'Young Museum',
-    attendees: 14,
-    likes: 0,
-    comments: 0,
-  },
-  {
-    id: '2',
-    title: 'Hanuman Chalisa Chanting Marathon',
-    date: new Date().toISOString().split('T')[0],
-    time: '8:00 PM - 11:00 PM',
-    location: 'Meditation Hall',
-    attendees: 14,
-    likes: 0,
-    comments: 0,
-  },
-  {
-    id: '3',
-    title: 'Yoga and Meditation Session',
-    date: new Date().toISOString().split('T')[0],
-    time: '7:00 PM - 8:30 PM',
-    location: 'Main Hall',
-    attendees: 8,
-    likes: 2,
-    comments: 1,
-  },
-]
+const SAMPLE_CENTER_EVENTS: EventDisplay[] = __DEV__
+  ? [
+      {
+        id: '1',
+        title: 'Bhagavad Gita Study Circle - Chapter 12',
+        date: new Date().toISOString().split('T')[0],
+        time: '10:30 AM - 11:30 AM',
+        location: 'Young Museum',
+        attendees: 14,
+        likes: 0,
+        comments: 0,
+      },
+      {
+        id: '2',
+        title: 'Hanuman Chalisa Chanting Marathon',
+        date: new Date().toISOString().split('T')[0],
+        time: '8:00 PM - 11:00 PM',
+        location: 'Meditation Hall',
+        attendees: 14,
+        likes: 0,
+        comments: 0,
+      },
+      {
+        id: '3',
+        title: 'Yoga and Meditation Session',
+        date: new Date().toISOString().split('T')[0],
+        time: '7:00 PM - 8:30 PM',
+        location: 'Main Hall',
+        attendees: 8,
+        likes: 2,
+        comments: 1,
+      },
+    ]
+  : []
 
 export function useCenterDetail(centerId: string) {
   const [center, setCenter] = useState<CenterDisplay | null>(null)
@@ -428,13 +428,12 @@ export function useCenterDetail(centerId: string) {
         ])
         if (!mounted) return
 
-        if (apiCenter?.centerObject) {
-          const obj = apiCenter.centerObject
+        if (apiCenter) {
           setCenter({
             id: centerId,
-            name: obj.centerName || 'Unknown Center',
+            name: apiCenter.name || 'Unknown Center',
             image: SAMPLE_CENTER_DETAILS[centerId]?.image || '',
-            address: SAMPLE_CENTER_DETAILS[centerId]?.address || '',
+            address: apiCenter.address || SAMPLE_CENTER_DETAILS[centerId]?.address || '',
             website: SAMPLE_CENTER_DETAILS[centerId]?.website || '',
             phone: SAMPLE_CENTER_DETAILS[centerId]?.phone || '',
             upcomingEvents: apiEvents.length,
@@ -491,12 +490,14 @@ export function useMyEvents(username: string | undefined) {
           isRegistered: true,
         })))
         setIsLive(true)
-      } else {
+      } else if (__DEV__) {
         // Fallback to sample registered events
         setEvents(SAMPLE_EVENT_LIST.filter((e) => e.isRegistered))
       }
     } catch {
-      setEvents(SAMPLE_EVENT_LIST.filter((e) => e.isRegistered))
+      if (__DEV__) {
+        setEvents(SAMPLE_EVENT_LIST.filter((e) => e.isRegistered))
+      }
     } finally {
       setLoading(false)
     }
@@ -557,18 +558,13 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
           setAllCenters(discoverCenters)
         }
 
-        // Fetch events for each center
-        const fetchedEvents: EventDisplay[] = []
-        for (const center of apiCenters) {
-          try {
-            const events = await fetchEventsByCenter(center.centerID)
-            fetchedEvents.push(...events.map((e) => apiEventToDisplay(e)))
-          } catch {
-            // Skip
-          }
-        }
+        // Fetch events for all centers in parallel
+        const allApiEvents = await fetchAllEventsFromCenters(apiCenters)
+        if (!mounted) return
 
-        if (fetchedEvents.length > 0 && mounted) {
+        const fetchedEvents = allApiEvents.map((e) => apiEventToDisplay(e))
+
+        if (fetchedEvents.length > 0) {
           setAllEvents(fetchedEvents)
           setIsLive(true)
         }

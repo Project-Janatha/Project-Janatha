@@ -1,10 +1,9 @@
-name: EC2 Deployment
+name: Deploy to Cloudflare Pages
 
 on:
   push:
     branches:
       - main
-      - aws-migration
   workflow_dispatch:
 
 jobs:
@@ -13,66 +12,30 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
-      - name: Build Docker image
-        run: docker-compose build
+      - name: TypeScript check (backend)
+        run: npx tsc --noEmit
+        working-directory: packages/backend
 
-      - name: Save Docker image
-        run: |
-          docker save project-janatha-app:latest | gzip > janatha-app.tar.gz
+      - name: Build frontend
+        run: npm run build:frontend
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Prepare Pages output
+        run: npm run build:pages
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Create SSH key file
-        run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > ec2-key.pem
-          chmod 600 ec2-key.pem
-
-      - name: Copy files to EC2
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-        run: |
-          scp -i ec2-key.pem -o StrictHostKeyChecking=no \
-            docker-compose.yml ubuntu@$EC2_HOST:/home/ubuntu/project-janatha/
-          scp -i ec2-key.pem -o StrictHostKeyChecking=no \
-            nginx.conf ubuntu@$EC2_HOST:/home/ubuntu/project-janatha/
-          scp -i ec2-key.pem -o StrictHostKeyChecking=no \
-            janatha-app.tar.gz ubuntu@$EC2_HOST:/home/ubuntu/project-janatha/
-
-      - name: Deploy on EC2
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-        run: |
-          ssh -i ec2-key.pem -o StrictHostKeyChecking=no ubuntu@$EC2_HOST << 'ENDSSH'
-            cd /home/ubuntu/project-janatha
-            docker load < janatha-app.tar.gz
-            docker-compose down || true
-            docker-compose up -d
-            rm janatha-app.tar.gz
-            docker-compose ps
-          ENDSSH
-
-      - name: Cleanup
-        if: always()
-        run: |
-          rm -f ec2-key.pem
-          rm -f janatha-app.tar.gz
-
-      - name: Notify deployment status
-        if: success()
-        run: echo "✅ Deployment to EC2 successful!"
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=chinmaya-janata

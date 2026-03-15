@@ -191,7 +191,7 @@ function HeaderBar({
         <Pressable
           onPress={onClose}
           className="flex-row items-center"
-          style={{ gap: 2, padding: 2 }}
+          style={{ gap: 4, padding: 8, minHeight: 44, minWidth: 44 }}
           accessibilityLabel="Close panel"
         >
           <ChevronLeft size={20} color={colors.iconHeader} />
@@ -209,7 +209,7 @@ function HeaderBar({
         {!isPast && (
           <Pressable
             onPress={() => {}}
-            style={{ padding: 6 }}
+            style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
             accessibilityLabel="Share event"
           >
             <Share2 size={18} color={colors.iconHeader} />
@@ -836,7 +836,8 @@ export default function EventDetailPanel({
   return (
     <View
       style={{
-        width: 440,
+        maxWidth: 440,
+        width: '100%',
         height: '100%',
         backgroundColor: colors.panelBg,
         borderLeftWidth: 1,

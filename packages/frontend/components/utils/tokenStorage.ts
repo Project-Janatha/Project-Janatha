@@ -64,7 +64,7 @@ export const setStoredToken = async (token: string): Promise<void> => {
       await AsyncStorage.setItem(TOKEN_KEY, token)
     }
   } catch (error) {
-    console.error('Error storing token:', error)
+    if (__DEV__) console.error('Error storing token:', error)
   }
 }
 
@@ -92,7 +92,7 @@ export const getStoredToken = async (): Promise<string | null> => {
       return await AsyncStorage.getItem(TOKEN_KEY)
     }
   } catch (error) {
-    console.error('Error retrieving token:', error)
+    if (__DEV__) console.error('Error retrieving token:', error)
     return null
   }
 }
@@ -113,7 +113,7 @@ export const removeStoredToken = async (): Promise<void> => {
       await AsyncStorage.removeItem(TOKEN_KEY)
     }
   } catch (error) {
-    console.error('Error removing token:', error)
+    if (__DEV__) console.error('Error removing token:', error)
   }
 }
 
@@ -126,7 +126,7 @@ export const hasStoredToken = async (): Promise<boolean> => {
     const token = await getStoredToken()
     return token !== null && token.length > 0
   } catch (error) {
-    console.error('Error checking for token:', error)
+    if (__DEV__) console.error('Error checking for token:', error)
     return false
   }
 }

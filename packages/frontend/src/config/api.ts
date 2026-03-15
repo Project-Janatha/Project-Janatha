@@ -1,6 +1,6 @@
 import { Platform } from 'react-native'
 
-const DEFAULT_FALLBACK = 'https://app.chinmayajanata.org/api'
+const DEFAULT_FALLBACK = 'https://chinmaya-janata.pages.dev/api'
 
 const webOrigin =
   typeof window !== 'undefined' && window.location?.origin ? window.location.origin : ''
