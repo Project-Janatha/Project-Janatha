@@ -71,6 +71,7 @@ app.use(
     origin: (origin) => origin || '*',
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
     maxAge: 86400,
   }),
 )

@@ -59,16 +59,22 @@ export const useUser = () => {
 }
 
 const resolveEndpointUrl = (endpoint: string): string => {
+  // Already a full URL — use as-is
   if (/^https?:\/\//i.test(endpoint)) return endpoint
 
   const normalizedBase = API_BASE_URL.replace(/\/+$/, '')
-  if (endpoint.startsWith('/api/')) {
-    return `${normalizedBase}${endpoint.replace(/^\/api/, '')}`
+
+  // Strip /api or /api/ prefix to avoid double-pathing since API_BASE_URL already includes /api
+  const normalizedEndpoint = endpoint.replace(/^\/api(?=\/|$)/, '')
+
+  // Ensure exactly one slash between base and endpoint
+  if (normalizedEndpoint.startsWith('/')) {
+    return `${normalizedBase}${normalizedEndpoint}`
   }
-  if (endpoint.startsWith('/')) {
-    return `${normalizedBase}${endpoint}`
+  if (normalizedEndpoint === '') {
+    return normalizedBase
   }
-  return `${normalizedBase}/${endpoint}`
+  return `${normalizedBase}/${normalizedEndpoint}`
 }
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
@@ -170,10 +176,17 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   const updateProfile = useCallback(async (updates: UpdateProfileRequest) => {
-    setUser((prev) => (prev ? { ...prev, ...updates } : null))
+    // Save previous user state for rollback on failure
+    let previousUser: User | null = null
+    setUser((prev) => {
+      previousUser = prev
+      return prev ? { ...prev, ...updates } : null
+    })
 
     const result = await authService.updateProfile(updates)
     if (!result.success || !result.user) {
+      // Rollback optimistic update on failure
+      setUser(previousUser)
       return { success: false, message: result.message || 'Failed to update profile' }
     }
 

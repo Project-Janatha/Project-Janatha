@@ -199,8 +199,9 @@ function EventPanelInner({ eventId, onClose }: { eventId: string; onClose: () =>
     if (!user?.username) return
     try {
       await toggleRegistration(user.username)
-    } catch {
-      // silently handle
+    } catch (err: any) {
+      if (__DEV__) console.warn('[EventPanel] toggleRegistration failed:', err?.message || err)
+      // Web doesn't have Alert, so log the error; the hook re-throws it for callers to handle
     }
   }
 

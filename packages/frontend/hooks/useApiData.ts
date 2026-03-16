@@ -152,11 +152,13 @@ export function useMapPoints() {
   const [points, setPoints] = useState<MapPoint[]>([...SAMPLE_CENTERS, ...SAMPLE_EVENTS])
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
     const load = async () => {
       try {
+        setError(null)
         const centers = await fetchCenters()
         if (!mounted) return
 
@@ -171,8 +173,12 @@ export function useMapPoints() {
           setIsLive(true)
         }
         // else: keep sample data
-      } catch {
-        // Keep sample data on error
+      } catch (err: any) {
+        if (mounted) {
+          const message = err?.message || 'Failed to load map data'
+          setError(message)
+          if (__DEV__) console.warn('[useMapPoints]', message)
+        }
       } finally {
         if (mounted) setLoading(false)
       }
@@ -181,18 +187,20 @@ export function useMapPoints() {
     return () => { mounted = false }
   }, [])
 
-  return { points, loading, isLive }
+  return { points, loading, isLive, error }
 }
 
 export function useEventList() {
   const [events, setEvents] = useState<EventDisplay[]>(SAMPLE_EVENT_LIST)
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
     const load = async () => {
       try {
+        setError(null)
         const centers = await fetchCenters()
         if (!mounted) return
 
@@ -210,8 +218,12 @@ export function useEventList() {
           setEvents(allEvents)
           setIsLive(true)
         }
-      } catch {
-        // Keep sample data
+      } catch (err: any) {
+        if (mounted) {
+          const message = err?.message || 'Failed to load events'
+          setError(message)
+          if (__DEV__) console.warn('[useEventList]', message)
+        }
       } finally {
         if (mounted) setLoading(false)
       }
@@ -220,7 +232,7 @@ export function useEventList() {
     return () => { mounted = false }
   }, [])
 
-  return { events, loading, isLive }
+  return { events, loading, isLive, error }
 }
 
 export function useEventDetail(eventId: string) {
@@ -231,12 +243,14 @@ export function useEventDetail(eventId: string) {
   const [isLive, setIsLive] = useState(false)
   const [isToggling, setIsToggling] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
 
     const load = async () => {
       try {
+        setError(null)
         const apiEvent = await fetchEvent(eventId)
         if (!mounted) return
 
@@ -259,10 +273,15 @@ export function useEventDetail(eventId: string) {
           const sample = SAMPLE_EVENT_LIST.find((e) => e.id === eventId) || SAMPLE_EVENT_LIST[0]
           if (sample) setEvent(sample)
         }
-      } catch {
-        if (__DEV__ && mounted) {
-          const sample = SAMPLE_EVENT_LIST.find((e) => e.id === eventId) || SAMPLE_EVENT_LIST[0]
-          if (sample) setEvent(sample)
+      } catch (err: any) {
+        if (mounted) {
+          const message = err?.message || 'Failed to load event details'
+          setError(message)
+          if (__DEV__) {
+            console.warn('[useEventDetail]', message)
+            const sample = SAMPLE_EVENT_LIST.find((e) => e.id === eventId) || SAMPLE_EVENT_LIST[0]
+            if (sample) setEvent(sample)
+          }
         }
       } finally {
         if (mounted) setLoading(false)
@@ -304,7 +323,7 @@ export function useEventDetail(eventId: string) {
     }
   }, [event, eventId, isRegistered])
 
-  return { event, attendees, messages, loading, isLive, toggleRegistration, isToggling }
+  return { event, attendees, messages, loading, isLive, toggleRegistration, isToggling, error }
 }
 
 export function useWeekCalendar() {
@@ -416,12 +435,14 @@ export function useCenterDetail(centerId: string) {
   const [events, setEvents] = useState<EventDisplay[]>([])
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
 
     const load = async () => {
       try {
+        setError(null)
         const [apiCenter, apiEvents] = await Promise.all([
           fetchCenter(centerId),
           fetchEventsByCenter(centerId),
@@ -450,8 +471,11 @@ export function useCenterDetail(centerId: string) {
         } else {
           setEvents(SAMPLE_CENTER_EVENTS)
         }
-      } catch {
+      } catch (err: any) {
         if (mounted) {
+          const message = err?.message || 'Failed to load center details'
+          setError(message)
+          if (__DEV__) console.warn('[useCenterDetail]', message)
           setCenter(SAMPLE_CENTER_DETAILS[centerId] || null)
           setEvents(SAMPLE_CENTER_EVENTS)
         }
@@ -464,7 +488,7 @@ export function useCenterDetail(centerId: string) {
     return () => { mounted = false }
   }, [centerId])
 
-  return { center, events, loading, isLive }
+  return { center, events, loading, isLive, error }
 }
 
 // ── My Events hook ──────────────────────────────────────────────────
@@ -473,6 +497,7 @@ export function useMyEvents(username: string | undefined) {
   const [events, setEvents] = useState<EventDisplay[]>([])
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!username) {
@@ -482,6 +507,7 @@ export function useMyEvents(username: string | undefined) {
     setLoading(true)
 
     try {
+      setError(null)
       const apiEvents = await getUserEvents(username)
 
       if (apiEvents.length > 0) {
@@ -494,8 +520,11 @@ export function useMyEvents(username: string | undefined) {
         // Fallback to sample registered events
         setEvents(SAMPLE_EVENT_LIST.filter((e) => e.isRegistered))
       }
-    } catch {
+    } catch (err: any) {
+      const message = err?.message || 'Failed to load your events'
+      setError(message)
       if (__DEV__) {
+        console.warn('[useMyEvents]', message)
         setEvents(SAMPLE_EVENT_LIST.filter((e) => e.isRegistered))
       }
     } finally {
@@ -505,7 +534,7 @@ export function useMyEvents(username: string | undefined) {
 
   useEffect(() => { load() }, [load])
 
-  return { events, loading, isLive, refetch: load }
+  return { events, loading, isLive, error, refetch: load }
 }
 
 // ── Discover hooks ──────────────────────────────────────────────────
@@ -514,11 +543,13 @@ export function useCenterList() {
   const [centers, setCenters] = useState<DiscoverCenter[]>(DISCOVER_SAMPLE_CENTERS)
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
     const load = async () => {
       try {
+        setError(null)
         const apiCenters = await fetchCenters()
         if (!mounted) return
 
@@ -527,8 +558,12 @@ export function useCenterList() {
           setCenters(discoverCenters)
           setIsLive(true)
         }
-      } catch {
-        // Keep sample data
+      } catch (err: any) {
+        if (mounted) {
+          const message = err?.message || 'Failed to load centers'
+          setError(message)
+          if (__DEV__) console.warn('[useCenterList]', message)
+        }
       } finally {
         if (mounted) setLoading(false)
       }
@@ -537,7 +572,7 @@ export function useCenterList() {
     return () => { mounted = false }
   }, [])
 
-  return { centers, loading, isLive }
+  return { centers, loading, isLive, error }
 }
 
 export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
@@ -545,11 +580,13 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
   const [allCenters, setAllCenters] = useState<DiscoverCenter[]>(DISCOVER_SAMPLE_CENTERS)
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
     const load = async () => {
       try {
+        setError(null)
         const apiCenters = await fetchCenters()
         if (!mounted) return
 
@@ -568,8 +605,12 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
           setAllEvents(fetchedEvents)
           setIsLive(true)
         }
-      } catch {
-        // Keep sample data
+      } catch (err: any) {
+        if (mounted) {
+          const message = err?.message || 'Failed to load discover data'
+          setError(message)
+          if (__DEV__) console.warn('[useDiscoverData]', message)
+        }
       } finally {
         if (mounted) setLoading(false)
       }
@@ -639,7 +680,7 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
     return allPoints
   }, [allCenters, allEvents, filter])
 
-  return { items, filteredPoints, loading, isLive, allEvents, allCenters }
+  return { items, filteredPoints, loading, isLive, error, allEvents, allCenters }
 }
 
 export { SAMPLE_ATTENDEES, SAMPLE_MESSAGES, SAMPLE_EVENT_LIST, SAMPLE_CENTERS, SAMPLE_EVENTS }

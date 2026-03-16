@@ -180,7 +180,8 @@ export async function fetchCenters(): Promise<CenterData[]> {
       if (!response.ok) return []
       const data = await response.json()
       return data.centers || []
-    } catch {
+    } catch (err: any) {
+      if (__DEV__) console.warn('[fetchCenters]', err?.message || err)
       _centersPromise = null // Clear on error so next call retries
       return []
     }
@@ -206,7 +207,8 @@ export async function fetchCenter(centerID: string): Promise<CenterData | null> 
     if (!response.ok) return null
     const data = await response.json()
     return data.center || null
-  } catch {
+  } catch (err: any) {
+    if (__DEV__) console.warn('[fetchCenter]', err?.message || err)
     return null
   }
 }
@@ -220,7 +222,8 @@ export async function fetchEvent(eventID: string): Promise<EventData | null> {
     if (!response.ok) return null
     const data = await response.json()
     return data.event || null
-  } catch {
+  } catch (err: any) {
+    if (__DEV__) console.warn('[fetchEvent]', err?.message || err)
     return null
   }
 }
@@ -234,7 +237,8 @@ export async function fetchEventsByCenter(centerID: string): Promise<EventData[]
     if (!response.ok) return []
     const data = await response.json()
     return data.events || []
-  } catch {
+  } catch (err: any) {
+    if (__DEV__) console.warn('[fetchEventsByCenter]', err?.message || err)
     return []
   }
 }
@@ -248,7 +252,8 @@ export async function fetchEventUsers(eventID: string): Promise<UserData[]> {
     if (!response.ok) return []
     const data = await response.json()
     return data.users || []
-  } catch {
+  } catch (err: any) {
+    if (__DEV__) console.warn('[fetchEventUsers]', err?.message || err)
     return []
   }
 }
@@ -299,7 +304,8 @@ export async function getUserEvents(username: string): Promise<EventData[]> {
     if (!response.ok) return []
     const data = await response.json()
     return data.events || []
-  } catch {
+  } catch (err: any) {
+    if (__DEV__) console.warn('[getUserEvents]', err?.message || err)
     return []
   }
 }

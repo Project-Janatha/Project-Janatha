@@ -1,13 +1,23 @@
 export type AuthStatus = 'booting' | 'authenticated' | 'unauthenticated'
 
 export interface User {
+  id?: string
   username: string
+  email?: string | null
   firstName?: string
   lastName?: string
-  email?: string
-  centerID?: string
+  dateOfBirth?: string | null
+  phoneNumber?: string | null
+  profileImage?: string | null
+  centerID?: string | null
+  points?: number
+  isVerified?: boolean
+  verificationLevel?: number
+  isActive?: boolean
   profileComplete?: boolean
-  profileImage?: string
+  interests?: string[] | null
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface AuthError {
@@ -37,10 +47,13 @@ export interface UpdateProfileRequest {
   centerID?: string
   profileComplete?: boolean
   profileImage?: string
+  phoneNumber?: string
+  interests?: string[]
 }
 
 export interface AuthSuccessResponse {
   token?: string
+  refreshToken?: string
   user: User
 }
 
@@ -49,7 +62,7 @@ export interface CheckUserExistsResponse {
 }
 
 export interface GenericSuccessResponse {
-  success: boolean
+  success?: boolean
   message?: string
 }
 
