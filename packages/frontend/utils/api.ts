@@ -287,17 +287,39 @@ export async function unattendEvent(eventID: string): Promise<{ peopleAttending:
   return response.json()
 }
 
-export async function updateEvent(eventJSON: Record<string, any>): Promise<any> {
-  try {
-    const response = await authFetch('/updateEvent', {
-      method: 'POST',
-      body: JSON.stringify({ eventJSON }),
-    })
-    if (!response.ok) throw new Error('Failed to update event')
-    return await response.json()
-  } catch (error) {
-    throw error
+export async function createEvent(data: {
+  title: string
+  description: string
+  date: string
+  latitude: number
+  longitude: number
+  address?: string
+  centerID: string
+  pointOfContact?: string
+  image?: string
+  category?: number
+}): Promise<{ id: string; tier: number }> {
+  const response = await authFetch('/addevent', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ message: 'Failed to create event' }))
+    throw new Error(err.message || 'Failed to create event')
   }
+  return response.json()
+}
+
+export async function updateEvent(eventJSON: Record<string, any>): Promise<any> {
+  const response = await authFetch('/updateEvent', {
+    method: 'POST',
+    body: JSON.stringify({ eventJSON }),
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ message: 'Failed to update event' }))
+    throw new Error(err.message || 'Failed to update event')
+  }
+  return response.json()
 }
 
 export async function getUserEvents(username: string): Promise<EventData[]> {

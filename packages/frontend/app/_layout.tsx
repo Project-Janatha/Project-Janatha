@@ -149,6 +149,12 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen
+          name="events/form"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
           name="center/[id]"
           options={{
             headerShown: false,
