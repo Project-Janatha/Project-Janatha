@@ -72,7 +72,7 @@ export default function BirthdatePicker({ value, onChange }) {
   // Add placeholder options
   const years = [
     { label: 'Year', value: null },
-    ...range(currentYear - 100, currentYear)
+    ...range(currentYear - 100, currentYear - 18)
       .reverse()
       .map((y) => ({ label: y, value: y })),
   ]

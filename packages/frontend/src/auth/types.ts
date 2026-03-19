@@ -49,6 +49,7 @@ export interface UpdateProfileRequest {
   profileImage?: string
   phoneNumber?: string
   interests?: string[]
+  dateOfBirth?: string
 }
 
 export interface AuthSuccessResponse {
