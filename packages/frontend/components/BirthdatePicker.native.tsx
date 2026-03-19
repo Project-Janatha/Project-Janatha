@@ -49,7 +49,7 @@ export default function BirthdatePicker({ value, onChange }: BirthdatePickerProp
             mode="date"
             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             onChange={handleChange}
-            maximumDate={new Date()}
+            maximumDate={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 18); return d })()}
             minimumDate={new Date(1900, 0, 1)}
           />
 

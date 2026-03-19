@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   ScrollView,
   View,
@@ -12,13 +12,32 @@ import {
 } from 'react-native'
 import { Camera } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
+import BirthdatePicker from '../../components/BirthdatePicker'
 
 type ProfileData = {
   name: string
   bio: string
-  birthday: string
+  birthday: Date | null
   preferences: string[]
   profileImage?: string
+}
+
+function formatBirthday(date: Date | null): string {
+  if (!date) return ''
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+}
+
+/** ISO date string (YYYY-MM-DD) from a Date, or empty string */
+function toISODate(date: Date | null): string {
+  if (!date) return ''
+  return date.toISOString().split('T')[0]
+}
+
+/** Parse YYYY-MM-DD to Date, or null */
+function parseISODate(str: string): Date | null {
+  if (!str) return null
+  const d = new Date(str + 'T00:00:00')
+  return isNaN(d.getTime()) ? null : d
 }
 
 const PREFERENCE_OPTIONS = [
@@ -47,40 +66,80 @@ export default function Profile() {
   const [profileData, setProfileData] = useState<ProfileData>({
     name: getDisplayName(),
     bio: '',
-    birthday: '',
+    birthday: user?.dateOfBirth ? new Date(user.dateOfBirth) : null,
     preferences: [],
     profileImage: user?.profileImage || `https://i.pravatar.cc/150?u=${user?.username || 'default'}`,
   })
 
+  const draftName = useRef(profileData.name)
+  const draftBio = useRef(profileData.bio)
+  const draftBirthday = useRef<Date | null>(profileData.birthday)
+
   useEffect(() => {
-    if (user) {
+    if (user && !isEditing) {
       setProfileData((prev) => ({
         ...prev,
         name: getDisplayName() || prev.name,
         profileImage: user.profileImage || prev.profileImage,
       }))
     }
-  }, [user])
+  }, [user?.firstName, user?.lastName, user?.profileImage])
+
+  useEffect(() => {
+    draftName.current = profileData.name
+    draftBio.current = profileData.bio
+  }, [profileData.name, profileData.bio])
+
+  const readDrafts = () => ({
+    name: draftName.current,
+    bio: draftBio.current,
+    birthday: draftBirthday.current,
+  })
 
   const validateForm = (): boolean => {
+    const drafts = readDrafts()
     const newErrors: { [key: string]: string } = {}
-    if (!profileData.name.trim()) newErrors.name = 'Name is required'
-    if (!profileData.bio.trim()) newErrors.bio = 'Bio is required'
-    if (!profileData.birthday.trim()) newErrors.birthday = 'Birthday is required'
+    if (!drafts.name.trim()) newErrors.name = 'Name is required'
+    if (!drafts.bio.trim()) newErrors.bio = 'Bio is required'
+    if (!drafts.birthday) newErrors.birthday = 'Birthday is required'
     if (profileData.preferences.length === 0) newErrors.preferences = 'At least one preference must be selected'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleEdit = () => setIsEditing(true)
-  const handleCancel = () => { setErrors({}); setIsEditing(false) }
+  const nameRef = useRef<any>(null)
+  const bioRef = useRef<any>(null)
+
+  const handleEdit = () => {
+    draftName.current = profileData.name
+    draftBio.current = profileData.bio
+    draftBirthday.current = profileData.birthday
+    setIsEditing(true)
+  }
+
+  const handleCancel = () => {
+    // Reset input values back to original via refs
+    if (isWeb) {
+      if (nameRef.current) nameRef.current.value = profileData.name
+      if (bioRef.current) bioRef.current.value = profileData.bio
+    }
+    draftBirthday.current = profileData.birthday
+    setErrors({})
+    setIsEditing(false)
+  }
 
   const handleSave = async () => {
     if (!validateForm()) return
+    const drafts = readDrafts()
+    setProfileData((prev) => ({ ...prev, name: drafts.name, bio: drafts.bio, birthday: drafts.birthday }))
     setIsSaving(true)
     try {
-      const nameParts = profileData.name.trim().split(' ')
-      await updateProfile({ firstName: nameParts[0], lastName: nameParts.slice(1).join(' ') })
+      const nameParts = drafts.name.trim().split(' ')
+      await updateProfile({
+        firstName: nameParts[0],
+        lastName: nameParts.slice(1).join(' '),
+        ...(drafts.birthday ? { dateOfBirth: drafts.birthday.toISOString().split('T')[0] } : {}),
+      })
       setIsEditing(false)
       setErrors({})
     } catch (error) {
@@ -102,11 +161,6 @@ export default function Profile() {
     }))
   }
 
-  const handleInputChange = (field: keyof ProfileData, value: string) => {
-    if (!isEditing) return
-    setProfileData((prev) => ({ ...prev, [field]: value }))
-  }
-
   const labelColor = isDark ? '#78716C' : '#A8A29E'
   const textColor = isDark ? '#F5F5F5' : '#1C1917'
   const mutedTextColor = isDark ? '#A8A29E' : '#78716C'
@@ -114,90 +168,33 @@ export default function Profile() {
   const cardBg = isDark ? '#171717' : '#FFFFFF'
   const chipBg = isDark ? '#262626' : '#F3F0ED'
 
-  // ─── Shared: Interest chips ───
-  const InterestChips = () => (
-    <View>
-      <Text
-        style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: labelColor, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}
-      >
-        Interests
-      </Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {PREFERENCE_OPTIONS.map((pref) => {
-          const selected = profileData.preferences.includes(pref)
-          return (
-            <Pressable
-              key={pref}
-              onPress={() => handlePreferenceToggle(pref)}
-              disabled={!isEditing}
-              style={{
-                paddingHorizontal: 18,
-                paddingVertical: 12,
-                borderRadius: 100,
-                minHeight: 44,
-                justifyContent: 'center',
-                backgroundColor: selected ? '#C2410C' : chipBg,
-                opacity: !isEditing && !selected ? 0.5 : 1,
-              }}
-            >
-              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: selected ? '#FFFFFF' : mutedTextColor }}>
-                {pref}
-              </Text>
-            </Pressable>
-          )
-        })}
-      </View>
-      {errors.preferences && (
-        <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}>{errors.preferences}</Text>
-      )}
-    </View>
-  )
+  const inputStyle = {
+    fontFamily: 'Inter-Regular' as const,
+    fontSize: 15,
+    color: textColor,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor,
+    backgroundColor: cardBg,
+  }
 
-  // ─── Field label ───
-  const FieldLabel = ({ children }: { children: string }) => (
-    <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: labelColor, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>
-      {children}
-    </Text>
-  )
+  const multilineInputStyle = {
+    ...inputStyle,
+    minHeight: 100,
+  }
 
-  // ─── Read-only field value (mobile) ───
-  const FieldValue = ({ value, multiline }: { value: string; multiline?: boolean }) => (
-    <Text style={{ fontFamily: multiline ? 'Inter-Regular' : 'Inter-Medium', fontSize: multiline ? 15 : 16, color: multiline ? mutedTextColor : textColor, lineHeight: multiline ? 22 : 24 }}>
-      {value || '—'}
-    </Text>
-  )
+  const labelStyle = {
+    fontFamily: 'Inter-SemiBold' as const,
+    fontSize: 12,
+    color: labelColor,
+    letterSpacing: 1,
+    textTransform: 'uppercase' as const,
+    marginBottom: 6,
+  }
 
-  // ─── Editable field ───
-  const EditableField = ({ field, value, error, multiline }: { field: keyof ProfileData; value: string; error?: string; multiline?: boolean }) => (
-    <View>
-      {isEditing ? (
-        <>
-          <TextInput
-            value={value}
-            onChangeText={(v) => handleInputChange(field, v)}
-            multiline={multiline}
-            textAlignVertical={multiline ? 'top' : 'center'}
-            placeholderTextColor="#9ca3af"
-            style={{
-              fontFamily: 'Inter-Regular',
-              fontSize: 15,
-              color: textColor,
-              paddingHorizontal: 16,
-              paddingVertical: 14,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: error ? '#DC2626' : borderColor,
-              backgroundColor: cardBg,
-              minHeight: multiline ? 100 : undefined,
-            }}
-          />
-          {error && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{error}</Text>}
-        </>
-      ) : (
-        <FieldValue value={value} multiline={multiline} />
-      )}
-    </View>
-  )
+  const hiddenStyle = { display: 'none' as const }
 
   // ═══════════════════════════════════════════
   //  MOBILE LAYOUT
@@ -205,7 +202,6 @@ export default function Profile() {
   if (!isWeb) {
     return (
       <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
-        {/* Hero: centered avatar + name */}
         <View style={{ alignItems: 'center', paddingTop: 28, paddingBottom: 24, paddingHorizontal: 20 }}>
           <View style={{ position: 'relative', marginBottom: 14 }}>
             <Image
@@ -233,24 +229,63 @@ export default function Profile() {
           </Text>
         </View>
 
-        {/* Info fields */}
         <View style={{ paddingHorizontal: 20, gap: 20 }}>
           <View>
-            <FieldLabel>Full Name</FieldLabel>
-            <EditableField field="name" value={profileData.name} error={errors.name} />
+            <Text style={labelStyle}>Full Name</Text>
+            {isEditing ? (
+              <TextInput defaultValue={profileData.name} onChangeText={(v) => { draftName.current = v }} placeholderTextColor="#9ca3af" style={inputStyle} />
+            ) : (
+              <Text style={{ fontFamily: 'Inter-Medium', fontSize: 16, color: textColor, lineHeight: 24 }}>{profileData.name || '—'}</Text>
+            )}
+            {errors.name && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{errors.name}</Text>}
           </View>
           <View>
-            <FieldLabel>Bio</FieldLabel>
-            <EditableField field="bio" value={profileData.bio} error={errors.bio} multiline />
+            <Text style={labelStyle}>Bio</Text>
+            {isEditing ? (
+              <TextInput defaultValue={profileData.bio} onChangeText={(v) => { draftBio.current = v }} multiline textAlignVertical="top" placeholderTextColor="#9ca3af" style={multilineInputStyle} />
+            ) : (
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor, lineHeight: 22 }}>{profileData.bio || '—'}</Text>
+            )}
+            {errors.bio && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{errors.bio}</Text>}
           </View>
           <View>
-            <FieldLabel>Birthday</FieldLabel>
-            <EditableField field="birthday" value={profileData.birthday} error={errors.birthday} />
+            <Text style={labelStyle}>Birthday</Text>
+            {isEditing ? (
+              <BirthdatePicker
+                value={draftBirthday.current ?? undefined}
+                onChange={(d: Date) => { draftBirthday.current = d }}
+              />
+            ) : (
+              <Text style={{ fontFamily: 'Inter-Medium', fontSize: 16, color: textColor, lineHeight: 24 }}>{formatBirthday(profileData.birthday) || '—'}</Text>
+            )}
+            {errors.birthday && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{errors.birthday}</Text>}
           </View>
 
-          <InterestChips />
+          <View>
+            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: labelColor, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>
+              Interests
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {PREFERENCE_OPTIONS.map((pref) => {
+                const selected = profileData.preferences.includes(pref)
+                return (
+                  <Pressable
+                    key={pref}
+                    onPress={() => handlePreferenceToggle(pref)}
+                    disabled={!isEditing}
+                    style={{
+                      paddingHorizontal: 18, paddingVertical: 12, borderRadius: 100, minHeight: 44, justifyContent: 'center',
+                      backgroundColor: selected ? '#C2410C' : chipBg, opacity: !isEditing && !selected ? 0.5 : 1,
+                    }}
+                  >
+                    <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: selected ? '#FFFFFF' : mutedTextColor }}>{pref}</Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+            {errors.preferences && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}>{errors.preferences}</Text>}
+          </View>
 
-          {/* Save/Cancel when editing */}
           {isEditing && (
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
               <Pressable
@@ -279,7 +314,7 @@ export default function Profile() {
   }
 
   // ═══════════════════════════════════════════
-  //  WEB LAYOUT
+  //  WEB LAYOUT — inputs are always mounted, hidden via display:none
   // ═══════════════════════════════════════════
   const { width: viewportWidth } = useWindowDimensions()
   const isNarrowWeb = viewportWidth < 768
@@ -353,43 +388,102 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Name + Birthday — stacks vertically on narrow screens */}
+        {/* Name + Birthday */}
         <View style={{ flexDirection: isNarrowWeb ? 'column' : 'row', gap: isNarrowWeb ? 20 : 28 }}>
           <View style={{ flex: 1, gap: 8 }}>
-            <FieldLabel>Full Name</FieldLabel>
-            {isEditing ? (
-              <EditableField field="name" value={profileData.name} error={errors.name} />
-            ) : (
+            <Text style={labelStyle}>Full Name</Text>
+            <TextInput
+              ref={nameRef}
+              defaultValue={profileData.name}
+              onChangeText={(v) => { draftName.current = v }}
+              placeholderTextColor="#9ca3af"
+              style={[inputStyle, !isEditing && hiddenStyle]}
+            />
+            {!isEditing && (
               <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: cardBg, borderRadius: 12, borderWidth: 1, borderColor }}>
                 <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>{profileData.name || '—'}</Text>
               </View>
             )}
+            {errors.name && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{errors.name}</Text>}
           </View>
           <View style={{ flex: 1, gap: 8 }}>
-            <FieldLabel>Birthday</FieldLabel>
+            <Text style={labelStyle}>Birthday</Text>
             {isEditing ? (
-              <EditableField field="birthday" value={profileData.birthday} error={errors.birthday} />
+              <input
+                type="date"
+                defaultValue={toISODate(draftBirthday.current) || '2000-01-01'}
+                onChange={(e) => { draftBirthday.current = parseISODate(e.target.value) }}
+                max={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 18); return d.toISOString().split('T')[0] })()}
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 15,
+                  color: textColor,
+                  paddingLeft: 16,
+                  paddingRight: 16,
+                  paddingTop: 14,
+                  paddingBottom: 14,
+                  borderRadius: 12,
+                  border: `1px solid ${borderColor}`,
+                  backgroundColor: cardBg,
+                  outline: 'none',
+                  width: '100%',
+                  boxSizing: 'border-box' as const,
+                }}
+              />
             ) : (
               <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: cardBg, borderRadius: 12, borderWidth: 1, borderColor }}>
-                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>{profileData.birthday || '—'}</Text>
+                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>{formatBirthday(profileData.birthday) || '—'}</Text>
               </View>
             )}
+            {errors.birthday && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{errors.birthday}</Text>}
           </View>
         </View>
 
         {/* Bio */}
         <View style={{ gap: 8 }}>
-          <FieldLabel>Bio</FieldLabel>
-          {isEditing ? (
-            <EditableField field="bio" value={profileData.bio} error={errors.bio} multiline />
-          ) : (
+          <Text style={labelStyle}>Bio</Text>
+          <TextInput
+            ref={bioRef}
+            defaultValue={profileData.bio}
+            onChangeText={(v) => { draftBio.current = v }}
+            multiline
+            textAlignVertical="top"
+            placeholderTextColor="#9ca3af"
+            style={[multilineInputStyle, !isEditing && hiddenStyle]}
+          />
+          {!isEditing && (
             <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: cardBg, borderRadius: 12, borderWidth: 1, borderColor, minHeight: 80 }}>
               <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor, lineHeight: 24 }}>{profileData.bio || '—'}</Text>
             </View>
           )}
+          {errors.bio && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{errors.bio}</Text>}
         </View>
 
-        <InterestChips />
+        {/* Interests */}
+        <View>
+          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: labelColor, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>
+            Interests
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {PREFERENCE_OPTIONS.map((pref) => {
+              const selected = profileData.preferences.includes(pref)
+              return (
+                <Pressable
+                  key={pref}
+                  onPress={() => handlePreferenceToggle(pref)}
+                  disabled={!isEditing}
+                  style={{
+                    paddingHorizontal: 18, paddingVertical: 12, borderRadius: 100, minHeight: 44, justifyContent: 'center',
+                    backgroundColor: selected ? '#C2410C' : chipBg, opacity: !isEditing && !selected ? 0.5 : 1,
+                  }}
+                >
+                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: selected ? '#FFFFFF' : mutedTextColor }}>{pref}</Text>
+                </Pressable>
+              )
+            })}
+          </View>
+          {errors.preferences && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}>{errors.preferences}</Text>}
+        </View>
 
         {/* Cancel button when editing */}
         {isEditing && (
