@@ -619,6 +619,7 @@ export default function DiscoverScreenWeb() {
   }, [])
 
   // Map popover state
+  const mapPanelRef = useRef<View>(null)
   const [hoverPopover, setHoverPopover] = useState<{
     point: MapPoint
     x: number
@@ -630,20 +631,31 @@ export default function DiscoverScreenWeb() {
     y: number
   } | null>(null)
 
+  const viewportToContainer = useCallback((vx: number, vy: number) => {
+    const el = (mapPanelRef.current as any) as HTMLElement | null
+    if (el?.getBoundingClientRect) {
+      const r = el.getBoundingClientRect()
+      return { x: vx - r.left, y: vy - r.top }
+    }
+    return { x: vx, y: vy }
+  }, [])
+
   const handlePointHover = useCallback((point: MapPoint | null, x?: number, y?: number) => {
     if (point && x != null && y != null) {
-      setHoverPopover({ point, x, y })
+      const pos = viewportToContainer(x, y)
+      setHoverPopover({ point, x: pos.x, y: pos.y })
     } else {
       setHoverPopover(null)
     }
-  }, [])
+  }, [viewportToContainer])
 
   const handlePointClick = useCallback((point: MapPoint, x?: number, y?: number) => {
     setHoverPopover(null)
     if (x != null && y != null) {
-      setClickPopover({ point, x, y })
+      const pos = viewportToContainer(x, y)
+      setClickPopover({ point, x: pos.x, y: pos.y })
     }
-  }, [])
+  }, [viewportToContainer])
 
   const handlePopoverView = useCallback(() => {
     if (!clickPopover) return
@@ -667,6 +679,11 @@ export default function DiscoverScreenWeb() {
     setSelectedItem({ type: point.type === 'center' ? 'center' : 'event', id: point.id })
   }, [])
 
+  const handleMapMove = useCallback(() => {
+    setClickPopover(null)
+    setHoverPopover(null)
+  }, [])
+
   if (isMobile) {
     return <MobileDiscoverFallback />
   }
@@ -675,13 +692,14 @@ export default function DiscoverScreenWeb() {
     <View className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-row flex-1">
         {/* Map Panel */}
-        <View className="flex-1 relative">
+        <View ref={mapPanelRef} className="flex-1 relative">
           <Suspense fallback={<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#E8862A" /></View>}>
             <Map
               points={filteredPoints}
               onPointPress={handlePointPress}
               onPointHover={handlePointHover}
               onPointClick={handlePointClick}
+              onMapMove={handleMapMove}
             />
           </Suspense>
 
