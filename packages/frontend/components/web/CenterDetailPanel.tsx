@@ -69,7 +69,8 @@ export default function CenterDetailPanel({
   return (
     <View
       style={{
-        width: 440,
+        maxWidth: 440,
+        width: '100%',
         height: '100%',
         backgroundColor: colors.panelBg,
         borderLeftWidth: 1,
@@ -92,7 +93,7 @@ export default function CenterDetailPanel({
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Pressable
             onPress={onClose}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 2, padding: 2 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8, minHeight: 44, minWidth: 44 }}
             accessibilityLabel="Close panel"
           >
             <ChevronLeft size={20} color={colors.iconHeader} />
@@ -109,7 +110,7 @@ export default function CenterDetailPanel({
 
           <Pressable
             onPress={handleShare}
-            style={{ padding: 6 }}
+            style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
             accessibilityLabel="Share"
           >
             <Share2 size={18} color={colors.iconHeader} />
@@ -160,7 +161,7 @@ export default function CenterDetailPanel({
             {center.address ? (
               <Pressable
                 onPress={handleAddressPress}
-                style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}
+                style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, minHeight: 44 }}
               >
                 <View
                   style={{
@@ -194,7 +195,7 @@ export default function CenterDetailPanel({
             {center.website ? (
               <Pressable
                 onPress={handleWebsitePress}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 }}
               >
                 <View
                   style={{
@@ -228,7 +229,7 @@ export default function CenterDetailPanel({
             {center.phone ? (
               <Pressable
                 onPress={handlePhonePress}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 }}
               >
                 <View
                   style={{
@@ -332,6 +333,7 @@ export default function CenterDetailPanel({
                         borderRadius: 8,
                         paddingVertical: 12,
                         paddingHorizontal: 14,
+                        minHeight: 44,
                       }}
                     >
                       {/* Date callout */}

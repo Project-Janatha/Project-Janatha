@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  useWindowDimensions,
 } from 'react-native'
 import { Bell, Eye, Shield, Info, ExternalLink, AlertTriangle } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
@@ -33,6 +34,9 @@ export default function Settings() {
   const mutedTextColor = isDark ? '#A8A29E' : '#78716C'
   const cardBg = isDark ? '#171717' : '#FFFFFF'
   const switchTrackColor = { false: isDark ? '#3f3f46' : '#d4d4d8', true: '#f97316' }
+  const { width: viewportWidth } = useWindowDimensions()
+  const isNarrowWeb = Platform.OS === 'web' && viewportWidth < 768
+  const webPaddingH = Platform.OS === 'web' ? (isNarrowWeb ? 16 : viewportWidth < 1024 ? 32 : 60) : 20
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true)
@@ -53,7 +57,7 @@ export default function Settings() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
-      <View style={{ maxWidth: 900, width: '100%', alignSelf: 'center', padding: Platform.OS === 'web' ? 40 : 20, paddingHorizontal: Platform.OS === 'web' ? 60 : 20 }}>
+      <View style={{ maxWidth: 900, width: '100%', alignSelf: 'center', padding: Platform.OS === 'web' ? (isNarrowWeb ? 20 : 40) : 20, paddingHorizontal: webPaddingH }}>
         {/* Header */}
         <View className="mb-8">
           <Text className="text-3xl font-inter font-bold text-content dark:text-content-dark mb-1">

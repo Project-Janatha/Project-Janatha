@@ -84,7 +84,7 @@ function HeaderBar({
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Pressable
           onPress={onBack}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 2, padding: 2 }}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8, minHeight: 44, minWidth: 44 }}
         >
           <ChevronLeft size={20} color={colors.iconHeader} />
           <Text
@@ -98,7 +98,7 @@ function HeaderBar({
           </Text>
         </Pressable>
 
-        <Pressable onPress={onShare} style={{ padding: 6 }}>
+        <Pressable onPress={onShare} style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
           <Share2 size={18} color={colors.iconHeader} />
         </Pressable>
       </View>
@@ -177,7 +177,7 @@ export default function CenterDetailPage() {
           <Text style={{ fontSize: 22, fontFamily: 'Inter-SemiBold', color: colors.text, marginBottom: 16 }}>
             Center not found
           </Text>
-          <Pressable onPress={() => router.back()} style={{ marginTop: 8 }}>
+          <Pressable onPress={() => router.back()} style={{ marginTop: 8, minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 16, fontFamily: 'Inter-Medium', color: '#E8862A' }}>Go Back</Text>
           </Pressable>
         </View>
@@ -235,7 +235,7 @@ export default function CenterDetailPage() {
             {center.address ? (
               <Pressable
                 onPress={handleAddressPress}
-                style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}
+                style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, minHeight: 44 }}
               >
                 <MetaIcon icon={MapPin} color="#E8862A" colors={colors} />
                 <View style={{ flex: 1, justifyContent: 'center' }}>
@@ -257,7 +257,7 @@ export default function CenterDetailPage() {
             {center.website ? (
               <Pressable
                 onPress={handleWebsitePress}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 }}
               >
                 <MetaIcon icon={Globe} color="#E8862A" colors={colors} />
                 <Text
@@ -279,7 +279,7 @@ export default function CenterDetailPage() {
             {center.phone ? (
               <Pressable
                 onPress={handlePhonePress}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 }}
               >
                 <MetaIcon icon={Phone} color="#E8862A" colors={colors} />
                 <Text
@@ -357,6 +357,7 @@ export default function CenterDetailPage() {
                         borderRadius: 8,
                         paddingVertical: 12,
                         paddingHorizontal: 14,
+                        minHeight: 44,
                       }}
                     >
                       {/* Date callout */}

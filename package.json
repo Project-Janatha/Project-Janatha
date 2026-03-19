@@ -7,28 +7,33 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=@janatha/backend\" \"npm run dev --workspace=@janatha/frontend\"",
-    "compose": "docker-compose down && docker-compose up --build",
-    "build": "npm run build --workspaces",
-    "backend": "npm run dev --workspace=@janatha/backend",
-    "frontend": "npm run dev --workspace=@janatha/frontend",
-    "ec2:setup": "bash infrastructure/scripts/setup-ec2.sh",
-    "ec2:check": "bash infrastructure/scripts/check-ec2.sh",
-    "deploy": "bash infrastructure/scripts/deploy.sh",
-    "db:setup": "bash infrastructure/scripts/setup-dynamo.sh",
-    "db:delete": "aws cloudformation delete-stack --stack-name ChinmayaJanata-DynamoDB --region us-east-1 && aws cloudformation wait stack-delete-complete --stack-name ChinmayaJanata-DynamoDB --region us-east-1",
-    "db:status": "aws cloudformation describe-stacks --stack-name ChinmayaJanata-DynamoDB --region us-east-1 --query 'Stacks[0].StackStatus' --output text",
-    "db:clean": "aws dynamodb delete-table --table-name ChinmayaJanata-Users --region us-east-1 2>/dev/null || true && aws dynamodb delete-table --table-name ChinmayaJanata-Centers --region us-east-1 2>/dev/null || true && aws dynamodb delete-table --table-name ChinmayaJanata-Events --region us-east-1 2>/dev/null || true",
-    "amplify": "amplify",
+    "dev:frontend": "npm run dev --workspace=@janatha/frontend",
+    "typecheck": "npm run typecheck --workspace=@janatha/backend",
+    "build": "npm run typecheck && npm run build --workspace=@janatha/frontend && npm run build:pages",
+    "build:frontend": "npm run build --workspace=@janatha/frontend",
+    "build:pages": "cp -r packages/frontend/dist dist",
+    "deploy": "npm run build && npx wrangler pages deploy dist",
+    "deploy:preview": "npm run build && npx wrangler pages deploy dist --branch preview",
+    "d1:create": "npx wrangler d1 create chinmaya-janata-db",
+    "d1:create:preview": "npx wrangler d1 create chinmaya-janata-db-preview",
+    "d1:migrate": "npx wrangler d1 execute chinmaya-janata-db --file=migrations/0001_initial_schema.sql",
+    "d1:migrate:local": "npx wrangler d1 execute chinmaya-janata-db --local --file=migrations/0001_initial_schema.sql",
+    "d1:migrate:preview": "npx wrangler d1 execute chinmaya-janata-db-preview --file=migrations/0001_initial_schema.sql",
+    "pages:dev": "npm run build:frontend && npx wrangler pages dev dist",
     "android": "expo run:android",
     "ios": "expo run:ios"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "@cloudflare/workers-types": "^4.20260101.0",
+    "concurrently": "^8.2.2",
+    "wrangler": "^4.0.0"
   },
   "dependencies": {
-    "@react-native/virtualized-lists": "^0.81.5",
-    "@types/leaflet": "^1.9.21",
-    "leaflet": "^1.9.4",
-    "react-leaflet": "^5.0.0"
+    "hono": "^4.7.0",
+    "jose": "^6.0.0"
+  },
+  "overrides": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   }
 }

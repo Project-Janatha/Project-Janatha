@@ -15,6 +15,8 @@ import { useUser, useThemeContext } from '../components/contexts'
 import { validateEmail, validatePassword } from '../utils'
 import { PasswordStrength } from '../components'
 import DevPanel from '../components/DevPanel'
+// @ts-ignore -- __DEV__ is a React Native global
+const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production'
 
 type AuthStep = 'initial' | 'login' | 'signup'
 
@@ -315,21 +317,23 @@ export default function AuthScreen() {
               )}
             </View>
 
-            {/* Dev Mode Button */}
-            <View className="mt-8 pt-6 border-t border-borderColor dark:border-borderColor-dark">
-              <Pressable
-                onPress={() => setShowDevPanel(true)}
-                className="flex-row items-center justify-center bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-xl active:opacity-70"
-              >
-                <Code size={18} className={isDark ? 'text-white' : 'text-black'} />
-                <Text className="ml-2 text-content dark:text-content-dark font-inter font-semibold">
-                  Developer Mode
-                </Text>
-              </Pressable>
-            </View>
+            {/* Dev Mode Button -- dev only */}
+            {isDev && (
+              <View className="mt-8 pt-6 border-t border-borderColor dark:border-borderColor-dark">
+                <Pressable
+                  onPress={() => setShowDevPanel(true)}
+                  className="flex-row items-center justify-center bg-slate-100 dark:bg-slate-800 px-4 py-3 rounded-xl active:opacity-70"
+                >
+                  <Code size={18} className={isDark ? 'text-white' : 'text-black'} />
+                  <Text className="ml-2 text-content dark:text-content-dark font-inter font-semibold">
+                    Developer Mode
+                  </Text>
+                </Pressable>
+              </View>
+            )}
 
             {/* Show DevPanel when Developer Mode is clicked */}
-            {showDevPanel && (
+            {isDev && showDevPanel && (
               <DevPanel visible={showDevPanel} onClose={() => setShowDevPanel(false)} />
             )}
 

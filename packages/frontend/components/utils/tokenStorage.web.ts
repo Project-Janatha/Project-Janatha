@@ -51,7 +51,7 @@ export const setStoredToken = async (token: string): Promise<void> => {
       setCookie(TOKEN_KEY, token, 7)
     }
   } catch (error) {
-    console.error('Error storing token:', error)
+    if (__DEV__) console.error('Error storing token:', error)
   }
 }
 
@@ -71,7 +71,7 @@ export const getStoredToken = async (): Promise<string | null> => {
     }
     return null
   } catch (error) {
-    console.error('Error retrieving token:', error)
+    if (__DEV__) console.error('Error retrieving token:', error)
     return null
   }
 }
@@ -85,7 +85,7 @@ export const removeStoredToken = async (): Promise<void> => {
       eraseCookie(TOKEN_KEY)
     }
   } catch (error) {
-    console.error('Error removing token:', error)
+    if (__DEV__) console.error('Error removing token:', error)
   }
 }
 

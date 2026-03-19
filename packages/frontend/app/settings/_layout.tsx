@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, Pressable, ScrollView, Platform } from 'react-native'
+import { View, Text, Pressable, ScrollView, Platform, useWindowDimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, usePathname, Slot, Stack } from 'expo-router'
 import { User, Settings as SettingsIcon, ChevronLeft } from 'lucide-react-native'
@@ -15,6 +15,10 @@ export default function SettingsLayout() {
   const router = useRouter()
   const pathname = usePathname()
   const { isDark } = useThemeContext()
+  const { width } = useWindowDimensions()
+
+  // Hide sidebar on narrow web viewports (< 768px)
+  const showSidebar = Platform.OS === 'web' && width >= 768
 
   const handleTabPress = (path: string) => {
     router.push(path as any)
@@ -32,7 +36,10 @@ export default function SettingsLayout() {
 
     return (
       <View className="flex-row items-center">
-        <Pressable onPress={() => router.push('/')}>
+        <Pressable
+          onPress={() => router.push('/')}
+          style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}
+        >
           <Logo size={28} />
         </Pressable>
       </View>
@@ -51,7 +58,11 @@ export default function SettingsLayout() {
           headerLeft:
             Platform.OS !== 'web'
               ? () => (
-                  <Pressable onPress={handleClose} className="ml-2 flex-row items-center">
+                  <Pressable
+                    onPress={handleClose}
+                    className="ml-2 flex-row items-center"
+                    style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}
+                  >
                     <ChevronLeft size={24} color={isDark ? '#fff' : '#000'} />
                     <Text className="text-base font-inter text-content dark:text-content-dark">Back</Text>
                   </Pressable>
@@ -61,8 +72,8 @@ export default function SettingsLayout() {
       />
       <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900" edges={['bottom']}>
         <View className="flex-1 flex-row">
-          {/* Sidebar - web only */}
-          {Platform.OS === 'web' && (
+          {/* Sidebar - web only, hidden on narrow viewports */}
+          {showSidebar && (
             <View className="w-64 border-r border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900">
               <View className="p-6 border-b border-stone-200 dark:border-stone-700">
                 <View className="flex-row items-center justify-between mb-2">
@@ -85,6 +96,7 @@ export default function SettingsLayout() {
                           ? 'bg-primary shadow-sm'
                           : 'bg-transparent hover:bg-stone-100 dark:hover:bg-stone-800'
                       }`}
+                      style={{ minHeight: 44 }}
                     >
                       <Icon
                         size={20}
