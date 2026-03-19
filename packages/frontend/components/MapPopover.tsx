@@ -38,7 +38,7 @@ export default function MapPopover({
     return (
       <div
         className="absolute z-50 pointer-events-none"
-        style={{ left: x, top: y - 44, transform: 'translateX(-50%)' }}
+        style={{ left: x, top: y - 16, transform: 'translate(-50%, -100%)' }}
       >
         <div
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-lg bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 whitespace-nowrap"
@@ -66,7 +66,7 @@ export default function MapPopover({
   return (
     <div
       className="absolute z-50"
-      style={{ left: x, top: y - 8, transform: 'translate(-50%, -100%)' }}
+      style={{ left: x, top: y - 20, transform: 'translate(-50%, -100%)' }}
     >
       <div
         className="rounded-xl shadow-xl bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 p-4 min-w-[240px] max-w-[300px]"
