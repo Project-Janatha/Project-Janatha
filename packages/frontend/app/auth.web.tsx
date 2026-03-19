@@ -5,8 +5,6 @@ import { validateEmail, validatePassword } from '../utils'
 import PasswordStrength from '../components/PasswordStrength'
 import { ImageCarousel } from '../components/auth/ImageCarousel'
 import DevPanel from '../components/DevPanel'
-// @ts-ignore -- __DEV__ is a React Native global
-const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const swamiChinmayanandaJpg = require('../assets/images/landing/Swami Chinmayananda.jpg')
 const swamiChinmayanandaAlt = require('../assets/images/landing/Swami Chinmayananda (1).jpg')
@@ -543,34 +541,32 @@ export default function AuthScreen() {
             By continuing, you agree to our Terms of Service and Privacy Policy
           </p>
 
-          {/* Developer Mode button -- dev only */}
-          {isDev && (
-            <button
-              onClick={() => setShowDevPanel(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                backgroundColor: '#F5F5F4',
-                padding: '10px 16px',
-                borderRadius: 8,
-                border: 'none',
-                cursor: 'pointer',
-                marginTop: 24,
-                width: '100%',
-                fontSize: 14,
-                fontFamily: 'Inter, sans-serif',
-                color: '#57534E',
-              }}
-            >
-              <span style={{ fontFamily: 'monospace', fontSize: 16 }}>&lt;/&gt;</span>
-              Developer Mode
-            </button>
-          )}
+          {/* Developer Mode button */}
+          <button
+            onClick={() => setShowDevPanel(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              backgroundColor: '#F5F5F4',
+              padding: '10px 16px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer',
+              marginTop: 24,
+              width: '100%',
+              fontSize: 14,
+              fontFamily: 'Inter, sans-serif',
+              color: '#57534E',
+            }}
+          >
+            <span style={{ fontFamily: 'monospace', fontSize: 16 }}>&lt;/&gt;</span>
+            Developer Mode
+          </button>
 
           {/* DevPanel */}
-          {isDev && showDevPanel && (
+          {showDevPanel && (
             <DevPanel visible={showDevPanel} onClose={() => setShowDevPanel(false)} />
           )}
         </div>

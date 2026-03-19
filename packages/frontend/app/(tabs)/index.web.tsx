@@ -22,10 +22,14 @@ import {
   type DiscoverFilter,
 } from '../../hooks/useApiData'
 import EventDetailPanel from '../../components/web/EventDetailPanel'
+import EventFormPanel from '../../components/web/EventFormPanel'
 import CenterDetailPanel from '../../components/web/CenterDetailPanel'
 import { useDetailColors } from '../../hooks/useDetailColors'
 import type { MapPoint, EventDisplay, DiscoverCenter } from '../../utils/api'
 import { WeekCalendar } from '../../components'
+
+const ADMIN_NAME = 'brahman'
+const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
 
 const FILTERS: { label: DiscoverFilter }[] = [
   { label: 'All' },
@@ -176,25 +180,28 @@ function DetailPanelWrapper({
   selectedItem,
   onClose,
   onEventPress,
+  onEditEvent,
 }: {
   selectedItem: { type: 'event' | 'center'; id: string }
   onClose: () => void
   onEventPress: (id: string) => void
+  onEditEvent?: (id: string) => void
 }) {
   if (selectedItem.type === 'event') {
-    return <EventPanelInner eventId={selectedItem.id} onClose={onClose} />
+    return <EventPanelInner eventId={selectedItem.id} onClose={onClose} onEdit={onEditEvent} />
   }
   return (
     <CenterPanelInner centerId={selectedItem.id} onClose={onClose} onEventPress={onEventPress} />
   )
 }
 
-function EventPanelInner({ eventId, onClose }: { eventId: string; onClose: () => void }) {
+function EventPanelInner({ eventId, onClose, onEdit }: { eventId: string; onClose: () => void; onEdit?: (id: string) => void }) {
   const { user } = useUser()
   const { event, attendees, messages, loading, toggleRegistration, isToggling } =
     useEventDetail(eventId)
   const colors = useDetailColors()
-  const isAdmin = user?.username === 'brahman'
+  const isAdmin = user?.username === ADMIN_NAME
+  const canEdit = isAdmin || isLocal
 
   const handleToggleRegistration = async () => {
     if (!user?.username) return
@@ -235,6 +242,7 @@ function EventPanelInner({ eventId, onClose }: { eventId: string; onClose: () =>
       onClose={onClose}
       onToggleRegistration={handleToggleRegistration}
       isToggling={isToggling}
+      onEdit={canEdit ? onEdit : undefined}
     />
   )
 }
@@ -579,19 +587,29 @@ export default function DiscoverScreenWeb() {
   const router = useRouter()
   const { isDark } = useThemeContext()
   const { user } = useUser()
-  const isAdmin = user?.username === 'brahman'
+  const isAdmin = user?.username === ADMIN_NAME
+  const canCreate = isAdmin || isLocal
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'center'; id: string } | null>(
     null
   )
+  // Event form panel: null = hidden, { id?: string } = open (id present = edit, absent = create)
+  const [formPanel, setFormPanel] = useState<{ id?: string } | null>(null)
   const { items, filteredPoints, loading, allEvents, allCenters } = useDiscoverData(
     activeFilter,
     searchQuery
   )
 
-  const params = useLocalSearchParams<{ detail?: string; id?: string }>()
+  const params = useLocalSearchParams<{ detail?: string; id?: string; action?: string }>()
+
+  // Clear query string without navigation
+  const clearParams = useCallback(() => {
+    if (typeof window !== 'undefined' && window.location.search) {
+      window.history.replaceState(null, '', window.location.pathname)
+    }
+  }, [])
 
   // Support direct URL navigation (e.g. ?detail=event&id=123)
   useEffect(() => {
@@ -599,6 +617,14 @@ export default function DiscoverScreenWeb() {
       setSelectedItem({ type: params.detail as 'event' | 'center', id: params.id })
     }
   }, [params.detail, params.id])
+
+  // Listen for create event from header nav button
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handler = () => { setSelectedItem(null); setFormPanel({}) }
+    window.addEventListener('open-event-form', handler)
+    return () => window.removeEventListener('open-event-form', handler)
+  }, [])
 
   // Fixed 440px width for both list and detail panels — no shift on selection
   const rightPanelWidth = 440
@@ -730,12 +756,26 @@ export default function DiscoverScreenWeb() {
           )}
         </View>
 
-        {/* Right Panel — detail view or list */}
-        {selectedItem ? (
+        {/* Right Panel — form, detail view, or list */}
+        {formPanel ? (
+          <EventFormPanel
+            eventId={formPanel.id}
+            onClose={() => {
+              const editId = formPanel.id
+              setFormPanel(null)
+              if (editId) {
+                setSelectedItem({ type: 'event', id: editId })
+              } else {
+                clearParams()
+              }
+            }}
+          />
+        ) : selectedItem ? (
           <DetailPanelWrapper
             selectedItem={selectedItem}
-            onClose={() => setSelectedItem(null)}
+            onClose={() => { setSelectedItem(null); clearParams() }}
             onEventPress={(id) => setSelectedItem({ type: 'event', id })}
+            onEditEvent={(id) => { setSelectedItem(null); setFormPanel({ id }) }}
           />
         ) : (
           <View
@@ -760,9 +800,9 @@ export default function DiscoverScreenWeb() {
                     style={{ paddingVertical: 8 }}
                   />
                 </View>
-                {isAdmin && (
+                {canCreate && (
                   <Pressable
-                    onPress={() => router.push('/events/form')}
+                    onPress={() => { setSelectedItem(null); setFormPanel({}) }}
                     style={{
                       width: 40,
                       height: 40,
