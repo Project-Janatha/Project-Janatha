@@ -10,11 +10,15 @@ import Logo from '../../components/ui/Logo'
  * TabLayout Component - The main layout for the tab-based navigation.
  * @return {JSX.Element} A TabLayout component that sets up tab navigation with theming.
  */
+const ADMIN_NAME = 'brahman'
+const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+
 export default function TabLayout() {
   const router = useRouter()
   const { user, logout } = useUser()
   const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
+  const canCreate = user?.username === ADMIN_NAME || isLocal
 
   const handleLogout = async () => {
     await logout()
@@ -50,16 +54,22 @@ export default function TabLayout() {
     if (Platform.OS === 'web') {
       return (
         <View className="flex-row items-center" style={{ gap: 8 }}>
-          <Pressable
-            className="px-3 py-2 rounded-lg flex-row items-center"
-            style={{ backgroundColor: '#E8862A', gap: 6 }}
-            onPress={() => router.push('/events/form')}
-          >
-            <Plus size={16} color="#fff" />
-            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: '#fff' }}>
-              Create Event
-            </Text>
-          </Pressable>
+          {canCreate && (
+            <Pressable
+              className="px-3 py-2 rounded-lg flex-row items-center"
+              style={{ backgroundColor: '#E8862A', gap: 6 }}
+              onPress={() => {
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('open-event-form'))
+                }
+              }}
+            >
+              <Plus size={16} color="#fff" />
+              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: '#fff' }}>
+                Create Event
+              </Text>
+            </Pressable>
+          )}
           <Pressable
             className="mr-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700"
             onPress={() => setSettingsVisible(true)}
