@@ -137,8 +137,8 @@ export async function createCenter(
     const now = new Date().toISOString()
     await db
       .prepare(
-        `INSERT INTO centers (id, name, latitude, longitude, address, member_count, is_verified, created_at, updated_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`,
+        `INSERT INTO centers (id, name, latitude, longitude, address, website, phone, image, acharya, point_of_contact, member_count, is_verified, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`,
       )
       .bind(
         center.id,
@@ -146,6 +146,11 @@ export async function createCenter(
         center.latitude,
         center.longitude,
         center.address ?? null,
+        center.website ?? null,
+        center.phone ?? null,
+        center.image ?? null,
+        center.acharya ?? null,
+        center.point_of_contact ?? null,
         center.member_count ?? 0,
         center.is_verified ?? 0,
         now,

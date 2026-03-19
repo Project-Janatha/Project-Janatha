@@ -453,13 +453,13 @@ export function useCenterDetail(centerId: string) {
           setCenter({
             id: centerId,
             name: apiCenter.name || 'Unknown Center',
-            image: SAMPLE_CENTER_DETAILS[centerId]?.image || '',
+            image: apiCenter.image || SAMPLE_CENTER_DETAILS[centerId]?.image || '',
             address: apiCenter.address || SAMPLE_CENTER_DETAILS[centerId]?.address || '',
-            website: SAMPLE_CENTER_DETAILS[centerId]?.website || '',
-            phone: SAMPLE_CENTER_DETAILS[centerId]?.phone || '',
+            website: apiCenter.website || SAMPLE_CENTER_DETAILS[centerId]?.website || '',
+            phone: apiCenter.phone || SAMPLE_CENTER_DETAILS[centerId]?.phone || '',
             upcomingEvents: apiEvents.length,
-            pointOfContact: SAMPLE_CENTER_DETAILS[centerId]?.pointOfContact || '',
-            acharya: SAMPLE_CENTER_DETAILS[centerId]?.acharya || '',
+            pointOfContact: apiCenter.pointOfContact || SAMPLE_CENTER_DETAILS[centerId]?.pointOfContact || '',
+            acharya: apiCenter.acharya || SAMPLE_CENTER_DETAILS[centerId]?.acharya || '',
           })
           setIsLive(true)
         } else {
