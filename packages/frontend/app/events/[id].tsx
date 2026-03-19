@@ -2,11 +2,13 @@ import React, { useState } from 'react'
 import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ChevronLeft, Share2, MapPin, Users, User, Clock, CheckCircle, Info } from 'lucide-react-native'
+import { ChevronLeft, Share2, MapPin, Users, User, Clock, CheckCircle, Info, Pencil } from 'lucide-react-native'
 import { useEventDetail } from '../../hooks/useApiData'
 import { useUser } from '../../components/contexts'
 import { Badge, UnderlineTabBar } from '../../components/ui'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
+
+const ADMIN_NAME = 'brahman'
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -116,15 +118,21 @@ function HeaderBar({
   title,
   isPast,
   isRegistered,
+  isAdmin,
+  eventId,
   onBack,
   colors,
 }: {
   title: string
   isPast?: boolean
   isRegistered?: boolean
+  isAdmin?: boolean
+  eventId?: string
   onBack: () => void
   colors: DetailColors
 }) {
+  const router = useRouter()
+
   return (
     <View
       style={{
@@ -136,7 +144,7 @@ function HeaderBar({
         gap: 10,
       }}
     >
-      {/* Top row: back + share */}
+      {/* Top row: back + actions */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Pressable
           onPress={onBack}
@@ -154,11 +162,21 @@ function HeaderBar({
           </Text>
         </Pressable>
 
-        {!isPast && (
-          <Pressable onPress={() => {}} style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
-            <Share2 size={18} color={colors.iconHeader} />
-          </Pressable>
-        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          {eventId && (
+            <Pressable
+              onPress={() => router.push(`/events/form?id=${eventId}`)}
+              style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Pencil size={18} color={colors.iconHeader} />
+            </Pressable>
+          )}
+          {!isPast && (
+            <Pressable onPress={() => {}} style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
+              <Share2 size={18} color={colors.iconHeader} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
       {/* Title row + badge */}
@@ -404,6 +422,8 @@ export default function EventDetailPage() {
   )
   const colors = useDetailColors()
 
+  const isAdmin = user?.username === ADMIN_NAME
+
   const handleToggleRegistration = async () => {
     if (!user?.username) return
     try {
@@ -456,6 +476,8 @@ export default function EventDetailPage() {
           title={event.title}
           isPast={false}
           isRegistered
+          isAdmin={isAdmin}
+          eventId={id as string}
           onBack={() => router.back()}
           colors={colors}
         />
@@ -596,6 +618,8 @@ export default function EventDetailPage() {
       <HeaderBar
         title={event.title}
         isPast={isPast}
+        isAdmin={isAdmin}
+        eventId={id as string}
         onBack={() => router.back()}
         colors={colors}
       />

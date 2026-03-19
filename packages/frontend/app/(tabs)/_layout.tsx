@@ -2,7 +2,7 @@ import { Link, Tabs, useRouter } from 'expo-router'
 import { Platform, View, Text, Pressable, Image } from 'react-native'
 import { useState } from 'react'
 import { useUser, useThemeContext } from '../../components/contexts'
-import { User, Settings, LogOut } from 'lucide-react-native'
+import { User, Settings, LogOut, Plus } from 'lucide-react-native'
 import SettingsPanel from '../../components/SettingsPanel'
 import Logo from '../../components/ui/Logo'
 
@@ -49,7 +49,17 @@ export default function TabLayout() {
     }
     if (Platform.OS === 'web') {
       return (
-        <>
+        <View className="flex-row items-center" style={{ gap: 8 }}>
+          <Pressable
+            className="px-3 py-2 rounded-lg flex-row items-center"
+            style={{ backgroundColor: '#E8862A', gap: 6 }}
+            onPress={() => router.push('/events/form')}
+          >
+            <Plus size={16} color="#fff" />
+            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: '#fff' }}>
+              Create Event
+            </Text>
+          </Pressable>
           <Pressable
             className="mr-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700"
             onPress={() => setSettingsVisible(true)}
@@ -61,7 +71,7 @@ export default function TabLayout() {
             onClose={() => setSettingsVisible(false)}
             onLogout={handleLogout}
           />
-        </>
+        </View>
       )
     }
 
