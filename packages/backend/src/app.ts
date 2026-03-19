@@ -15,7 +15,6 @@ import {
   userRowToApi,
   centerRowToApi,
   eventRowToApi,
-  sanitizeUser,
 } from './types'
 import {
   hashPassword,
@@ -55,10 +54,7 @@ export const app = new Hono<HonoEnv>().basePath('/api')
 app.onError((err, c) => {
   console.error(`[${c.req.method}] ${c.req.path} — Unhandled error:`, err)
   return c.json(
-    {
-      message: 'Internal server error',
-      error: err?.message ?? 'Unknown error',
-    },
+    { message: 'Internal server error' },
     500,
   )
 })
@@ -96,7 +92,7 @@ async function authMiddleware(
   }
 
   const decoded = await verifyToken(token, c.env.JWT_SECRET)
-  if (!decoded) {
+  if (!decoded || decoded.type !== 'access') {
     return c.json({ message: 'Invalid or expired token' }, 403)
   }
 
@@ -278,7 +274,7 @@ app.post('/auth/complete-onboarding', authMiddleware, async (c) => {
   } catch (err: any) {
     console.error('complete-onboarding error:', err)
     return c.json(
-      { message: 'Failed to complete onboarding', error: err?.message ?? 'Unknown error' },
+      { message: 'Failed to complete onboarding' },
       500,
     )
   }
@@ -379,7 +375,7 @@ app.get('/centers', cacheControl(30), async (c) => {
   return c.json({ centers: centers.map(centerRowToApi) })
 })
 
-app.post('/addCenter', async (c) => {
+app.post('/addCenter', authMiddleware, async (c) => {
   const body = await c.req.json<{
     latitude: number
     longitude: number
@@ -509,6 +505,11 @@ app.post('/verifyUser', authMiddleware, async (c) => {
 })
 
 app.post('/userUpdate', authMiddleware, async (c) => {
+  const user = c.get('user')
+  if (user.username !== ADMIN_NAME) {
+    return c.json({ message: 'Insufficient permissions' }, 401)
+  }
+
   const { username, userJSON } = await c.req.json<{
     username: string
     userJSON: any
@@ -546,11 +547,16 @@ app.post('/userUpdate', authMiddleware, async (c) => {
   return c.json({ message: 'Update failed.' }, 400)
 })
 
-app.post('/updateRegistration', async (c) => {
+app.post('/updateRegistration', authMiddleware, async (c) => {
+  const user = c.get('user')
   const { username, userJSON } = await c.req.json<{
     username: string
     userJSON: any
   }>()
+
+  if (user.username !== username && user.username !== ADMIN_NAME) {
+    return c.json({ message: 'Insufficient permissions' }, 401)
+  }
 
   const targetUser = await db.getUserByUsername(c.env.DB, username)
   if (!targetUser) {
@@ -575,6 +581,11 @@ app.post('/updateRegistration', async (c) => {
 })
 
 app.post('/removeUser', authMiddleware, async (c) => {
+  const user = c.get('user')
+  if (user.username !== ADMIN_NAME) {
+    return c.json({ message: 'Insufficient permissions' }, 401)
+  }
+
   const { username } = await c.req.json<{ username: string }>()
   const targetUser = await db.getUserByUsername(c.env.DB, username)
   if (!targetUser) {
@@ -700,6 +711,11 @@ app.post('/addevent', authMiddleware, async (c) => {
 })
 
 app.post('/removeEvent', authMiddleware, async (c) => {
+  const user = c.get('user')
+  if (user.username !== ADMIN_NAME) {
+    return c.json({ message: 'Insufficient permissions' }, 401)
+  }
+
   const { id } = await c.req.json<{ id: string }>()
   const result = await db.deleteEvent(c.env.DB, id)
   if (result.success) {
@@ -718,6 +734,11 @@ app.post('/fetchEvent', cacheControl(30), async (c) => {
 })
 
 app.post('/updateEvent', authMiddleware, async (c) => {
+  const user = c.get('user')
+  if (user.username !== ADMIN_NAME) {
+    return c.json({ message: 'Insufficient permissions' }, 401)
+  }
+
   const { eventJSON } = await c.req.json<{ eventJSON: any }>()
 
   const eventId = eventJSON.id || eventJSON.eventID

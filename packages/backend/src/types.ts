@@ -133,6 +133,18 @@ export interface EventApiResponse {
   updatedAt: string
 }
 
+// ── Utility helpers ───────────────────────────────────────────────────
+
+function safeParseJsonArray(value: string | null): string[] | null {
+  if (!value) return null
+  try {
+    const parsed = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
 // ── Serialization helpers ─────────────────────────────────────────────
 
 export function userRowToApi(row: UserRow): UserApiResponse {
@@ -151,7 +163,7 @@ export function userRowToApi(row: UserRow): UserApiResponse {
     verificationLevel: row.verification_level,
     isActive: row.is_active === 1,
     profileComplete: row.profile_complete === 1,
-    interests: row.interests ? JSON.parse(row.interests) : null,
+    interests: safeParseJsonArray(row.interests),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
