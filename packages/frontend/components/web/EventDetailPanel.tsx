@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { View, Text, Image, ScrollView, Pressable, ActivityIndicator } from 'react-native'
-import { MapPin, Users, User, Share2, Clock, CheckCircle, Info, ChevronLeft } from 'lucide-react-native'
+import { MapPin, Users, User, Share2, Clock, CheckCircle, Info, ChevronLeft, Pencil } from 'lucide-react-native'
 import Badge from '../ui/Badge'
 import UnderlineTabBar from '../ui/UnderlineTabBar'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
@@ -100,6 +100,7 @@ type EventDetailPanelProps = {
   attendees: Attendee[]
   messages: Message[]
   isPast?: boolean
+  isAdmin?: boolean
   onClose: () => void
   onToggleRegistration: () => void
   isToggling: boolean
@@ -166,12 +167,16 @@ function HeaderBar({
   title,
   isPast,
   isRegistered,
+  isAdmin,
+  eventId,
   onClose,
   colors,
 }: {
   title: string
   isPast?: boolean
   isRegistered?: boolean
+  isAdmin?: boolean
+  eventId?: string
   onClose: () => void
   colors: DetailColors
 }) {
@@ -186,7 +191,7 @@ function HeaderBar({
         gap: 10,
       }}
     >
-      {/* Top row: back + share/close */}
+      {/* Top row: back + actions */}
       <View className="flex-row items-center" style={{ justifyContent: 'space-between' }}>
         <Pressable
           onPress={onClose}
@@ -206,15 +211,28 @@ function HeaderBar({
           </Text>
         </Pressable>
 
-        {!isPast && (
-          <Pressable
-            onPress={() => {}}
-            style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
-            accessibilityLabel="Share event"
-          >
-            <Share2 size={18} color={colors.iconHeader} />
-          </Pressable>
-        )}
+        <View className="flex-row items-center" style={{ gap: 4 }}>
+          {eventId && (
+            <Pressable
+              onPress={() => {
+                window.location.href = `/events/form?id=${eventId}`
+              }}
+              style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+              accessibilityLabel="Edit event"
+            >
+              <Pencil size={18} color={colors.iconHeader} />
+            </Pressable>
+          )}
+          {!isPast && (
+            <Pressable
+              onPress={() => {}}
+              style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+              accessibilityLabel="Share event"
+            >
+              <Share2 size={18} color={colors.iconHeader} />
+            </Pressable>
+          )}
+        </View>
       </View>
 
       {/* Title row + badge */}
@@ -826,6 +844,7 @@ export default function EventDetailPanel({
   attendees,
   messages,
   isPast,
+  isAdmin,
   onClose,
   onToggleRegistration,
   isToggling,
@@ -846,7 +865,7 @@ export default function EventDetailPanel({
       }}
     >
       {/* Header */}
-      <HeaderBar title={event.title} isPast={isPast} isRegistered={isRegistered} onClose={onClose} colors={colors} />
+      <HeaderBar title={event.title} isPast={isPast} isRegistered={isRegistered} isAdmin={isAdmin} eventId={event.id} onClose={onClose} colors={colors} />
 
       {/* Hero image (non-registered only) */}
       {!isRegistered && (

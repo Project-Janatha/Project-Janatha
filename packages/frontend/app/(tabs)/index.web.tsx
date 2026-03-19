@@ -9,7 +9,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native'
-import { MapPin, Search, Building2, Users, ChevronUp } from 'lucide-react-native'
+import { MapPin, Search, Building2, Users, ChevronUp, Plus } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar } from '../../components/ui'
@@ -194,6 +194,7 @@ function EventPanelInner({ eventId, onClose }: { eventId: string; onClose: () =>
   const { event, attendees, messages, loading, toggleRegistration, isToggling } =
     useEventDetail(eventId)
   const colors = useDetailColors()
+  const isAdmin = user?.username === 'brahman'
 
   const handleToggleRegistration = async () => {
     if (!user?.username) return
@@ -201,7 +202,6 @@ function EventPanelInner({ eventId, onClose }: { eventId: string; onClose: () =>
       await toggleRegistration(user.username)
     } catch (err: any) {
       if (__DEV__) console.warn('[EventPanel] toggleRegistration failed:', err?.message || err)
-      // Web doesn't have Alert, so log the error; the hook re-throws it for callers to handle
     }
   }
 
@@ -223,7 +223,6 @@ function EventPanelInner({ eventId, onClose }: { eventId: string; onClose: () =>
     )
   }
 
-  // Determine if past (compare event date to today)
   const isPast = event.date ? new Date(event.date + 'T23:59:59') < new Date() : false
 
   return (
@@ -232,6 +231,7 @@ function EventPanelInner({ eventId, onClose }: { eventId: string; onClose: () =>
       attendees={attendees}
       messages={messages}
       isPast={isPast}
+      isAdmin={isAdmin}
       onClose={onClose}
       onToggleRegistration={handleToggleRegistration}
       isToggling={isToggling}
@@ -578,6 +578,8 @@ export default function DiscoverScreenWeb() {
 
   const router = useRouter()
   const { isDark } = useThemeContext()
+  const { user } = useUser()
+  const isAdmin = user?.username === 'brahman'
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -619,6 +621,7 @@ export default function DiscoverScreenWeb() {
   }, [])
 
   // Map popover state
+  const mapPanelRef = useRef<View>(null)
   const [hoverPopover, setHoverPopover] = useState<{
     point: MapPoint
     x: number
@@ -630,20 +633,31 @@ export default function DiscoverScreenWeb() {
     y: number
   } | null>(null)
 
+  const viewportToContainer = useCallback((vx: number, vy: number) => {
+    const el = (mapPanelRef.current as any) as HTMLElement | null
+    if (el?.getBoundingClientRect) {
+      const r = el.getBoundingClientRect()
+      return { x: vx - r.left, y: vy - r.top }
+    }
+    return { x: vx, y: vy }
+  }, [])
+
   const handlePointHover = useCallback((point: MapPoint | null, x?: number, y?: number) => {
     if (point && x != null && y != null) {
-      setHoverPopover({ point, x, y })
+      const pos = viewportToContainer(x, y)
+      setHoverPopover({ point, x: pos.x, y: pos.y })
     } else {
       setHoverPopover(null)
     }
-  }, [])
+  }, [viewportToContainer])
 
   const handlePointClick = useCallback((point: MapPoint, x?: number, y?: number) => {
     setHoverPopover(null)
     if (x != null && y != null) {
-      setClickPopover({ point, x, y })
+      const pos = viewportToContainer(x, y)
+      setClickPopover({ point, x: pos.x, y: pos.y })
     }
-  }, [])
+  }, [viewportToContainer])
 
   const handlePopoverView = useCallback(() => {
     if (!clickPopover) return
@@ -675,7 +689,7 @@ export default function DiscoverScreenWeb() {
     <View className="flex-1 bg-background dark:bg-background-dark">
       <View className="flex-row flex-1">
         {/* Map Panel */}
-        <View className="flex-1 relative">
+        <View ref={mapPanelRef} className="flex-1 relative">
           <Suspense fallback={<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#E8862A" /></View>}>
             <Map
               points={filteredPoints}
@@ -724,20 +738,38 @@ export default function DiscoverScreenWeb() {
           >
             {/* Panel Header */}
             <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 0 }}>
-              {/* Search */}
-              <View
-                className="flex-row items-center px-3 rounded-xl bg-stone-100 dark:bg-neutral-800"
-                style={{ minHeight: 40 }}
-              >
-                <Search size={16} color="#9CA3AF" />
-                <TextInput
-                  className="flex-1 ml-2 text-sm font-inter text-content dark:text-content-dark outline-none"
-                  placeholder="Search events and centers..."
-                  placeholderTextColor="#9CA3AF"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  style={{ paddingVertical: 8 }}
-                />
+              {/* Search + Create */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View
+                  className="flex-row items-center px-3 rounded-xl bg-stone-100 dark:bg-neutral-800"
+                  style={{ minHeight: 40, flex: 1 }}
+                >
+                  <Search size={16} color="#9CA3AF" />
+                  <TextInput
+                    className="flex-1 ml-2 text-sm font-inter text-content dark:text-content-dark outline-none"
+                    placeholder="Search events and centers..."
+                    placeholderTextColor="#9CA3AF"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    style={{ paddingVertical: 8 }}
+                  />
+                </View>
+                {isAdmin && (
+                  <Pressable
+                    onPress={() => router.push('/events/form')}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 12,
+                      backgroundColor: '#E8862A',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    accessibilityLabel="Create event"
+                  >
+                    <Plus size={20} color="#FFFFFF" />
+                  </Pressable>
+                )}
               </View>
             </View>
 
