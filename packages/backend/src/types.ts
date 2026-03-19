@@ -43,6 +43,11 @@ export interface CenterRow {
   latitude: number
   longitude: number
   address: string | null
+  website: string | null
+  phone: string | null
+  image: string | null
+  acharya: string | null
+  point_of_contact: string | null
   member_count: number
   is_verified: number // 0 | 1
   created_at: string
@@ -109,6 +114,11 @@ export interface CenterApiResponse {
   latitude: number
   longitude: number
   address: string | null
+  website: string | null
+  phone: string | null
+  image: string | null
+  acharya: string | null
+  pointOfContact: string | null
   memberCount: number
   isVerified: boolean
   createdAt: string
@@ -176,6 +186,11 @@ export function centerRowToApi(row: CenterRow): CenterApiResponse {
     latitude: row.latitude,
     longitude: row.longitude,
     address: row.address,
+    website: row.website,
+    phone: row.phone,
+    image: row.image,
+    acharya: row.acharya,
+    pointOfContact: row.point_of_contact,
     memberCount: row.member_count,
     isVerified: row.is_verified === 1,
     createdAt: row.created_at,

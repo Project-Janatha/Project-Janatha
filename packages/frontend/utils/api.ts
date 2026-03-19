@@ -30,6 +30,11 @@ export interface CenterData {
   latitude: number
   longitude: number
   address: string | null
+  website: string | null
+  phone: string | null
+  image: string | null
+  acharya: string | null
+  pointOfContact: string | null
   memberCount: number
   isVerified: boolean
   createdAt?: string

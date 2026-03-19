@@ -380,6 +380,12 @@ app.post('/addCenter', authMiddleware, async (c) => {
     latitude: number
     longitude: number
     centerName: string
+    address?: string
+    website?: string
+    phone?: string
+    image?: string
+    acharya?: string
+    pointOfContact?: string
   }>()
 
   const validName = validate.centerName(body.centerName)
@@ -399,6 +405,12 @@ app.post('/addCenter', authMiddleware, async (c) => {
     name: validName,
     latitude: lat,
     longitude: lng,
+    address: body.address ?? null,
+    website: body.website ?? null,
+    phone: body.phone ?? null,
+    image: body.image ?? null,
+    acharya: body.acharya ?? null,
+    point_of_contact: body.pointOfContact ?? null,
   })
 
   if (!result.success) {
