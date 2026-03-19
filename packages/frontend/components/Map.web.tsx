@@ -29,6 +29,7 @@ export interface MapProps {
   onPointPress?: (point: MapPoint) => void
   onPointHover?: (point: MapPoint | null, x?: number, y?: number) => void
   onPointClick?: (point: MapPoint, x?: number, y?: number) => void
+  onMapMove?: () => void
   initialCenter?: [number, number]
   initialZoom?: number
   showUserLocation?: boolean
@@ -172,6 +173,7 @@ const MapComponent = memo<MapProps>(
     onPointPress,
     onPointHover,
     onPointClick,
+    onMapMove,
     initialCenter,
     initialZoom = DEFAULT_ZOOM,
     showUserLocation = false,
@@ -190,29 +192,44 @@ const MapComponent = memo<MapProps>(
 
     const handleMove = useCallback((evt: any) => {
       setViewState(evt.viewState)
-    }, [])
+      onMapMove?.()
+    }, [onMapMove])
+
+    const getMarkerViewportCoords = useCallback(
+      (domEvent: MouseEvent) => {
+        const target = domEvent.target as HTMLElement
+        const markerEl = target?.closest('.maplibregl-marker') as HTMLElement
+        if (markerEl) {
+          const mRect = markerEl.getBoundingClientRect()
+          return {
+            x: mRect.left + mRect.width / 2,
+            y: mRect.top,
+          }
+        }
+        return { x: domEvent.clientX, y: domEvent.clientY }
+      },
+      []
+    )
 
     const handleMarkerClick = useCallback(
       (point: MapPoint) => (e: any) => {
         e.originalEvent?.stopPropagation()
-        const screenX = e.originalEvent?.clientX ?? 0
-        const screenY = e.originalEvent?.clientY ?? 0
         if (onPointClick) {
-          onPointClick(point, screenX, screenY)
+          const { x, y } = getMarkerViewportCoords(e.originalEvent)
+          onPointClick(point, x, y)
         } else {
           onPointPress?.(point)
         }
       },
-      [onPointPress, onPointClick]
+      [onPointPress, onPointClick, getMarkerViewportCoords]
     )
 
     const handleMarkerMouseEnter = useCallback(
       (point: MapPoint) => (e: any) => {
-        const screenX = e.originalEvent?.clientX ?? 0
-        const screenY = e.originalEvent?.clientY ?? 0
-        onPointHover?.(point, screenX, screenY)
+        const { x, y } = getMarkerViewportCoords(e.originalEvent)
+        onPointHover?.(point, x, y)
       },
-      [onPointHover]
+      [onPointHover, getMarkerViewportCoords]
     )
 
     const handleMarkerMouseLeave = useCallback(() => {

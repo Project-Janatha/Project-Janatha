@@ -681,6 +681,11 @@ export default function DiscoverScreenWeb() {
     setSelectedItem({ type: point.type === 'center' ? 'center' : 'event', id: point.id })
   }, [])
 
+  const handleMapMove = useCallback(() => {
+    setClickPopover(null)
+    setHoverPopover(null)
+  }, [])
+
   if (isMobile) {
     return <MobileDiscoverFallback />
   }
@@ -696,6 +701,7 @@ export default function DiscoverScreenWeb() {
               onPointPress={handlePointPress}
               onPointHover={handlePointHover}
               onPointClick={handlePointClick}
+              onMapMove={handleMapMove}
             />
           </Suspense>
 
