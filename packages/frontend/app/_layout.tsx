@@ -1,6 +1,4 @@
 import '@expo/metro-runtime'
-// import '../config/performance'
-// import '../config/devtools'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, View, Text } from 'react-native'
 import { useFonts } from 'expo-font'

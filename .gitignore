@@ -79,7 +79,6 @@ temp/
 !.yarn/sdks
 !.yarn/versions
 yarn.lock
-package-lock.json
 
 # TypeScript
 **/types/**/*.d.ts.map

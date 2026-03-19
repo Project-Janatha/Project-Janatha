@@ -51,7 +51,7 @@ export const setOnboardingComplete = async (value: boolean): Promise<void> => {
       await AsyncStorage.setItem(ONBOARDING_KEY, serialized)
     }
   } catch (error) {
-    console.error('Error storing onboarding state:', error)
+    if (__DEV__) console.error('Error storing onboarding state:', error)
   }
 }
 
@@ -71,7 +71,7 @@ export const getOnboardingComplete = async (): Promise<boolean> => {
     const value = await AsyncStorage.getItem(ONBOARDING_KEY)
     return value === '1'
   } catch (error) {
-    console.error('Error retrieving onboarding state:', error)
+    if (__DEV__) console.error('Error retrieving onboarding state:', error)
     return false
   }
 }
@@ -89,6 +89,6 @@ export const clearOnboardingComplete = async (): Promise<void> => {
       await AsyncStorage.removeItem(ONBOARDING_KEY)
     }
   } catch (error) {
-    console.error('Error clearing onboarding state:', error)
+    if (__DEV__) console.error('Error clearing onboarding state:', error)
   }
 }

@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
   Platform,
+  useWindowDimensions,
 } from 'react-native'
 import { Camera } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
@@ -83,7 +84,7 @@ export default function Profile() {
       setIsEditing(false)
       setErrors({})
     } catch (error) {
-      console.error('Error saving profile:', error)
+      if (__DEV__) console.error('Error saving profile:', error)
       setIsEditing(false)
       setErrors({})
     } finally {
@@ -131,8 +132,10 @@ export default function Profile() {
               disabled={!isEditing}
               style={{
                 paddingHorizontal: 18,
-                paddingVertical: 8,
+                paddingVertical: 12,
                 borderRadius: 100,
+                minHeight: 44,
+                justifyContent: 'center',
                 backgroundColor: selected ? '#C2410C' : chipBg,
                 opacity: !isEditing && !selected ? 0.5 : 1,
               }}
@@ -212,13 +215,13 @@ export default function Profile() {
             {isEditing && (
               <Pressable
                 style={{
-                  position: 'absolute', bottom: 0, right: 0,
-                  width: 28, height: 28, borderRadius: 14,
+                  position: 'absolute', bottom: -6, right: -6,
+                  width: 44, height: 44, borderRadius: 22,
                   backgroundColor: '#C2410C', alignItems: 'center', justifyContent: 'center',
                   borderWidth: 2, borderColor: isDark ? '#171717' : '#FAFAF7',
                 }}
               >
-                <Camera size={13} color="#fff" />
+                <Camera size={16} color="#fff" />
               </Pressable>
             )}
           </View>
@@ -252,14 +255,14 @@ export default function Profile() {
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
               <Pressable
                 onPress={handleCancel}
-                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: isDark ? '#262626' : '#F3F0ED', alignItems: 'center' }}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, minHeight: 48, backgroundColor: isDark ? '#262626' : '#F3F0ED', alignItems: 'center', justifyContent: 'center' }}
               >
                 <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: textColor }}>Cancel</Text>
               </Pressable>
               <Pressable
                 onPress={handleSave}
                 disabled={isSaving}
-                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#C2410C', alignItems: 'center' }}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, minHeight: 48, backgroundColor: '#C2410C', alignItems: 'center', justifyContent: 'center' }}
               >
                 {isSaving ? (
                   <ActivityIndicator size="small" color="#fff" />
@@ -278,13 +281,17 @@ export default function Profile() {
   // ═══════════════════════════════════════════
   //  WEB LAYOUT
   // ═══════════════════════════════════════════
+  const { width: viewportWidth } = useWindowDimensions()
+  const isNarrowWeb = viewportWidth < 768
+  const webPaddingH = isNarrowWeb ? 16 : viewportWidth < 1024 ? 32 : 60
+
   return (
     <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
-      <View style={{ maxWidth: 900, width: '100%', alignSelf: 'center', padding: 40, paddingHorizontal: 60, gap: 36 }}>
+      <View style={{ maxWidth: 900, width: '100%', alignSelf: 'center', padding: isNarrowWeb ? 20 : 40, paddingHorizontal: webPaddingH, gap: isNarrowWeb ? 24 : 36 }}>
         {/* Header row */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <View style={{ flexDirection: isNarrowWeb ? 'column' : 'row', justifyContent: 'space-between', alignItems: isNarrowWeb ? 'stretch' : 'flex-start', gap: isNarrowWeb ? 16 : 0 }}>
           <View style={{ gap: 4 }}>
-            <Text style={{ fontFamily: 'Inter-Bold', fontSize: 28, color: textColor, letterSpacing: -0.5 }}>
+            <Text style={{ fontFamily: 'Inter-Bold', fontSize: isNarrowWeb ? 24 : 28, color: textColor, letterSpacing: -0.5 }}>
               Profile
             </Text>
             <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor }}>
@@ -295,8 +302,10 @@ export default function Profile() {
             onPress={isEditing ? handleSave : handleEdit}
             disabled={isSaving}
             style={{
-              paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10,
+              paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, minHeight: 44,
               backgroundColor: isEditing ? '#C2410C' : '#1C1917',
+              alignItems: 'center', justifyContent: 'center',
+              alignSelf: isNarrowWeb ? 'stretch' : 'auto',
             }}
           >
             {isSaving ? (
@@ -312,7 +321,7 @@ export default function Profile() {
         {/* Profile card */}
         <View
           style={{
-            flexDirection: 'row', alignItems: 'center', gap: 28, padding: 28,
+            flexDirection: isNarrowWeb ? 'column' : 'row', alignItems: 'center', gap: isNarrowWeb ? 16 : 28, padding: isNarrowWeb ? 20 : 28,
             backgroundColor: cardBg, borderRadius: 20, borderWidth: 1, borderColor,
           }}
         >
@@ -324,17 +333,17 @@ export default function Profile() {
             {isEditing && (
               <Pressable
                 style={{
-                  position: 'absolute', bottom: 2, right: 2,
-                  width: 28, height: 28, borderRadius: 14,
+                  position: 'absolute', bottom: -4, right: -4,
+                  width: 44, height: 44, borderRadius: 22,
                   backgroundColor: '#C2410C', alignItems: 'center', justifyContent: 'center',
                   borderWidth: 2, borderColor: cardBg,
                 }}
               >
-                <Camera size={13} color="#fff" />
+                <Camera size={16} color="#fff" />
               </Pressable>
             )}
           </View>
-          <View style={{ gap: 4 }}>
+          <View style={{ gap: 4, alignItems: isNarrowWeb ? 'center' : 'flex-start' }}>
             <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 24, color: textColor, letterSpacing: -0.3 }}>
               {profileData.name || '—'}
             </Text>
@@ -344,8 +353,8 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Two-column: Name + Birthday */}
-        <View style={{ flexDirection: 'row', gap: 28 }}>
+        {/* Name + Birthday — stacks vertically on narrow screens */}
+        <View style={{ flexDirection: isNarrowWeb ? 'column' : 'row', gap: isNarrowWeb ? 20 : 28 }}>
           <View style={{ flex: 1, gap: 8 }}>
             <FieldLabel>Full Name</FieldLabel>
             {isEditing ? (
@@ -386,7 +395,7 @@ export default function Profile() {
         {isEditing && (
           <Pressable
             onPress={handleCancel}
-            style={{ alignSelf: 'flex-start', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10, backgroundColor: isDark ? '#262626' : '#F3F0ED' }}
+            style={{ alignSelf: isNarrowWeb ? 'stretch' : 'flex-start', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, minHeight: 44, backgroundColor: isDark ? '#262626' : '#F3F0ED', alignItems: 'center', justifyContent: 'center' }}
           >
             <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: textColor }}>Cancel</Text>
           </Pressable>

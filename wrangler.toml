@@ -1,8 +1,35 @@
-name = "api-cors"
-main = "cors-worker.js"
-compatibility_date = "2026-02-26"
+# Chinmaya Janata - Cloudflare Pages configuration
+# Om Sri Chinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
+#
+# This project deploys as a CF Pages site:
+#   - Static frontend (Expo web export) served from /
+#   - API functions (Hono on Workers) served from /api/*
+#
+# Deploy commands:
+#   Production: npm run deploy
+#   Preview:    npm run deploy:preview
+#   Local dev:  npm run pages:dev
+#
+# Secrets (set via Wrangler CLI, NOT in this file):
+#   npx wrangler pages secret put JWT_SECRET
+#   npx wrangler pages secret put JWT_REFRESH_SECRET
 
-routes = [
-  { pattern = "chinmayajanata.org/api/*", zone_name = "chinmayajanata.org" },
-  { pattern = "app.chinmayajanata.org/api/*", zone_name = "chinmayajanata.org" }
-]
+name = "chinmaya-janata"
+compatibility_date = "2026-02-26"
+pages_build_output_dir = "dist"
+
+# D1 database binding (production)
+[[d1_databases]]
+binding = "DB"
+database_name = "chinmaya-janata-db"
+database_id = "289ca84c-bae5-4d15-baeb-d76406fe0ea3"
+
+# ── Preview environment ────────────────────────────────────────────────
+# Uncomment and set database_id after creating the preview database:
+#   npx wrangler d1 create chinmaya-janata-db-preview
+#
+# [env.preview]
+# [[env.preview.d1_databases]]
+# binding = "DB"
+# database_name = "chinmaya-janata-db-preview"
+# database_id = ""

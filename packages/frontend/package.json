@@ -4,7 +4,7 @@
   "description": "The official project to connect the CHYKs of Chinmaya Mission West!",
   "main": "expo-router/entry",
   "scripts": {
-    "test": "echo \"No tests specified\"",
+    "test": "vitest run",
     "dev": "expo start -c",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -27,9 +27,6 @@
     "@headlessui/react": "^2.2.9",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
-    "@seald-io/nedb": "^4.1.2",
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.5",
     "expo": "^54.0.21",
     "expo-build-properties": "^1.0.9",
     "expo-constants": "~18.0.10",
@@ -39,20 +36,15 @@
     "expo-location": "^19.0.7",
     "expo-router": "~6.0.14",
     "expo-secure-store": "^15.0.7",
-    "express": "^5.1.0",
-    "express-session": "^1.18.2",
-    "heroicons": "^2.2.0",
     "lucide-react-native": "^0.545.0",
-    "mapbox-gl": "^3.15.0",
     "maplibre-gl": "^4.7.1",
     "nativewind": "^4.2.2",
-    "react": "19.1.0",
+    "react": "19.2.4",
     "react-datepicker": "^8.9.0",
-    "react-dom": "19.1.0",
+    "react-dom": "19.2.4",
     "react-map-gl": "^8.1.0",
     "react-native": "0.81.5",
     "react-native-calendars": "^1.1313.0",
-    "react-native-heroicons": "^4.0.0",
     "react-native-maps": "1.20.1",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
@@ -60,14 +52,15 @@
     "react-native-svg": "^15.12.1",
     "react-native-toast-message": "^2.3.3",
     "react-native-web": "^0.21.0",
-    "react-native-worklets-core": "^1.6.2",
-    "serverless": "^4.28.0"
+    "react-native-worklets-core": "^1.6.2"
   },
   "devDependencies": {
     "@expo/metro-runtime": "^6.1.2",
     "@types/react": "~19.1.10",
+    "@vitest/coverage-v8": "^4.1.0",
     "concurrently": "^9.2.1",
     "npm-run-all": "^4.1.5",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.0"
   }
 }

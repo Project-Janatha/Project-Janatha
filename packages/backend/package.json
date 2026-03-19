@@ -1,30 +1,23 @@
 {
   "name": "@janatha/backend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
-  "main": "centralSequence.js",
+  "main": "src/app.ts",
+  "types": "src/types.ts",
   "scripts": {
-    "start": "node centralSequence.js",
-    "dev": "nodemon centralSequence.js"
+    "dev": "wrangler pages dev ../../dist --port 8787 --d1 DB=289ca84c-bae5-4d15-baeb-d76406fe0ea3",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.948.0",
-    "@aws-sdk/lib-dynamodb": "^3.948.0",
-    "aws-sdk": "^2.1400.0",
-    "bcryptjs": "^2.4.3",
-    "connect-dynamodb": "^3.0.5",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "express-session": "^1.18.2",
-    "jsonwebtoken": "^9.0.3",
-    "uuid": "^7.0.3"
+    "hono": "^4.7.0",
+    "jose": "^6.0.0"
   },
   "devDependencies": {
-    "@types/jsonwebtoken": "^9.0.10",
-    "serverless": "^4.28.0",
-    "serverless-dynamodb-local": "^0.2.40",
-    "serverless-offline": "^14.4.0"
+    "@cloudflare/vitest-pool-workers": "^0.13.0",
+    "@cloudflare/workers-types": "^4.20260101.0",
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.0"
   }
 }

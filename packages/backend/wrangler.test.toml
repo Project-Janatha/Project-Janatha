@@ -1,0 +1,11 @@
+name = "chinmaya-janata-test"
+compatibility_date = "2026-02-26"
+
+[vars]
+JWT_SECRET = "test-jwt-secret-for-testing-only"
+JWT_REFRESH_SECRET = "test-jwt-refresh-secret-for-testing-only"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "chinmaya-janata-test-db"
+database_id = "test-db-id"

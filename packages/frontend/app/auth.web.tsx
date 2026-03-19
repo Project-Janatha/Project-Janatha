@@ -5,13 +5,15 @@ import { validateEmail, validatePassword } from '../utils'
 import PasswordStrength from '../components/PasswordStrength'
 import { ImageCarousel } from '../components/auth/ImageCarousel'
 import DevPanel from '../components/DevPanel'
+// @ts-ignore -- __DEV__ is a React Native global
+const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const swamiChinmayanandaJpg = require('../assets/images/landing/Swami Chinmayananda.jpg')
 const swamiChinmayanandaAlt = require('../assets/images/landing/Swami Chinmayananda (1).jpg')
 const swamiChinmayanandaOption2 = require('../assets/images/landing/Swami Chinmayananda Option 2.jpeg')
 import Logo from '../components/ui/Logo'
 
-// Inject CSS for placeholder and hover styles (web only)
+// Inject CSS for placeholder, hover, and mobile-specific styles (web only)
 if (typeof document !== 'undefined') {
   const id = 'auth-web-styles'
   if (!document.getElementById(id)) {
@@ -20,7 +22,11 @@ if (typeof document !== 'undefined') {
     style.textContent = `
       .auth-input::placeholder { color: #9CA3AF; }
       .auth-input:disabled { opacity: 0.6; cursor: not-allowed; }
+      .auth-input { font-size: 16px !important; } /* Prevent iOS zoom on focus */
       .auth-submit:hover:not(:disabled) { background-color: #B91C1C !important; }
+      @supports (min-height: 100dvh) {
+        .auth-root { min-height: 100dvh !important; }
+      }
     `
     document.head.appendChild(style)
   }
@@ -189,6 +195,7 @@ export default function AuthScreen() {
   const baseInputStyle: React.CSSProperties = {
     width: '100%',
     height: 48,
+    minHeight: 44,
     border: '1px solid #D6D3D1',
     borderRadius: 8,
     padding: '0 16px',
@@ -198,6 +205,7 @@ export default function AuthScreen() {
     backgroundColor: '#FAFAF7',
     outline: 'none',
     boxSizing: 'border-box' as const,
+    WebkitAppearance: 'none' as const,
   }
 
   const focusInputStyle: React.CSSProperties = {
@@ -235,9 +243,11 @@ export default function AuthScreen() {
         ? 'Create Account'
         : 'Continue'
   const isNarrowWeb = viewportWidth < 1024
+  const isMobile = viewportWidth < 640
 
   return (
     <div
+      className="auth-root"
       style={{
         display: 'flex',
         flexDirection: isNarrowWeb ? 'column' : 'row',
@@ -258,10 +268,12 @@ export default function AuthScreen() {
           width: isNarrowWeb ? '100%' : '50%',
           backgroundColor: '#FAFAF7',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: isMobile ? 'flex-start' : 'center',
           justifyContent: 'center',
           overflow: 'auto',
-          padding: isNarrowWeb ? '32px 20px' : 0,
+          WebkitOverflowScrolling: 'touch',
+          padding: isMobile ? '24px 16px' : isNarrowWeb ? '32px 20px' : 0,
+          flex: 1,
         }}
       >
         <div style={{ maxWidth: 400, width: '100%', padding: isNarrowWeb ? 0 : '0 48px' }}>
@@ -276,8 +288,13 @@ export default function AuthScreen() {
                 cursor: 'pointer',
                 background: 'none',
                 border: 'none',
-                padding: 0,
-                marginBottom: 24,
+                padding: '12px 16px 12px 0',
+                marginBottom: 12,
+                marginLeft: -4,
+                minHeight: 44,
+                minWidth: 44,
+                display: 'flex',
+                alignItems: 'center',
               }}
             >
               &larr; Back
@@ -285,15 +302,15 @@ export default function AuthScreen() {
           )}
 
           {/* Janata logo */}
-          <div style={{ marginBottom: 48 }}>
-            <Logo size={32} />
+          <div style={{ marginBottom: isMobile ? 32 : 48 }}>
+            <Logo size={isMobile ? 28 : 32} />
           </div>
 
           {/* Heading */}
           <h1
             style={{
               fontFamily: '"Inclusive Sans", sans-serif',
-              fontSize: isNarrowWeb ? 32 : 36,
+              fontSize: isMobile ? 28 : isNarrowWeb ? 32 : 36,
               fontWeight: '400',
               color: '#1C1917',
               marginBottom: 8,
@@ -414,6 +431,7 @@ export default function AuthScreen() {
               style={{
                 width: '100%',
                 height: 48,
+                minHeight: 44,
                 backgroundColor: '#C2410C',
                 color: '#FFFFFF',
                 border: 'none',
@@ -424,6 +442,8 @@ export default function AuthScreen() {
                 cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
                 marginTop: 8,
                 opacity: isButtonDisabled ? 0.4 : 1,
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
               }}
             >
               {buttonText}
@@ -443,6 +463,8 @@ export default function AuthScreen() {
             >
               Don't have an account?{' '}
               <span
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                   if (!username) {
                     setErrors({ username: 'Please enter your email first.' })
@@ -454,7 +476,27 @@ export default function AuthScreen() {
                   }
                   setAuthStep('signup')
                 }}
-                style={{ color: '#C2410C', cursor: 'pointer' }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    if (!username) {
+                      setErrors({ username: 'Please enter your email first.' })
+                      return
+                    }
+                    if (!validateEmail(username)) {
+                      setErrors({ username: 'You must enter a valid email address.' })
+                      return
+                    }
+                    setAuthStep('signup')
+                  }
+                }}
+                style={{
+                  color: '#C2410C',
+                  cursor: 'pointer',
+                  padding: '8px 4px',
+                  margin: '-8px -4px',
+                  display: 'inline-block',
+                }}
               >
                 Create one
               </span>
@@ -471,7 +513,19 @@ export default function AuthScreen() {
                 fontFamily: 'Inter, sans-serif',
               }}
             >
-              <span style={{ color: '#C2410C', cursor: 'pointer' }}>Forgot password?</span>
+              <span
+                role="button"
+                tabIndex={0}
+                style={{
+                  color: '#C2410C',
+                  cursor: 'pointer',
+                  padding: '8px 4px',
+                  margin: '-8px -4px',
+                  display: 'inline-block',
+                }}
+              >
+                Forgot password?
+              </span>
             </p>
           )}
 
@@ -481,39 +535,42 @@ export default function AuthScreen() {
               fontSize: 13,
               color: '#A8A29E',
               textAlign: 'center',
-              marginTop: 32,
+              marginTop: isMobile ? 24 : 32,
               fontFamily: 'Inter, sans-serif',
+              paddingBottom: isMobile ? 16 : 0,
             }}
           >
             By continuing, you agree to our Terms of Service and Privacy Policy
           </p>
 
-          {/* Developer Mode button */}
-          <button
-            onClick={() => setShowDevPanel(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              backgroundColor: '#F5F5F4',
-              padding: '10px 16px',
-              borderRadius: 8,
-              border: 'none',
-              cursor: 'pointer',
-              marginTop: 24,
-              width: '100%',
-              fontSize: 14,
-              fontFamily: 'Inter, sans-serif',
-              color: '#57534E',
-            }}
-          >
-            <span style={{ fontFamily: 'monospace', fontSize: 16 }}>&lt;/&gt;</span>
-            Developer Mode
-          </button>
+          {/* Developer Mode button -- dev only */}
+          {isDev && (
+            <button
+              onClick={() => setShowDevPanel(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                backgroundColor: '#F5F5F4',
+                padding: '10px 16px',
+                borderRadius: 8,
+                border: 'none',
+                cursor: 'pointer',
+                marginTop: 24,
+                width: '100%',
+                fontSize: 14,
+                fontFamily: 'Inter, sans-serif',
+                color: '#57534E',
+              }}
+            >
+              <span style={{ fontFamily: 'monospace', fontSize: 16 }}>&lt;/&gt;</span>
+              Developer Mode
+            </button>
+          )}
 
           {/* DevPanel */}
-          {showDevPanel && (
+          {isDev && showDevPanel && (
             <DevPanel visible={showDevPanel} onClose={() => setShowDevPanel(false)} />
           )}
         </div>
