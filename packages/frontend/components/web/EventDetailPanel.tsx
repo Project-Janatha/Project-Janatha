@@ -104,6 +104,7 @@ type EventDetailPanelProps = {
   onClose: () => void
   onToggleRegistration: () => void
   isToggling: boolean
+  onEdit?: (eventId: string) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -170,6 +171,7 @@ function HeaderBar({
   isAdmin,
   eventId,
   onClose,
+  onEdit,
   colors,
 }: {
   title: string
@@ -178,6 +180,7 @@ function HeaderBar({
   isAdmin?: boolean
   eventId?: string
   onClose: () => void
+  onEdit?: (eventId: string) => void
   colors: DetailColors
 }) {
   return (
@@ -212,11 +215,9 @@ function HeaderBar({
         </Pressable>
 
         <View className="flex-row items-center" style={{ gap: 4 }}>
-          {eventId && (
+          {eventId && onEdit && (
             <Pressable
-              onPress={() => {
-                window.location.href = `/events/form?id=${eventId}`
-              }}
+              onPress={() => onEdit(eventId)}
               style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
               accessibilityLabel="Edit event"
             >
@@ -848,6 +849,7 @@ export default function EventDetailPanel({
   onClose,
   onToggleRegistration,
   isToggling,
+  onEdit,
 }: EventDetailPanelProps) {
   const colors = useDetailColors()
   const isRegistered = event.isRegistered && !isPast
@@ -865,7 +867,7 @@ export default function EventDetailPanel({
       }}
     >
       {/* Header */}
-      <HeaderBar title={event.title} isPast={isPast} isRegistered={isRegistered} isAdmin={isAdmin} eventId={event.id} onClose={onClose} colors={colors} />
+      <HeaderBar title={event.title} isPast={isPast} isRegistered={isRegistered} isAdmin={isAdmin} eventId={event.id} onClose={onClose} onEdit={onEdit} colors={colors} />
 
       {/* Hero image (non-registered only) */}
       {!isRegistered && (
