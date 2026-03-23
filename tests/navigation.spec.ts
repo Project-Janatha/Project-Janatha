@@ -37,19 +37,12 @@ test.describe('Navigation & Route Guards', () => {
     await expect(page.getByText('Find your center')).toBeVisible({ timeout: 10000 })
   })
 
-  test('unknown routes redirect to landing', async ({ page }) => {
+  test('unknown routes redirect to landing or auth', async ({ page }) => {
     await page.goto('/this-route-does-not-exist')
     await page.waitForTimeout(5000)
 
-    // SPA should either show 404 or redirect
+    // SPA should redirect unauthenticated users to landing or auth
     const url = page.url()
-    const bodyText = await page.textContent('body')
-    const handled =
-      url.includes('/landing') ||
-      url.includes('/auth') ||
-      bodyText?.toLowerCase().includes('not found') ||
-      bodyText?.toLowerCase().includes('404') ||
-      true
-    expect(handled).toBeTruthy()
+    expect(url).toMatch(/\/(landing|auth)/)
   })
 })
