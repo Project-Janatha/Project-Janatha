@@ -1,4 +1,4 @@
-// In BirthdatePicker.web.js
+// BirthdatePicker.web.tsx
 import React, { useState, useEffect } from 'react'
 import { View, Text, Pressable } from 'react-native'
 // --- NEW: Import Headless UI ---
@@ -37,7 +37,7 @@ function Select({ label, value, options, onChange, className }) {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-background dark:bg-background-dark py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <Listbox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-background dark:bg-background-dark py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
             {options
               .filter((option) => option.value !== null) // <-- filter out placeholder
               .map((option) => (
@@ -60,7 +60,6 @@ function Select({ label, value, options, onChange, className }) {
   )
 }
 
-// --- Main Picker Component (No changes from here down) ---
 export default function BirthdatePicker({ value, onChange }) {
   const [date, setDate] = useState(value || new Date(2000, 0, 1))
 
@@ -97,36 +96,25 @@ export default function BirthdatePicker({ value, onChange }) {
   })
 
   const handlePartChange = (part, newValue) => {
-    setDateParts((prev) => ({ ...prev, [part]: newValue }))
-    // Only call onChange if all parts are selected
-    if (
-      part === 'year' &&
-      dateParts.month !== null &&
-      dateParts.day !== null &&
-      newValue !== null
-    ) {
-      onChange(new Date(newValue, dateParts.month, dateParts.day))
-    }
-    if (
-      part === 'month' &&
-      dateParts.year !== null &&
-      dateParts.day !== null &&
-      newValue !== null
-    ) {
-      onChange(new Date(dateParts.year, newValue, dateParts.day))
-    }
-    if (
-      part === 'day' &&
-      dateParts.year !== null &&
-      dateParts.month !== null &&
-      newValue !== null
-    ) {
-      onChange(new Date(dateParts.year, dateParts.month, newValue))
+    const newParts = { ...dateParts, [part]: newValue }
+    setDateParts(newParts)
+
+    // Only call onChange when all parts are selected
+    if (newParts.year !== null && newParts.month !== null && newParts.day !== null) {
+      const selectedDate = new Date(newParts.year, newParts.month, newParts.day)
+      const minAgeDate = new Date()
+      minAgeDate.setFullYear(minAgeDate.getFullYear() - 18)
+      minAgeDate.setHours(0, 0, 0, 0)
+
+      // Block under-18 (also covers future dates since minAgeDate < today)
+      if (selectedDate <= minAgeDate) {
+        onChange(selectedDate)
+      }
     }
   }
 
   return (
-    <View className="p-4 w-full max-w-[480px]">
+    <View className="p-4 w-full max-w-[480px]" style={{ overflow: 'visible', zIndex: 20 }}>
       <View className="flex-row justify-between space-x-2">
         {/* Month */}
         <Select

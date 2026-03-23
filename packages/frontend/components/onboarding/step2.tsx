@@ -1,6 +1,6 @@
 import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { View, Text, Pressable } from 'react-native'
+import { View, Text, Pressable, Platform } from 'react-native'
 import { useOnboarding } from '../contexts'
 import BirthdatePicker from '../BirthdatePicker'
 
@@ -24,7 +24,7 @@ export default function Step2() {
                 We'll use this to personalize your experience.
               </Text>
             </View>
-            <View className="mt-8 w-full flex items-center justify-center">
+            <View className="mt-8 w-full flex items-center justify-center" style={Platform.OS === 'web' ? { overflow: 'visible', zIndex: 20 } : undefined}>
               <BirthdatePicker value={birthdate ?? undefined} onChange={setBirthdate} />
             </View>
           </View>
