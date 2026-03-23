@@ -183,17 +183,17 @@ export default function PasswordStrength({ password, show }: PasswordStrengthPro
   const getStrengthColor = () => {
     if (score < 20) return 'bg-red-500'
     if (score < 40) return 'bg-orange-500'
-    if (score < 60) return 'bg-yellow-500'
+    if (score < 60) return 'bg-amber-500'
     if (score < 80) return 'bg-lime-500'
     return 'bg-green-500'
   }
 
   const getStrengthTextColor = () => {
-    if (score < 20) return 'text-red-500'
-    if (score < 40) return 'text-orange-500'
-    if (score < 60) return 'text-yellow-500'
-    if (score < 80) return 'text-lime-500'
-    return 'text-green-500'
+    if (score < 20) return 'text-red-600 dark:text-red-400'
+    if (score < 40) return 'text-orange-600 dark:text-orange-400'
+    if (score < 60) return 'text-amber-700 dark:text-amber-400'
+    if (score < 80) return 'text-lime-700 dark:text-lime-400'
+    return 'text-green-600 dark:text-green-400'
   }
 
   return (
@@ -201,18 +201,18 @@ export default function PasswordStrength({ password, show }: PasswordStrengthPro
       {/* Strength Bar */}
       <View className="gap-2">
         <View className="flex-row justify-between items-center">
-          <Text className="text-xs font-inter font-medium text-content dark:text-content-dark">
+          <Text className="text-sm font-inter font-medium text-content dark:text-content-dark">
             Password Strength
           </Text>
           <View className="flex-row items-center gap-2">
-            <Text className={`text-xs font-inter font-semibold ${getStrengthTextColor()}`}>
+            <Text className={`text-sm font-inter font-semibold ${getStrengthTextColor()}`}>
               {strength}
             </Text>
           </View>
         </View>
 
         {/* Progress Bar */}
-        <View className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+        <View className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <View
             className={`h-full ${getStrengthColor()} transition-all duration-300`}
             style={{ width: `${percent}%` }}
