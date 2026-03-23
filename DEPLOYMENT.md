@@ -1,167 +1,87 @@
-# EC2 Deployment Guide
+# Deployment Guide — Cloudflare Pages
 
-# Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
+Om Sri Chinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
 
-## Created Deployment Scripts
+The app runs on **Cloudflare Pages** with **D1** (SQLite at the edge). The frontend is a static Expo web export and the backend is a Hono API served via Pages Functions.
 
-### 1. **setup-ec2.sh** - One-time EC2 setup
+## Architecture
 
-Run this ONCE on your fresh EC2 instance to install Docker, Docker Compose, and configure the environment.
-
-```bash
-# SSH into EC2 and run:
-bash setup-ec2.sh
+```
+Browser → Cloudflare Pages CDN
+            ├── /           → static frontend (Expo web export in dist/)
+            └── /api/*      → Pages Functions (Hono on Workers)
+                                └── D1 database (SQLite)
 ```
 
-### 2. **deploy.sh** - Main deployment script
+## Prerequisites
 
-Deploy from your local machine to EC2.
+- A [Cloudflare account](https://dash.cloudflare.com/sign-up)
+- Node.js >= 20, npm >= 10
+- Wrangler CLI (installed as a dev dependency)
 
-```bash
-# From your local machine:
-EC2_HOST=your-ec2-ip.compute.amazonaws.com npm run deploy
-```
+## First-Time Setup
 
-### 3. **remote-deploy.sh** - Git-based deployment
-
-Deploy by pulling from GitHub directly on EC2.
+### 1. Create the D1 database
 
 ```bash
-# SSH into EC2 and run:
-bash remote-deploy.sh
+npm run d1:create
 ```
 
-### 4. **logs.sh** - View application logs
+Copy the `database_id` from the output and update `wrangler.toml`:
+
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "chinmaya-janata-db"
+database_id = "<your-database-id>"
+```
+
+### 2. Run migrations on the remote database
 
 ```bash
-EC2_HOST=your-ec2-ip.compute.amazonaws.com bash infrastructure/scripts/logs.sh
+npm run d1:migrate
 ```
 
-### 5. **ssh-ec2.sh** - Quick SSH access
+### 3. Set secrets
+
+These are stored securely by Cloudflare and injected as environment variables at runtime:
 
 ```bash
-EC2_HOST=your-ec2-ip.compute.amazonaws.com bash infrastructure/scripts/ssh-ec2.sh
+npx wrangler pages secret put JWT_SECRET
+npx wrangler pages secret put JWT_REFRESH_SECRET
 ```
 
-### 6. **rollback.sh** - Rollback to previous version
+## Deploying
+
+### Production
 
 ```bash
-EC2_HOST=your-ec2-ip.compute.amazonaws.com bash infrastructure/scripts/rollback.sh
-```
-
-## Setup Steps
-
-### Step 1: Set up EC2 Instance
-
-1. Launch Ubuntu EC2 instance (t3.small or larger recommended)
-2. Configure security group:
-   - Port 22 (SSH)
-   - Port 80 (HTTP)
-   - Port 443 (HTTPS)
-3. Attach IAM role with DynamoDB permissions
-4. Save your SSH key as `~/.ssh/janatha-ec2.pem`
-
-### Step 2: Configure IAM Role for DynamoDB
-
-Create IAM role with this policy:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "dynamodb:Query",
-        "dynamodb:Scan",
-        "dynamodb:GetItem",
-        "dynamodb:PutItem",
-        "dynamodb:UpdateItem",
-        "dynamodb:DeleteItem"
-      ],
-      "Resource": ["arn:aws:dynamodb:us-east-1:*:table/ChinmayaJanata-*"]
-    }
-  ]
-}
-```
-
-### Step 3: Initial EC2 Setup
-
-```bash
-# 1. Copy setup script to EC2
-scp -i ~/.ssh/janatha-ec2.pem infrastructure/scripts/setup-ec2.sh ubuntu@YOUR-EC2-IP:/home/ubuntu/
-
-# 2. SSH into EC2
-ssh -i ~/.ssh/janatha-ec2.pem ubuntu@YOUR-EC2-IP
-
-# 3. Run setup
-bash setup-ec2.sh
-
-# 4. Log out and back in
-exit
-```
-
-### Step 4: Configure Environment Variables
-
-```bash
-# SSH into EC2
-ssh -i ~/.ssh/janatha-ec2.pem ubuntu@YOUR-EC2-IP
-
-# Create .env file
-cd /home/ubuntu/project-janatha/packages/backend
-nano .env
-```
-
-Copy from `.env.example` and fill in values.
-
-Minimum required secrets (do not leave blank):
-- `JWT_SECRET`
-- `SESSION_SECRET`
-- `CORS_ORIGIN` (comma-separated list of allowed frontend origins, no `*`)
-- `CORS_ALLOW_NO_ORIGIN` (`true` only if you need to allow native/mobile clients without an Origin header)
-
-### Step 5: Deploy
-
-```bash
-# From your local machine
-export EC2_HOST=your-ec2-ip.compute.amazonaws.com
 npm run deploy
 ```
 
-## GitHub Actions Setup
+This runs: typecheck → build frontend → copy to `dist/` → `wrangler pages deploy dist`.
 
-Add these secrets to your GitHub repository (Settings → Secrets and variables → Actions):
+Cloudflare automatically picks up `functions/api/[[route]].ts` as the API entry point.
 
-- `EC2_HOST` - Your EC2 public DNS/IP
-- `EC2_SSH_KEY` - Contents of your SSH private key
-- `AWS_ACCESS_KEY_ID` - AWS access key (for GitHub Actions)
-- `AWS_SECRET_ACCESS_KEY` - AWS secret key (for GitHub Actions)
-
-## Monitoring & Maintenance
-
-### View logs
+### Preview (branch deploy)
 
 ```bash
-EC2_HOST=your-ec2-ip.com bash infrastructure/scripts/logs.sh
+npm run deploy:preview
 ```
 
-### Check container status
+Creates a preview deployment at a unique URL — useful for testing PRs before merging.
 
-```bash
-ssh -i ~/.ssh/janatha-ec2.pem ubuntu@YOUR-EC2-IP
-cd /home/ubuntu/project-janatha
-docker-compose ps
-```
+## Environment & Bindings
 
-### Restart services
+| Binding | Type | Description |
+|---|---|---|
+| `DB` | D1 Database | SQLite database for users, centers, events |
+| `JWT_SECRET` | Secret | Signing key for access tokens |
+| `JWT_REFRESH_SECRET` | Secret | Signing key for refresh tokens |
 
-```bash
-docker-compose restart
-```
+These are configured in `wrangler.toml` (for D1) and via `wrangler pages secret put` (for secrets).
 
-## Notes
+## Monitoring
 
-- The PM2 ecosystem config is in `infrastructure/pm2/ecosystem.config.js`
-- Use IAM roles instead of hardcoding AWS credentials
-- Update `CORS_ORIGIN` in `.env` to your domain(s). Do not use `*`.
-- Consider setting up CloudWatch for monitoring
+- **Cloudflare Dashboard** → Workers & Pages → chinmaya-janata → logs and analytics
+- **D1 Console** → Workers & Pages → D1 → chinmaya-janata-db → query browser

@@ -6,7 +6,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace=@janatha/backend\" \"npm run dev --workspace=@janatha/frontend\"",
+    "dev": "concurrently -n api,web -c blue,green \"npx wrangler pages dev dist --port 8787 --d1 DB=289ca84c-bae5-4d15-baeb-d76406fe0ea3\" \"npm run dev --workspace=@janatha/frontend\"",
+    "dev:backend": "npx wrangler pages dev dist --port 8787 --d1 DB=289ca84c-bae5-4d15-baeb-d76406fe0ea3",
     "dev:frontend": "npm run dev --workspace=@janatha/frontend",
     "typecheck": "npm run typecheck --workspace=@janatha/backend",
     "build": "npm run typecheck && npm run build --workspace=@janatha/frontend && npm run build:pages",

@@ -1,137 +1,133 @@
-## Project-Janatha
+# Project Janatha
 
-The official project to connect the CHYKs of Chinmaya Mission West!
+The official app to connect the CHYKs of Chinmaya Mission West.
 
-May Gurudev's and Lord Krishna's grace be with us.
+Om Sri Chinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
 
-Authors: Abhiram Ramachandran, Sahanav Sai Ramesh
+## Tech Stack
 
-## How to run:
+- **Frontend:** Expo (React Native) — web + iOS + Android from one codebase
+- **Backend:** Hono on Cloudflare Workers (Pages Functions)
+- **Database:** Cloudflare D1 (SQLite at the edge)
+- **Auth:** PBKDF2 password hashing + JWT (via `jose`)
 
-Requirements:
+## Project Structure
 
-- Docker
-- NodeJS version [19.0.0]
-- Expo SDK 52
-  - Expo Go for native
-- AWS SDK
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Run the app
-
-- Locally
-
-  ```sh
-  npm run dev
-  ```
-
-- Dockerized Container
-  ```sh
-  npm run compose
-  ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-# Expo + AWS EC2 + AWS DynamoDB Monorepo
-
-## 📦 Included packages
-
-- Expo SDK
-- AWS SDK
-- Nativewind
-- Expo Router
-
-## 🗂 Folder layout
-
-- `expo` (native)
-- `next` (web)
-
-- `packages` shared packages across apps
-  - `ui` includes your custom UI kit that will be optimized by Tamagui
-  - `app` you'll be importing most files from `app/`
-    - `features` (don't use a `screens` folder. organize by feature.)
-    - `provider` (all the providers that wrap the app, and some no-ops for Web.)
-
-You can add other folders inside of `packages/` if you know what you're doing and have a good reason to.
-
-> [!TIP]
-> Switching from `app` to `pages` router:
->
-> - remove `app` folder from `apps/next`
-> - move `index.tsx` from `pages-example` to `pages` folder
-> - rename `pages-example-user` to `user` and be sure to update `linkTarget` in `screen.tsx` to `user` as well
-> - delete `SwitchRouterButton.tsx` component and remove it from `screen.tsx` and `packages/ui/src/index.tsx`
-> - search for `pagesMode` keyword and remove it
-
-## 🏁 Start the app
-
-- Install dependencies: `yarn`
-
-- Next.js local dev: `yarn web`
-
-To run with optimizer on in dev mode (just for testing, it's faster to leave it off): `yarn web:extract`. To build for production `yarn web:prod`.
-
-To see debug output to verify the compiler, add `// debug` as a comment to the top of any file.
-
-- Expo local dev: `yarn native`
-
-## UI Kit
-
-Note we're following the [design systems guide](https://tamagui.dev/docs/guides/design-systems) and creating our own package for components.
-
-See `packages/ui` named `@my/ui` for how this works.
-
-## 🆕 Add new dependencies
-
-### Pure JS dependencies
-
-If you're installing a JavaScript-only dependency that will be used across platforms, install it in `packages/app`:
-
-```sh
-cd packages/app
-yarn add date-fns
-cd ../..
-yarn
+```
+├── packages/
+│   ├── frontend/      # Expo app (screens, components, auth)
+│   └── backend/       # Hono API (routes, DB queries, auth)
+├── functions/
+│   └── api/[[route]].ts  # CF Pages Functions entry point
+├── migrations/        # D1 SQL migrations
+├── wrangler.toml      # Cloudflare Pages config
+└── package.json       # npm workspaces root
 ```
 
-### Native dependencies
+## Local Development
 
-If you're installing a library with any native code, you must install it in `expo`:
+### Prerequisites
 
-```sh
-cd apps/expo
-yarn add react-native-reanimated
-cd ..
-yarn
+- Node.js >= 20
+- npm >= 10
+- A Cloudflare account (for deployment only — local dev works without one)
+
+### Setup
+
+1. Clone the repo and install dependencies:
+
+```bash
+git clone https://github.com/Project-Janatha/Project-Janatha.git
+cd Project-Janatha
+npm install
 ```
 
-## Update new dependencies
+2. Build the frontend (needed once before first run, since the backend serves static files from `dist/`):
 
-### Pure JS dependencies
-
-```sh
-yarn upgrade-interactive
+```bash
+npm run build:frontend
 ```
 
-You can also install the native library inside of `packages/app` if you want to get autoimport for that package inside of the `app` folder. However, you need to be careful and install the _exact_ same version in both packages. If the versions mismatch at all, you'll potentially get terrible bugs. This is a classic monorepo issue. I use `lerna-update-wizard` to help with this (you don't need to use Lerna to use that lib).
+3. Run the D1 database migrations locally:
 
-You may potentially want to have the native module transpiled for the next app. If you get error messages with `Cannot use import statement outside a module`, you may need to use `transpilePackages` in your `next.config.js` and add the module to the array there.
+```bash
+npm run d1:migrate:local
+```
 
-### Deploying to Vercel
+4. Start the dev servers:
 
-- Root: `apps/next`
-- Install command to be `yarn set version stable && yarn install`
-- Build command: leave default setting
-- Output dir: leave default setting
+```bash
+npm run dev
+```
+
+This starts both servers concurrently:
+- **API** (Wrangler): http://localhost:8787 — serves the Hono backend + static frontend
+- **Web** (Metro/Expo): http://localhost:8081 — Expo dev server with hot reload
+
+Open http://localhost:8081 in your browser for the web app with hot reload.
+
+### Other dev commands
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start API + frontend dev servers |
+| `npm run dev:backend` | Start only the API server |
+| `npm run dev:frontend` | Start only the Expo dev server |
+| `npm run pages:dev` | Build frontend + start API (no hot reload) |
+| `npm run build` | Full production build (typecheck + frontend + copy) |
+
+### Running on mobile
+
+```bash
+npm run ios       # Requires Xcode
+npm run android   # Requires Android Studio
+```
+
+## Deployment
+
+The app deploys to **Cloudflare Pages** with D1.
+
+### First-time setup
+
+1. Create the D1 database:
+
+```bash
+npm run d1:create
+```
+
+2. Set the `database_id` in `wrangler.toml` (from the output above).
+
+3. Run migrations on the remote database:
+
+```bash
+npm run d1:migrate
+```
+
+4. Set secrets:
+
+```bash
+npx wrangler pages secret put JWT_SECRET
+npx wrangler pages secret put JWT_REFRESH_SECRET
+```
+
+### Deploy
+
+```bash
+npm run deploy            # Production
+npm run deploy:preview    # Preview branch
+```
+
+This builds the frontend, copies it to `dist/`, and deploys via `wrangler pages deploy`. The `functions/api/[[route]].ts` entry point is automatically picked up by Cloudflare Pages.
+
+## Running Tests
+
+```bash
+# Backend unit tests (vitest + Cloudflare Workers pool)
+npm test --workspace=@janatha/backend
+
+# Frontend unit tests
+npm test --workspace=@janatha/frontend
+
+# E2E tests (Playwright — requires the dev server running)
+npx playwright test
+```
