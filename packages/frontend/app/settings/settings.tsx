@@ -4,7 +4,6 @@ import {
   View,
   Text,
   Pressable,
-  Switch,
   Linking,
   Modal,
   Platform,
@@ -12,7 +11,7 @@ import {
   Alert,
   useWindowDimensions,
 } from 'react-native'
-import { Bell, Eye, Shield, Info, ExternalLink, AlertTriangle } from 'lucide-react-native'
+import { Eye, Shield, Info, ExternalLink, AlertTriangle } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
 import { useRouter } from 'expo-router'
 import { DestructiveButton } from '../../components/ui'
@@ -22,10 +21,6 @@ export default function Settings() {
   const { isDark } = useThemeContext()
   const { deleteAccount } = useUser()
   const router = useRouter()
-  const [pushNotifications, setPushNotifications] = useState(true)
-  const [emailNotifications, setEmailNotifications] = useState(false)
-  const [eventReminders, setEventReminders] = useState(true)
-
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
@@ -33,7 +28,6 @@ export default function Settings() {
   const textColor = isDark ? '#F5F5F5' : '#1C1917'
   const mutedTextColor = isDark ? '#A8A29E' : '#78716C'
   const cardBg = isDark ? '#171717' : '#FFFFFF'
-  const switchTrackColor = { false: isDark ? '#3f3f46' : '#d4d4d8', true: '#f97316' }
   const { width: viewportWidth } = useWindowDimensions()
   const isNarrowWeb = Platform.OS === 'web' && viewportWidth < 768
   const webPaddingH = Platform.OS === 'web' ? (isNarrowWeb ? 16 : viewportWidth < 1024 ? 32 : 60) : 20
@@ -81,71 +75,6 @@ export default function Settings() {
               Choose your preferred theme
             </Text>
             <ThemeSelector />
-          </View>
-        </View>
-
-        {/* Notifications Section */}
-        <View className="mb-8">
-          <View className="flex-row items-center gap-2 mb-4">
-            <Bell size={20} color={iconColor} />
-            <Text className="text-lg font-inter font-semibold text-content dark:text-content-dark">
-              Notifications
-            </Text>
-          </View>
-          <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl overflow-hidden">
-            {/* Push Notifications */}
-            <View className="flex-row items-center justify-between p-5 border-b border-stone-200 dark:border-stone-700">
-              <View className="flex-1 mr-4">
-                <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
-                  Push Notifications
-                </Text>
-                <Text className="text-sm font-inter text-stone-500 dark:text-stone-400 mt-0.5">
-                  Get notified about events and updates
-                </Text>
-              </View>
-              <Switch
-                value={pushNotifications}
-                onValueChange={setPushNotifications}
-                trackColor={switchTrackColor}
-                thumbColor="#fff"
-              />
-            </View>
-
-            {/* Email Notifications */}
-            <View className="flex-row items-center justify-between p-5 border-b border-stone-200 dark:border-stone-700">
-              <View className="flex-1 mr-4">
-                <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
-                  Email Notifications
-                </Text>
-                <Text className="text-sm font-inter text-stone-500 dark:text-stone-400 mt-0.5">
-                  Receive weekly event digests via email
-                </Text>
-              </View>
-              <Switch
-                value={emailNotifications}
-                onValueChange={setEmailNotifications}
-                trackColor={switchTrackColor}
-                thumbColor="#fff"
-              />
-            </View>
-
-            {/* Event Reminders */}
-            <View className="flex-row items-center justify-between p-5">
-              <View className="flex-1 mr-4">
-                <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
-                  Event Reminders
-                </Text>
-                <Text className="text-sm font-inter text-stone-500 dark:text-stone-400 mt-0.5">
-                  Get reminded before events you're attending
-                </Text>
-              </View>
-              <Switch
-                value={eventReminders}
-                onValueChange={setEventReminders}
-                trackColor={switchTrackColor}
-                thumbColor="#fff"
-              />
-            </View>
           </View>
         </View>
 
