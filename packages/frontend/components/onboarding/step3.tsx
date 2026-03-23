@@ -2,53 +2,57 @@ import { View, Text, Pressable, TextInput, ActivityIndicator, ScrollView } from 
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useOnboarding } from '../contexts'
 import { useState, useEffect, useRef } from 'react'
-import { findNearestLocation, calculateDistance } from '../../utils/distance'
+import { calculateDistance } from '../../utils/distance'
+import { fetchCenters, CenterData } from '../../utils/api'
 import { Check } from 'lucide-react-native'
 
-const CENTERS = [
-  {
-    id: '1',
-    name: 'Chinmaya Mission San Jose',
-    latitude: 37.2431,
-    longitude: -121.7831,
-  },
-  {
-    id: '2',
-    name: 'Chinmaya Mission West',
-    latitude: 37.8599,
-    longitude: -122.4856,
-  },
-  {
-    id: '3',
-    name: 'Chinmaya Mission San Francisco',
-    latitude: 37.7749,
-    longitude: -122.4194,
-  },
-  {
-    id: '4',
-    name: 'Chinmaya Vrindavan',
-    latitude: 40.3086,
-    longitude: -74.5603,
-  },
-]
+interface CenterWithDistance {
+  id: string
+  name: string
+  latitude: number
+  longitude: number
+  distance: number
+}
 
 export default function Step3() {
   const { goToNextStep, centerID, setCenterID } = useOnboarding()
   const [searchInput, setSearchInput] = useState('')
   const [focusedField, setFocusedField] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [selectedCenter, setSelectedCenter] = useState<any>(null)
-  const [nearbyCenters, setNearbyCenters] = useState<any[]>([])
-  const [userCoords, setUserCoords] = useState<[number, number] | null>(null)
+  const [selectedCenter, setSelectedCenter] = useState<CenterWithDistance | null>(null)
+  const [nearbyCenters, setNearbyCenters] = useState<CenterWithDistance[]>([])
+  const [allCenters, setAllCenters] = useState<CenterData[]>([])
   const [error, setError] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const debounceTimer = useRef<NodeJS.Timeout | null>(null)
+
+  // Fetch real centers from API on mount
+  useEffect(() => {
+    let mounted = true
+    const loadCenters = async () => {
+      try {
+        const centers = await fetchCenters()
+        if (mounted && centers.length > 0) {
+          setAllCenters(centers)
+        }
+      } catch {
+        // Silently fail — geocode will still work with whatever centers we have
+      }
+    }
+    loadCenters()
+    return () => { mounted = false }
+  }, [])
 
   // Geocode and find nearby centers
   const geocodeLocation = async (input: string) => {
     if (!input.trim()) {
       setNearbyCenters([])
       setShowSuggestions(false)
+      return
+    }
+
+    if (allCenters.length === 0) {
+      setError('Loading centers... please try again in a moment.')
       return
     }
 
@@ -79,13 +83,17 @@ export default function Step3() {
       const userLat = parseFloat(data[0].lat)
       const userLon = parseFloat(data[0].lon)
 
-      setUserCoords([userLat, userLon])
-
       // Calculate distances for all centers and sort by distance
-      const centersWithDistance = CENTERS.map((center) => ({
-        ...center,
-        distance: calculateDistance(userLat, userLon, center.latitude, center.longitude),
-      })).sort((a, b) => a.distance - b.distance)
+      const centersWithDistance: CenterWithDistance[] = allCenters
+        .filter((c) => c.latitude && c.longitude)
+        .map((center) => ({
+          id: center.centerID,
+          name: center.name,
+          latitude: center.latitude,
+          longitude: center.longitude,
+          distance: calculateDistance(userLat, userLon, center.latitude, center.longitude),
+        }))
+        .sort((a, b) => a.distance - b.distance)
 
       setNearbyCenters(centersWithDistance)
       setShowSuggestions(true)
@@ -94,6 +102,7 @@ export default function Step3() {
       // Auto-select nearest center
       if (centersWithDistance.length > 0) {
         setSelectedCenter(centersWithDistance[0])
+        setCenterID(centersWithDistance[0].id)
       }
     } catch (err) {
       setError('Unable to find location')
@@ -124,9 +133,9 @@ export default function Step3() {
         clearTimeout(debounceTimer.current)
       }
     }
-  }, [searchInput])
+  }, [searchInput, allCenters])
 
-  const handleSelectCenter = (center: any) => {
+  const handleSelectCenter = (center: CenterWithDistance) => {
     setSelectedCenter(center)
     setCenterID(center.id)
   }
