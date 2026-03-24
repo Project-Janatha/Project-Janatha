@@ -37,7 +37,7 @@ Om Sri Chinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
 ```bash
 git clone https://github.com/Project-Janatha/Project-Janatha.git
 cd Project-Janatha
-npm run setup    # Installs deps + runs D1 migrations
+npm run setup    # Installs deps + runs D1 migrations + seeds test data
 ```
 
 ### Running
