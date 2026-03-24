@@ -420,6 +420,69 @@ export default function Profile() {
               {user.email}
             </Text>
           )}
+          {isEditing ? (
+            <Pressable
+              onPress={() => setShowCenterPicker(!showCenterPicker)}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                marginTop: 4,
+              }}
+            >
+              <MapPin size={14} color={mutedTextColor} />
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: '#C2410C' }}>
+                {allCenters.find((c) => c.centerID === profileData.centerID)?.name || 'Select center'}
+              </Text>
+            </Pressable>
+          ) : profileData.centerID ? (
+            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
+              {allCenters.find((c) => c.centerID === profileData.centerID)?.name || ''}
+            </Text>
+          ) : null}
+          {isEditing && showCenterPicker && (
+            <View
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                backgroundColor: cardBg,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor,
+                maxHeight: 200,
+                overflow: 'scroll' as const,
+                zIndex: 200,
+                marginTop: 4,
+              }}
+            >
+              {allCenters.map((center) => (
+                <Pressable
+                  key={center.centerID}
+                  onPress={() => {
+                    setProfileData((prev) => ({ ...prev, centerID: center.centerID }))
+                    setShowCenterPicker(false)
+                  }}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    backgroundColor: profileData.centerID === center.centerID ? '#C2410C' + '20' : 'transparent',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: 'Inter-Regular',
+                      fontSize: 14,
+                      color: profileData.centerID === center.centerID ? '#C2410C' : textColor,
+                    }}
+                  >
+                    {center.name}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
         </View>
 
         <View style={{ paddingHorizontal: 20, gap: 20 }}>
