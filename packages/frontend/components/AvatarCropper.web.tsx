@@ -4,30 +4,38 @@ import { View, Text, Pressable, Modal, Image, StyleSheet } from 'react-native'
 export interface WebAvatarCropperProps {
   visible: boolean
   imageUri: string
+  originalImageUri?: string
   onCropComplete: (blob: Blob) => void
   onCancel: () => void
   onReplacePhoto?: () => void
 }
 
-export default function WebAvatarCropper({ visible, imageUri, onCropComplete, onCancel, onReplacePhoto }: WebAvatarCropperProps) {
+export default function WebAvatarCropper({ 
+  visible, 
+  imageUri, 
+  originalImageUri,
+  onCropComplete, 
+  onCancel, 
+  onReplacePhoto 
+}: WebAvatarCropperProps) {
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 })
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
   const [loaded, setLoaded] = useState(false)
-  const [rotation, setRotation] = useState(0)
 
   const imageRef = useRef<HTMLImageElement | null>(null)
+  
+  const displayImageUri = originalImageUri || imageUri
 
-  // Crop box state
   const [cropPosition, setCropPosition] = useState({ x: 0, y: 0 })
   const [cropSize, setCropSize] = useState(200)
   const [isDragging, setIsDragging] = useState(false)
   const [dragMode, setDragMode] = useState<'move' | 'resize' | null>(null)
   const [dragCorner, setDragCorner] = useState<string | null>(null)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, cropX: 0, cropY: 0, cropSize: 0 })
+  const [rotation, setRotation] = useState(0)
 
-  // Handle image load
   useEffect(() => {
-    if (!visible || !imageUri) return
+    if (!visible || !displayImageUri) return
 
     const img = new window.Image()
     img.onload = () => {
@@ -35,19 +43,18 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
       imageRef.current = img
       setLoaded(true)
     }
-    img.src = imageUri
+    img.src = displayImageUri
 
     return () => {
       img.onload = null
     }
-  }, [visible, imageUri])
+  }, [visible, displayImageUri])
 
-  // Calculate container size and initialize crop
   useEffect(() => {
     if (!loaded || !imageSize.width) return
 
-    const maxWidth = Math.min(window.innerWidth * 0.85, 480)
-    const maxHeight = window.innerHeight * 0.5
+    const maxWidth = Math.min(window.innerWidth * 0.85, 400)
+    const maxHeight = window.innerHeight * 0.45
     const aspectRatio = imageSize.width / imageSize.height
 
     let width = maxWidth
@@ -60,8 +67,7 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
 
     setContainerSize({ width, height })
 
-    // Start with a reasonable crop size (75% of smaller dimension)
-    const initialSize = Math.min(width, height) * 0.75
+    const initialSize = Math.min(width, height) * 0.7
     setCropSize(initialSize)
     setCropPosition({
       x: (width - initialSize) / 2,
@@ -69,40 +75,10 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
     })
   }, [loaded, imageSize])
 
-  // Handle rotation
   const rotate = (direction: 'left' | 'right') => {
-    const newRotation = (rotation + (direction === 'right' ? 90 : -90) + 360) % 360
-    setRotation(newRotation)
-    
-    // Swap dimensions after rotation
-    const newWidth = rotation % 180 === 0 ? containerSize.width : containerSize.height
-    const newHeight = rotation % 180 === 0 ? containerSize.height : containerSize.width
-    
-    // Recalculate container with swapped aspect ratio
-    const maxWidth = Math.min(window.innerWidth * 0.85, 480)
-    const maxHeight = window.innerHeight * 0.5
-    const newAspectRatio = newWidth / newHeight
-    
-    let newCW = maxWidth
-    let newCH = newCW / newAspectRatio
-    
-    if (newCH > maxHeight) {
-      newCH = maxHeight
-      newCW = newCH * newAspectRatio
-    }
-    
-    setContainerSize({ width: newCW, height: newCH })
-    
-    // Keep crop centered
-    const newSize = Math.min(newCW, newCH) * 0.75
-    setCropSize(newSize)
-    setCropPosition({
-      x: (newCW - newSize) / 2,
-      y: (newCH - newSize) / 2
-    })
+    setRotation(prev => (prev + (direction === 'right' ? 90 : -90) + 360) % 360)
   }
 
-  // Handle mouse down on crop box (for moving)
   const handleCropMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -118,7 +94,6 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
     })
   }
 
-  // Handle mouse down on resize handle
   const handleResizeMouseDown = (e: React.MouseEvent, corner: string) => {
     e.preventDefault()
     e.stopPropagation()
@@ -139,7 +114,7 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
 
     const dx = e.clientX - dragStart.x
     const dy = e.clientY - dragStart.y
-    const minSize = 80
+    const minSize = 60
 
     if (dragMode === 'move') {
       const newX = dragStart.cropX + dx
@@ -156,26 +131,24 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
 
       switch (dragCorner) {
         case 'topLeft':
-          newSize = dragStart.cropSize - dx
-          newX = dragStart.cropX + dx
-          newY = dragStart.cropY + dy
+          newSize = dragStart.cropSize - Math.max(dx, dy)
+          newX = dragStart.cropX + (dragStart.cropSize - newSize)
+          newY = dragStart.cropY + (dragStart.cropSize - newSize)
           break
         case 'topRight':
           newSize = dragStart.cropSize + dx
-          newY = dragStart.cropY + dy
+          newY = dragStart.cropY - dy
           break
         case 'bottomLeft':
           newSize = dragStart.cropSize - dx
-          newX = dragStart.cropX + dx
+          newX = dragStart.cropX + (dragStart.cropSize - newSize)
           break
         case 'bottomRight':
-          newSize = dragStart.cropSize + dx
+          newSize = dragStart.cropSize + Math.max(dx, dy)
           break
       }
 
       newSize = Math.max(minSize, Math.min(newSize, Math.min(containerSize.width, containerSize.height)))
-
-      // Constrain position
       newX = Math.max(0, Math.min(newX, containerSize.width - newSize))
       newY = Math.max(0, Math.min(newY, containerSize.height - newSize))
 
@@ -201,7 +174,6 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
     }
   }, [isDragging, handleMouseMove, handleMouseUp])
 
-  // Save cropped image
   const handleSave = () => {
     if (!imageRef.current) return
 
@@ -212,24 +184,37 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const scaleX = imageSize.width / containerSize.width
-    const scaleY = imageSize.height / containerSize.height
+    const isRotated = rotation % 180 !== 0
+    
+    // Calculate the visible portion after rotation
+    const srcWidth = isRotated ? imageSize.height : imageSize.width
+    const srcHeight = isRotated ? imageSize.width : imageSize.height
+    const scale = containerSize.width / srcWidth
 
-    const srcX = cropPosition.x * scaleX
-    const srcY = cropPosition.y * scaleY
-    const srcW = cropSize * scaleX
-    const srcH = cropSize * scaleY
+    // Map crop position to source coordinates
+    const srcCropX = cropPosition.x / scale
+    const srcCropY = cropPosition.y / scale
+    const srcCropSize = cropSize / scale
 
-    // Draw circular crop
+    ctx.save()
+    
+    // Move to center and rotate
+    ctx.translate(outputSize / 2, outputSize / 2)
+    ctx.rotate((rotation * Math.PI) / 180)
+
+    // Create circular clip
     ctx.beginPath()
-    ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2)
+    ctx.arc(0, 0, outputSize / 2, 0, Math.PI * 2)
     ctx.clip()
 
+    // Draw the image portion
     ctx.drawImage(
       imageRef.current,
-      srcX, srcY, srcW, srcH,
-      0, 0, outputSize, outputSize
+      srcCropX, srcCropY, srcCropSize, srcCropSize,
+      -outputSize / 2, -outputSize / 2, outputSize, outputSize
     )
+
+    ctx.restore()
 
     canvas.toBlob(
       (blob) => {
@@ -252,7 +237,7 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
       backgroundColor: '#1a1a1a', 
       borderRadius: 16, 
       padding: 20,
-      maxWidth: 540,
+      maxWidth: 480,
       width: '100%',
     },
     header: { 
@@ -265,10 +250,6 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
     btnText: { color: '#9CA3AF', fontSize: 16 },
     saveBtn: { color: '#F97316', fontWeight: '600' as const },
     replaceBtn: { color: '#60A5FA', fontSize: 14 },
-    cropWrapper: { 
-      alignItems: 'center', 
-      justifyContent: 'center',
-    },
     cropArea: {
       position: 'relative',
       overflow: 'hidden',
@@ -277,7 +258,6 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
       position: 'absolute',
       borderWidth: 2,
       borderColor: '#fff',
-      cursor: 'move',
     },
     gridLine: {
       position: 'absolute',
@@ -285,11 +265,11 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
     },
     handle: {
       position: 'absolute',
-      width: 28,
-      height: 28,
+      width: 24,
+      height: 24,
       backgroundColor: '#F97316',
-      borderRadius: 14,
-      borderWidth: 3,
+      borderRadius: 12,
+      borderWidth: 2,
       borderColor: '#fff',
     },
     controls: { 
@@ -299,14 +279,14 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
       marginTop: 20,
     },
     rotateBtn: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       backgroundColor: '#374151',
       justifyContent: 'center',
       alignItems: 'center',
     },
-    rotateIcon: { color: '#fff', fontSize: 24 },
+    rotateIcon: { color: '#fff', fontSize: 22 },
   })
 
   if (!visible) return null
@@ -323,7 +303,7 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
             <View style={{ flexDirection: 'row', gap: 16 }}>
               {onReplacePhoto && (
                 <Pressable onPress={onReplacePhoto}>
-                  <Text style={styles.replaceBtn as any}>↻</Text>
+                  <Text style={styles.replaceBtn as any}>Upload Image</Text>
                 </Pressable>
               )}
               <Pressable onPress={handleSave}>
@@ -337,78 +317,96 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
               <Text style={styles.rotateIcon as any}>↺</Text>
             </Pressable>
             
-            <View style={styles.cropWrapper as any}>
+            <View
+              style={[
+                styles.cropArea as any,
+                { 
+                  width: containerSize.width, 
+                  height: containerSize.height,
+                }
+              ]}
+            >
+              {/* Image with rotation */}
+              <Image
+                source={{ uri: displayImageUri }}
+                style={{ 
+                  width: containerSize.width, 
+                  height: containerSize.height,
+                  transform: [{ rotate: `${rotation}deg` }],
+                }}
+              />
+
+              {/* SVG Circular Mask */}
+              <svg
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  pointerEvents: 'none',
+                }}
+                viewBox={`0 0 ${containerSize.width} ${containerSize.height}`}
+              >
+                <defs>
+                  <mask id="cropMask">
+                    <rect width="100%" height="100%" fill="white" />
+                    <circle
+                      cx={cropPosition.x + cropSize / 2}
+                      cy={cropPosition.y + cropSize / 2}
+                      r={cropSize / 2}
+                      fill="black"
+                    />
+                  </mask>
+                </defs>
+                <rect
+                  width="100%"
+                  height="100%"
+                  fill="rgba(0,0,0,0.65)"
+                  mask="url(#cropMask)"
+                />
+              </svg>
+
+              {/* Crop circle */}
               <View
                 style={[
-                  styles.cropArea as any,
-                  { width: containerSize.width, height: containerSize.height }
+                  styles.cropBox as any,
+                  {
+                    left: cropPosition.x,
+                    top: cropPosition.y,
+                    width: cropSize,
+                    height: cropSize,
+                    borderRadius: cropSize / 2,
+                  }
                 ]}
+                // @ts-ignore
+                onMouseDown={handleCropMouseDown}
               >
-                {/* Image */}
-                <Image
-                  source={{ uri: imageUri }}
-                  style={{ width: containerSize.width, height: containerSize.height }}
-                />
+                <View style={[styles.gridLine as any, { left: '33.33%', top: 0, bottom: 0, width: 1 }]} />
+                <View style={[styles.gridLine as any, { left: '66.66%', top: 0, bottom: 0, width: 1 }]} />
+                <View style={[styles.gridLine as any, { top: '33.33%', left: 0, right: 0, height: 1 }]} />
+                <View style={[styles.gridLine as any, { top: '66.66%', left: 0, right: 0, height: 1 }]} />
 
-                {/* Circular mask overlay using border */}
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: cropPosition.y - 1000,
-                    left: cropPosition.x - 1000,
-                    width: cropSize + 2000,
-                    height: cropSize + 2000,
-                    borderRadius: (cropSize + 2000) / 2,
-                    borderWidth: 1000 + Math.max(containerSize.height, containerSize.width),
-                    borderColor: 'rgba(0,0,0,0.7)',
-                    backgroundColor: 'transparent',
-                  }}
-                  pointerEvents="none"
-                />
-
-                {/* Crop circle with grid */}
-                <View
-                  style={[
-                    styles.cropBox as any,
-                    {
-                      left: cropPosition.x,
-                      top: cropPosition.y,
-                      width: cropSize,
-                      height: cropSize,
-                      borderRadius: cropSize / 2,
-                    }
-                  ]}
+                <View 
+                  style={[styles.handle as any, { left: -12, top: -12 }]}
                   // @ts-ignore
-                  onMouseDown={handleCropMouseDown}
-                >
-                  {/* Grid lines */}
-                  <View style={[styles.gridLine as any, { left: '33.33%', top: 0, bottom: 0, width: 1 }]} />
-                  <View style={[styles.gridLine as any, { left: '66.66%', top: 0, bottom: 0, width: 1 }]} />
-                  <View style={[styles.gridLine as any, { top: '33.33%', left: 0, right: 0, height: 1 }]} />
-                  <View style={[styles.gridLine as any, { top: '66.66%', left: 0, right: 0, height: 1 }]} />
-
-                  {/* Resize handles - each moves from its corner */}
-                  <View 
-                    style={[styles.handle as any, { left: -14, top: -14 }]}
-                    // @ts-ignore
-                    onMouseDown={(e: any) => handleResizeMouseDown(e, 'topLeft')}
-                  />
-                  <View 
-                    style={[styles.handle as any, { right: -14, top: -14 }]}
-                    // @ts-ignore
-                    onMouseDown={(e: any) => handleResizeMouseDown(e, 'topRight')}
-                  />
-                  <View 
-                    style={[styles.handle as any, { left: -14, bottom: -14 }]}
-                    // @ts-ignore
-                    onMouseDown={(e: any) => handleResizeMouseDown(e, 'bottomLeft')}
-                  />
-                  <View 
-                    style={[styles.handle as any, { right: -14, bottom: -14 }]}
-                    // @ts-ignore
-                    onMouseDown={(e: any) => handleResizeMouseDown(e, 'bottomRight')}
-                  />
-                </View>
+                  onMouseDown={(e: any) => handleResizeMouseDown(e, 'topLeft')}
+                />
+                <View 
+                  style={[styles.handle as any, { right: -12, top: -12 }]}
+                  // @ts-ignore
+                  onMouseDown={(e: any) => handleResizeMouseDown(e, 'topRight')}
+                />
+                <View 
+                  style={[styles.handle as any, { left: -12, bottom: -12 }]}
+                  // @ts-ignore
+                  onMouseDown={(e: any) => handleResizeMouseDown(e, 'bottomLeft')}
+                />
+                <View 
+                  style={[styles.handle as any, { right: -12, bottom: -12 }]}
+                  // @ts-ignore
+                  onMouseDown={(e: any) => handleResizeMouseDown(e, 'bottomRight')}
+                />
               </View>
             </View>
 

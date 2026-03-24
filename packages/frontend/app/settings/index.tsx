@@ -76,6 +76,9 @@ export default function Profile() {
 
   const hasExistingProfileImage = !!user?.profileImage
 
+  // Store the original uploaded image (before cropping) for re-editing
+  const [originalImage, setOriginalImage] = useState<string | null>(null)
+
   const [profileData, setProfileData] = useState<ProfileData>({
     name: getDisplayName(),
     bio: '',
@@ -93,9 +96,9 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleAvatarPress = () => {
-    // If user has an existing profile image, offer to crop it
-    if (profileData.profileImage) {
-      setCropperImage(profileData.profileImage)
+    // If user has an existing profile image, use the original (uncropped) if available
+    if (originalImage || profileData.profileImage) {
+      setCropperImage(originalImage || profileData.profileImage)
     } else {
       // New user - open file picker directly
       fileInputRef.current?.click()
@@ -106,13 +109,17 @@ export default function Profile() {
     const file = e.target.files?.[0]
     if (file) {
       const url = URL.createObjectURL(file)
+      setOriginalImage(url)
       setCropperImage(url)
     }
   }
 
+  const [profileImageChanged, setProfileImageChanged] = useState(false)
+
   const handleCropComplete = (blob: Blob) => {
     const url = URL.createObjectURL(blob)
     setProfileData((prev) => ({ ...prev, profileImage: url }))
+    setProfileImageChanged(true)
     setCropperImage(null)
   }
 
@@ -917,6 +924,7 @@ export default function Profile() {
           <WebAvatarCropper
             visible={!!cropperImage}
             imageUri={cropperImage}
+            originalImageUri={originalImage || undefined}
             onCropComplete={handleCropComplete}
             onCancel={handleCropCancel}
             onReplacePhoto={handleReplacePhoto}
