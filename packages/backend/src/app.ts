@@ -64,7 +64,18 @@ app.onError((err, c) => {
 app.use(
   '*',
   cors({
-    origin: (origin) => origin || '*',
+    origin: (origin) => {
+      if (!origin) return '*'
+      const allowed = [
+        'https://chinmaya-janata.pages.dev',
+        'http://localhost:8081',
+        'http://localhost:8787',
+        'http://localhost:19006',
+      ]
+      if (allowed.includes(origin)) return origin
+      if (origin.endsWith('.chinmaya-janata.pages.dev')) return origin
+      return ''
+    },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,

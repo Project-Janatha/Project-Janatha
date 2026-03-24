@@ -5,7 +5,8 @@
   "main": "src/app.ts",
   "types": "src/types.ts",
   "scripts": {
-    "dev": "wrangler pages dev dist --cwd ../.. --port 8787 --d1 DB=289ca84c-bae5-4d15-baeb-d76406fe0ea3",
+    "dev": "wrangler dev --port 8787",
+    "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
