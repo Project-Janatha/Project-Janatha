@@ -37,7 +37,7 @@ function Select({ label, value, options, onChange, className }) {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <Listbox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-background dark:bg-background-dark py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <Listbox.Options className="mt-1 max-h-60 w-full overflow-auto rounded-md bg-background dark:bg-background-dark py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
             {options
               .filter((option) => option.value !== null) // <-- filter out placeholder
               .map((option) => (
@@ -88,11 +88,20 @@ export default function BirthdatePicker({ value, onChange }) {
     ...range(1, daysInMonth).map((d) => ({ label: d, value: d })),
   ]
 
-  // Set initial state to null for placeholders
-  const [dateParts, setDateParts] = useState({
-    year: null,
-    month: null,
-    day: null,
+  // Set initial state to value prop if provided, otherwise null for placeholders
+  const [dateParts, setDateParts] = useState(() => {
+    if (value) {
+      return {
+        year: value.getFullYear(),
+        month: value.getMonth(),
+        day: value.getDate(),
+      }
+    }
+    return {
+      year: null,
+      month: null,
+      day: null,
+    }
   })
 
   const handlePartChange = (part, newValue) => {
