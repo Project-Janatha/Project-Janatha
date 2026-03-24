@@ -10,7 +10,7 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native'
-import { Camera } from 'lucide-react-native'
+import { Camera, Pencil } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
 import BirthdatePicker from '../../components/BirthdatePicker'
 import WebAvatarCropper from '../../components/AvatarCropper.web'
@@ -371,8 +371,13 @@ export default function Profile() {
             {profileData.name || '—'}
           </Text>
           <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
-            @{user?.username || 'user'}
+            {user?.username || 'user'}
           </Text>
+          {isEditing && user?.email && (
+            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
+              {user.email}
+            </Text>
+          )}
         </View>
 
         <View style={{ paddingHorizontal: 20, gap: 20 }}>
@@ -652,18 +657,23 @@ export default function Profile() {
               paddingVertical: 12,
               borderRadius: 10,
               minHeight: 44,
-              backgroundColor: isEditing ? '#C2410C' : '#1C1917',
+              backgroundColor: isEditing ? '#C2410C' : isDark ? '#F5F5F5' : '#1C1917',
               alignItems: 'center',
               justifyContent: 'center',
               alignSelf: isNarrowWeb ? 'stretch' : 'auto',
+              flexDirection: 'row',
+              gap: 8,
             }}
           >
             {isSaving ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: '#FFFFFF' }}>
-                {isEditing ? 'Save Changes' : 'Edit Profile'}
-              </Text>
+              <>
+                <Pencil size={16} color={isEditing ? '#FFFFFF' : isDark ? '#1C1917' : '#FFFFFF'} />
+                <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: isEditing ? '#FFFFFF' : isDark ? '#1C1917' : '#FFFFFF' }}>
+                  {isEditing ? 'Save Changes' : 'Edit Profile'}
+                </Text>
+              </>
             )}
           </Pressable>
         </View>
@@ -724,95 +734,67 @@ export default function Profile() {
               </Pressable>
             )}
           </View>
-          <View style={{ gap: 4, alignItems: isNarrowWeb ? 'center' : 'flex-start' }}>
-            <Text
-              style={{
-                fontFamily: 'Inter-SemiBold',
-                fontSize: 24,
-                color: textColor,
-                letterSpacing: -0.3,
-              }}
-            >
-              {profileData.name || '—'}
-            </Text>
-            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
-              @{user?.username || 'user'}
-            </Text>
-          </View>
-        </View>
-
-        {/* Name + Birthday */}
-        <View style={{ flexDirection: isNarrowWeb ? 'column' : 'row', gap: isNarrowWeb ? 20 : 28 }}>
-          <View style={{ flex: 1, gap: 8 }}>
-            <Text style={labelStyle}>Full Name</Text>
-            <TextInput
-              ref={nameRef}
-              defaultValue={profileData.name}
-              onChangeText={(v) => {
-                draftName.current = v
-              }}
-              placeholderTextColor="#9ca3af"
-              style={[inputStyle, !isEditing && hiddenStyle]}
-            />
-            {!isEditing && (
-              <View
-                style={{
-                  paddingHorizontal: 16,
-                  paddingVertical: 14,
-                  backgroundColor: cardBg,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor,
-                }}
-              >
-                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>
-                  {profileData.name || '—'}
-                </Text>
+          <View style={{ gap: 4, alignItems: isNarrowWeb ? 'center' : 'flex-start', flex: 1 }}>
+            {isEditing ? (
+              <View style={{ 
+                borderBottomWidth: 2, 
+                borderBottomColor: '#C2410C', 
+                paddingBottom: 2,
+                width: '100%',
+              }}>
+                <TextInput
+                  defaultValue={profileData.name}
+                  onChangeText={(v) => {
+                    draftName.current = v
+                  }}
+                  placeholderTextColor="#9ca3af"
+                  style={{
+                    fontFamily: 'Inter-SemiBold',
+                    fontSize: 24,
+                    color: textColor,
+                    letterSpacing: -0.3,
+                    width: '100%',
+                    padding: 0,
+                    margin: 0,
+                  }}
+                />
               </View>
-            )}
-            {errors.name && (
+            ) : (
               <Text
                 style={{
-                  fontFamily: 'Inter-Regular',
-                  fontSize: 13,
-                  color: '#DC2626',
-                  marginTop: 6,
+                  fontFamily: 'Inter-SemiBold',
+                  fontSize: 24,
+                  color: textColor,
+                  letterSpacing: -0.3,
                 }}
               >
-                {errors.name}
+                {profileData.name || '—'}
+              </Text>
+            )}
+            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
+              {user?.username || 'user'}
+            </Text>
+            {isEditing && user?.email && (
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
+                {user.email}
               </Text>
             )}
           </View>
-          <View style={{ flex: 1, gap: 8 }}>
+        </View>
+
+        {/* Birthday only */}
+        <View style={{ flexDirection: isNarrowWeb ? 'column' : 'row', gap: isNarrowWeb ? 20 : 28 }}>
+            <View style={{ flex: 1, gap: 8, zIndex: 100 }}>
             <Text style={labelStyle}>Birthday</Text>
             {isEditing ? (
-              <input
-                type="date"
-                defaultValue={toISODate(draftBirthday.current) || '2000-01-01'}
-                onChange={(e) => {
-                  draftBirthday.current = parseISODate(e.target.value)
-                }}
-                max={(() => {
-                  const d = new Date()
-                  d.setFullYear(d.getFullYear() - 18)
-                  return d.toISOString().split('T')[0]
-                })()}
-                style={{
-                  fontFamily: 'Inter-Regular',
-                  fontSize: 15,
-                  color: textColor,
-                  paddingLeft: 16,
-                  paddingRight: 16,
-                  paddingTop: 14,
-                  paddingBottom: 14,
-                  borderRadius: 12,
-                  border: `1px solid ${borderColor}`,
-                  backgroundColor: cardBg,
-                  outline: 'none',
-                  width: '100%',
-                  boxSizing: 'border-box' as const,
-                }}
-              />
+              <View style={{ zIndex: 100 }}>
+                <BirthdatePicker
+                  value={draftBirthday.current ?? undefined}
+                  onChange={(d: Date) => {
+                    draftBirthday.current = d
+                  }}
+                />
+              </View>
             ) : (
               <View
                 style={{

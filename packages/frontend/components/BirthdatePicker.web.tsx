@@ -21,7 +21,7 @@ function Select({ label, value, options, onChange, className }) {
         {/* This is the "select" box */}
         <Listbox.Button
           aria-label={label}
-          className="relative w-full font-inter text-base bg-stone-100 dark:bg-stone-800 text-content dark:text-content-dark py-3 px-4 rounded-lg border-2 border-transparent focus:border-primary outline-none text-left"
+          className="relative w-full font-inter text-base bg-stone-100 dark:bg-stone-800 text-content dark:text-content-dark py-[14px] px-4 rounded-lg border-2 border-transparent focus:border-primary outline-none text-left"
         >
           <span className="block truncate">{selectedOption?.label}</span>
           {/* A basic arrow. Replace with an SVG icon for best results. */}
@@ -114,7 +114,7 @@ export default function BirthdatePicker({ value, onChange }) {
   }
 
   return (
-    <View className="p-4 w-full max-w-[480px]" style={{ overflow: 'visible', zIndex: 20 }}>
+    <View className="w-full max-w-[480px]" style={{ overflow: 'visible', zIndex: 50 }}>
       <View className="flex-row justify-between space-x-2">
         {/* Month */}
         <Select
