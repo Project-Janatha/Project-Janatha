@@ -30,51 +30,34 @@ Om Sri Chinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
 
 - Node.js >= 20
 - npm >= 10
-- A Cloudflare account (for deployment only — local dev works without one)
+- A Cloudflare account with `wrangler` CLI configured (for deployment)
 
 ### Setup
-
-1. Clone the repo and install dependencies:
 
 ```bash
 git clone https://github.com/Project-Janatha/Project-Janatha.git
 cd Project-Janatha
-npm install
+npm run setup    # Installs deps + runs D1 migrations
 ```
 
-2. Build the frontend (needed once before first run, since the backend serves static files from `dist/`):
+### Running
 
 ```bash
-npm run build:frontend
+npm run dev      # Starts both API (8787) + Frontend (8081)
 ```
 
-3. Run the D1 database migrations locally:
-
-```bash
-npm run d1:migrate:local
-```
-
-4. Start the dev servers:
-
-```bash
-npm run dev
-```
-
-This starts both servers concurrently:
-- **API** (Wrangler): http://localhost:8787 — serves the Hono backend + static frontend
-- **Web** (Metro/Expo): http://localhost:8081 — Expo dev server with hot reload
-
-Open http://localhost:8081 in your browser for the web app with hot reload.
+- **API**: http://localhost:8787 — Hono backend on Cloudflare Workers
+- **Frontend**: http://localhost:8081 — Expo web with hot reload
 
 ### Other dev commands
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start API + frontend dev servers |
+| `npm run dev` | Start API + frontend |
 | `npm run dev:backend` | Start only the API server |
 | `npm run dev:frontend` | Start only the Expo dev server |
-| `npm run pages:dev` | Build frontend + start API (no hot reload) |
-| `npm run build` | Full production build (typecheck + frontend + copy) |
+| `npm run d1:migrate:local` | Run D1 migrations |
+| `npm run build` | Typecheck + build frontend |
 
 ### Running on mobile
 
@@ -85,49 +68,46 @@ npm run android   # Requires Android Studio
 
 ## Deployment
 
-The app deploys to **Cloudflare Pages** with D1.
+The app deploys to **Cloudflare Pages** (frontend) and **Cloudflare Workers** (backend API) with D1.
 
 ### First-time setup
 
 1. Create the D1 database:
 
 ```bash
-npm run d1:create
+npx wrangler d1 create chinmaya-janata-db --config packages/backend/wrangler.toml
 ```
 
-2. Set the `database_id` in `wrangler.toml` (from the output above).
+2. Update `database_id` in `packages/backend/wrangler.toml` with the ID from the output.
 
-3. Run migrations on the remote database:
+3. Run migrations:
 
 ```bash
-npm run d1:migrate
+npm run d1:migrate    # Remote database
 ```
 
-4. Set secrets:
+4. Set secrets for the backend:
 
 ```bash
-npx wrangler pages secret put JWT_SECRET
-npx wrangler pages secret put JWT_REFRESH_SECRET
+cd packages/backend
+npx wrangler secret put JWT_SECRET
+npx wrangler secret put JWT_REFRESH_SECRET
 ```
 
 ### Deploy
 
 ```bash
-npm run deploy            # Production
-npm run deploy:preview    # Preview branch
+npm run deploy            # Deploy both frontend + backend
+npm run deploy:frontend   # Frontend only
+npm run deploy:backend    # Backend only
 ```
-
-This builds the frontend, copies it to `dist/`, and deploys via `wrangler pages deploy`. The `functions/api/[[route]].ts` entry point is automatically picked up by Cloudflare Pages.
 
 ## Running Tests
 
 ```bash
 # Backend unit tests (vitest + Cloudflare Workers pool)
-npm test --workspace=@janatha/backend
+cd packages/backend && npm test
 
-# Frontend unit tests
-npm test --workspace=@janatha/frontend
-
-# E2E tests (Playwright — requires the dev server running)
+# E2E tests (Playwright)
 npx playwright test
 ```
