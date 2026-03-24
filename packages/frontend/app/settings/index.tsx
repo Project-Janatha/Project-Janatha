@@ -124,10 +124,6 @@ export default function Profile() {
     fileInputRef.current?.click()
   }
 
-  const handleCropCancel = () => {
-    setCropperImage(null)
-  }
-
   useEffect(() => {
     if (user && !isEditing) {
       setProfileData((prev) => ({
@@ -923,6 +919,7 @@ export default function Profile() {
             imageUri={cropperImage}
             onCropComplete={handleCropComplete}
             onCancel={handleCropCancel}
+            onReplacePhoto={handleReplacePhoto}
           />
         )}
       </View>
