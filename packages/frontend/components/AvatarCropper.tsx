@@ -1,17 +1,67 @@
+import React, { useRef, useImperativeHandle, forwardRef, useState } from 'react'
 import { Platform } from 'react-native'
-import WebAvatarCropper from './AvatarCropper.web'
+import WebAvatarCropper, { WebAvatarCropperProps } from './AvatarCropper.web'
 import NativeAvatarCropper from './AvatarCropper.native'
 
-interface AvatarCropperProps {
-  visible: boolean
-  imageUri: string
-  onCropComplete: (blob: Blob) => void
-  onCancel: () => void
+export interface AvatarCropperRef {
+  open: () => void
 }
 
-export function AvatarCropper(props: AvatarCropperProps) {
-  if (Platform.OS === 'web') {
-    return <WebAvatarCropper {...props} />
-  }
-  return <NativeAvatarCropper {...props} />
+interface AvatarCropperProps {
+  onCropComplete: (blob: Blob) => void
 }
+
+export const AvatarCropper = forwardRef<AvatarCropperRef, AvatarCropperProps>(function AvatarCropper({ onCropComplete }, ref) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [imageUri, setImageUri] = useState('')
+  const [showCropper, setShowCropper] = useState(false)
+
+  useImperativeHandle(ref, () => ({
+    open: () => fileInputRef.current?.click(),
+  }))
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setImageUri(URL.createObjectURL(file))
+      setShowCropper(true)
+    }
+  }
+
+  const handleCropComplete = (blob: Blob) => {
+    setShowCropper(false)
+    onCropComplete(blob)
+  }
+
+  const handleCancel = () => {
+    setShowCropper(false)
+  }
+
+  return (
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleFileSelect}
+      />
+      {Platform.OS === 'web' && (
+        <WebAvatarCropper
+          visible={showCropper}
+          imageUri={imageUri}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCancel}
+        />
+      )}
+      {Platform.OS !== 'web' && (
+        <NativeAvatarCropper
+          visible={showCropper}
+          imageUri={imageUri}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCancel}
+        />
+      )}
+    </>
+  )
+})
