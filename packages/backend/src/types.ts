@@ -10,6 +10,7 @@
 
 export interface Env {
   DB: D1Database
+  AVATARS: R2Bucket
   JWT_SECRET: string
   JWT_REFRESH_SECRET?: string
 }

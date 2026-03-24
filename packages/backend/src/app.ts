@@ -11,11 +11,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { Env, UserRow, EventRow } from './types'
-import {
-  userRowToApi,
-  centerRowToApi,
-  eventRowToApi,
-} from './types'
+import { userRowToApi, centerRowToApi, eventRowToApi } from './types'
 import {
   hashPassword,
   verifyPassword,
@@ -24,19 +20,8 @@ import {
   verifyToken,
 } from './auth'
 import * as db from './db'
-import {
-  ADMIN_NAME,
-  NORMAL_USER,
-  SEVAK,
-  BRAHMACHARI,
-  TIER_DESCALE,
-} from './constants'
-import {
-  rateLimit,
-  cacheControl,
-  securityHeaders,
-  validate,
-} from './middleware'
+import { ADMIN_NAME, NORMAL_USER, SEVAK, BRAHMACHARI, TIER_DESCALE } from './constants'
+import { rateLimit, cacheControl, securityHeaders, validate } from './middleware'
 
 // ── Hono app type with CF bindings ────────────────────────────────────
 
@@ -53,10 +38,7 @@ export const app = new Hono<HonoEnv>().basePath('/api')
 
 app.onError((err, c) => {
   console.error(`[${c.req.method}] ${c.req.path} — Unhandled error:`, err)
-  return c.json(
-    { message: 'Internal server error' },
-    500,
-  )
+  return c.json({ message: 'Internal server error' }, 500)
 })
 
 // ── Global middleware ─────────────────────────────────────────────────
@@ -80,17 +62,14 @@ app.use(
     allowHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
     maxAge: 86400,
-  }),
+  })
 )
 
 app.use('*', securityHeaders)
 
 // ── Auth middleware factory ───────────────────────────────────────────
 
-async function authMiddleware(
-  c: any,
-  next: () => Promise<void>,
-): Promise<Response | void> {
+async function authMiddleware(c: any, next: () => Promise<void>): Promise<Response | void> {
   const authHeader = c.req.header('Authorization')
   if (!authHeader) {
     return c.json({ message: 'Authorization header missing' }, 401)
@@ -156,10 +135,7 @@ app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
   }
 
   if (validPassword.length < 8) {
-    return c.json(
-      { message: 'Password must be at least 8 characters long' },
-      400,
-    )
+    return c.json({ message: 'Password must be at least 8 characters long' }, 400)
   }
 
   const existingUser = await db.getUserByUsername(c.env.DB, normalizedUsername.toLowerCase())
@@ -184,13 +160,13 @@ app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
             ? 'Username already exists'
             : 'Failed to create user',
       },
-      status,
+      status
     )
   }
 
   return c.json(
     { message: 'User registered successfully', username: normalizedUsername.toLowerCase() },
-    201,
+    201
   )
 })
 
@@ -262,11 +238,9 @@ app.post('/auth/complete-onboarding', authMiddleware, async (c) => {
     if (body.dateOfBirth !== undefined) updates.date_of_birth = body.dateOfBirth
     // Skip center_id if empty string (no center selected during onboarding)
     if (body.centerID) updates.center_id = body.centerID
-    if (body.profileComplete !== undefined)
-      updates.profile_complete = body.profileComplete ? 1 : 0
+    if (body.profileComplete !== undefined) updates.profile_complete = body.profileComplete ? 1 : 0
     if (body.phoneNumber !== undefined) updates.phone_number = body.phoneNumber
-    if (body.interests !== undefined)
-      updates.interests = JSON.stringify(body.interests)
+    if (body.interests !== undefined) updates.interests = JSON.stringify(body.interests)
 
     const result = await db.updateUser(c.env.DB, user.id, updates)
 
@@ -278,16 +252,10 @@ app.post('/auth/complete-onboarding', authMiddleware, async (c) => {
       })
     }
 
-    return c.json(
-      { message: 'Failed to update profile', error: result.error },
-      500,
-    )
+    return c.json({ message: 'Failed to update profile', error: result.error }, 500)
   } catch (err: any) {
     console.error('complete-onboarding error:', err)
-    return c.json(
-      { message: 'Failed to complete onboarding' },
-      500,
-    )
+    return c.json({ message: 'Failed to complete onboarding' }, 500)
   }
 })
 
@@ -310,12 +278,10 @@ app.put('/auth/update-profile', authMiddleware, async (c) => {
   if (body.email !== undefined) updates.email = body.email
   // Coerce empty string to null (allowed by FK), reject non-existent center IDs naturally
   if (body.centerID !== undefined) updates.center_id = body.centerID || null
-  if (body.profileComplete !== undefined)
-    updates.profile_complete = body.profileComplete ? 1 : 0
+  if (body.profileComplete !== undefined) updates.profile_complete = body.profileComplete ? 1 : 0
   if (body.profileImage !== undefined) updates.profile_image = body.profileImage
   if (body.phoneNumber !== undefined) updates.phone_number = body.phoneNumber
-  if (body.interests !== undefined)
-    updates.interests = JSON.stringify(body.interests)
+  if (body.interests !== undefined) updates.interests = JSON.stringify(body.interests)
 
   const result = await db.updateUser(c.env.DB, user.id, updates)
 
@@ -327,10 +293,7 @@ app.put('/auth/update-profile', authMiddleware, async (c) => {
     })
   }
 
-  return c.json(
-    { message: 'Failed to update profile', error: result.error },
-    500,
-  )
+  return c.json({ message: 'Failed to update profile', error: result.error }, 500)
 })
 
 app.delete('/auth/delete-account', authMiddleware, async (c) => {
@@ -341,10 +304,7 @@ app.delete('/auth/delete-account', authMiddleware, async (c) => {
     return c.json({ message: 'Account deleted successfully' })
   }
 
-  return c.json(
-    { message: 'Failed to delete account', error: result.error },
-    500,
-  )
+  return c.json({ message: 'Failed to delete account', error: result.error }, 500)
 })
 
 // Legacy auth routes (backward compatibility)
@@ -407,7 +367,10 @@ app.post('/addCenter', authMiddleware, async (c) => {
   const lat = typeof body.latitude === 'number' ? body.latitude : NaN
   const lng = typeof body.longitude === 'number' ? body.longitude : NaN
   if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    return c.json({ message: 'Valid latitude (-90..90) and longitude (-180..180) are required' }, 400)
+    return c.json(
+      { message: 'Valid latitude (-90..90) and longitude (-180..180) are required' },
+      400
+    )
   }
 
   const id = crypto.randomUUID()
@@ -425,10 +388,7 @@ app.post('/addCenter', authMiddleware, async (c) => {
   })
 
   if (!result.success) {
-    return c.json(
-      { message: 'Internal server error OR center ID not unique' },
-      500,
-    )
+    return c.json({ message: 'Internal server error OR center ID not unique' }, 500)
   }
 
   return c.json({ message: 'Operation successful', id })
@@ -437,10 +397,7 @@ app.post('/addCenter', authMiddleware, async (c) => {
 app.post('/verifyCenter', authMiddleware, async (c) => {
   const user = c.get('user')
   if (user.username !== ADMIN_NAME) {
-    return c.json(
-      { message: 'User is not authorized to verify or verification failed.' },
-      401,
-    )
+    return c.json({ message: 'User is not authorized to verify or verification failed.' }, 401)
   }
 
   const { centerID } = await c.req.json<{ centerID: string }>()
@@ -547,20 +504,15 @@ app.post('/userUpdate', authMiddleware, async (c) => {
   const updates: Partial<UserRow> = {}
   if (userJSON.firstName !== undefined) updates.first_name = userJSON.firstName
   if (userJSON.lastName !== undefined) updates.last_name = userJSON.lastName
-  if (userJSON.dateOfBirth !== undefined)
-    updates.date_of_birth = userJSON.dateOfBirth
-  if (userJSON.profilePictureURL !== undefined)
-    updates.profile_image = userJSON.profilePictureURL
+  if (userJSON.dateOfBirth !== undefined) updates.date_of_birth = userJSON.dateOfBirth
+  if (userJSON.profilePictureURL !== undefined) updates.profile_image = userJSON.profilePictureURL
   if (userJSON.center !== undefined)
-    updates.center_id =
-      userJSON.center === -1 ? null : String(userJSON.center)
+    updates.center_id = userJSON.center === -1 ? null : String(userJSON.center)
   if (userJSON.points !== undefined) updates.points = userJSON.points
-  if (userJSON.isVerified !== undefined)
-    updates.is_verified = userJSON.isVerified ? 1 : 0
+  if (userJSON.isVerified !== undefined) updates.is_verified = userJSON.isVerified ? 1 : 0
   if (userJSON.verificationLevel !== undefined)
     updates.verification_level = userJSON.verificationLevel
-  if (userJSON.isActive !== undefined)
-    updates.is_active = userJSON.isActive ? 1 : 0
+  if (userJSON.isActive !== undefined) updates.is_active = userJSON.isActive ? 1 : 0
 
   const result = await db.updateUser(c.env.DB, targetUser.id, updates)
 
@@ -589,11 +541,9 @@ app.post('/updateRegistration', authMiddleware, async (c) => {
   const updates: Partial<UserRow> = {}
   if (userJSON.firstName !== undefined) updates.first_name = userJSON.firstName
   if (userJSON.lastName !== undefined) updates.last_name = userJSON.lastName
-  if (userJSON.dateOfBirth !== undefined)
-    updates.date_of_birth = userJSON.dateOfBirth
+  if (userJSON.dateOfBirth !== undefined) updates.date_of_birth = userJSON.dateOfBirth
   if (userJSON.center !== undefined)
-    updates.center_id =
-      userJSON.center === -1 ? null : String(userJSON.center)
+    updates.center_id = userJSON.center === -1 ? null : String(userJSON.center)
 
   const result = await db.updateUser(c.env.DB, targetUser.id, updates)
 
@@ -668,7 +618,10 @@ app.post('/addevent', authMiddleware, async (c) => {
   const lat = typeof data.latitude === 'number' ? data.latitude : NaN
   const lng = typeof data.longitude === 'number' ? data.longitude : NaN
   if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    return c.json({ message: 'Valid latitude (-90..90) and longitude (-180..180) are required' }, 400)
+    return c.json(
+      { message: 'Valid latitude (-90..90) and longitude (-180..180) are required' },
+      400
+    )
   }
 
   // Validate optional string fields (false = exceeded max length)
@@ -677,7 +630,12 @@ app.post('/addevent', authMiddleware, async (c) => {
   const validAddress = validate.address(data.address)
   const validImage = validate.url(data.image)
 
-  if (validTitle === false || validDescription === false || validAddress === false || validImage === false) {
+  if (
+    validTitle === false ||
+    validDescription === false ||
+    validAddress === false ||
+    validImage === false
+  ) {
     return c.json({ message: 'One or more fields exceed maximum length' }, 400)
   }
 
@@ -710,10 +668,7 @@ app.post('/addevent', authMiddleware, async (c) => {
   // Add endorsers
   if (data.endorsers && data.endorsers.length > 0) {
     for (const endorserUsername of data.endorsers) {
-      const endorserUser = await db.getUserByUsername(
-        c.env.DB,
-        endorserUsername,
-      )
+      const endorserUser = await db.getUserByUsername(c.env.DB, endorserUsername)
       if (endorserUser && endorserUser.verification_level >= SEVAK) {
         await db.addEventEndorser(c.env.DB, eventId, endorserUser.id)
         // Also add as attendee
@@ -724,9 +679,7 @@ app.post('/addevent', authMiddleware, async (c) => {
 
   // Calculate tier
   const endorsers = await db.getEventEndorsers(c.env.DB, eventId)
-  const attendeeCount = (
-    await db.getEventAttendees(c.env.DB, eventId)
-  ).length
+  const attendeeCount = (await db.getEventAttendees(c.env.DB, eventId)).length
   const tier = calculateTier(endorsers, attendeeCount)
   await db.updateEvent(c.env.DB, eventId, { tier, people_attending: attendeeCount })
 
@@ -776,17 +729,13 @@ app.post('/updateEvent', authMiddleware, async (c) => {
 
   const updates: Partial<EventRow> = {}
   if (eventJSON.title !== undefined) updates.title = eventJSON.title
-  if (eventJSON.description !== undefined)
-    updates.description = eventJSON.description
+  if (eventJSON.description !== undefined) updates.description = eventJSON.description
   if (eventJSON.date !== undefined) updates.date = eventJSON.date
-  if (eventJSON.latitude !== undefined)
-    updates.latitude = parseFloat(String(eventJSON.latitude))
-  if (eventJSON.longitude !== undefined)
-    updates.longitude = parseFloat(String(eventJSON.longitude))
+  if (eventJSON.latitude !== undefined) updates.latitude = parseFloat(String(eventJSON.latitude))
+  if (eventJSON.longitude !== undefined) updates.longitude = parseFloat(String(eventJSON.longitude))
   if (eventJSON.address !== undefined) updates.address = eventJSON.address
   if (eventJSON.centerID !== undefined) updates.center_id = eventJSON.centerID
-  if (eventJSON.pointOfContact !== undefined)
-    updates.point_of_contact = eventJSON.pointOfContact
+  if (eventJSON.pointOfContact !== undefined) updates.point_of_contact = eventJSON.pointOfContact
   if (eventJSON.image !== undefined) updates.image = eventJSON.image
   if (eventJSON.category !== undefined) updates.category = eventJSON.category
 
@@ -874,6 +823,61 @@ app.post('/fetchEventsByCenter', cacheControl(30), async (c) => {
   })
 })
 
+// ══════════════════════════════════════════════════════════════════════
+// PROFILE IMAGE ROUTES
+// ══════════════════════════════════════════════════════════════════════
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic']
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+app.post('/profile/uploadImage', authMiddleware, async (c) => {
+  const user = c.get('user')
+
+  // Parse multipart form data
+  const body = await c.req.parseBody()
+  const file = body['file']
+
+  // Validate file
+  if (!(file instanceof File)) {
+    return c.json({ message: 'No file uploaded' }, 400)
+  }
+
+  // Validate file type
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return c.json(
+      { message: 'Unsupported file type. Allowed types are JPEG, PNG, GIF, WebP, HEIC' },
+      400
+    )
+  }
+
+  // Validate file size (max 5MB)
+  if (file.size > MAX_FILE_SIZE) {
+    return c.json({ message: 'File size exceeds 5MB limit' }, 400)
+  }
+
+  // Generate unique filename
+  const ext = file.name.split('.').pop() || 'jpg'
+  const key = `avatars/${user.id}/${crypto.randomUUID()}.${ext}`
+
+  // Upload to R2
+  await c.env.AVATARS.put(key, file.stream(), {
+    httpMetadata: { contentType: file.type },
+    customMetadata: {
+      userId: user.id,
+      originalFileName: file.name,
+    },
+  })
+
+  const baseUrl = 'https://avatars.chinmayajanata.org/avatars'
+  const url = `${baseUrl}/${key}`
+
+  // Update user profile with new image URL
+  await db.updateUser(c.env.DB, user.id, {
+    profile_image: url,
+  })
+
+  return c.json({ message: 'Profile image uploaded successfully', imageUrl: url })
+})
+
 // ── Fun route ─────────────────────────────────────────────────────────
 
 app.post('/brewCoffee', (c) => {
@@ -882,7 +886,7 @@ app.post('/brewCoffee', (c) => {
       message:
         'This server is a teapot, and cannot brew coffee. It not just cannot, but it will not. How dare you disgrace this server with a request to brew coffee? This is a server that brews tea. Masala Chai >>> Filter Coffee.',
     },
-    418,
+    418
   )
 })
 
