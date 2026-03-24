@@ -13,12 +13,14 @@ import {
 import { Camera } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
 import BirthdatePicker from '../../components/BirthdatePicker'
+import { AvatarCropper, AvatarCropperRef } from '../../components/AvatarCropper'
 
 type ProfileData = {
   name: string
   bio: string
   birthday: Date | null
   interests: string[]
+  preferences: string[]
   profileImage?: string
 }
 
@@ -68,6 +70,7 @@ export default function Profile() {
     bio: '',
     birthday: user?.dateOfBirth ? new Date(user.dateOfBirth) : null,
     interests: [],
+    preferences: [],
     profileImage:
       user?.profileImage || `https://i.pravatar.cc/150?u=${user?.username || 'default'}`,
   })
@@ -75,6 +78,7 @@ export default function Profile() {
   const draftName = useRef(profileData.name)
   const draftBio = useRef(profileData.bio)
   const draftBirthday = useRef<Date | null>(profileData.birthday)
+  const avatarCropperRef = useRef<AvatarCropperRef>(null)
 
   useEffect(() => {
     if (user && !isEditing) {
@@ -239,6 +243,7 @@ export default function Profile() {
                   borderWidth: 2,
                   borderColor: isDark ? '#171717' : '#FAFAF7',
                 }}
+                onPress={() => avatarCropperRef.current?.open()}
               >
                 <Camera size={16} color="#fff" />
               </Pressable>
@@ -468,15 +473,13 @@ export default function Profile() {
                 )}
               </Pressable>
             </View>
-          )}
+        )}
         </View>
       </ScrollView>
     )
   }
 
-  // ═══════════════════════════════════════════
-  //  WEB LAYOUT — inputs are always mounted, hidden via display:none
-  // ═══════════════════════════════════════════
+  // WEB LAYOUT
   const { width: viewportWidth } = useWindowDimensions()
   const isNarrowWeb = viewportWidth < 768
   const webPaddingH = isNarrowWeb ? 16 : viewportWidth < 1024 ? 32 : 60
@@ -574,6 +577,7 @@ export default function Profile() {
                   borderWidth: 2,
                   borderColor: cardBg,
                 }}
+                onPress={() => avatarCropperRef.current?.open()}
               >
                 <Camera size={16} color="#fff" />
               </Pressable>
@@ -820,6 +824,14 @@ export default function Profile() {
             </Text>
           </Pressable>
         )}
+
+        <AvatarCropper
+          ref={avatarCropperRef}
+          onCropComplete={(blob) => {
+            const url = URL.createObjectURL(blob)
+            setProfileData((prev) => ({ ...prev, profileImage: url }))
+          }}
+        />
       </View>
     </ScrollView>
   )

@@ -1,7 +1,5 @@
 import React, { useRef, useImperativeHandle, forwardRef, useState } from 'react'
-import { Platform } from 'react-native'
-import WebAvatarCropper, { WebAvatarCropperProps } from './AvatarCropper.web'
-import NativeAvatarCropper from './AvatarCropper.native'
+import WebAvatarCropper from './AvatarCropper.web'
 
 export interface AvatarCropperRef {
   open: () => void
@@ -46,16 +44,8 @@ export const AvatarCropper = forwardRef<AvatarCropperRef, AvatarCropperProps>(fu
         style={{ display: 'none' }}
         onChange={handleFileSelect}
       />
-      {Platform.OS === 'web' && (
+      {showCropper && (
         <WebAvatarCropper
-          visible={showCropper}
-          imageUri={imageUri}
-          onCropComplete={handleCropComplete}
-          onCancel={handleCancel}
-        />
-      )}
-      {Platform.OS !== 'web' && (
-        <NativeAvatarCropper
           visible={showCropper}
           imageUri={imageUri}
           onCropComplete={handleCropComplete}
