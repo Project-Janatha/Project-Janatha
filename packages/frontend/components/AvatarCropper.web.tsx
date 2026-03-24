@@ -1,8 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { View, Text, Pressable, Modal, Image, StyleSheet } from 'react-native'
-
-const MIN_SCALE = 0.5
-const MAX_SCALE = 3
 
 export interface WebAvatarCropperProps {
   visible: boolean
@@ -12,17 +9,20 @@ export interface WebAvatarCropperProps {
 }
 
 export default function WebAvatarCropper({ visible, imageUri, onCropComplete, onCancel }: WebAvatarCropperProps) {
-  const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [scale, setScale] = useState(1)
-  const [rotation, setRotation] = useState(0)
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 })
-  const [isDragging, setIsDragging] = useState(false)
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
   const [loaded, setLoaded] = useState(false)
 
   const imageRef = useRef<HTMLImageElement | null>(null)
-  const dragStart = useRef({ x: 0, y: 0 })
-  const containerSize = 280
 
+  // Crop box state
+  const [cropPosition, setCropPosition] = useState({ x: 0, y: 0 })
+  const [cropSize, setCropSize] = useState(200)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragMode, setDragMode] = useState<'move' | 'resize' | null>(null)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0, cropX: 0, cropY: 0, cropSize: 0 })
+
+  // Handle image load
   useEffect(() => {
     if (!visible || !imageUri) return
 
@@ -30,12 +30,6 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
     img.onload = () => {
       setImageSize({ width: img.width, height: img.height })
       imageRef.current = img
-      
-      const minDimension = Math.min(img.width, img.height)
-      const fitScale = containerSize / minDimension
-      setScale(Math.min(fitScale * 1.5, 1))
-      setPosition({ x: 0, y: 0 })
-      setRotation(0)
       setLoaded(true)
     }
     img.src = imageUri
@@ -45,96 +39,138 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
     }
   }, [visible, imageUri])
 
+  // Calculate container size and initialize crop
   useEffect(() => {
-    if (!isDragging || !loaded) return
+    if (!loaded || !imageSize.width) return
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const newX = e.clientX - dragStart.current.x
-      const newY = e.clientY - dragStart.current.y
+    const maxWidth = Math.min(window.innerWidth * 0.85, 480)
+    const maxHeight = window.innerHeight * 0.5
+    const aspectRatio = imageSize.width / imageSize.height
 
-      const effectiveW = rotation % 180 === 0 ? imageSize.width : imageSize.height
-      const effectiveH = rotation % 180 === 0 ? imageSize.height : imageSize.width
-      const scaledW = effectiveW * scale
-      const scaledH = effectiveH * scale
+    let width = maxWidth
+    let height = width / aspectRatio
 
-      const maxX = Math.max(0, (scaledW - containerSize) / 2)
-      const maxY = Math.max(0, (scaledH - containerSize) / 2)
+    if (height > maxHeight) {
+      height = maxHeight
+      width = height * aspectRatio
+    }
 
-      setPosition({
-        x: Math.max(-maxX, Math.min(maxX, newX)),
-        y: Math.max(-maxY, Math.min(maxY, newY)),
+    setContainerSize({ width, height })
+
+    // Start with a reasonable crop size (80% of smaller dimension)
+    const initialSize = Math.min(width, height) * 0.75
+    setCropSize(initialSize)
+    setCropPosition({
+      x: (width - initialSize) / 2,
+      y: (height - initialSize) / 2
+    })
+  }, [loaded, imageSize])
+
+  // Handle mouse down on crop box (for moving)
+  const handleCropMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+    setDragMode('move')
+    setDragStart({
+      x: e.clientX,
+      y: e.clientY,
+      cropX: cropPosition.x,
+      cropY: cropPosition.y,
+      cropSize: cropSize
+    })
+  }
+
+  // Handle mouse down on resize handle
+  const handleResizeMouseDown = (e: React.MouseEvent, corner: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+    setDragMode('resize')
+    setDragStart({
+      x: e.clientX,
+      y: e.clientY,
+      cropX: cropPosition.x,
+      cropY: cropPosition.y,
+      cropSize: cropSize
+    })
+  }
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging) return
+
+    const dx = e.clientX - dragStart.x
+    const dy = e.clientY - dragStart.y
+
+    if (dragMode === 'move') {
+      const newX = dragStart.cropX + dx
+      const newY = dragStart.cropY + dy
+
+      setCropPosition({
+        x: Math.max(0, Math.min(newX, containerSize.width - cropSize)),
+        y: Math.max(0, Math.min(newY, containerSize.height - cropSize))
+      })
+    } else if (dragMode === 'resize') {
+      // Resize based on drag distance
+      const delta = Math.max(dx, dy)
+      const newSize = Math.max(80, Math.min(dragStart.cropSize + delta, Math.min(containerSize.width, containerSize.height)))
+
+      // Keep centered while resizing
+      const newX = dragStart.cropX + (dragStart.cropSize - newSize) / 2
+      const newY = dragStart.cropY + (dragStart.cropSize - newSize) / 2
+
+      setCropSize(newSize)
+      setCropPosition({
+        x: Math.max(0, Math.min(newX, containerSize.width - newSize)),
+        y: Math.max(0, Math.min(newY, containerSize.height - newSize))
       })
     }
+  }, [isDragging, dragMode, dragStart, cropSize, containerSize])
 
-    const handleMouseUp = () => {
-      setIsDragging(false)
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false)
+    setDragMode(null)
+  }, [])
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', handleMouseUp)
     }
-
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
-
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isDragging, scale, rotation, imageSize, loaded])
+  }, [isDragging, handleMouseMove, handleMouseUp])
 
-  const handleMouseDown = (e: any) => {
-    e.preventDefault()
-    setIsDragging(true)
-    dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y }
-  }
-
-  const handleWheel = (e: any) => {
-    e.preventDefault()
-    const delta = e.deltaY > 0 ? -0.1 : 0.1
-    setScale((s) => Math.max(MIN_SCALE, Math.min(MAX_SCALE, s + delta)))
-  }
-
-  const handleRotate = (dir: 'left' | 'right') => {
-    setRotation((r) => (r + (dir === 'right' ? 90 : -90) + 360) % 360)
-  }
-
-  const handleReset = () => {
-    const minDimension = Math.min(imageSize.width, imageSize.height)
-    const fitScale = containerSize / minDimension
-    setScale(Math.min(fitScale * 1.5, 1))
-    setPosition({ x: 0, y: 0 })
-    setRotation(0)
-  }
-
+  // Save cropped image
   const handleSave = () => {
     if (!imageRef.current) return
 
-    const cropSize = 200
+    const outputSize = 200
     const canvas = document.createElement('canvas')
-    canvas.width = cropSize
-    canvas.height = cropSize
+    canvas.width = outputSize
+    canvas.height = outputSize
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    ctx.translate(cropSize / 2, cropSize / 2)
-    ctx.rotate((rotation * Math.PI) / 180)
+    const scaleX = imageSize.width / containerSize.width
+    const scaleY = imageSize.height / containerSize.height
 
+    const srcX = cropPosition.x * scaleX
+    const srcY = cropPosition.y * scaleY
+    const srcW = cropSize * scaleX
+    const srcH = cropSize * scaleY
+
+    // Draw circular crop
     ctx.beginPath()
-    ctx.arc(0, 0, cropSize / 2, 0, Math.PI * 2)
+    ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2)
     ctx.clip()
-
-    const effectiveW = rotation % 180 === 0 ? imageSize.width : imageSize.height
-    const effectiveH = rotation % 180 === 0 ? imageSize.height : imageSize.width
-    const scaledW = effectiveW * scale
-    const scaledH = effectiveH * scale
 
     ctx.drawImage(
       imageRef.current,
-      -scaledW / 2 - position.x / scale,
-      -scaledH / 2 - position.y / scale,
-      scaledW / scale,
-      scaledH / scale,
-      -cropSize / 2,
-      -cropSize / 2,
-      cropSize,
-      cropSize
+      srcX, srcY, srcW, srcH,
+      0, 0, outputSize, outputSize
     )
 
     canvas.toBlob(
@@ -146,121 +182,244 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
     )
   }
 
-  const effectiveW = rotation % 180 === 0 ? imageSize.width : imageSize.height
-  const effectiveH = rotation % 180 === 0 ? imageSize.height : imageSize.width
-  const sliderPercent = ((scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100
-
   const styles = StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' },
-    container: { backgroundColor: '#1a1a1a', borderRadius: 16, padding: 20, width: 340 },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    title: { color: '#fff', fontSize: 17, fontWeight: '600' as const },
-    btnText: { color: '#999', fontSize: 16 },
-    saveBtn: { color: '#ea580c', fontWeight: '600' as const },
-    cropArea: { 
-      width: containerSize, 
-      height: containerSize, 
-      alignSelf: 'center', 
-      overflow: 'hidden', 
-      borderRadius: containerSize / 2, 
-      backgroundColor: '#333',
+    overlay: { 
+      flex: 1, 
+      backgroundColor: 'rgba(0,0,0,0.85)', 
+      justifyContent: 'center', 
+      alignItems: 'center',
+      padding: 20,
+    },
+    container: { 
+      backgroundColor: '#262626', 
+      borderRadius: 16, 
+      padding: 20,
+      maxWidth: 540,
+      width: '100%',
+    },
+    header: { 
+      flexDirection: 'row', 
+      justifyContent: 'space-between', 
+      alignItems: 'center', 
+      marginBottom: 16,
+    },
+    title: { color: '#fff', fontSize: 18, fontWeight: '600' as const },
+    btnText: { color: '#9CA3AF', fontSize: 16 },
+    saveBtn: { color: '#F97316', fontWeight: '600' as const },
+    cropWrapper: { 
+      alignItems: 'center', 
+      justifyContent: 'center',
       position: 'relative',
     },
-    imageWrapper: { position: 'absolute' as const, left: containerSize / 2, top: containerSize / 2 },
-    mask: { 
-      position: 'absolute' as const, 
-      top: 0, left: 0, right: 0, bottom: 0, 
-      borderRadius: containerSize / 2, 
-      borderWidth: 3, 
-      borderColor: '#fff',
+    cropArea: {
+      position: 'relative',
+      overflow: 'hidden',
     },
-    controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, gap: 12 },
-    rotateBtns: { flexDirection: 'row', gap: 8 },
-    rotateBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
-    rotateIcon: { color: '#fff', fontSize: 20 },
-    sliderContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-    sliderLabel: { color: '#999', fontSize: 13 },
-    sliderTrack: { flex: 1, height: 4, backgroundColor: '#444', borderRadius: 2, overflow: 'hidden' },
-    sliderFill: { height: '100%', backgroundColor: '#ea580c' },
-    resetBtn: { paddingHorizontal: 12, paddingVertical: 8 },
-    resetText: { color: '#999', fontSize: 14 },
+    overlayTop: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+    },
+    overlayBottom: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+    },
+    overlayLeft: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+    },
+    overlayRight: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      right: 0,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+    },
+    cropBox: {
+      position: 'absolute',
+      borderWidth: 2,
+      borderColor: '#fff',
+      cursor: 'move',
+    },
+    gridLine: {
+      position: 'absolute',
+      backgroundColor: 'rgba(255,255,255,0.25)',
+    },
+    handle: {
+      position: 'absolute',
+      width: 24,
+      height: 24,
+      backgroundColor: '#F97316',
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: '#fff',
+      cursor: 'nwse-resize',
+    },
+    controls: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      marginTop: 20,
+      gap: 24,
+    },
+    controlBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      backgroundColor: '#374151',
+      borderRadius: 8,
+    },
+    controlBtnText: { color: '#fff', fontSize: 14 },
+    hint: { 
+      color: '#9CA3AF', 
+      fontSize: 13, 
+      textAlign: 'center',
+      marginTop: 16,
+    },
   })
 
   if (!visible) return null
 
+  // Calculate overlay dimensions
+  const topHeight = cropPosition.y
+  const bottomHeight = containerSize.height - cropPosition.y - cropSize
+  const leftWidth = cropPosition.x
+  const rightWidth = containerSize.width - cropPosition.x - cropSize
+
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="fade" transparent>
       <View style={styles.overlay as any}>
         <View style={styles.container as any}>
           <View style={styles.header as any}>
             <Pressable onPress={onCancel}>
               <Text style={styles.btnText as any}>Cancel</Text>
             </Pressable>
-            <Text style={styles.title as any}>Edit Avatar</Text>
+            <Text style={styles.title as any}>Crop Photo</Text>
             <Pressable onPress={handleSave}>
-              <Text style={[styles.btnText as any, styles.saveBtn as any]}>Save</Text>
+              <Text style={[styles.btnText as any, styles.saveBtn as any]}>Done</Text>
             </Pressable>
           </View>
 
-          <View
-            style={styles.cropArea as any}
-            // @ts-ignore
-            onMouseDown={handleMouseDown}
-            // @ts-ignore
-            onWheel={handleWheel}
-          >
+          <View style={styles.cropWrapper as any}>
             <View
               style={[
-                styles.imageWrapper as any,
-                {
-                  width: effectiveW * scale,
-                  height: effectiveH * scale,
-                  marginLeft: -(effectiveW * scale) / 2,
-                  marginTop: -(effectiveH * scale) / 2,
-                  transform: [
-                    { translateX: position.x },
-                    { translateY: position.y },
-                    { rotate: `${rotation}deg` },
-                  ],
-                },
+                styles.cropArea as any,
+                { width: containerSize.width, height: containerSize.height }
               ]}
             >
+              {/* Image */}
               <Image
                 source={{ uri: imageUri }}
-                style={{ width: effectiveW, height: effectiveH }}
+                style={{ width: containerSize.width, height: containerSize.height }}
               />
-            </View>
 
-            <View style={styles.mask as any} pointerEvents="none" />
+              {/* Dark overlays around crop area */}
+              {topHeight > 0 && (
+                <View style={[styles.overlayTop as any, { height: topHeight }]} />
+              )}
+              {bottomHeight > 0 && (
+                <View style={[styles.overlayBottom as any, { height: bottomHeight, top: cropPosition.y + cropSize }]} />
+              )}
+              {leftWidth > 0 && (
+                <View style={[styles.overlayLeft as any, { width: leftWidth, top: cropPosition.y, height: cropSize }]} />
+              )}
+              {rightWidth > 0 && (
+                <View style={[styles.overlayRight as any, { width: rightWidth, left: cropPosition.x + cropSize, top: cropPosition.y, height: cropSize }]} />
+              )}
+
+              {/* Crop circle with grid */}
+              <View
+                style={[
+                  styles.cropBox as any,
+                  {
+                    left: cropPosition.x,
+                    top: cropPosition.y,
+                    width: cropSize,
+                    height: cropSize,
+                    borderRadius: cropSize / 2,
+                  }
+                ]}
+                // @ts-ignore
+                onMouseDown={handleCropMouseDown}
+              >
+                {/* Grid lines */}
+                <View style={[styles.gridLine as any, { left: '33.33%', top: 0, bottom: 0, width: 1 }]} />
+                <View style={[styles.gridLine as any, { left: '66.66%', top: 0, bottom: 0, width: 1 }]} />
+                <View style={[styles.gridLine as any, { top: '33.33%', left: 0, right: 0, height: 1 }]} />
+                <View style={[styles.gridLine as any, { top: '66.66%', left: 0, right: 0, height: 1 }]} />
+
+                {/* Resize handles */}
+                <View 
+                  style={[styles.handle as any, { left: -12, top: -12 }]}
+                  // @ts-ignore
+                  onMouseDown={(e: any) => handleResizeMouseDown(e, 'topLeft')}
+                />
+                <View 
+                  style={[styles.handle as any, { right: -12, top: -12 }]}
+                  // @ts-ignore
+                  onMouseDown={(e: any) => handleResizeMouseDown(e, 'topRight')}
+                />
+                <View 
+                  style={[styles.handle as any, { left: -12, bottom: -12 }]}
+                  // @ts-ignore
+                  onMouseDown={(e: any) => handleResizeMouseDown(e, 'bottomLeft')}
+                />
+                <View 
+                  style={[styles.handle as any, { right: -12, bottom: -12 }]}
+                  // @ts-ignore
+                  onMouseDown={(e: any) => handleResizeMouseDown(e, 'bottomRight')}
+                />
+              </View>
+            </View>
           </View>
 
           <View style={styles.controls as any}>
-            <View style={styles.rotateBtns as any}>
-              <Pressable
-                onPress={() => handleRotate('left')}
-                style={styles.rotateBtn as any}
-              >
-                <Text style={styles.rotateIcon as any}>↺</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => handleRotate('right')}
-                style={styles.rotateBtn as any}
-              >
-                <Text style={styles.rotateIcon as any}>↻</Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.sliderContainer as any}>
-              <Text style={styles.sliderLabel as any}>Zoom</Text>
-              <View style={styles.sliderTrack as any}>
-                <View style={[styles.sliderFill as any, { width: `${sliderPercent}%` }]} />
-              </View>
-            </View>
-
-            <Pressable onPress={handleReset} style={styles.resetBtn as any}>
-              <Text style={styles.resetText as any}>Reset</Text>
+            <Pressable 
+              style={styles.controlBtn as any}
+              onPress={() => {
+                const newSize = Math.max(80, cropSize - 30)
+                const centerX = cropPosition.x + cropSize / 2
+                const centerY = cropPosition.y + cropSize / 2
+                setCropSize(newSize)
+                setCropPosition({
+                  x: Math.max(0, Math.min(centerX - newSize / 2, containerSize.width - newSize)),
+                  y: Math.max(0, Math.min(centerY - newSize / 2, containerSize.height - newSize))
+                })
+              }}
+            >
+              <Text style={styles.controlBtnText as any}>− Smaller</Text>
+            </Pressable>
+            
+            <Pressable 
+              style={styles.controlBtn as any}
+              onPress={() => {
+                const newSize = Math.min(cropSize + 30, Math.min(containerSize.width, containerSize.height))
+                const centerX = cropPosition.x + cropSize / 2
+                const centerY = cropPosition.y + cropSize / 2
+                setCropSize(newSize)
+                setCropPosition({
+                  x: Math.max(0, Math.min(centerX - newSize / 2, containerSize.width - newSize)),
+                  y: Math.max(0, Math.min(centerY - newSize / 2, containerSize.height - newSize))
+                })
+              }}
+            >
+              <Text style={styles.controlBtnText as any}>+ Larger</Text>
             </Pressable>
           </View>
+
+          <Text style={styles.hint as any}>
+            Drag the orange handles to resize • Drag inside to move
+          </Text>
         </View>
       </View>
     </Modal>

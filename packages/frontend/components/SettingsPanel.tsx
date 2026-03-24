@@ -91,7 +91,13 @@ function SettingsPanel({ visible, onClose, onLogout }) {
   const displayName =
     user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Pranav Vaish'
 
-  const profileImage = user?.profileImage || `https://i.pravatar.cc/150?u=${user?.username || 'default'}`
+  const profileImage = user?.profileImage
+  const getInitials = () => {
+    if (user?.firstName && user?.lastName) return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+    if (user?.firstName) return user.firstName[0].toUpperCase()
+    if (user?.username) return user.username[0].toUpperCase()
+    return '?'
+  }
 
   return (
     <>
@@ -131,7 +137,23 @@ function SettingsPanel({ visible, onClose, onLogout }) {
       >
         {/* Profile Info */}
         <View className="flex-row items-center mb-3">
-          <Image source={{ uri: profileImage }} className="w-8 h-8 rounded-full mr-3 bg-gray-300" />
+          {profileImage ? (
+            <Image source={{ uri: profileImage }} className="w-8 h-8 rounded-full mr-3 bg-gray-300" />
+          ) : (
+            <View style={{ 
+              width: 32, 
+              height: 32, 
+              borderRadius: 16, 
+              backgroundColor: '#C2410C', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              marginRight: 12
+            }}>
+              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
+                {getInitials()}
+              </Text>
+            </View>
+          )}
           <View className="flex-col flex-1">
             <Text className="text-lg font-inter-semibold text-content dark:text-content-dark -mb-0.5">
               {displayName}

@@ -93,7 +93,13 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleAvatarPress = () => {
-    fileInputRef.current?.click()
+    // If user has an existing profile image, offer to crop it
+    if (profileData.profileImage) {
+      setCropperImage(profileData.profileImage)
+    } else {
+      // New user - open file picker directly
+      fileInputRef.current?.click()
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,6 +114,14 @@ export default function Profile() {
     const url = URL.createObjectURL(blob)
     setProfileData((prev) => ({ ...prev, profileImage: url }))
     setCropperImage(null)
+  }
+
+  const handleCropCancel = () => {
+    setCropperImage(null)
+  }
+
+  const handleReplacePhoto = () => {
+    fileInputRef.current?.click()
   }
 
   const handleCropCancel = () => {
