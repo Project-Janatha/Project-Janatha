@@ -13,7 +13,7 @@ import {
 import { Camera } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
 import BirthdatePicker from '../../components/BirthdatePicker'
-import { AvatarCropper, AvatarCropperRef } from '../../components/AvatarCropper'
+import WebAvatarCropper from '../../components/AvatarCropper.web'
 
 type ProfileData = {
   name: string
@@ -21,7 +21,7 @@ type ProfileData = {
   birthday: Date | null
   interests: string[]
   preferences: string[]
-  profileImage?: string
+  profileImage: string | null
 }
 
 function formatBirthday(date: Date | null): string {
@@ -65,20 +65,54 @@ export default function Profile() {
     return user?.username || ''
   }
 
+  const getInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+    }
+    if (user?.firstName) return user.firstName[0].toUpperCase()
+    if (user?.username) return user.username[0].toUpperCase()
+    return '?'
+  }
+
+  const hasExistingProfileImage = !!user?.profileImage
+
   const [profileData, setProfileData] = useState<ProfileData>({
     name: getDisplayName(),
     bio: '',
     birthday: user?.dateOfBirth ? new Date(user.dateOfBirth) : null,
-    interests: [],
+    interests: user?.interests || [],
     preferences: [],
-    profileImage:
-      user?.profileImage || `https://i.pravatar.cc/150?u=${user?.username || 'default'}`,
+    profileImage: user?.profileImage || null,
   })
 
   const draftName = useRef(profileData.name)
   const draftBio = useRef(profileData.bio)
   const draftBirthday = useRef<Date | null>(profileData.birthday)
-  const avatarCropperRef = useRef<AvatarCropperRef>(null)
+
+  const [cropperImage, setCropperImage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleAvatarPress = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const url = URL.createObjectURL(file)
+      setCropperImage(url)
+    }
+  }
+
+  const handleCropComplete = (blob: Blob) => {
+    const url = URL.createObjectURL(blob)
+    setProfileData((prev) => ({ ...prev, profileImage: url }))
+    setCropperImage(null)
+  }
+
+  const handleCropCancel = () => {
+    setCropperImage(null)
+  }
 
   useEffect(() => {
     if (user && !isEditing) {
@@ -217,17 +251,36 @@ export default function Profile() {
           style={{ alignItems: 'center', paddingTop: 28, paddingBottom: 24, paddingHorizontal: 20 }}
         >
           <View style={{ position: 'relative', marginBottom: 14 }}>
-            <Image
-              source={{ uri: profileData.profileImage }}
-              style={{
-                width: 88,
-                height: 88,
-                borderRadius: 44,
-                borderWidth: 3,
-                borderColor: cardBg,
-                backgroundColor: '#D6D3D1',
-              }}
-            />
+            {profileData.profileImage ? (
+              <Image
+                source={{ uri: profileData.profileImage }}
+                style={{
+                  width: 88,
+                  height: 88,
+                  borderRadius: 44,
+                  borderWidth: 3,
+                  borderColor: cardBg,
+                  backgroundColor: '#D6D3D1',
+                }}
+              />
+            ) : (
+              <View
+                style={{
+                  width: 88,
+                  height: 88,
+                  borderRadius: 44,
+                  borderWidth: 3,
+                  borderColor: cardBg,
+                  backgroundColor: '#C2410C',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 28, fontWeight: '600' }}>
+                  {getInitials()}
+                </Text>
+              </View>
+            )}
             {isEditing && (
               <Pressable
                 style={{
@@ -243,7 +296,7 @@ export default function Profile() {
                   borderWidth: 2,
                   borderColor: isDark ? '#171717' : '#FAFAF7',
                 }}
-                onPress={() => avatarCropperRef.current?.open()}
+                onPress={handleAvatarPress}
               >
                 <Camera size={16} color="#fff" />
               </Pressable>
@@ -558,10 +611,27 @@ export default function Profile() {
           }}
         >
           <View style={{ position: 'relative' }}>
-            <Image
-              source={{ uri: profileData.profileImage }}
-              style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#D6D3D1' }}
-            />
+            {profileData.profileImage ? (
+              <Image
+                source={{ uri: profileData.profileImage }}
+                style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#D6D3D1' }}
+              />
+            ) : (
+              <View
+                style={{
+                  width: 96,
+                  height: 96,
+                  borderRadius: 48,
+                  backgroundColor: '#C2410C',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 32, fontWeight: '600' }}>
+                  {getInitials()}
+                </Text>
+              </View>
+            )}
             {isEditing && (
               <Pressable
                 style={{
@@ -577,7 +647,7 @@ export default function Profile() {
                   borderWidth: 2,
                   borderColor: cardBg,
                 }}
-                onPress={() => avatarCropperRef.current?.open()}
+                onPress={handleAvatarPress}
               >
                 <Camera size={16} color="#fff" />
               </Pressable>
@@ -825,13 +895,22 @@ export default function Profile() {
           </Pressable>
         )}
 
-        <AvatarCropper
-          ref={avatarCropperRef}
-          onCropComplete={(blob) => {
-            const url = URL.createObjectURL(blob)
-            setProfileData((prev) => ({ ...prev, profileImage: url }))
-          }}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
         />
+
+        {cropperImage && (
+          <WebAvatarCropper
+            visible={!!cropperImage}
+            imageUri={cropperImage}
+            onCropComplete={handleCropComplete}
+            onCancel={handleCropCancel}
+          />
+        )}
       </View>
     </ScrollView>
   )

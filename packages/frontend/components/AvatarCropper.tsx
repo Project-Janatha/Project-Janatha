@@ -1,57 +1,28 @@
-import React, { useRef, useImperativeHandle, forwardRef, useState } from 'react'
-import WebAvatarCropper from './AvatarCropper.web'
+import { useRef, useCallback } from 'react'
+import { View } from 'react-native'
 
-export interface AvatarCropperRef {
-  open: () => void
-}
-
-interface AvatarCropperProps {
+interface Props {
   onCropComplete: (blob: Blob) => void
 }
 
-export const AvatarCropper = forwardRef<AvatarCropperRef, AvatarCropperProps>(function AvatarCropper({ onCropComplete }, ref) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [imageUri, setImageUri] = useState('')
-  const [showCropper, setShowCropper] = useState(false)
+export function AvatarCropper({ onCropComplete }: Props) {
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  useImperativeHandle(ref, () => ({
-    open: () => fileInputRef.current?.click(),
-  }))
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: any) => {
     const file = e.target.files?.[0]
     if (file) {
-      setImageUri(URL.createObjectURL(file))
-      setShowCropper(true)
+      onCropComplete(file as unknown as Blob)
     }
-  }
-
-  const handleCropComplete = (blob: Blob) => {
-    setShowCropper(false)
-    onCropComplete(blob)
-  }
-
-  const handleCancel = () => {
-    setShowCropper(false)
-  }
+  }, [onCropComplete])
 
   return (
-    <>
+    <View style={{ display: 'none' }}>
       <input
-        ref={fileInputRef}
+        ref={inputRef}
         type="file"
         accept="image/*"
-        style={{ display: 'none' }}
-        onChange={handleFileSelect}
+        onChange={handleChange}
       />
-      {showCropper && (
-        <WebAvatarCropper
-          visible={showCropper}
-          imageUri={imageUri}
-          onCropComplete={handleCropComplete}
-          onCancel={handleCancel}
-        />
-      )}
-    </>
+    </View>
   )
-})
+}

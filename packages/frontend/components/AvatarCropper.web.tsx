@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { View, Text, Pressable, Modal, Image, StyleSheet } from 'react-native'
 
-const CROP_SIZE = 200
 const MIN_SCALE = 0.5
 const MAX_SCALE = 3
 
@@ -22,6 +21,7 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
 
   const imageRef = useRef<HTMLImageElement | null>(null)
   const dragStart = useRef({ x: 0, y: 0 })
+  const containerSize = 280
 
   useEffect(() => {
     if (!visible || !imageUri) return
@@ -30,8 +30,10 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
     img.onload = () => {
       setImageSize({ width: img.width, height: img.height })
       imageRef.current = img
-      const fitScale = CROP_SIZE / Math.max(img.width, img.height)
-      setScale(Math.min(fitScale * 2, 1))
+      
+      const minDimension = Math.min(img.width, img.height)
+      const fitScale = containerSize / minDimension
+      setScale(Math.min(fitScale * 1.5, 1))
       setPosition({ x: 0, y: 0 })
       setRotation(0)
       setLoaded(true)
@@ -55,8 +57,8 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
       const scaledW = effectiveW * scale
       const scaledH = effectiveH * scale
 
-      const maxX = Math.max(0, (scaledW - CROP_SIZE) / 2)
-      const maxY = Math.max(0, (scaledH - CROP_SIZE) / 2)
+      const maxX = Math.max(0, (scaledW - containerSize) / 2)
+      const maxY = Math.max(0, (scaledH - containerSize) / 2)
 
       setPosition({
         x: Math.max(-maxX, Math.min(maxX, newX)),
@@ -94,8 +96,9 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
   }
 
   const handleReset = () => {
-    const fitScale = CROP_SIZE / Math.max(imageSize.width, imageSize.height)
-    setScale(Math.min(fitScale * 2, 1))
+    const minDimension = Math.min(imageSize.width, imageSize.height)
+    const fitScale = containerSize / minDimension
+    setScale(Math.min(fitScale * 1.5, 1))
     setPosition({ x: 0, y: 0 })
     setRotation(0)
   }
@@ -103,17 +106,18 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
   const handleSave = () => {
     if (!imageRef.current) return
 
+    const cropSize = 200
     const canvas = document.createElement('canvas')
-    canvas.width = CROP_SIZE
-    canvas.height = CROP_SIZE
+    canvas.width = cropSize
+    canvas.height = cropSize
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    ctx.translate(CROP_SIZE / 2, CROP_SIZE / 2)
+    ctx.translate(cropSize / 2, cropSize / 2)
     ctx.rotate((rotation * Math.PI) / 180)
 
     ctx.beginPath()
-    ctx.arc(0, 0, CROP_SIZE / 2, 0, Math.PI * 2)
+    ctx.arc(0, 0, cropSize / 2, 0, Math.PI * 2)
     ctx.clip()
 
     const effectiveW = rotation % 180 === 0 ? imageSize.width : imageSize.height
@@ -127,10 +131,10 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
       -scaledH / 2 - position.y / scale,
       scaledW / scale,
       scaledH / scale,
-      -CROP_SIZE / 2,
-      -CROP_SIZE / 2,
-      CROP_SIZE,
-      CROP_SIZE
+      -cropSize / 2,
+      -cropSize / 2,
+      cropSize,
+      cropSize
     )
 
     canvas.toBlob(
@@ -147,15 +151,29 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
   const sliderPercent = ((scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100
 
   const styles = StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center' },
     container: { backgroundColor: '#1a1a1a', borderRadius: 16, padding: 20, width: 340 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
     title: { color: '#fff', fontSize: 17, fontWeight: '600' as const },
     btnText: { color: '#999', fontSize: 16 },
     saveBtn: { color: '#ea580c', fontWeight: '600' as const },
-    cropArea: { width: CROP_SIZE, height: CROP_SIZE, alignSelf: 'center', overflow: 'hidden', borderRadius: CROP_SIZE / 2, backgroundColor: '#333', position: 'relative' },
-    imageWrapper: { position: 'absolute' as const, transformOrigin: 'center' as const },
-    mask: { position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0, borderRadius: CROP_SIZE / 2, borderWidth: 2, borderColor: '#fff' },
+    cropArea: { 
+      width: containerSize, 
+      height: containerSize, 
+      alignSelf: 'center', 
+      overflow: 'hidden', 
+      borderRadius: containerSize / 2, 
+      backgroundColor: '#333',
+      position: 'relative',
+    },
+    imageWrapper: { position: 'absolute' as const, left: containerSize / 2, top: containerSize / 2 },
+    mask: { 
+      position: 'absolute' as const, 
+      top: 0, left: 0, right: 0, bottom: 0, 
+      borderRadius: containerSize / 2, 
+      borderWidth: 3, 
+      borderColor: '#fff',
+    },
     controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, gap: 12 },
     rotateBtns: { flexDirection: 'row', gap: 8 },
     rotateBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
@@ -167,6 +185,8 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
     resetBtn: { paddingHorizontal: 12, paddingVertical: 8 },
     resetText: { color: '#999', fontSize: 14 },
   })
+
+  if (!visible) return null
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -184,9 +204,9 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
 
           <View
             style={styles.cropArea as any}
-            // @ts-ignore - onMouseDown is valid in React Native Web
+            // @ts-ignore
             onMouseDown={handleMouseDown}
-            // @ts-ignore - onWheel is valid in React Native Web
+            // @ts-ignore
             onWheel={handleWheel}
           >
             <View
@@ -195,9 +215,11 @@ export default function WebAvatarCropper({ visible, imageUri, onCropComplete, on
                 {
                   width: effectiveW * scale,
                   height: effectiveH * scale,
+                  marginLeft: -(effectiveW * scale) / 2,
+                  marginTop: -(effectiveH * scale) / 2,
                   transform: [
-                    { translateX: position.x + CROP_SIZE / 2 },
-                    { translateY: position.y + CROP_SIZE / 2 },
+                    { translateX: position.x },
+                    { translateY: position.y },
                     { rotate: `${rotation}deg` },
                   ],
                 },
