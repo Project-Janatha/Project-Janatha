@@ -10,18 +10,19 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native'
-import { Camera, Pencil } from 'lucide-react-native'
+import { Camera, Pencil, MapPin } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
 import BirthdatePicker from '../../components/BirthdatePicker'
 import WebAvatarCropper from '../../components/AvatarCropper.web'
+import { fetchCenters, CenterData } from '../../utils/api'
 
 type ProfileData = {
   name: string
   bio: string
   birthday: Date | null
   interests: string[]
-  preferences: string[]
   profileImage: string | null
+  centerID: string | null
 }
 
 function formatBirthday(date: Date | null): string {
@@ -84,9 +85,12 @@ export default function Profile() {
     bio: user?.bio || '',
     birthday: user?.dateOfBirth ? new Date(user.dateOfBirth) : null,
     interests: user?.interests || [],
-    preferences: [],
     profileImage: user?.profileImage || null,
+    centerID: user?.centerID || null,
   })
+
+  const [allCenters, setAllCenters] = useState<CenterData[]>([])
+  const [showCenterPicker, setShowCenterPicker] = useState(false)
 
   const draftName = useRef(profileData.name)
   const draftBio = useRef(profileData.bio)
@@ -138,9 +142,23 @@ export default function Profile() {
         name: getDisplayName() || prev.name,
         bio: user.bio || prev.bio,
         profileImage: user.profileImage || prev.profileImage,
+        interests: user.interests || prev.interests,
+        centerID: user.centerID || prev.centerID,
       }))
     }
-  }, [user?.firstName, user?.lastName, user?.profileImage, user?.bio])
+  }, [user?.firstName, user?.lastName, user?.profileImage, user?.bio, user?.interests, user?.centerID])
+
+  useEffect(() => {
+    const loadCenters = async () => {
+      try {
+        const centers = await fetchCenters()
+        setAllCenters(centers)
+      } catch (e) {
+        // Silently fail
+      }
+    }
+    loadCenters()
+  }, [])
 
   useEffect(() => {
     draftName.current = profileData.name
@@ -151,6 +169,8 @@ export default function Profile() {
     name: draftName.current,
     bio: draftBio.current,
     birthday: draftBirthday.current,
+    interests: profileData.interests,
+    centerID: profileData.centerID,
   })
 
   const validateForm = (): boolean => {
@@ -232,6 +252,8 @@ export default function Profile() {
         firstName: nameParts[0],
         lastName: nameParts.slice(1).join(' '),
         bio: drafts.bio || '',
+        interests: drafts.interests,
+        ...(drafts.centerID ? { centerID: drafts.centerID } : {}),
         ...(drafts.birthday ? { dateOfBirth: drafts.birthday.toISOString().split('T')[0] } : {}),
         ...(profileImageBase64 ? { profileImage: profileImageBase64 } : {}),
       })
@@ -359,17 +381,37 @@ export default function Profile() {
               </Pressable>
             )}
           </View>
-          <Text
-            style={{
-              fontFamily: 'Inter-SemiBold',
-              fontSize: 24,
-              color: textColor,
-              letterSpacing: -0.5,
-              marginBottom: 3,
-            }}
-          >
-            {profileData.name || '—'}
-          </Text>
+          {isEditing ? (
+            <TextInput
+              defaultValue={profileData.name}
+              onChangeText={(v) => {
+                draftName.current = v
+              }}
+              placeholderTextColor="#9ca3af"
+              style={{
+                fontFamily: 'Inter-SemiBold',
+                fontSize: 24,
+                color: textColor,
+                letterSpacing: -0.5,
+                marginBottom: 3,
+                width: '100%',
+                padding: 0,
+                textAlign: 'center',
+              }}
+            />
+          ) : (
+            <Text
+              style={{
+                fontFamily: 'Inter-SemiBold',
+                fontSize: 24,
+                color: textColor,
+                letterSpacing: -0.5,
+                marginBottom: 3,
+              }}
+            >
+              {profileData.name || '—'}
+            </Text>
+          )}
           <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
             {user?.username || 'user'}
           </Text>
@@ -381,42 +423,6 @@ export default function Profile() {
         </View>
 
         <View style={{ paddingHorizontal: 20, gap: 20 }}>
-          <View>
-            <Text style={labelStyle}>Full Name</Text>
-            {isEditing ? (
-              <TextInput
-                defaultValue={profileData.name}
-                onChangeText={(v) => {
-                  draftName.current = v
-                }}
-                placeholderTextColor="#9ca3af"
-                style={inputStyle}
-              />
-            ) : (
-              <Text
-                style={{
-                  fontFamily: 'Inter-Medium',
-                  fontSize: 16,
-                  color: textColor,
-                  lineHeight: 24,
-                }}
-              >
-                {profileData.name || '—'}
-              </Text>
-            )}
-            {errors.name && (
-              <Text
-                style={{
-                  fontFamily: 'Inter-Regular',
-                  fontSize: 13,
-                  color: '#DC2626',
-                  marginTop: 6,
-                }}
-              >
-                {errors.name}
-              </Text>
-            )}
-          </View>
           <View>
             <Text style={labelStyle}>Bio</Text>
             {isEditing ? (
@@ -505,7 +511,7 @@ export default function Profile() {
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {PREFERENCE_OPTIONS.map((pref) => {
-                const selected = profileData.preferences.includes(pref)
+                const selected = profileData.interests.includes(pref)
                 return (
                   <Pressable
                     key={pref}
@@ -534,7 +540,7 @@ export default function Profile() {
                 )
               })}
             </View>
-            {errors.preferences && (
+            {errors.interests && (
               <Text
                 style={{
                   fontFamily: 'Inter-Regular',
@@ -543,7 +549,7 @@ export default function Profile() {
                   marginTop: 8,
                 }}
               >
-                {errors.preferences}
+                {errors.interests}
               </Text>
             )}
           </View>
@@ -779,6 +785,69 @@ export default function Profile() {
                 {user.email}
               </Text>
             )}
+            {isEditing ? (
+              <Pressable
+                onPress={() => setShowCenterPicker(!showCenterPicker)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                  marginTop: 4,
+                }}
+              >
+                <MapPin size={14} color={mutedTextColor} />
+                <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: '#C2410C' }}>
+                  {allCenters.find((c) => c.centerID === profileData.centerID)?.name || 'Select center'}
+                </Text>
+              </Pressable>
+            ) : profileData.centerID ? (
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
+                {allCenters.find((c) => c.centerID === profileData.centerID)?.name || ''}
+              </Text>
+            ) : null}
+            {isEditing && showCenterPicker && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: cardBg,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor,
+                  maxHeight: 200,
+                  overflow: 'scroll' as const,
+                  zIndex: 200,
+                  marginTop: 4,
+                }}
+              >
+                {allCenters.map((center) => (
+                  <Pressable
+                    key={center.centerID}
+                    onPress={() => {
+                      setProfileData((prev) => ({ ...prev, centerID: center.centerID }))
+                      setShowCenterPicker(false)
+                    }}
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 12,
+                      backgroundColor: profileData.centerID === center.centerID ? '#C2410C' + '20' : 'transparent',
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: 'Inter-Regular',
+                        fontSize: 14,
+                        color: profileData.centerID === center.centerID ? '#C2410C' : textColor,
+                      }}
+                    >
+                      {center.name}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </View>
         </View>
 
@@ -889,7 +958,7 @@ export default function Profile() {
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {PREFERENCE_OPTIONS.map((pref) => {
-              const selected = profileData.preferences.includes(pref)
+              const selected = profileData.interests.includes(pref)
               return (
                 <Pressable
                   key={pref}
@@ -918,11 +987,11 @@ export default function Profile() {
               )
             })}
           </View>
-          {errors.preferences && (
+          {errors.interests && (
             <Text
               style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}
             >
-              {errors.preferences}
+              {errors.interests}
             </Text>
           )}
         </View>
