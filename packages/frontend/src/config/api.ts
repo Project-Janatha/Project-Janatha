@@ -1,18 +1,11 @@
 import { Platform } from 'react-native'
 
-// Dev mode: point auth calls to same local backend as data calls (utils/api.ts)
 const DEV_API_URL = Platform.OS === 'android'
   ? 'http://10.0.2.2:8787/api'
   : 'http://localhost:8787/api'
 
-const DEFAULT_FALLBACK = 'https://chinmaya-janata.pages.dev/api'
+const PROD_API_URL = 'https://chinmaya-janata-api.workers.dev/api'
 
-const webOrigin =
-  typeof window !== 'undefined' && window.location?.origin ? window.location.origin : ''
-const WEB_FALLBACK = webOrigin ? `${webOrigin}/api` : DEFAULT_FALLBACK
-const NATIVE_FALLBACK = DEFAULT_FALLBACK
-
-// Expo public env var overrides everything
 const envBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim()
 
 export const API_BASE_URL =
@@ -20,9 +13,7 @@ export const API_BASE_URL =
     ? envBaseUrl
     : typeof __DEV__ !== 'undefined' && __DEV__
       ? DEV_API_URL
-      : Platform.OS === 'web'
-        ? WEB_FALLBACK
-        : NATIVE_FALLBACK
+      : PROD_API_URL
 
 export const API_TIMEOUTS = {
   auth: 60_000,

@@ -68,22 +68,22 @@ describe('API_URL generation', () => {
     expect(api.API_URL).toBe('http://localhost:8787/api')
   })
 
-  it('returns /api for web in production', async () => {
+  it('returns backend Worker URL for web in production', async () => {
     ;(globalThis as any).__DEV__ = false
     vi.doMock('react-native', () => ({
       Platform: { OS: 'web', select: (obj: any) => obj.web ?? obj.default },
     }))
     const api = await import('../../utils/api')
-    expect(api.API_URL).toBe('/api')
+    expect(api.API_URL).toBe('https://chinmaya-janata-api.workers.dev/api')
   })
 
-  it('returns full URL for native in production', async () => {
+  it('returns backend Worker URL for native in production', async () => {
     ;(globalThis as any).__DEV__ = false
     vi.doMock('react-native', () => ({
       Platform: { OS: 'ios', select: (obj: any) => obj.ios ?? obj.default },
     }))
     const api = await import('../../utils/api')
-    expect(api.API_URL).toBe('https://chinmaya-janata.pages.dev/api')
+    expect(api.API_URL).toBe('https://chinmaya-janata-api.workers.dev/api')
   })
 })
 

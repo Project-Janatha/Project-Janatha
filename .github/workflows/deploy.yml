@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare
 
 on:
   push:
@@ -7,9 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-backend:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,11 +26,31 @@ jobs:
         run: npx tsc --noEmit
         working-directory: packages/backend
 
+      - name: Deploy backend Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+          workingDirectory: packages/backend
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Build frontend
         run: npm run build:frontend
-
-      - name: Prepare Pages output
-        run: npm run build:pages
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

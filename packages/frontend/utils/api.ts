@@ -1,26 +1,7 @@
-import { Platform } from 'react-native'
 import { getStoredToken } from '../components/utils/tokenStorage'
+import { API_BASE_URL } from '../src/config/api'
 
-// Use local backend in development, production otherwise.
-// All endpoint paths passed to apiFetch() are relative (e.g. '/centers'),
-// and API_URL already includes the '/api' base path.
-const getApiUrl = () => {
-  if (__DEV__) {
-    if (Platform.OS === 'web') {
-      return 'http://localhost:8787/api'
-    }
-    // Android emulator uses 10.0.2.2, iOS simulator uses localhost
-    return Platform.OS === 'android' ? 'http://10.0.2.2:8787/api' : 'http://localhost:8787/api'
-  }
-  // In production web, use relative /api (same CF Pages domain)
-  // In production native, use full URL
-  if (Platform.OS === 'web') {
-    return '/api'
-  }
-  return 'https://chinmaya-janata.pages.dev/api'
-}
-
-export const API_URL = getApiUrl()
+export const API_URL = API_BASE_URL
 
 // ── Types (flat, matching backend API response) ───────────────────────
 
