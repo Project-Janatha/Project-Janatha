@@ -81,7 +81,7 @@ export default function Profile() {
 
   const [profileData, setProfileData] = useState<ProfileData>({
     name: getDisplayName(),
-    bio: '',
+    bio: user?.bio || '',
     birthday: user?.dateOfBirth ? new Date(user.dateOfBirth) : null,
     interests: user?.interests || [],
     preferences: [],
@@ -136,10 +136,11 @@ export default function Profile() {
       setProfileData((prev) => ({
         ...prev,
         name: getDisplayName() || prev.name,
+        bio: user.bio || prev.bio,
         profileImage: user.profileImage || prev.profileImage,
       }))
     }
-  }, [user?.firstName, user?.lastName, user?.profileImage])
+  }, [user?.firstName, user?.lastName, user?.profileImage, user?.bio])
 
   useEffect(() => {
     draftName.current = profileData.name
@@ -197,11 +198,50 @@ export default function Profile() {
     setIsSaving(true)
     try {
       const nameParts = drafts.name.trim().split(' ')
-      await updateProfile({
+      
+      // Prepare profile image if changed
+      let profileImageBase64: string | undefined
+      if (profileImageChanged && profileData.profileImage) {
+        try {
+          const response = await fetch(profileData.profileImage)
+          if (!response.ok) {
+            throw new Error(`Fetch failed: ${response.status}`)
+          }
+          const blob = await response.blob()
+          profileImageBase64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.onerror = () => reject(new Error('Failed to read blob'))
+            reader.readAsDataURL(blob)
+          })
+          if (__DEV__) {
+            console.log('Profile image converted to base64, length:', profileImageBase64.length)
+          }
+        } catch (e) {
+          console.error('Error converting image:', e)
+          setErrors((prev) => ({ ...prev, profileImage: 'Failed to upload image. Please try again.' }))
+          setIsSaving(false)
+          return
+        }
+      }
+
+      if (__DEV__) {
+        console.log('Sending profile update, hasImage:', !!profileImageBase64)
+      }
+      const result = await updateProfile({
         firstName: nameParts[0],
         lastName: nameParts.slice(1).join(' '),
+        bio: drafts.bio || '',
         ...(drafts.birthday ? { dateOfBirth: drafts.birthday.toISOString().split('T')[0] } : {}),
+        ...(profileImageBase64 ? { profileImage: profileImageBase64 } : {}),
       })
+      
+      if (!result.success) {
+        setErrors((prev) => ({ ...prev, form: result.message || 'Failed to save profile' }))
+        setIsSaving(false)
+        return
+      }
+      setProfileImageChanged(false)
       setIsEditing(false)
       setErrors({})
     } catch (error) {
@@ -502,6 +542,20 @@ export default function Profile() {
               </Text>
             )}
           </View>
+
+          {/* Form-level errors */}
+          {(errors.form || errors.profileImage) && (
+            <Text
+              style={{
+                fontFamily: 'Inter-Regular',
+                fontSize: 13,
+                color: '#DC2626',
+                marginTop: 8,
+              }}
+            >
+              {errors.form || errors.profileImage}
+            </Text>
+          )}
 
           {isEditing && (
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
@@ -890,6 +944,15 @@ export default function Profile() {
             </Text>
           )}
         </View>
+
+        {/* Form-level errors */}
+        {(errors.form || errors.profileImage) && (
+          <Text
+            style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}
+          >
+            {errors.form || errors.profileImage}
+          </Text>
+        )}
 
         {/* Cancel button when editing */}
         {isEditing && (

@@ -27,6 +27,7 @@ export interface UserRow {
   date_of_birth: string | null
   phone_number: string | null
   profile_image: string | null
+  bio: string | null
   center_id: string | null
   points: number
   is_verified: number // 0 | 1
@@ -98,6 +99,7 @@ export interface UserApiResponse {
   dateOfBirth: string | null
   phoneNumber: string | null
   profileImage: string | null
+  bio: string | null
   centerID: string | null
   points: number
   isVerified: boolean
@@ -168,6 +170,7 @@ export function userRowToApi(row: UserRow): UserApiResponse {
     dateOfBirth: row.date_of_birth,
     phoneNumber: row.phone_number,
     profileImage: row.profile_image,
+    bio: row.bio,
     centerID: row.center_id,
     points: row.points,
     isVerified: row.is_verified === 1,

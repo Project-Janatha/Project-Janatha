@@ -268,6 +268,7 @@ app.put('/auth/update-profile', authMiddleware, async (c) => {
     centerID?: string
     profileComplete?: boolean
     profileImage?: string
+    bio?: string
     phoneNumber?: string
     interests?: string[]
   }>()
@@ -280,6 +281,7 @@ app.put('/auth/update-profile', authMiddleware, async (c) => {
   if (body.centerID !== undefined) updates.center_id = body.centerID || null
   if (body.profileComplete !== undefined) updates.profile_complete = body.profileComplete ? 1 : 0
   if (body.profileImage !== undefined) updates.profile_image = body.profileImage
+  if (body.bio !== undefined) updates.bio = body.bio || null
   if (body.phoneNumber !== undefined) updates.phone_number = body.phoneNumber
   if (body.interests !== undefined) updates.interests = JSON.stringify(body.interests)
 
