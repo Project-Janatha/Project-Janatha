@@ -18,7 +18,7 @@ type ProfileData = {
   name: string
   bio: string
   birthday: Date | null
-  preferences: string[]
+  interests: string[]
   profileImage?: string
 }
 
@@ -67,8 +67,9 @@ export default function Profile() {
     name: getDisplayName(),
     bio: '',
     birthday: user?.dateOfBirth ? new Date(user.dateOfBirth) : null,
-    preferences: [],
-    profileImage: user?.profileImage || `https://i.pravatar.cc/150?u=${user?.username || 'default'}`,
+    interests: [],
+    profileImage:
+      user?.profileImage || `https://i.pravatar.cc/150?u=${user?.username || 'default'}`,
   })
 
   const draftName = useRef(profileData.name)
@@ -102,7 +103,8 @@ export default function Profile() {
     if (!drafts.name.trim()) newErrors.name = 'Name is required'
     if (!drafts.bio.trim()) newErrors.bio = 'Bio is required'
     if (!drafts.birthday) newErrors.birthday = 'Birthday is required'
-    if (profileData.preferences.length === 0) newErrors.preferences = 'At least one preference must be selected'
+    if (profileData.interests.length === 0)
+      newErrors.interests = 'At least one interest must be selected'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -131,7 +133,12 @@ export default function Profile() {
   const handleSave = async () => {
     if (!validateForm()) return
     const drafts = readDrafts()
-    setProfileData((prev) => ({ ...prev, name: drafts.name, bio: drafts.bio, birthday: drafts.birthday }))
+    setProfileData((prev) => ({
+      ...prev,
+      name: drafts.name,
+      bio: drafts.bio,
+      birthday: drafts.birthday,
+    }))
     setIsSaving(true)
     try {
       const nameParts = drafts.name.trim().split(' ')
@@ -155,9 +162,9 @@ export default function Profile() {
     if (!isEditing) return
     setProfileData((prev) => ({
       ...prev,
-      preferences: prev.preferences.includes(preference)
-        ? prev.preferences.filter((p) => p !== preference)
-        : [...prev.preferences, preference],
+      interests: prev.interests.includes(preference)
+        ? prev.interests.filter((p) => p !== preference)
+        : [...prev.interests, preference],
     }))
   }
 
@@ -202,26 +209,50 @@ export default function Profile() {
   if (!isWeb) {
     return (
       <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
-        <View style={{ alignItems: 'center', paddingTop: 28, paddingBottom: 24, paddingHorizontal: 20 }}>
+        <View
+          style={{ alignItems: 'center', paddingTop: 28, paddingBottom: 24, paddingHorizontal: 20 }}
+        >
           <View style={{ position: 'relative', marginBottom: 14 }}>
             <Image
               source={{ uri: profileData.profileImage }}
-              style={{ width: 88, height: 88, borderRadius: 44, borderWidth: 3, borderColor: cardBg, backgroundColor: '#D6D3D1' }}
+              style={{
+                width: 88,
+                height: 88,
+                borderRadius: 44,
+                borderWidth: 3,
+                borderColor: cardBg,
+                backgroundColor: '#D6D3D1',
+              }}
             />
             {isEditing && (
               <Pressable
                 style={{
-                  position: 'absolute', bottom: -6, right: -6,
-                  width: 44, height: 44, borderRadius: 22,
-                  backgroundColor: '#C2410C', alignItems: 'center', justifyContent: 'center',
-                  borderWidth: 2, borderColor: isDark ? '#171717' : '#FAFAF7',
+                  position: 'absolute',
+                  bottom: -6,
+                  right: -6,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: '#C2410C',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: isDark ? '#171717' : '#FAFAF7',
                 }}
               >
                 <Camera size={16} color="#fff" />
               </Pressable>
             )}
           </View>
-          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 24, color: textColor, letterSpacing: -0.5, marginBottom: 3 }}>
+          <Text
+            style={{
+              fontFamily: 'Inter-SemiBold',
+              fontSize: 24,
+              color: textColor,
+              letterSpacing: -0.5,
+              marginBottom: 3,
+            }}
+          >
             {profileData.name || '—'}
           </Text>
           <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
@@ -233,36 +264,123 @@ export default function Profile() {
           <View>
             <Text style={labelStyle}>Full Name</Text>
             {isEditing ? (
-              <TextInput defaultValue={profileData.name} onChangeText={(v) => { draftName.current = v }} placeholderTextColor="#9ca3af" style={inputStyle} />
+              <TextInput
+                defaultValue={profileData.name}
+                onChangeText={(v) => {
+                  draftName.current = v
+                }}
+                placeholderTextColor="#9ca3af"
+                style={inputStyle}
+              />
             ) : (
-              <Text style={{ fontFamily: 'Inter-Medium', fontSize: 16, color: textColor, lineHeight: 24 }}>{profileData.name || '—'}</Text>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Medium',
+                  fontSize: 16,
+                  color: textColor,
+                  lineHeight: 24,
+                }}
+              >
+                {profileData.name || '—'}
+              </Text>
             )}
-            {errors.name && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{errors.name}</Text>}
+            {errors.name && (
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 13,
+                  color: '#DC2626',
+                  marginTop: 6,
+                }}
+              >
+                {errors.name}
+              </Text>
+            )}
           </View>
           <View>
             <Text style={labelStyle}>Bio</Text>
             {isEditing ? (
-              <TextInput defaultValue={profileData.bio} onChangeText={(v) => { draftBio.current = v }} multiline textAlignVertical="top" placeholderTextColor="#9ca3af" style={multilineInputStyle} />
+              <TextInput
+                defaultValue={profileData.bio}
+                onChangeText={(v) => {
+                  draftBio.current = v
+                }}
+                multiline
+                textAlignVertical="top"
+                placeholderTextColor="#9ca3af"
+                style={multilineInputStyle}
+              />
             ) : (
-              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor, lineHeight: 22 }}>{profileData.bio || '—'}</Text>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 15,
+                  color: mutedTextColor,
+                  lineHeight: 22,
+                }}
+              >
+                {profileData.bio || '—'}
+              </Text>
             )}
-            {errors.bio && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{errors.bio}</Text>}
+            {errors.bio && (
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 13,
+                  color: '#DC2626',
+                  marginTop: 6,
+                }}
+              >
+                {errors.bio}
+              </Text>
+            )}
           </View>
           <View>
             <Text style={labelStyle}>Birthday</Text>
             {isEditing ? (
               <BirthdatePicker
                 value={draftBirthday.current ?? undefined}
-                onChange={(d: Date) => { draftBirthday.current = d }}
+                onChange={(d: Date) => {
+                  draftBirthday.current = d
+                }}
               />
             ) : (
-              <Text style={{ fontFamily: 'Inter-Medium', fontSize: 16, color: textColor, lineHeight: 24 }}>{formatBirthday(profileData.birthday) || '—'}</Text>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Medium',
+                  fontSize: 16,
+                  color: textColor,
+                  lineHeight: 24,
+                }}
+              >
+                {formatBirthday(profileData.birthday) || '—'}
+              </Text>
             )}
-            {errors.birthday && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{errors.birthday}</Text>}
+            {errors.birthday && (
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 13,
+                  color: '#DC2626',
+                  marginTop: 6,
+                }}
+              >
+                {errors.birthday}
+              </Text>
+            )}
           </View>
 
           <View>
-            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: labelColor, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>
+            <Text
+              style={{
+                fontFamily: 'Inter-SemiBold',
+                fontSize: 12,
+                color: labelColor,
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+                marginBottom: 12,
+              }}
+            >
               Interests
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -274,41 +392,84 @@ export default function Profile() {
                     onPress={() => handlePreferenceToggle(pref)}
                     disabled={!isEditing}
                     style={{
-                      paddingHorizontal: 18, paddingVertical: 12, borderRadius: 100, minHeight: 44, justifyContent: 'center',
-                      backgroundColor: selected ? '#C2410C' : chipBg, opacity: !isEditing && !selected ? 0.5 : 1,
+                      paddingHorizontal: 18,
+                      paddingVertical: 12,
+                      borderRadius: 100,
+                      minHeight: 44,
+                      justifyContent: 'center',
+                      backgroundColor: selected ? '#C2410C' : chipBg,
+                      opacity: !isEditing && !selected ? 0.5 : 1,
                     }}
                   >
-                    <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: selected ? '#FFFFFF' : mutedTextColor }}>{pref}</Text>
+                    <Text
+                      style={{
+                        fontFamily: 'Inter-SemiBold',
+                        fontSize: 14,
+                        color: selected ? '#FFFFFF' : mutedTextColor,
+                      }}
+                    >
+                      {pref}
+                    </Text>
                   </Pressable>
                 )
               })}
             </View>
-            {errors.preferences && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}>{errors.preferences}</Text>}
+            {errors.preferences && (
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 13,
+                  color: '#DC2626',
+                  marginTop: 8,
+                }}
+              >
+                {errors.preferences}
+              </Text>
+            )}
           </View>
 
           {isEditing && (
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
               <Pressable
                 onPress={handleCancel}
-                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, minHeight: 48, backgroundColor: isDark ? '#262626' : '#F3F0ED', alignItems: 'center', justifyContent: 'center' }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  minHeight: 48,
+                  backgroundColor: isDark ? '#262626' : '#F3F0ED',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: textColor }}>Cancel</Text>
+                <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: textColor }}>
+                  Cancel
+                </Text>
               </Pressable>
               <Pressable
                 onPress={handleSave}
                 disabled={isSaving}
-                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, minHeight: 48, backgroundColor: '#C2410C', alignItems: 'center', justifyContent: 'center' }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  minHeight: 48,
+                  backgroundColor: '#C2410C',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
                 {isSaving ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#FFFFFF' }}>Save Changes</Text>
+                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#FFFFFF' }}>
+                    Save Changes
+                  </Text>
                 )}
               </Pressable>
             </View>
           )}
         </View>
-
       </ScrollView>
     )
   }
@@ -322,11 +483,34 @@ export default function Profile() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
-      <View style={{ maxWidth: 900, width: '100%', alignSelf: 'center', padding: isNarrowWeb ? 20 : 40, paddingHorizontal: webPaddingH, gap: isNarrowWeb ? 24 : 36 }}>
+      <View
+        style={{
+          maxWidth: 900,
+          width: '100%',
+          alignSelf: 'center',
+          padding: isNarrowWeb ? 20 : 40,
+          paddingHorizontal: webPaddingH,
+          gap: isNarrowWeb ? 24 : 36,
+        }}
+      >
         {/* Header row */}
-        <View style={{ flexDirection: isNarrowWeb ? 'column' : 'row', justifyContent: 'space-between', alignItems: isNarrowWeb ? 'stretch' : 'flex-start', gap: isNarrowWeb ? 16 : 0 }}>
+        <View
+          style={{
+            flexDirection: isNarrowWeb ? 'column' : 'row',
+            justifyContent: 'space-between',
+            alignItems: isNarrowWeb ? 'stretch' : 'flex-start',
+            gap: isNarrowWeb ? 16 : 0,
+          }}
+        >
           <View style={{ gap: 4 }}>
-            <Text style={{ fontFamily: 'Inter-Bold', fontSize: isNarrowWeb ? 24 : 28, color: textColor, letterSpacing: -0.5 }}>
+            <Text
+              style={{
+                fontFamily: 'Inter-Bold',
+                fontSize: isNarrowWeb ? 24 : 28,
+                color: textColor,
+                letterSpacing: -0.5,
+              }}
+            >
               Profile
             </Text>
             <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor }}>
@@ -337,9 +521,13 @@ export default function Profile() {
             onPress={isEditing ? handleSave : handleEdit}
             disabled={isSaving}
             style={{
-              paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, minHeight: 44,
+              paddingHorizontal: 24,
+              paddingVertical: 12,
+              borderRadius: 10,
+              minHeight: 44,
               backgroundColor: isEditing ? '#C2410C' : '#1C1917',
-              alignItems: 'center', justifyContent: 'center',
+              alignItems: 'center',
+              justifyContent: 'center',
               alignSelf: isNarrowWeb ? 'stretch' : 'auto',
             }}
           >
@@ -356,8 +544,14 @@ export default function Profile() {
         {/* Profile card */}
         <View
           style={{
-            flexDirection: isNarrowWeb ? 'column' : 'row', alignItems: 'center', gap: isNarrowWeb ? 16 : 28, padding: isNarrowWeb ? 20 : 28,
-            backgroundColor: cardBg, borderRadius: 20, borderWidth: 1, borderColor,
+            flexDirection: isNarrowWeb ? 'column' : 'row',
+            alignItems: 'center',
+            gap: isNarrowWeb ? 16 : 28,
+            padding: isNarrowWeb ? 20 : 28,
+            backgroundColor: cardBg,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor,
           }}
         >
           <View style={{ position: 'relative' }}>
@@ -368,10 +562,17 @@ export default function Profile() {
             {isEditing && (
               <Pressable
                 style={{
-                  position: 'absolute', bottom: -4, right: -4,
-                  width: 44, height: 44, borderRadius: 22,
-                  backgroundColor: '#C2410C', alignItems: 'center', justifyContent: 'center',
-                  borderWidth: 2, borderColor: cardBg,
+                  position: 'absolute',
+                  bottom: -4,
+                  right: -4,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: '#C2410C',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: cardBg,
                 }}
               >
                 <Camera size={16} color="#fff" />
@@ -379,7 +580,14 @@ export default function Profile() {
             )}
           </View>
           <View style={{ gap: 4, alignItems: isNarrowWeb ? 'center' : 'flex-start' }}>
-            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 24, color: textColor, letterSpacing: -0.3 }}>
+            <Text
+              style={{
+                fontFamily: 'Inter-SemiBold',
+                fontSize: 24,
+                color: textColor,
+                letterSpacing: -0.3,
+              }}
+            >
               {profileData.name || '—'}
             </Text>
             <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
@@ -395,16 +603,40 @@ export default function Profile() {
             <TextInput
               ref={nameRef}
               defaultValue={profileData.name}
-              onChangeText={(v) => { draftName.current = v }}
+              onChangeText={(v) => {
+                draftName.current = v
+              }}
               placeholderTextColor="#9ca3af"
               style={[inputStyle, !isEditing && hiddenStyle]}
             />
             {!isEditing && (
-              <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: cardBg, borderRadius: 12, borderWidth: 1, borderColor }}>
-                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>{profileData.name || '—'}</Text>
+              <View
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  backgroundColor: cardBg,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor,
+                }}
+              >
+                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>
+                  {profileData.name || '—'}
+                </Text>
               </View>
             )}
-            {errors.name && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{errors.name}</Text>}
+            {errors.name && (
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 13,
+                  color: '#DC2626',
+                  marginTop: 6,
+                }}
+              >
+                {errors.name}
+              </Text>
+            )}
           </View>
           <View style={{ flex: 1, gap: 8 }}>
             <Text style={labelStyle}>Birthday</Text>
@@ -412,8 +644,14 @@ export default function Profile() {
               <input
                 type="date"
                 defaultValue={toISODate(draftBirthday.current) || '2000-01-01'}
-                onChange={(e) => { draftBirthday.current = parseISODate(e.target.value) }}
-                max={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 18); return d.toISOString().split('T')[0] })()}
+                onChange={(e) => {
+                  draftBirthday.current = parseISODate(e.target.value)
+                }}
+                max={(() => {
+                  const d = new Date()
+                  d.setFullYear(d.getFullYear() - 18)
+                  return d.toISOString().split('T')[0]
+                })()}
                 style={{
                   fontFamily: 'Inter-Regular',
                   fontSize: 15,
@@ -431,11 +669,33 @@ export default function Profile() {
                 }}
               />
             ) : (
-              <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: cardBg, borderRadius: 12, borderWidth: 1, borderColor }}>
-                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>{formatBirthday(profileData.birthday) || '—'}</Text>
+              <View
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  backgroundColor: cardBg,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor,
+                }}
+              >
+                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>
+                  {formatBirthday(profileData.birthday) || '—'}
+                </Text>
               </View>
             )}
-            {errors.birthday && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{errors.birthday}</Text>}
+            {errors.birthday && (
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 13,
+                  color: '#DC2626',
+                  marginTop: 6,
+                }}
+              >
+                {errors.birthday}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -445,23 +705,59 @@ export default function Profile() {
           <TextInput
             ref={bioRef}
             defaultValue={profileData.bio}
-            onChangeText={(v) => { draftBio.current = v }}
+            onChangeText={(v) => {
+              draftBio.current = v
+            }}
             multiline
             textAlignVertical="top"
             placeholderTextColor="#9ca3af"
             style={[multilineInputStyle, !isEditing && hiddenStyle]}
           />
           {!isEditing && (
-            <View style={{ paddingHorizontal: 16, paddingVertical: 14, backgroundColor: cardBg, borderRadius: 12, borderWidth: 1, borderColor, minHeight: 80 }}>
-              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor, lineHeight: 24 }}>{profileData.bio || '—'}</Text>
+            <View
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                backgroundColor: cardBg,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor,
+                minHeight: 80,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 15,
+                  color: mutedTextColor,
+                  lineHeight: 24,
+                }}
+              >
+                {profileData.bio || '—'}
+              </Text>
             </View>
           )}
-          {errors.bio && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>{errors.bio}</Text>}
+          {errors.bio && (
+            <Text
+              style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}
+            >
+              {errors.bio}
+            </Text>
+          )}
         </View>
 
         {/* Interests */}
         <View>
-          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: labelColor, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>
+          <Text
+            style={{
+              fontFamily: 'Inter-SemiBold',
+              fontSize: 12,
+              color: labelColor,
+              letterSpacing: 1,
+              textTransform: 'uppercase',
+              marginBottom: 12,
+            }}
+          >
             Interests
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -473,28 +769,57 @@ export default function Profile() {
                   onPress={() => handlePreferenceToggle(pref)}
                   disabled={!isEditing}
                   style={{
-                    paddingHorizontal: 18, paddingVertical: 12, borderRadius: 100, minHeight: 44, justifyContent: 'center',
-                    backgroundColor: selected ? '#C2410C' : chipBg, opacity: !isEditing && !selected ? 0.5 : 1,
+                    paddingHorizontal: 18,
+                    paddingVertical: 12,
+                    borderRadius: 100,
+                    minHeight: 44,
+                    justifyContent: 'center',
+                    backgroundColor: selected ? '#C2410C' : chipBg,
+                    opacity: !isEditing && !selected ? 0.5 : 1,
                   }}
                 >
-                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: selected ? '#FFFFFF' : mutedTextColor }}>{pref}</Text>
+                  <Text
+                    style={{
+                      fontFamily: 'Inter-SemiBold',
+                      fontSize: 14,
+                      color: selected ? '#FFFFFF' : mutedTextColor,
+                    }}
+                  >
+                    {pref}
+                  </Text>
                 </Pressable>
               )
             })}
           </View>
-          {errors.preferences && <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}>{errors.preferences}</Text>}
+          {errors.preferences && (
+            <Text
+              style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}
+            >
+              {errors.preferences}
+            </Text>
+          )}
         </View>
 
         {/* Cancel button when editing */}
         {isEditing && (
           <Pressable
             onPress={handleCancel}
-            style={{ alignSelf: isNarrowWeb ? 'stretch' : 'flex-start', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, minHeight: 44, backgroundColor: isDark ? '#262626' : '#F3F0ED', alignItems: 'center', justifyContent: 'center' }}
+            style={{
+              alignSelf: isNarrowWeb ? 'stretch' : 'flex-start',
+              paddingHorizontal: 24,
+              paddingVertical: 12,
+              borderRadius: 10,
+              minHeight: 44,
+              backgroundColor: isDark ? '#262626' : '#F3F0ED',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: textColor }}>Cancel</Text>
+            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: textColor }}>
+              Cancel
+            </Text>
           </Pressable>
         )}
-
       </View>
     </ScrollView>
   )
