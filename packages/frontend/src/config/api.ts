@@ -4,7 +4,7 @@ const DEV_API_URL = Platform.OS === 'android'
   ? 'http://10.0.2.2:8787/api'
   : 'http://localhost:8787/api'
 
-const PROD_API_URL = 'https://chinmaya-janata-api.workers.dev/api'
+const PROD_API_URL = 'https://chinmaya-janata-api.chinmayajanata.workers.dev/api'
 
 const envBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim()
 
