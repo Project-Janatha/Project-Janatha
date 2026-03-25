@@ -13,7 +13,7 @@ node_modules/
 coverage/
 
 # Production builds
-dist/
+# dist/ - tracked in packages/frontend/
 build/
 .next/
 out/
