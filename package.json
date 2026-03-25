@@ -11,7 +11,7 @@
     "dev:frontend": "npm run dev --workspace=@janatha/frontend",
     "typecheck": "npm run typecheck --workspace=@janatha/backend",
     "build": "npm run typecheck && npm run build:frontend",
-    "build:frontend": "npm run build --workspace=@janatha/frontend && cp -r packages/frontend/dist dist",
+    "build:frontend": "npm run build --workspace=@janatha/frontend && cp -r packages/frontend/dist dist && cp packages/frontend/assets/images/logo.png dist/favicon.png",
     "deploy": "npm run deploy:backend && npm run deploy:frontend",
     "deploy:frontend": "npm run build:frontend && npx wrangler pages deploy dist",
     "deploy:frontend:preview": "npm run build:frontend && npx wrangler pages deploy dist --branch preview",
