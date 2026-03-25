@@ -38,7 +38,10 @@ export const app = new Hono<HonoEnv>().basePath('/api')
 
 app.onError((err, c) => {
   console.error(`[${c.req.method}] ${c.req.path} — Unhandled error:`, err)
-  return c.json({ message: 'Internal server error' }, 500)
+  const errorMessage = err instanceof Error ? err.message : String(err)
+  const stack = err instanceof Error ? err.stack : ''
+  console.error('Stack:', stack)
+  return c.json({ message: 'Internal server error', error: errorMessage }, 500)
 })
 
 // ── Global middleware ─────────────────────────────────────────────────
@@ -122,13 +125,18 @@ app.post('/userExistence', async (c) => {
 // ═══════════════════════════════════════════════════════════════════════
 
 app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
+  console.log('Register endpoint hit')
   const body = await c.req.json<{
     username: string
     password: string
   }>()
+  console.log('Parsed body:', body)
 
   const normalizedUsername = validate.username(body.username)
   const validPassword = validate.password(body.password)
+
+  console.log('normalizedUsername:', normalizedUsername)
+  console.log('validPassword:', validPassword ? 'present' : 'missing')
 
   if (!normalizedUsername || !validPassword) {
     return c.json({ message: 'Username and password are required' }, 400)
@@ -139,19 +147,26 @@ app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
   }
 
   const existingUser = await db.getUserByUsername(c.env.DB, normalizedUsername.toLowerCase())
+  console.log('existingUser:', existingUser ? 'found' : 'none')
   if (existingUser) {
     return c.json({ message: 'Username already exists' }, 409)
   }
 
+  console.log('Hashing password...')
   const hashedPassword = await hashPassword(validPassword)
+  console.log('Password hashed')
 
-  const created = await db.createUser(c.env.DB, {
-    id: crypto.randomUUID(),
-    username: normalizedUsername.toLowerCase(),
-    password: hashedPassword,
-  })
+  console.log('Creating user...')
+  console.log('DB:', c.env.DB)
+  try {
+    const created = await db.createUser(c.env.DB, {
+      id: crypto.randomUUID(),
+      username: normalizedUsername.toLowerCase(),
+      password: hashedPassword,
+    })
+    console.log('createUser result:', created)
 
-  if (!created.success) {
+    if (!created.success) {
     const status = created.error === 'User already exists' ? 409 : 500
     return c.json(
       {
@@ -168,6 +183,10 @@ app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
     { message: 'User registered successfully', username: normalizedUsername.toLowerCase() },
     201
   )
+  } catch (err: any) {
+    console.error('createUser error:', err)
+    return c.json({ message: 'Failed to create user', error: err?.message }, 500)
+  }
 })
 
 app.post('/auth/authenticate', rateLimit(5, 60_000), async (c) => {
