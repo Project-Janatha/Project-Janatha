@@ -163,8 +163,12 @@ export async function fetchCenters(): Promise<CenterData[]> {
   _centersPromise = (async () => {
     try {
       const response = await apiFetch('/centers')
-      if (!response.ok) return []
+      if (!response.ok) {
+        if (__DEV__) console.warn('[fetchCenters] Response not ok:', response.status)
+        return []
+      }
       const data = await response.json()
+      if (__DEV__) console.log('[fetchCenters] Got', data.centers?.length || 0, 'centers')
       return data.centers || []
     } catch (err: any) {
       if (__DEV__) console.warn('[fetchCenters]', err?.message || err)
@@ -412,9 +416,9 @@ export const DISCOVER_SAMPLE_EVENTS: EventDisplay[] = __DEV__
         date: tomorrowStr,
         time: '7:00 AM - 8:30 AM',
         location: 'Chinmaya Mission San Francisco',
-        address: '1 Sansome St, San Francisco, CA 94104',
+        address: '1 Hallidie Plaza, San Francisco, CA 94102',
         latitude: 37.7849,
-        longitude: -122.4094,
+        longitude: -122.4194,
         attendees: 9,
         likes: 0,
         comments: 0,
