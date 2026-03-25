@@ -239,8 +239,10 @@ app.get('/auth/verify', authMiddleware, (c) => {
 })
 
 app.post('/auth/complete-onboarding', authMiddleware, async (c) => {
+  console.log('complete-onboarding hit')
   try {
     const user = c.get('user')
+    console.log('user:', user.id, user.username)
     const body = await c.req.json<{
       firstName?: string
       lastName?: string
@@ -250,6 +252,7 @@ app.post('/auth/complete-onboarding', authMiddleware, async (c) => {
       phoneNumber?: string
       interests?: string[]
     }>()
+    console.log('body:', body)
 
     const updates: Partial<UserRow> = {}
     if (body.firstName !== undefined) updates.first_name = body.firstName
