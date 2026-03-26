@@ -3,7 +3,7 @@
 
 DELETE FROM centers;
 
-INSERT INTO centers (id, name, latitude, longitude, address, phone, is_verified) VALUES ('0', 'Chinmaya Mission West', 0, 0, 'P.O. Box 129, Piercy, CA - 95587, US', '707-247-3488', 1);
+INSERT INTO centers (id, name, latitude, longitude, address, phone, is_verified) VALUES ('0', 'Chinmaya Mission Krishnalaya', 0, 0, '83900 CA-271,, Piercy, CA - 95587, US', '707-247-3488', 1);
 INSERT INTO centers (id, name, latitude, longitude, address, phone, is_verified) VALUES ('1', 'Chinmaya Mission Trinidad - Tobago Couva', 0, 0, '#1 Swami Chinmayananada Dr., Calcutta Rd #1, McBean, CO - , US', '', 1);
 INSERT INTO centers (id, name, latitude, longitude, address, phone, is_verified) VALUES ('2', 'Chinmaya Maruti', 42.6765858, -71.1508859, '1 Union St, Andover, MA - 01810, US', '978-496-4834', 1);
 INSERT INTO centers (id, name, latitude, longitude, address, phone, is_verified) VALUES ('3', 'Chinmaya Stamford', 41.0560942, -73.5421639, '1 University Pl, Stamford, CT - 06901, US', '203-273-1262', 1);

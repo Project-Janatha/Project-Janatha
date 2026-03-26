@@ -170,8 +170,9 @@ export function TermsOfService() {
         </Text>
         <Text style={{ fontSize: 15, color: '#44403C', lineHeight: 24 }}>
           For questions about these Terms, please contact us at:{'\n'}
-          Email: support@chinmaya-janata.org{'\n'}
-          Website: chinmaya-janata.org/contact
+          Email: info@chinmayajanata.org{'\n'}
+          Website: chinmayajanata.org/contact{'\n'}
+          Address: Chinmaya Mission West, P.O. Box 129, Piercy, CA 95587
         </Text>
 
         <View style={{ marginTop: 48, paddingTop: 24, borderTopWidth: 1, borderTopColor: '#E7E5E4' }}>
