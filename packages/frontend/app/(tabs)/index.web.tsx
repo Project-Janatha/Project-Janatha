@@ -261,6 +261,7 @@ function EventPanelInner({
 
   // Propogate registration status change back to discover list
   const prevRegisteredRef = useRef<boolean | undefined>(undefined)
+
   useEffect(() => {
     if (!event) return
     if (prevRegisteredRef.current === undefined) {
@@ -268,16 +269,15 @@ function EventPanelInner({
       return
     }
     if (event.isRegistered !== prevRegisteredRef.current) {
-      onStatusChange?.(
-        event.id,
-        event.isRegistered || false,
-        event.attendees || 0,
-        event.attendeesList || []
-      )
+      const attendeesList = attendees.map(({ name, image, initials }) => ({
+        name,
+        image,
+        initials,
+      }))
+      onStatusChange?.(event.id, event.isRegistered || false, event.attendees || 0, attendeesList)
       prevRegisteredRef.current = event.isRegistered
     }
   }, [event?.isRegistered, event?.attendees, attendees, onStatusChange])
-
   const handleToggleRegistration = async () => {
     if (!user?.username) return
     try {

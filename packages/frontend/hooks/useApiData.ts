@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { API_BASE_URL } from '../src/config/api'
 import {
   fetchCenters,
   fetchCenter,
@@ -53,7 +54,7 @@ function apiEventToDisplay(e: EventData, _username?: string): EventDisplay {
     ? parsedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
     : ''
 
-  return {
+  const display: EventDisplay = {
     id: e.eventID,
     title: e.title || e.description || 'Event',
     date: dateStr,
@@ -73,6 +74,13 @@ function apiEventToDisplay(e: EventData, _username?: string): EventDisplay {
     centerId: e.centerID ?? undefined,
     createdBy: e.createdBy ?? undefined,
   }
+
+  // If we have an image URL for the event, ensure it's absolute
+  if (display.image && display.image.startsWith('/')) {
+    display.image = `${API_BASE_URL}${display.image}`
+  }
+
+  return display
 }
 
 // ── Helper: fetch all events across centers in parallel ────────────────
@@ -257,11 +265,11 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
 
         if (currentUserInAttendees) {
           // Already registered - unattend
-          const result = await unattendEvent(eventId)
+          await unattendEvent(eventId)
           setIsRegistered(false)
           // Re-fetch attendees after unregistering
           const updatedUsers = await fetchEventUsers(eventId)
-          const newAttendeesList = updatedUsers.slice(0, 4).map((u) => ({
+          const newAttendeesList = updatedUsers.map((u) => ({
             name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
             image: u.profileImage || undefined,
             initials: u.firstName
@@ -273,8 +281,8 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
               ? {
                   ...prev,
                   isRegistered: false,
-                  attendees: result.peopleAttending,
-                  attendeesList: newAttendeesList,
+                  attendees: updatedUsers.length,
+                  attendeesList: newAttendeesList.slice(0, 4),
                 }
               : null
           )
@@ -291,11 +299,11 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
           )
         } else {
           // Not registered - attend
-          const result = await attendEvent(eventId)
+          await attendEvent(eventId)
           setIsRegistered(true)
           // Re-fetch attendees after registering
           const updatedUsers = await fetchEventUsers(eventId)
-          const newAttendeesList = updatedUsers.slice(0, 4).map((u) => ({
+          const newAttendeesList = updatedUsers.map((u) => ({
             name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
             image: u.profileImage || undefined,
             initials: u.firstName
@@ -307,8 +315,8 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
               ? {
                   ...prev,
                   isRegistered: true,
-                  attendees: result.peopleAttending,
-                  attendeesList: newAttendeesList,
+                  attendees: updatedUsers.length,
+                  attendeesList: newAttendeesList.slice(0, 4),
                 }
               : null
           )
@@ -534,72 +542,8 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
   const [isLive, setIsLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let mounted = true
-    const load = async () => {
-      try {
-        setError(null)
-        const apiCenters = await fetchCenters()
-        if (!mounted) return
-
-        const discoverCenters = centersToDiscoverCenters(apiCenters)
-        if (discoverCenters.length > 0) {
-          setAllCenters(discoverCenters)
-        }
-
-        // Fetch all events from API
-        const allApiEvents = await fetchAllEvents()
-        if (!mounted) return
-
-        // Fetch attendees for each event
-        const eventsWithAttendees = await Promise.all(
-          allApiEvents.map(async (e) => {
-            const users = await fetchEventUsers(e.eventID)
-            const attendeesList = users.slice(0, 4).map((u) => ({
-              name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
-              image: u.profileImage || undefined,
-              initials: u.firstName
-                ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase()
-                : u.username.slice(0, 2).toUpperCase(),
-            }))
-            const userIsRegistered = userId ? users.some((u) => u.id === userId) : false
-            return {
-              ...e,
-              attendeesList,
-              isRegistered: userIsRegistered,
-            }
-          })
-        )
-
-        const fetchedEvents = eventsWithAttendees.map((e) => {
-          const display = apiEventToDisplay(e)
-          display.attendeesList = e.attendeesList
-          display.isRegistered = e.isRegistered
-          return display
-        })
-
-        if (fetchedEvents.length > 0) {
-          setAllEvents(fetchedEvents)
-          setIsLive(true)
-        }
-      } catch (err: any) {
-        if (mounted) {
-          const message = err?.message || 'Failed to load discover data'
-          setError(message)
-          if (__DEV__) console.warn('[useDiscoverData]', message)
-        }
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    }
-    load()
-    return () => {
-      mounted = false
-    }
-  }, [userId])
-
   const refresh = useCallback(async () => {
-    setLoading(true)
+    // Note: We don't set loading(true) here to avoid jarring UI flickers on focus
     try {
       const apiCenters = await fetchCenters()
       const discoverCenters = centersToDiscoverCenters(apiCenters)
@@ -612,7 +556,7 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
       const eventsWithAttendees = await Promise.all(
         allApiEvents.map(async (e) => {
           const users = await fetchEventUsers(e.eventID)
-          const attendeesList = users.slice(0, 4).map((u) => ({
+          const attendeesList = users.map((u) => ({
             name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
             image: u.profileImage || undefined,
             initials: u.firstName
@@ -622,8 +566,9 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
           const userIsRegistered = userId ? users.some((u) => u.id === userId) : false
           return {
             ...e,
-            attendeesList,
+            attendeesList: attendeesList.slice(0, 4),
             isRegistered: userIsRegistered,
+            peopleAttending: users.length,
           }
         })
       )
@@ -632,6 +577,7 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
         const display = apiEventToDisplay(e)
         display.attendeesList = e.attendeesList
         display.isRegistered = e.isRegistered
+        display.attendees = e.peopleAttending
         return display
       })
       if (fetchedEvents.length > 0) {
@@ -645,6 +591,10 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
       setLoading(false)
     }
   }, [userId])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
 
   const items = useMemo<DiscoverItem[]>(() => {
     const query = searchQuery.toLowerCase().trim()

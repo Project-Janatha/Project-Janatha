@@ -360,6 +360,9 @@ export async function addEventAttendee(
       .bind(eventId, now)
       .run()
 
+    // Wait briefly to ensure D1 consistency (optional, but safer in some environments)
+    // Actually, in D1, consecutive await run() calls are sequential.
+    
     return { success: true }
   } catch (err: any) {
     return { success: false, error: err?.message ?? 'Unknown error' }
@@ -418,7 +421,7 @@ export async function getEventAttendees(
       `SELECT u.* FROM users u
        JOIN event_attendees ea ON ea.user_id = u.id
        WHERE ea.event_id = ?1
-       ORDER BY ea.created_at`,
+       ORDER BY ea.created_at DESC`,
     )
     .bind(eventId)
     .all<UserRow>()

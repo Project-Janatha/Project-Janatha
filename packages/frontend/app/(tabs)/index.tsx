@@ -68,9 +68,9 @@ function AttendeeAvatars({ count, attendees }: { count: number; attendees?: Atte
               image={attendee.image}
               initials={attendee.initials}
               name={attendee.name}
-              size={16}
+              size={18}
               style={{
-                marginLeft: i === 0 ? 0 : -5,
+                marginLeft: i === 0 ? 0 : -6,
                 borderWidth: 1.5,
                 borderColor: 'white',
               }}
@@ -81,11 +81,11 @@ function AttendeeAvatars({ count, attendees }: { count: number; attendees?: Atte
             <View
               key={i}
               style={{
-                width: 16,
-                height: 16,
-                borderRadius: 8,
+                width: 18,
+                height: 18,
+                borderRadius: 9,
                 backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
-                marginLeft: i === 0 ? 0 : -5,
+                marginLeft: i === 0 ? 0 : -6,
                 borderWidth: 1.5,
                 borderColor: 'white',
               }}

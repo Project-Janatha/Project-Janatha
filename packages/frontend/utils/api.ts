@@ -218,7 +218,11 @@ export async function fetchEvent(eventID: string): Promise<EventData | null> {
     })
     if (!response.ok) return null
     const data = await response.json()
-    return data.event || null
+    const event = data.event as EventData | null
+    if (event && event.image && event.image.startsWith('/')) {
+      event.image = `${API_BASE_URL}${event.image}`
+    }
+    return event
   } catch (err: any) {
     if (__DEV__) console.warn('[fetchEvent]', err?.message || err)
     return null
@@ -247,7 +251,13 @@ export async function fetchAllEvents(): Promise<EventData[]> {
       return []
     }
     const data = await response.json()
-    return data.events || []
+    const events = (data.events || []) as EventData[]
+    return events.map((e) => {
+      if (e.image && e.image.startsWith('/')) {
+        return { ...e, image: `${API_BASE_URL}${e.image}` }
+      }
+      return e
+    })
   } catch (err: any) {
     if (__DEV__) console.warn('[fetchAllEvents]', err?.message || err)
     return []
@@ -262,7 +272,18 @@ export async function fetchEventUsers(eventID: string): Promise<UserData[]> {
     })
     if (!response.ok) return []
     const data = await response.json()
-    return data.users || []
+    const users = (data.users || []) as UserData[]
+
+    // Normalize profile images
+    return users.map((u) => {
+      if (u.profileImage && u.profileImage.startsWith('/')) {
+        return {
+          ...u,
+          profileImage: `${API_BASE_URL}${u.profileImage}`,
+        }
+      }
+      return u
+    })
   } catch (err: any) {
     if (__DEV__) console.warn('[fetchEventUsers]', err?.message || err)
     return []

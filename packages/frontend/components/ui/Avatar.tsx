@@ -11,6 +11,8 @@ interface AvatarProps {
 }
 
 export default function Avatar({ image, initials, name, size = 40, style, backgroundColor }: AvatarProps) {
+  const [imageError, setImageError] = React.useState(false)
+
   const getInitials = () => {
     if (initials) return initials
     if (name) {
@@ -26,19 +28,29 @@ export default function Avatar({ image, initials, name, size = 40, style, backgr
   const fontSize = size * 0.4
   const bgColor = backgroundColor || '#C2410C'
 
-  if (image) {
+  if (image && !imageError) {
     return (
-      <Image
-        source={{ uri: image }}
+      <View
         style={[
           {
             width: size,
             height: size,
             borderRadius: size / 2,
+            overflow: 'hidden',
           },
           style,
         ]}
-      />
+      >
+        <Image
+          source={{ uri: image }}
+          style={{
+            width: '100%',
+            height: '100%',
+          }}
+          resizeMode="cover"
+          onError={() => setImageError(true)}
+        />
+      </View>
     )
   }
 
