@@ -75,6 +75,7 @@ function apiEventToDisplay(e: EventData, _username?: string): EventDisplay {
     image: e.image ?? undefined,
     isRegistered: false, // Determined per-user at call site if needed
     centerId: e.centerID ?? undefined,
+    createdBy: e.createdBy ?? undefined,
   }
 }
 
@@ -177,7 +178,7 @@ export function useEventList() {
   return { events, loading, isLive, error }
 }
 
-export function useEventDetail(eventId: string, username?: string) {
+export function useEventDetail(eventId: string, username?: string, userId?: string) {
   const [event, setEvent] = useState<EventDisplay | null>(null)
   const [attendees, setAttendees] = useState<{ name: string; subtitle: string; image: string }[]>([])
   const [messages, setMessages] = useState<{ author: string; timestamp: string; text: string; image: string }[]>([])
@@ -185,6 +186,7 @@ export function useEventDetail(eventId: string, username?: string) {
   const [isLive, setIsLive] = useState(false)
   const [isToggling, setIsToggling] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
+  const [isCreator, setIsCreator] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -204,10 +206,14 @@ export function useEventDetail(eventId: string, username?: string) {
             userIsRegistered = userEvents.some((e) => e.eventID === eventId)
           }
 
+          // Check if user is the creator
+          const userIsCreator = !!(userId && apiEvent.createdBy === userId)
+
           const display = apiEventToDisplay(apiEvent)
           display.isRegistered = userIsRegistered
           setEvent(display)
           setIsRegistered(userIsRegistered)
+          setIsCreator(userIsCreator)
           setIsLive(true)
 
           const users = await fetchEventUsers(eventId)
@@ -265,7 +271,7 @@ export function useEventDetail(eventId: string, username?: string) {
     }
   }, [event, eventId, isRegistered])
 
-  return { event, attendees, messages, loading, isLive, toggleRegistration, isToggling, error }
+  return { event, attendees, messages, loading, isLive, toggleRegistration, isToggling, isCreator, error }
 }
 
 export function useWeekCalendar() {

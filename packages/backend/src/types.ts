@@ -143,6 +143,7 @@ export interface EventApiResponse {
   pointOfContact: string | null
   image: string | null
   category: number | null
+  createdBy: string | null
   createdAt: string
   updatedAt: string
 }
@@ -218,6 +219,7 @@ export function eventRowToApi(row: EventRow): EventApiResponse {
     pointOfContact: row.point_of_contact,
     image: row.image,
     category: row.category,
+    createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }

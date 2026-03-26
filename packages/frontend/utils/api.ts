@@ -36,6 +36,7 @@ export interface EventData {
   pointOfContact: string | null
   image: string | null
   category: number | null
+  createdBy: string | null
   createdAt?: string
   updatedAt?: string
 }
@@ -88,6 +89,7 @@ export interface EventDisplay {
   isRegistered?: boolean
   centerName?: string
   centerId?: string
+  createdBy?: string
 }
 
 export interface DiscoverCenter {
@@ -301,7 +303,7 @@ export async function createEvent(data: {
   image?: string
   category?: number
 }): Promise<{ id: string; tier: number }> {
-  const response = await authFetch('/addevent', {
+  const response = await authFetch('/addEvent', {
     method: 'POST',
     body: JSON.stringify(data),
   })

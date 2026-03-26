@@ -417,13 +417,15 @@ export default function EventDetailPage() {
   const router = useRouter()
   const { user } = useUser()
   const [activeTab, setActiveTab] = useState('Details')
-  const { event, attendees, messages, loading, toggleRegistration, isToggling } = useEventDetail(
+  const { event, attendees, messages, loading, toggleRegistration, isToggling, isCreator } = useEventDetail(
     id as string,
-    user?.username
+    user?.username,
+    user?.id
   )
   const colors = useDetailColors()
 
   const isAdmin = user?.username === ADMIN_NAME
+  const canEdit = isAdmin || isCreator
 
   const handleToggleRegistration = async () => {
     if (!user?.username) return
@@ -477,7 +479,7 @@ export default function EventDetailPage() {
           title={event.title}
           isPast={false}
           isRegistered
-          isAdmin={isAdmin}
+          isAdmin={canEdit}
           eventId={id as string}
           onBack={() => router.back()}
           colors={colors}
@@ -619,7 +621,7 @@ export default function EventDetailPage() {
       <HeaderBar
         title={event.title}
         isPast={isPast}
-        isAdmin={isAdmin}
+        isAdmin={canEdit}
         eventId={id as string}
         onBack={() => router.back()}
         colors={colors}

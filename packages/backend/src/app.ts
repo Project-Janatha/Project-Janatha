@@ -614,7 +614,7 @@ app.post('/getUserEvents', authMiddleware, async (c) => {
 // EVENT ROUTES
 // ═══════════════════════════════════════════════════════════════════════
 
-app.post('/addevent', authMiddleware, async (c) => {
+app.post('/addEvent', authMiddleware, async (c) => {
   const user = c.get('user')
   const data = await c.req.json<{
     title?: string
@@ -750,11 +750,11 @@ app.post('/updateEvent', authMiddleware, async (c) => {
     return c.json({ message: 'Event not found' }, 404)
   }
 
-  // Allow admin or the event host (pointOfContact) to edit
+  // Allow admin or the event creator to edit
   const isAdmin = user.username === ADMIN_NAME
-  const isHost = existing.point_of_contact === user.username
-  if (!isAdmin && !isHost) {
-    return c.json({ message: 'Insufficient permissions - only admin or host can edit' }, 401)
+  const isCreator = existing.created_by === user.id
+  if (!isAdmin && !isCreator) {
+    return c.json({ message: 'Insufficient permissions - only admin or event creator can edit' }, 401)
   }
 
   const updates: Partial<EventRow> = {}
