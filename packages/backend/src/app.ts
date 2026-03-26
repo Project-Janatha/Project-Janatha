@@ -441,7 +441,7 @@ app.post('/removeCenter', authMiddleware, async (c) => {
   return c.json({ message: 'Removal failed' }, 500)
 })
 
-app.post('/fetchAllCenters', cacheControl(30), async (c) => {
+app.post('/fetchAllCenters', async (c) => {
   const centers = await db.getAllCenters(c.env.DB)
   return c.json({
     message: 'Successful',
@@ -449,7 +449,7 @@ app.post('/fetchAllCenters', cacheControl(30), async (c) => {
   })
 })
 
-app.post('/fetchCenter', cacheControl(30), async (c) => {
+app.post('/fetchCenter', async (c) => {
   const { centerID } = await c.req.json<{ centerID: string }>()
   if (!centerID) {
     return c.json({ message: 'Malformed centerID' }, 400)
@@ -712,7 +712,7 @@ app.post('/removeEvent', authMiddleware, async (c) => {
   return c.json({ message: 'Failed to remove event' }, 500)
 })
 
-app.post('/fetchEvent', cacheControl(30), async (c) => {
+app.post('/fetchEvent', async (c) => {
   const { id } = await c.req.json<{ id: string }>()
   const event = await db.getEventById(c.env.DB, id)
   if (!event) {
@@ -763,7 +763,7 @@ app.post('/updateEvent', authMiddleware, async (c) => {
   return c.json({ message: 'Update failed' }, 400)
 })
 
-app.post('/getEventUsers', cacheControl(30), async (c) => {
+app.post('/getEventUsers', async (c) => {
   const { id } = await c.req.json<{ id: string }>()
   if (!id) {
     return c.json({ message: 'Bad request - missing id' }, 400)
@@ -838,7 +838,7 @@ app.post('/unattendEvent', authMiddleware, async (c) => {
   })
 })
 
-app.post('/fetchEventsByCenter', cacheControl(30), async (c) => {
+app.post('/fetchEventsByCenter', async (c) => {
   const { centerID } = await c.req.json<{ centerID: string }>()
   const events = await db.getEventsByCenterId(c.env.DB, centerID)
   return c.json({

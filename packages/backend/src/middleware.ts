@@ -155,12 +155,17 @@ export const validate = {
 export function cacheControl(maxAge: number, staleWhileRevalidate = 60): MiddlewareHandler {
   return async (c, next) => {
     await next()
-    // Only cache successful responses
-    if (c.res.status >= 200 && c.res.status < 300) {
+    // Only cache successful GET responses
+    if (c.req.method === 'GET' && c.res.status >= 200 && c.res.status < 300) {
       c.header(
         'Cache-Control',
         `public, max-age=${maxAge}, s-maxage=${maxAge}, stale-while-revalidate=${staleWhileRevalidate}`,
       )
+    } else {
+      // Ensure no caching for POST/authenticated requests if they happen to use this middleware
+      c.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+      c.header('Pragma', 'no-cache')
+      c.header('Expires', '0')
     }
   }
 }

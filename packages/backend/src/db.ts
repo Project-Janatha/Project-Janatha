@@ -342,20 +342,24 @@ export async function addEventAttendee(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const now = new Date().toISOString()
-    await db.batch([
-      db
-        .prepare(
-          'INSERT OR IGNORE INTO event_attendees (event_id, user_id, created_at) VALUES (?1, ?2, ?3)',
-        )
-        .bind(eventId, userId, now),
-      db
-        .prepare(
-          `UPDATE events SET people_attending = (
-            SELECT COUNT(*) FROM event_attendees WHERE event_id = ?1
-          ), updated_at = ?2 WHERE id = ?1`,
-        )
-        .bind(eventId, now),
-    ])
+    // First ensure the record exists
+    await db
+      .prepare(
+        'INSERT OR IGNORE INTO event_attendees (event_id, user_id, created_at) VALUES (?1, ?2, ?3)',
+      )
+      .bind(eventId, userId, now)
+      .run()
+
+    // Then update the count from the actual table
+    await db
+      .prepare(
+        `UPDATE events SET people_attending = (
+          SELECT COUNT(*) FROM event_attendees WHERE event_id = ?1
+        ), updated_at = ?2 WHERE id = ?1`,
+      )
+      .bind(eventId, now)
+      .run()
+
     return { success: true }
   } catch (err: any) {
     return { success: false, error: err?.message ?? 'Unknown error' }
@@ -369,18 +373,22 @@ export async function removeEventAttendee(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const now = new Date().toISOString()
-    await db.batch([
-      db
-        .prepare('DELETE FROM event_attendees WHERE event_id = ?1 AND user_id = ?2')
-        .bind(eventId, userId),
-      db
-        .prepare(
-          `UPDATE events SET people_attending = (
-            SELECT COUNT(*) FROM event_attendees WHERE event_id = ?1
-          ), updated_at = ?2 WHERE id = ?1`,
-        )
-        .bind(eventId, now),
-    ])
+    // First remove the record
+    await db
+      .prepare('DELETE FROM event_attendees WHERE event_id = ?1 AND user_id = ?2')
+      .bind(eventId, userId)
+      .run()
+
+    // Then update the count from the actual table
+    await db
+      .prepare(
+        `UPDATE events SET people_attending = (
+          SELECT COUNT(*) FROM event_attendees WHERE event_id = ?1
+        ), updated_at = ?2 WHERE id = ?1`,
+      )
+      .bind(eventId, now)
+      .run()
+
     return { success: true }
   } catch (err: any) {
     return { success: false, error: err?.message ?? 'Unknown error' }
