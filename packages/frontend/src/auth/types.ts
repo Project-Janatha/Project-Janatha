@@ -9,6 +9,7 @@ export interface User {
   dateOfBirth?: string | null
   phoneNumber?: string | null
   profileImage?: string | null
+  bio?: string | null
   centerID?: string | null
   points?: number
   isVerified?: boolean
@@ -47,6 +48,7 @@ export interface UpdateProfileRequest {
   centerID?: string
   profileComplete?: boolean
   profileImage?: string
+  bio?: string
   phoneNumber?: string
   interests?: string[]
   dateOfBirth?: string

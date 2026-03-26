@@ -21,7 +21,7 @@ function Select({ label, value, options, onChange, className }) {
         {/* This is the "select" box */}
         <Listbox.Button
           aria-label={label}
-          className="relative w-full font-inter text-base bg-stone-100 dark:bg-stone-800 text-content dark:text-content-dark py-3 px-4 rounded-lg border-2 border-transparent focus:border-primary outline-none text-left"
+          className="relative w-full font-inter text-base bg-stone-100 dark:bg-stone-800 text-content dark:text-content-dark py-[14px] px-4 rounded-lg border-2 border-transparent focus:border-primary outline-none text-left"
         >
           <span className="block truncate">{selectedOption?.label}</span>
           {/* A basic arrow. Replace with an SVG icon for best results. */}
@@ -37,7 +37,7 @@ function Select({ label, value, options, onChange, className }) {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <Listbox.Options className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-background dark:bg-background-dark py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <Listbox.Options className="mt-1 max-h-60 w-full overflow-auto rounded-md bg-background dark:bg-background-dark py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
             {options
               .filter((option) => option.value !== null) // <-- filter out placeholder
               .map((option) => (
@@ -88,11 +88,20 @@ export default function BirthdatePicker({ value, onChange }) {
     ...range(1, daysInMonth).map((d) => ({ label: d, value: d })),
   ]
 
-  // Set initial state to null for placeholders
-  const [dateParts, setDateParts] = useState({
-    year: null,
-    month: null,
-    day: null,
+  // Set initial state to value prop if provided, otherwise null for placeholders
+  const [dateParts, setDateParts] = useState(() => {
+    if (value) {
+      return {
+        year: value.getFullYear(),
+        month: value.getMonth(),
+        day: value.getDate(),
+      }
+    }
+    return {
+      year: null,
+      month: null,
+      day: null,
+    }
   })
 
   const handlePartChange = (part, newValue) => {
@@ -114,7 +123,7 @@ export default function BirthdatePicker({ value, onChange }) {
   }
 
   return (
-    <View className="p-4 w-full max-w-[480px]" style={{ overflow: 'visible', zIndex: 20 }}>
+    <View className="w-full max-w-[480px]" style={{ overflow: 'visible', zIndex: 50 }}>
       <View className="flex-row justify-between space-x-2">
         {/* Month */}
         <Select
