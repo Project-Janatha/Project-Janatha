@@ -84,12 +84,11 @@ function RootLayoutNav() {
     const inAuthGroup = pathname.startsWith('/auth')
     const inOnboardingGroup = pathname.startsWith('/onboarding')
     const inLandingPage = pathname === '/landing'
-    const inLegalPages = pathname === '/privacy' || pathname === '/terms' || pathname === '/cookies'
 
     if (!isAuthenticated) {
       // User is NOT authenticated — show landing page by default
-      // But allow access to legal pages without auth
-      if (!inAuthGroup && !inLandingPage && !inLegalPages) {
+      // But allow access to legal pages and auth without redirect
+      if (!inAuthGroup && !inLandingPage && !pathname.startsWith('/privacy') && !pathname.startsWith('/terms') && !pathname.startsWith('/cookies')) {
         router.replace('/landing')
       }
     } else {
@@ -164,15 +163,15 @@ function RootLayoutNav() {
         />
         <Stack.Screen
           name="privacy"
-          options={{ headerShown: true, title: 'Privacy Policy' }}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="terms"
-          options={{ headerShown: true, title: 'Terms of Service' }}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="cookies"
-          options={{ headerShown: true, title: 'Cookie Policy' }}
+          options={{ headerShown: false }}
         />
       </Stack>
     </NavigationThemeProvider>

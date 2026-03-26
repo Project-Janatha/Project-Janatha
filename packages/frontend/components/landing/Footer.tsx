@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, Pressable, useWindowDimensions, Linking } from 'react-native'
+import { View, Text, Pressable, useWindowDimensions } from 'react-native'
 import { useRouter } from 'expo-router'
 import Logo from '../ui/Logo'
 
@@ -48,14 +48,9 @@ export function Footer() {
   const isMobile = width < 768
   const isTablet = width >= 768 && width < 1024
 
-  const handleLink = (url?: string) => {
-    if (!url) return
-    if (url.startsWith('/')) {
-      router.push(url as any)
-    } else {
-      Linking.openURL(url)
-    }
-  }
+  const handlePrivacy = () => router.push('/privacy')
+  const handleTerms = () => router.push('/terms')
+  const handleCookies = () => router.push('/cookies')
 
   return (
     <View style={{ backgroundColor: '#FAFAF7' }}>
@@ -110,20 +105,15 @@ export function Footer() {
                 {column.title}
               </Text>
               <View style={{ gap: 10 }}>
-                {column.links.map((link) => (
-                  <Pressable key={link.label} onPress={() => handleLink(link.url)}>
-                    <Text
-                      style={{
-                        fontFamily: 'Inter, sans-serif',
-                        fontWeight: '400',
-                        fontSize: 14,
-                        color: '#78716C',
-                      }}
-                    >
-                      {link.label}
-                    </Text>
-                  </Pressable>
-                ))}
+                <Pressable onPress={handlePrivacy}>
+                  <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: 14, color: '#78716C' }}>Privacy Policy</Text>
+                </Pressable>
+                <Pressable onPress={handleTerms}>
+                  <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: 14, color: '#78716C' }}>Terms of Service</Text>
+                </Pressable>
+                <Pressable onPress={handleCookies}>
+                  <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: 14, color: '#78716C' }}>Cookie Policy</Text>
+                </Pressable>
               </View>
             </View>
           ))}
