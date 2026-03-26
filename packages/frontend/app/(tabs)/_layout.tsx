@@ -5,6 +5,7 @@ import { useUser, useThemeContext } from '../../components/contexts'
 import { User, Settings, LogOut, Plus } from 'lucide-react-native'
 import SettingsPanel from '../../components/SettingsPanel'
 import Logo from '../../components/ui/Logo'
+import { Avatar } from '../../components/ui'
 
 /**
  * TabLayout Component - The main layout for the tab-based navigation.
@@ -116,12 +117,6 @@ if (Platform.OS === 'web') {
     const displayName =
       user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || ''
     const profileImage = user?.profileImage
-    const getMobileInitials = () => {
-      if (user?.firstName && user?.lastName) return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-      if (user?.firstName) return user.firstName[0].toUpperCase()
-      if (user?.username) return user.username[0].toUpperCase()
-      return '?'
-    }
 
     return (
       <View style={{ position: 'relative' }}>
@@ -129,25 +124,11 @@ if (Platform.OS === 'web') {
           className="mr-4 p-2"
           onPress={() => setSettingsVisible(!settingsVisible)}
         >
-          {profileImage ? (
-            <Image
-              source={{ uri: profileImage }}
-              style={{ width: 26, height: 26, borderRadius: 13 }}
-            />
-          ) : (
-            <View style={{ 
-              width: 26, 
-              height: 26, 
-              borderRadius: 13, 
-              backgroundColor: '#C2410C', 
-              alignItems: 'center', 
-              justifyContent: 'center' 
-            }}>
-              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '600' }}>
-                {getMobileInitials()}
-              </Text>
-            </View>
-          )}
+          <Avatar
+            image={profileImage || undefined}
+            name={displayName}
+            size={26}
+          />
         </Pressable>
 
         {settingsVisible && (
@@ -180,26 +161,12 @@ if (Platform.OS === 'web') {
             >
 {/* Profile info */}
               <View className="flex-row items-center px-2.5 py-3" style={{ borderBottomWidth: 1, borderBottomColor: isDark ? '#262626' : '#F0EDE8', marginBottom: 4 }}>
-                {profileImage ? (
-                  <Image
-                    source={{ uri: profileImage }}
-                    className="w-10 h-10 rounded-full mr-3 bg-gray-300"
-                  />
-                ) : (
-                  <View style={{ 
-                    width: 40, 
-                    height: 40, 
-                    borderRadius: 20, 
-                    backgroundColor: '#C2410C', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    marginRight: 12
-                  }}>
-                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-                      {getMobileInitials()}
-                    </Text>
-                  </View>
-                )}
+                <Avatar
+                  image={profileImage || undefined}
+                  name={displayName}
+                  size={40}
+                  style={{ marginRight: 12 }}
+                />
                 <View className="flex-1">
                   <Text className="text-[15px] font-inter-semibold text-content dark:text-content-dark">
                     {displayName}

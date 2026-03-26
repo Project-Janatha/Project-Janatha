@@ -180,7 +180,7 @@ export function useEventList() {
 
 export function useEventDetail(eventId: string, username?: string, userId?: string) {
   const [event, setEvent] = useState<EventDisplay | null>(null)
-  const [attendees, setAttendees] = useState<{ name: string; subtitle: string; image: string }[]>([])
+  const [attendees, setAttendees] = useState<{ name: string; subtitle: string; image?: string; initials: string }[]>([])
   const [messages, setMessages] = useState<{ author: string; timestamp: string; text: string; image: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
@@ -216,7 +216,8 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
             setAttendees(users.map((u) => ({
               name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
               subtitle: '',
-              image: u.profileImage || `https://i.pravatar.cc/100?u=${u.username}`,
+              image: undefined, // Will use initials fallback in UI
+              initials: u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : u.username.slice(0, 2).toUpperCase(),
             })))
             // Check if current user is in attendees list
             const userIsRegistered = userId ? users.some((u) => u.id === userId) : false

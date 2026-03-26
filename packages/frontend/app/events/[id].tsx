@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ChevronLeft, Share2, MapPin, Users, User, Clock, CheckCircle, Info, Pencil } from 'lucide-react-native'
 import { useEventDetail } from '../../hooks/useApiData'
 import { useUser } from '../../components/contexts'
-import { Badge, UnderlineTabBar } from '../../components/ui'
+import { Badge, UnderlineTabBar, Avatar } from '../../components/ui'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
 
 const ADMIN_NAME = 'brahman'
@@ -90,18 +90,18 @@ function MetaIcon({
   )
 }
 
-function AvatarStack({ attendees, colors }: { attendees: { image: string }[]; colors: DetailColors }) {
+function AvatarStack({ attendees, colors }: { attendees: { image?: string; initials?: string; name: string }[]; colors: DetailColors }) {
   const shown = attendees.slice(0, 3)
   return (
     <View style={{ flexDirection: 'row', marginLeft: 4 }}>
       {shown.map((a, i) => (
-        <Image
+        <Avatar
           key={i}
-          source={{ uri: a.image }}
+          image={a.image}
+          initials={a.initials}
+          name={a.name}
+          size={24}
           style={{
-            width: 24,
-            height: 24,
-            borderRadius: 12,
             borderWidth: 2,
             borderColor: colors.avatarBorder,
             marginLeft: i === 0 ? 0 : -8,
@@ -211,7 +211,7 @@ function MetaSection({
   colors,
 }: {
   event: { location: string; address?: string; attendees: number; pointOfContact?: string }
-  attendees: { image: string }[]
+  attendees: { image?: string; initials?: string; name: string; subtitle: string }[]
   isPast?: boolean
   colors: DetailColors
 }) {
@@ -537,9 +537,11 @@ export default function EventDetailPage() {
                     key={index}
                     style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 12 }}
                   >
-                    <Image
-                      source={{ uri: attendee.image }}
-                      style={{ width: 42, height: 42, borderRadius: 21 }}
+                    <Avatar
+                      image={attendee.image}
+                      initials={attendee.initials}
+                      name={attendee.name}
+                      size={42}
                     />
                     <View style={{ flex: 1, gap: 2 }}>
                       <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: colors.text }}>
