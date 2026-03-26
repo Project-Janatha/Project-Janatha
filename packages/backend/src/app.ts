@@ -615,6 +615,7 @@ app.post('/getUserEvents', authMiddleware, async (c) => {
 // ═══════════════════════════════════════════════════════════════════════
 
 app.post('/addevent', authMiddleware, async (c) => {
+  const user = c.get('user')
   const data = await c.req.json<{
     title?: string
     description?: string
@@ -683,6 +684,7 @@ app.post('/addevent', authMiddleware, async (c) => {
     point_of_contact: data.pointOfContact ?? null,
     image: validImage ?? null,
     category: data.category ?? null,
+    created_by: user.id,
   })
 
   if (!result.success) {
@@ -735,9 +737,6 @@ app.post('/fetchEvent', cacheControl(30), async (c) => {
 
 app.post('/updateEvent', authMiddleware, async (c) => {
   const user = c.get('user')
-  if (user.username !== ADMIN_NAME) {
-    return c.json({ message: 'Insufficient permissions' }, 401)
-  }
 
   const { eventJSON } = await c.req.json<{ eventJSON: any }>()
 
@@ -749,6 +748,13 @@ app.post('/updateEvent', authMiddleware, async (c) => {
   const existing = await db.getEventById(c.env.DB, eventId)
   if (!existing) {
     return c.json({ message: 'Event not found' }, 404)
+  }
+
+  // Allow admin or the event host (pointOfContact) to edit
+  const isAdmin = user.username === ADMIN_NAME
+  const isHost = existing.point_of_contact === user.username
+  if (!isAdmin && !isHost) {
+    return c.json({ message: 'Insufficient permissions - only admin or host can edit' }, 401)
   }
 
   const updates: Partial<EventRow> = {}
@@ -799,6 +805,13 @@ app.post('/attendEvent', authMiddleware, async (c) => {
   const event = await db.getEventById(c.env.DB, eventID)
   if (!event) {
     return c.json({ message: 'Event not found' }, 404)
+  }
+
+  // Check if already registered
+  const attendees = await db.getEventAttendees(c.env.DB, eventID)
+  const alreadyRegistered = attendees.some((a) => a.id === user.id)
+  if (alreadyRegistered) {
+    return c.json({ message: 'Already registered for this event' }, 400)
   }
 
   const result = await db.addEventAttendee(c.env.DB, eventID, user.id)

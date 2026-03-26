@@ -70,6 +70,7 @@ export interface EventRow {
   point_of_contact: string | null
   image: string | null
   category: number | null
+  created_by: string | null
   created_at: string
   updated_at: string
 }

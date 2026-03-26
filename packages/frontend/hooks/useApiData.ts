@@ -177,10 +177,10 @@ export function useEventList() {
   return { events, loading, isLive, error }
 }
 
-export function useEventDetail(eventId: string) {
+export function useEventDetail(eventId: string, username?: string) {
   const [event, setEvent] = useState<EventDisplay | null>(null)
-  const [attendees, setAttendees] = useState(SAMPLE_ATTENDEES)
-  const [messages, setMessages] = useState(SAMPLE_MESSAGES)
+  const [attendees, setAttendees] = useState<{ name: string; subtitle: string; image: string }[]>([])
+  const [messages, setMessages] = useState<{ author: string; timestamp: string; text: string; image: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
   const [isToggling, setIsToggling] = useState(false)
@@ -197,8 +197,17 @@ export function useEventDetail(eventId: string) {
         if (!mounted) return
 
         if (apiEvent) {
+          // Check if user is registered for this event
+          let userIsRegistered = false
+          if (username) {
+            const userEvents = await getUserEvents(username)
+            userIsRegistered = userEvents.some((e) => e.eventID === eventId)
+          }
+
           const display = apiEventToDisplay(apiEvent)
+          display.isRegistered = userIsRegistered
           setEvent(display)
+          setIsRegistered(userIsRegistered)
           setIsLive(true)
 
           const users = await fetchEventUsers(eventId)
@@ -223,7 +232,7 @@ export function useEventDetail(eventId: string) {
 
     load()
     return () => { mounted = false }
-  }, [eventId])
+  }, [eventId, username])
 
   const toggleRegistration = useCallback(async (_username: string) => {
     if (!event) return

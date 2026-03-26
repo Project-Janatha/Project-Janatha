@@ -418,7 +418,8 @@ export default function EventDetailPage() {
   const { user } = useUser()
   const [activeTab, setActiveTab] = useState('Details')
   const { event, attendees, messages, loading, toggleRegistration, isToggling } = useEventDetail(
-    id as string
+    id as string,
+    user?.username
   )
   const colors = useDetailColors()
 
