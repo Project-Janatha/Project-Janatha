@@ -89,7 +89,7 @@ export default function Settings() {
           <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl overflow-hidden">
             <Pressable
               className="flex-row items-center justify-between p-5 border-b border-stone-200 dark:border-stone-700 active:opacity-70"
-              onPress={() => Linking.openURL('https://chinmayajanata.org/privacy')}
+              onPress={() => router.push('/privacy')}
             >
               <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
                 Privacy Policy

@@ -84,10 +84,13 @@ function RootLayoutNav() {
     const inAuthGroup = pathname.startsWith('/auth')
     const inOnboardingGroup = pathname.startsWith('/onboarding')
     const inLandingPage = pathname === '/landing'
+    const inPrivacyPage = pathname === '/privacy'
+    const inLegalPages = inPrivacyPage || pathname === '/terms'
 
     if (!isAuthenticated) {
       // User is NOT authenticated — show landing page by default
-      if (!inAuthGroup && !inLandingPage) {
+      // But allow access to legal pages without auth
+      if (!inAuthGroup && !inLandingPage && !inLegalPages) {
         router.replace('/landing')
       }
     } else {
@@ -159,6 +162,10 @@ function RootLayoutNav() {
           options={{
             headerShown: false,
           }}
+        />
+        <Stack.Screen
+          name="privacy"
+          options={{ headerShown: true, title: 'Privacy Policy' }}
         />
       </Stack>
     </NavigationThemeProvider>
