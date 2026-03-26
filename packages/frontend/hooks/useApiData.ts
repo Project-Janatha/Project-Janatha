@@ -510,18 +510,23 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
         const eventsWithAttendees = await Promise.all(
           allApiEvents.map(async (e) => {
             const users = await fetchEventUsers(e.eventID)
+            const attendeesList = users.slice(0, 4).map((u) => ({
+              name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
+              image: u.profileImage || undefined,
+              initials: u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : u.username.slice(0, 2).toUpperCase(),
+            }))
             return {
               ...e,
-              attendeesList: users.slice(0, 4).map((u) => ({
-                name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
-                image: u.profileImage || undefined,
-                initials: u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : u.username.slice(0, 2).toUpperCase(),
-              })),
+              attendeesList,
             }
           })
         )
 
-        const fetchedEvents = eventsWithAttendees.map((e) => apiEventToDisplay(e))
+        const fetchedEvents = eventsWithAttendees.map((e) => {
+          const display = apiEventToDisplay(e)
+          display.attendeesList = e.attendeesList
+          return display
+        })
 
         if (fetchedEvents.length > 0) {
           setAllEvents(fetchedEvents)
@@ -555,18 +560,23 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
       const eventsWithAttendees = await Promise.all(
         allApiEvents.map(async (e) => {
           const users = await fetchEventUsers(e.eventID)
+          const attendeesList = users.slice(0, 4).map((u) => ({
+            name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
+            image: u.profileImage || undefined,
+            initials: u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : u.username.slice(0, 2).toUpperCase(),
+          }))
           return {
             ...e,
-            attendeesList: users.slice(0, 4).map((u) => ({
-              name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
-              image: u.profileImage || undefined,
-              initials: u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : u.username.slice(0, 2).toUpperCase(),
-            })),
+            attendeesList,
           }
         })
       )
 
-      const fetchedEvents = eventsWithAttendees.map((e) => apiEventToDisplay(e))
+      const fetchedEvents = eventsWithAttendees.map((e) => {
+        const display = apiEventToDisplay(e)
+        display.attendeesList = e.attendeesList
+        return display
+      })
       if (fetchedEvents.length > 0) {
         setAllEvents(fetchedEvents)
         setIsLive(true)
