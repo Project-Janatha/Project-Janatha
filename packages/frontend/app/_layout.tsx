@@ -84,8 +84,7 @@ function RootLayoutNav() {
     const inAuthGroup = pathname.startsWith('/auth')
     const inOnboardingGroup = pathname.startsWith('/onboarding')
     const inLandingPage = pathname === '/landing'
-    const inPrivacyPage = pathname === '/privacy'
-    const inLegalPages = inPrivacyPage || pathname === '/terms'
+    const inLegalPages = pathname === '/privacy' || pathname === '/terms' || pathname === '/cookies'
 
     if (!isAuthenticated) {
       // User is NOT authenticated — show landing page by default
@@ -166,6 +165,14 @@ function RootLayoutNav() {
         <Stack.Screen
           name="privacy"
           options={{ headerShown: true, title: 'Privacy Policy' }}
+        />
+        <Stack.Screen
+          name="terms"
+          options={{ headerShown: true, title: 'Terms of Service' }}
+        />
+        <Stack.Screen
+          name="cookies"
+          options={{ headerShown: true, title: 'Cookie Policy' }}
         />
       </Stack>
     </NavigationThemeProvider>

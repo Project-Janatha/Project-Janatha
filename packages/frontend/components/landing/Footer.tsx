@@ -1,31 +1,61 @@
 import React from 'react'
-import { View, Text, Pressable, useWindowDimensions } from 'react-native'
+import { View, Text, Pressable, useWindowDimensions, Linking } from 'react-native'
+import { useRouter } from 'expo-router'
 import Logo from '../ui/Logo'
+
+interface FooterLink {
+  label: string
+  url?: string
+}
 
 interface FooterColumn {
   title: string
-  links: string[]
+  links: FooterLink[]
 }
 
 const COLUMNS: FooterColumn[] = [
   {
     title: 'Product',
-    links: ['Features', 'Centers', 'Events', 'Mobile App'],
+    links: [
+      { label: 'Features', url: 'https://chinmaya-janata.org/#features' },
+      { label: 'Centers', url: 'https://chinmaya-janata.org/#centers' },
+      { label: 'Events', url: 'https://chinmaya-janata.org/#events' },
+      { label: 'Mobile App', url: 'https://chinmaya-janata.org/#download' },
+    ],
   },
   {
     title: 'Community',
-    links: ['About Us', 'CHYKs', 'Chinmaya Mission', 'Contact'],
+    links: [
+      { label: 'About Us', url: 'https://chinmaya-janata.org/#about' },
+      { label: 'CHYKs', url: 'https://chinmaya-janata.org/#chyk' },
+      { label: 'Chinmaya Mission', url: 'https://chinmaya.org' },
+      { label: 'Contact', url: 'https://chinmaya-janata.org/#contact' },
+    ],
   },
   {
     title: 'Legal',
-    links: ['Privacy Policy', 'Terms of Service', 'Cookie Policy'],
+    links: [
+      { label: 'Privacy Policy', url: '/privacy' },
+      { label: 'Terms of Service', url: '/terms' },
+      { label: 'Cookie Policy', url: '/cookies' },
+    ],
   },
 ]
 
 export function Footer() {
+  const router = useRouter()
   const { width } = useWindowDimensions()
   const isMobile = width < 768
   const isTablet = width >= 768 && width < 1024
+
+  const handleLink = (url?: string) => {
+    if (!url) return
+    if (url.startsWith('/')) {
+      router.push(url as any)
+    } else {
+      Linking.openURL(url)
+    }
+  }
 
   return (
     <View style={{ backgroundColor: '#FAFAF7' }}>
@@ -81,7 +111,7 @@ export function Footer() {
               </Text>
               <View style={{ gap: 10 }}>
                 {column.links.map((link) => (
-                  <Pressable key={link}>
+                  <Pressable key={link.label} onPress={() => handleLink(link.url)}>
                     <Text
                       style={{
                         fontFamily: 'Inter, sans-serif',
@@ -90,7 +120,7 @@ export function Footer() {
                         color: '#78716C',
                       }}
                     >
-                      {link}
+                      {link.label}
                     </Text>
                   </Pressable>
                 ))}

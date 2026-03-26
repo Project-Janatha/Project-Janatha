@@ -98,10 +98,19 @@ export default function Settings() {
             </Pressable>
             <Pressable
               className="flex-row items-center justify-between p-5 active:opacity-70"
-              onPress={() => Linking.openURL('https://chinmayajanata.org/terms')}
+              onPress={() => router.push('/terms')}
             >
               <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
                 Terms of Service
+              </Text>
+              <ExternalLink size={18} color={iconColor} />
+            </Pressable>
+            <Pressable
+              className="flex-row items-center justify-between p-5 active:opacity-70"
+              onPress={() => router.push('/cookies')}
+            >
+              <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
+                Cookie Policy
               </Text>
               <ExternalLink size={18} color={iconColor} />
             </Pressable>
