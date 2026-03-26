@@ -36,77 +36,13 @@ const SAMPLE_CENTERS: MapPoint[] = __DEV__
     ]
   : []
 
-const SAMPLE_EVENTS: MapPoint[] = __DEV__
-  ? [
-      { id: 'evt-1', type: 'event', name: 'Bhagavad Gita Study Circle', latitude: 37.2631, longitude: -121.8031 },
-      { id: 'evt-2', type: 'event', name: 'Hanuman Chalisa Chanting', latitude: 37.8699, longitude: -122.4756 },
-      { id: 'evt-3', type: 'event', name: 'Yoga and Meditation Session', latitude: 37.7849, longitude: -122.4094 },
-    ]
-  : []
+const SAMPLE_EVENTS: MapPoint[] = []
 
-const SAMPLE_EVENT_LIST: EventDisplay[] = __DEV__
-  ? [
-      {
-        id: '1',
-        title: 'Bhagavad Gita Study Circle - Chapter 12',
-        date: new Date().toISOString().split('T')[0],
-        time: '10:30 AM - 11:30 AM',
-        location: 'Chinmaya Mission San Jose',
-        address: '10160 Clayton Rd, San Jose, CA 95127',
-        attendees: 14,
-        likes: 0,
-        comments: 0,
-        description: 'Join us for an in-depth study of Chapter 12 of the Bhagavad Gita, focusing on Bhakti Yoga and the path of devotion.',
-        pointOfContact: 'Ramesh Ji',
-        isRegistered: true,
-      },
-      {
-        id: '2',
-        title: 'Hanuman Chalisa Chanting Marathon',
-        date: new Date().toISOString().split('T')[0],
-        time: '8:00 PM - 11:00 PM',
-        location: 'Chinmaya Mission West',
-        address: '299 Juanita Way, Sausalito, CA 94965',
-        attendees: 14,
-        likes: 0,
-        comments: 0,
-        description: 'Join us for a powerful chanting session of the Hanuman Chalisa.',
-        pointOfContact: 'Priya Devi',
-        isRegistered: false,
-      },
-      {
-        id: '3',
-        title: 'Yoga and Meditation Session',
-        date: new Date().toISOString().split('T')[0],
-        time: '9:00 AM - 10:30 AM',
-        location: 'Chinmaya Mission San Francisco',
-        address: '1 Sansome St, San Francisco, CA 94104',
-        attendees: 8,
-        likes: 0,
-        comments: 0,
-        description: 'Weekly yoga and meditation practice for beginners and advanced practitioners.',
-        pointOfContact: 'Anil Kumar',
-        isRegistered: false,
-      },
-    ]
-  : []
+const SAMPLE_EVENT_LIST: EventDisplay[] = []
 
-const SAMPLE_ATTENDEES = __DEV__
-  ? [
-      { name: 'Theresa Hebert', subtitle: 'Design manager @Setproduct', image: 'https://i.pravatar.cc/100?img=1' },
-      { name: 'Jessica Chlen', subtitle: 'Chief Design Officer', image: 'https://i.pravatar.cc/100?img=5' },
-      { name: 'Diana Shelton', subtitle: 'Senior UX designer', image: 'https://i.pravatar.cc/100?img=9' },
-      { name: 'Annie Huy Long', subtitle: 'Digital designer & Motion expert', image: 'https://i.pravatar.cc/100?img=16' },
-      { name: 'Morgan Melendez', subtitle: 'Community Organizer', image: 'https://i.pravatar.cc/100?img=20' },
-    ]
-  : []
+const SAMPLE_ATTENDEES: { name: string; subtitle: string; image: string }[] = []
 
-const SAMPLE_MESSAGES = __DEV__
-  ? [
-      { author: 'Jessica Chlen', timestamp: '3:30PM · 19 August 2025', text: 'Thank you everyone who could attend!', image: 'https://i.pravatar.cc/100?img=5' },
-      { author: 'Jessica Chlen', timestamp: '9:20AM · 18 August 2025', text: 'We will be meeting on the 14th floor.', image: 'https://i.pravatar.cc/100?img=5' },
-    ]
-  : []
+const SAMPLE_MESSAGES: { author: string; timestamp: string; text: string; image: string }[] = []
 
 // ── Helper: transform API EventData into EventDisplay ──────────────────
 
@@ -150,7 +86,7 @@ async function fetchAllEventsFromCenters(centers: CenterData[]): Promise<EventDa
 // ── Hooks ──────────────────────────────────────────────────────────────
 
 export function useMapPoints() {
-  const [points, setPoints] = useState<MapPoint[]>([...SAMPLE_CENTERS, ...SAMPLE_EVENTS])
+  const [points, setPoints] = useState<MapPoint[]>([])
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -173,7 +109,6 @@ export function useMapPoints() {
           setPoints([...centerPoints, ...eventPoints])
           setIsLive(true)
         }
-        // else: keep sample data
       } catch (err: any) {
         if (mounted) {
           const message = err?.message || 'Failed to load map data'
@@ -192,7 +127,7 @@ export function useMapPoints() {
 }
 
 export function useEventList() {
-  const [events, setEvents] = useState<EventDisplay[]>(SAMPLE_EVENT_LIST)
+  const [events, setEvents] = useState<EventDisplay[]>([])
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -260,7 +195,6 @@ export function useEventDetail(eventId: string) {
           setEvent(display)
           setIsLive(true)
 
-          // Fetch real attendees
           const users = await fetchEventUsers(eventId)
           if (users.length > 0 && mounted) {
             setAttendees(users.map((u) => ({
@@ -269,20 +203,12 @@ export function useEventDetail(eventId: string) {
               image: u.profileImage || `https://i.pravatar.cc/100?u=${u.username}`,
             })))
           }
-        } else if (__DEV__) {
-          // Use sample data in dev
-          const sample = SAMPLE_EVENT_LIST.find((e) => e.id === eventId) || SAMPLE_EVENT_LIST[0]
-          if (sample) setEvent(sample)
         }
       } catch (err: any) {
         if (mounted) {
           const message = err?.message || 'Failed to load event details'
           setError(message)
-          if (__DEV__) {
-            console.warn('[useEventDetail]', message)
-            const sample = SAMPLE_EVENT_LIST.find((e) => e.id === eventId) || SAMPLE_EVENT_LIST[0]
-            if (sample) setEvent(sample)
-          }
+          if (__DEV__) console.warn('[useEventDetail]', message)
         }
       } finally {
         if (mounted) setLoading(false)
@@ -358,78 +284,9 @@ export interface CenterDisplay {
   acharya: string
 }
 
-const SAMPLE_CENTER_DETAILS: Record<string, CenterDisplay> = __DEV__
-  ? {
-      '1': {
-        id: '1',
-        name: 'Chinmaya Mission San Jose',
-        image: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=400&h=250&fit=crop',
-        address: '10160 Clayton Rd, San Jose, CA 95127',
-        website: 'https://www.cmsj.org/',
-        phone: '+1 408 254 8392',
-        upcomingEvents: 24,
-        pointOfContact: 'Ramesh Ji',
-        acharya: 'Acharya Brahmachari Soham Ji',
-      },
-      '2': {
-        id: '2',
-        name: 'Chinmaya Mission West',
-        image: 'https://images.unsplash.com/photo-1464822759844-d150baec93d5?w=400&h=250&fit=crop',
-        address: '560 Bridgeway, Sausalito, CA 94965',
-        website: 'https://www.chinmayamissionwest.org/',
-        phone: '+1 415 332 2182',
-        upcomingEvents: 18,
-        pointOfContact: 'Priya Ji',
-        acharya: 'Acharya Swami Ishwarananda',
-      },
-      '3': {
-        id: '3',
-        name: 'Chinmaya Mission San Francisco',
-        image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=250&fit=crop',
-        address: '631 Irving St, San Francisco, CA 94122',
-        website: 'https://www.chinmayasf.org/',
-        phone: '+1 415 661 8499',
-        upcomingEvents: 15,
-        pointOfContact: 'Anjali Ji',
-        acharya: 'Acharya Swami Tejomayananda',
-      },
-    }
-  : {}
+const SAMPLE_CENTER_DETAILS: Record<string, CenterDisplay> = {}
 
-const SAMPLE_CENTER_EVENTS: EventDisplay[] = __DEV__
-  ? [
-      {
-        id: '1',
-        title: 'Bhagavad Gita Study Circle - Chapter 12',
-        date: new Date().toISOString().split('T')[0],
-        time: '10:30 AM - 11:30 AM',
-        location: 'Young Museum',
-        attendees: 14,
-        likes: 0,
-        comments: 0,
-      },
-      {
-        id: '2',
-        title: 'Hanuman Chalisa Chanting Marathon',
-        date: new Date().toISOString().split('T')[0],
-        time: '8:00 PM - 11:00 PM',
-        location: 'Meditation Hall',
-        attendees: 14,
-        likes: 0,
-        comments: 0,
-      },
-      {
-        id: '3',
-        title: 'Yoga and Meditation Session',
-        date: new Date().toISOString().split('T')[0],
-        time: '7:00 PM - 8:30 PM',
-        location: 'Main Hall',
-        attendees: 8,
-        likes: 2,
-        comments: 1,
-      },
-    ]
-  : []
+const SAMPLE_CENTER_EVENTS: EventDisplay[] = []
 
 export function useCenterDetail(centerId: string) {
   const [center, setCenter] = useState<CenterDisplay | null>(null)
@@ -454,31 +311,25 @@ export function useCenterDetail(centerId: string) {
           setCenter({
             id: centerId,
             name: apiCenter.name || 'Unknown Center',
-            image: apiCenter.image || SAMPLE_CENTER_DETAILS[centerId]?.image || '',
-            address: apiCenter.address || SAMPLE_CENTER_DETAILS[centerId]?.address || '',
-            website: apiCenter.website || SAMPLE_CENTER_DETAILS[centerId]?.website || '',
-            phone: apiCenter.phone || SAMPLE_CENTER_DETAILS[centerId]?.phone || '',
+            image: apiCenter.image || '',
+            address: apiCenter.address || '',
+            website: apiCenter.website || '',
+            phone: apiCenter.phone || '',
             upcomingEvents: apiEvents.length,
-            pointOfContact: apiCenter.pointOfContact || SAMPLE_CENTER_DETAILS[centerId]?.pointOfContact || '',
-            acharya: apiCenter.acharya || SAMPLE_CENTER_DETAILS[centerId]?.acharya || '',
+            pointOfContact: apiCenter.pointOfContact || '',
+            acharya: apiCenter.acharya || '',
           })
           setIsLive(true)
-        } else {
-          setCenter(SAMPLE_CENTER_DETAILS[centerId] || null)
         }
 
         if (apiEvents.length > 0) {
           setEvents(apiEvents.map((e) => apiEventToDisplay(e)))
-        } else {
-          setEvents(SAMPLE_CENTER_EVENTS)
         }
       } catch (err: any) {
         if (mounted) {
           const message = err?.message || 'Failed to load center details'
           setError(message)
           if (__DEV__) console.warn('[useCenterDetail]', message)
-          setCenter(SAMPLE_CENTER_DETAILS[centerId] || null)
-          setEvents(SAMPLE_CENTER_EVENTS)
         }
       } finally {
         if (mounted) setLoading(false)
@@ -517,17 +368,11 @@ export function useMyEvents(username: string | undefined) {
           isRegistered: true,
         })))
         setIsLive(true)
-      } else if (__DEV__) {
-        // Fallback to sample registered events
-        setEvents(SAMPLE_EVENT_LIST.filter((e) => e.isRegistered))
       }
     } catch (err: any) {
       const message = err?.message || 'Failed to load your events'
       setError(message)
-      if (__DEV__) {
-        console.warn('[useMyEvents]', message)
-        setEvents(SAMPLE_EVENT_LIST.filter((e) => e.isRegistered))
-      }
+      if (__DEV__) console.warn('[useMyEvents]', message)
     } finally {
       setLoading(false)
     }
@@ -541,7 +386,7 @@ export function useMyEvents(username: string | undefined) {
 // ── Discover hooks ──────────────────────────────────────────────────
 
 export function useCenterList() {
-  const [centers, setCenters] = useState<DiscoverCenter[]>(DISCOVER_SAMPLE_CENTERS)
+  const [centers, setCenters] = useState<DiscoverCenter[]>([])
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -577,8 +422,8 @@ export function useCenterList() {
 }
 
 export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
-  const [allEvents, setAllEvents] = useState<EventDisplay[]>(DISCOVER_SAMPLE_EVENTS)
-  const [allCenters, setAllCenters] = useState<DiscoverCenter[]>(DISCOVER_SAMPLE_CENTERS)
+  const [allEvents, setAllEvents] = useState<EventDisplay[]>([])
+  const [allCenters, setAllCenters] = useState<DiscoverCenter[]>([])
   const [loading, setLoading] = useState(true)
   const [isLive, setIsLive] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -590,6 +435,7 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
         setError(null)
         const apiCenters = await fetchCenters()
         if (!mounted) return
+        if (__DEV__) console.log('[useDiscoverData] Got centers:', apiCenters.length)
 
         const discoverCenters = centersToDiscoverCenters(apiCenters)
         if (discoverCenters.length > 0) {
@@ -599,6 +445,7 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
         // Fetch all events from API
         const allApiEvents = await fetchAllEvents()
         if (!mounted) return
+        if (__DEV__) console.log('[useDiscoverData] Got events:', allApiEvents.length)
 
         const fetchedEvents = allApiEvents.map((e) => apiEventToDisplay(e))
 
@@ -684,4 +531,4 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
   return { items, filteredPoints, loading, isLive, error, allEvents, allCenters }
 }
 
-export { SAMPLE_ATTENDEES, SAMPLE_MESSAGES, SAMPLE_EVENT_LIST, SAMPLE_CENTERS, SAMPLE_EVENTS }
+export { SAMPLE_ATTENDEES, SAMPLE_MESSAGES }
