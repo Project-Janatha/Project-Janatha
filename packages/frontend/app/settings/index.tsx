@@ -53,7 +53,7 @@ const PREFERENCE_OPTIONS = [
 ]
 
 export default function Profile() {
-  const { user, updateProfile } = useUser()
+  const { user, updateProfile, setUser } = useUser()
   const { isDark } = useThemeContext()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -78,7 +78,7 @@ export default function Profile() {
   const hasExistingProfileImage = !!user?.profileImage
 
   // Store the original uploaded image (before cropping) for re-editing
-  const [originalImage, setOriginalImage] = useState<string | null>(null)
+  const [originalImage, setOriginalImage] = useState<string | null>(user?.originalImage || null)
 
   const [profileData, setProfileData] = useState<ProfileData>({
     name: getDisplayName(),
@@ -105,9 +105,11 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleAvatarPress = () => {
-    // If user has an existing profile image, use the original (uncropped) if available
-    if (originalImage || profileData.profileImage) {
-      setCropperImage(originalImage || profileData.profileImage)
+    // If user has an existing profile image, use the original (uncropped) if available in session
+    if (originalImage || user?.originalImage) {
+      setCropperImage(originalImage || user?.originalImage || null)
+    } else if (profileData.profileImage) {
+      setCropperImage(profileData.profileImage)
     } else {
       // New user - open file picker directly
       fileInputRef.current?.click()
@@ -323,6 +325,10 @@ export default function Profile() {
         return
       }
       setProfileImageChanged(false)
+      // Cache the cropped image as the original for re-editing in this session
+      if (originalImage && user) {
+        setUser({ ...user, originalImage: originalImage })
+      }
       setIsEditing(false)
       setErrors({})
     } catch (error) {
