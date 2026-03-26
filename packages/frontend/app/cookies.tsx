@@ -67,7 +67,8 @@ export default function CookiePolicy() {
         <Text style={{ fontSize: 15, color: '#44403C', lineHeight: 24 }}>
           If you have questions about our use of cookies, please contact us:{'\n'}
           Email: info@chinmayajanata.org{'\n'}
-          Address: Chinmaya Mission West, P.O. Box 129, Piercy, CA 95587
+          Address: Chinmaya Mission West, 83900 Highway 271, Piercy, CA 95587{'\n'}
+          Phone: 707-247-3488
         </Text>
 
         <View style={{ marginTop: 48, paddingTop: 24, borderTopWidth: 1, borderTopColor: '#E7E5E4' }}>
