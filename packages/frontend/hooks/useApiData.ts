@@ -47,9 +47,15 @@ const SAMPLE_MESSAGES: { author: string; timestamp: string; text: string; image:
 // ── Helper: transform API EventData into EventDisplay ──────────────────
 
 function apiEventToDisplay(e: EventData, _username?: string): EventDisplay {
-  const dateStr = e.date ? new Date(e.date).toISOString().split('T')[0] : ''
-  const timeStr = e.date
-    ? new Date(e.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  const parseDate = (dateStr: string | null | undefined): Date | null => {
+    if (!dateStr) return null
+    const d = new Date(dateStr)
+    return isNaN(d.getTime()) ? null : d
+  }
+  const parsedDate = parseDate(e.date)
+  const dateStr = parsedDate ? parsedDate.toISOString().split('T')[0] : ''
+  const timeStr = parsedDate
+    ? parsedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
     : ''
 
   return {

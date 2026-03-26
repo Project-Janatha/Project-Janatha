@@ -235,9 +235,14 @@ export async function fetchEventsByCenter(centerID: string): Promise<EventData[]
 
 export async function fetchAllEvents(): Promise<EventData[]> {
   try {
+    if (__DEV__) console.log('[fetchAllEvents] Calling API...')
     const response = await apiFetch('/fetchAllEvents')
-    if (!response.ok) return []
+    if (!response.ok) {
+      if (__DEV__) console.warn('[fetchAllEvents] Response not ok:', response.status)
+      return []
+    }
     const data = await response.json()
+    if (__DEV__) console.log('[fetchAllEvents] Got events:', data.events?.length || 0)
     return data.events || []
   } catch (err: any) {
     if (__DEV__) console.warn('[fetchAllEvents]', err?.message || err)
