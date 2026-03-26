@@ -65,7 +65,6 @@ const AVATAR_COLORS = ['#E8862A', '#78716C', '#A8A29E', '#D6D3D1']
 function AttendeeAvatars({ count, attendees }: { count: number; attendees?: AttendeeInfo[] }) {
   if (count <= 0) return null
   const shown = Math.min(count, 4)
-  if (__DEV__) console.log('[AttendeeAvatars web] count:', count, 'attendees:', attendees)
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
       <View style={{ flexDirection: 'row' }}>
@@ -212,7 +211,12 @@ function DetailPanelWrapper({
   onClose: () => void
   onEventPress: (id: string) => void
   onEditEvent?: (id: string) => void
-  onStatusChange?: (id: string, registered: boolean, count: number) => void
+  onStatusChange?: (
+    id: string,
+    registered: boolean,
+    count: number,
+    attendeesList: AttendeeInfo[]
+  ) => void
 }) {
   if (selectedItem.type === 'event') {
     return (
@@ -684,10 +688,8 @@ export default function DiscoverScreenWeb() {
   const { items, filteredPoints, loading, allEvents, allCenters, refresh, updateEventStatus } =
     useDiscoverData(activeFilter, searchQuery, user?.id)
 
-  // Refetch data when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      if (__DEV__) console.log('[DiscoverScreenWeb] focused, refreshing...')
       refresh()
     }, [refresh])
   )

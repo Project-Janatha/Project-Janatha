@@ -27,33 +27,9 @@ import {
 export type { DiscoverFilter }
 export type { EventDisplay } from '../utils/api'
 
-// ── Sample data (fallback when API returns empty, dev only) ────────────
+// ── Sample data (empty since we fetch from API) ────────────
 
-const SAMPLE_CENTERS: MapPoint[] = __DEV__
-  ? [
-      {
-        id: '1',
-        type: 'center',
-        name: 'Chinmaya Mission San Jose',
-        latitude: 37.2431,
-        longitude: -121.7831,
-      },
-      {
-        id: '2',
-        type: 'center',
-        name: 'Chinmaya Mission West',
-        latitude: 37.8599,
-        longitude: -122.4856,
-      },
-      {
-        id: '3',
-        type: 'center',
-        name: 'Chinmaya Mission San Francisco',
-        latitude: 37.7749,
-        longitude: -122.4194,
-      },
-    ]
-  : []
+const SAMPLE_CENTERS: MapPoint[] = []
 
 const SAMPLE_EVENTS: MapPoint[] = []
 
@@ -221,19 +197,8 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
     const load = async () => {
       try {
         setError(null)
-        if (__DEV__)
-          console.log(
-            '[useEventDetail] Loading event:',
-            eventId,
-            'username:',
-            username,
-            'userId:',
-            userId
-          )
         const apiEvent = await fetchEvent(eventId)
         if (!mounted) return
-
-        if (__DEV__) console.log('[useEventDetail] Got event:', apiEvent)
 
         if (apiEvent) {
           // Check if user is the creator
@@ -574,10 +539,8 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
     const load = async () => {
       try {
         setError(null)
-        if (__DEV__) console.log('[useDiscoverData] Loading data with userId:', userId)
         const apiCenters = await fetchCenters()
         if (!mounted) return
-        if (__DEV__) console.log('[useDiscoverData] Got centers:', apiCenters.length)
 
         const discoverCenters = centersToDiscoverCenters(apiCenters)
         if (discoverCenters.length > 0) {
@@ -587,7 +550,6 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
         // Fetch all events from API
         const allApiEvents = await fetchAllEvents()
         if (!mounted) return
-        if (__DEV__) console.log('[useDiscoverData] Got events:', allApiEvents.length)
 
         // Fetch attendees for each event
         const eventsWithAttendees = await Promise.all(
@@ -601,10 +563,6 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
                 : u.username.slice(0, 2).toUpperCase(),
             }))
             const userIsRegistered = userId ? users.some((u) => u.id === userId) : false
-            if (userIsRegistered) {
-              if (__DEV__)
-                console.log(`[useDiscoverData] User ${userId} IS registered for event ${e.eventID}`)
-            }
             return {
               ...e,
               attendeesList,

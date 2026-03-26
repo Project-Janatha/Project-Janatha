@@ -417,7 +417,6 @@ export default function EventDetailPage() {
   const router = useRouter()
   const userContext = useUser()
   const { user, authStatus } = userContext
-  console.log('##### AUTH STATUS:', authStatus, 'USER:', user?.username, '#####')
   const [activeTab, setActiveTab] = useState('Details')
   const username = authStatus === 'authenticated' ? user?.username : undefined
   const userId = authStatus === 'authenticated' ? user?.id : undefined
@@ -480,8 +479,6 @@ export default function EventDetailPage() {
 
   const isPast = event?.date ? new Date(event.date + 'T23:59:59') < new Date() : false
   const isRegistered = !!event?.isRegistered && !isPast
-
-  console.log('##### RENDER:', { hasEvent: !!event, isRegistered, userId })
 
   // ── Registered state (with tabs) ─────────────────────────────────────
 

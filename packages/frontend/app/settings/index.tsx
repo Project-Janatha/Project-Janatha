@@ -295,9 +295,6 @@ export default function Profile() {
             reader.onerror = () => reject(new Error('Failed to read blob'))
             reader.readAsDataURL(blob)
           })
-          if (__DEV__) {
-            console.log('Profile image converted to base64, length:', profileImageBase64.length)
-          }
         } catch (e) {
           console.error('Error converting image:', e)
           setErrors((prev) => ({ ...prev, profileImage: 'Failed to upload image. Please try again.' }))
@@ -306,9 +303,6 @@ export default function Profile() {
         }
       }
 
-      if (__DEV__) {
-        console.log('Sending profile update, hasImage:', !!profileImageBase64)
-      }
       const result = await updateProfile({
         firstName: nameParts[0],
         lastName: nameParts.slice(1).join(' '),

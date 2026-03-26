@@ -125,18 +125,13 @@ app.post('/userExistence', async (c) => {
 // ═══════════════════════════════════════════════════════════════════════
 
 app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
-  console.log('Register endpoint hit')
   const body = await c.req.json<{
     username: string
     password: string
   }>()
-  console.log('Parsed body:', body)
 
   const normalizedUsername = validate.username(body.username)
   const validPassword = validate.password(body.password)
-
-  console.log('normalizedUsername:', normalizedUsername)
-  console.log('validPassword:', validPassword ? 'present' : 'missing')
 
   if (!normalizedUsername || !validPassword) {
     return c.json({ message: 'Username and password are required' }, 400)
@@ -147,24 +142,18 @@ app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
   }
 
   const existingUser = await db.getUserByUsername(c.env.DB, normalizedUsername.toLowerCase())
-  console.log('existingUser:', existingUser ? 'found' : 'none')
   if (existingUser) {
     return c.json({ message: 'Username already exists' }, 409)
   }
 
-  console.log('Hashing password...')
   const hashedPassword = await hashPassword(validPassword)
-  console.log('Password hashed')
 
-  console.log('Creating user...')
-  console.log('DB:', c.env.DB)
   try {
     const created = await db.createUser(c.env.DB, {
       id: crypto.randomUUID(),
       username: normalizedUsername.toLowerCase(),
       password: hashedPassword,
     })
-    console.log('createUser result:', created)
 
     if (!created.success) {
     const status = created.error === 'User already exists' ? 409 : 500
@@ -239,10 +228,8 @@ app.get('/auth/verify', authMiddleware, (c) => {
 })
 
 app.post('/auth/complete-onboarding', authMiddleware, async (c) => {
-  console.log('complete-onboarding hit')
   try {
     const user = c.get('user')
-    console.log('user:', user.id, user.username)
     const body = await c.req.json<{
       firstName?: string
       lastName?: string
@@ -252,7 +239,6 @@ app.post('/auth/complete-onboarding', authMiddleware, async (c) => {
       phoneNumber?: string
       interests?: string[]
     }>()
-    console.log('body:', body)
 
     const updates: Partial<UserRow> = {}
     if (body.firstName !== undefined) updates.first_name = body.firstName
@@ -752,10 +738,8 @@ app.post('/updateEvent', authMiddleware, async (c) => {
 
   // Allow admin or the event creator to edit (or any logged-in user for events without creator)
   const isAdmin = user.username === ADMIN_NAME
-  console.log('[updateEvent] user.id:', user.id, 'existing.created_by:', existing.created_by, 'isAdmin:', isAdmin)
   const isCreator = existing.created_by === user.id
   const isEditable = isAdmin || isCreator || existing.created_by === null
-  console.log('[updateEvent] isCreator:', isCreator, 'isEditable:', isEditable)
   if (!isEditable) {
     return c.json({ message: 'Insufficient permissions - only admin or event creator can edit' }, 401)
   }

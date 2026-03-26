@@ -173,11 +173,9 @@ export async function fetchCenters(): Promise<CenterData[]> {
     try {
       const response = await apiFetch('/centers')
       if (!response.ok) {
-        if (__DEV__) console.warn('[fetchCenters] Response not ok:', response.status)
         return []
       }
       const data = await response.json()
-      if (__DEV__) console.log('[fetchCenters] Got', data.centers?.length || 0, 'centers')
       return data.centers || []
     } catch (err: any) {
       if (__DEV__) console.warn('[fetchCenters]', err?.message || err)
@@ -244,14 +242,11 @@ export async function fetchEventsByCenter(centerID: string): Promise<EventData[]
 
 export async function fetchAllEvents(): Promise<EventData[]> {
   try {
-    if (__DEV__) console.log('[fetchAllEvents] Calling API...')
     const response = await apiFetch('/fetchAllEvents')
     if (!response.ok) {
-      if (__DEV__) console.warn('[fetchAllEvents] Response not ok:', response.status)
       return []
     }
     const data = await response.json()
-    if (__DEV__) console.log('[fetchAllEvents] Got events:', data.events?.length || 0)
     return data.events || []
   } catch (err: any) {
     if (__DEV__) console.warn('[fetchAllEvents]', err?.message || err)
@@ -335,17 +330,14 @@ export async function updateEvent(eventJSON: Record<string, any>): Promise<any> 
 
 export async function getUserEvents(username: string): Promise<EventData[]> {
   try {
-    if (__DEV__) console.log('[getUserEvents] Calling for:', username)
     const response = await authFetch('/getUserEvents', {
       method: 'POST',
       body: JSON.stringify({ username }),
     })
     if (!response.ok) {
-      if (__DEV__) console.warn('[getUserEvents] Response not ok:', response.status)
       return []
     }
     const data = await response.json()
-    if (__DEV__) console.log('[getUserEvents] Got events:', data.events?.length || 0, 'events:', data.events?.map((e: any) => e.eventID))
     return data.events || []
   } catch (err: any) {
     if (__DEV__) console.warn('[getUserEvents]', err?.message || err)
@@ -392,87 +384,8 @@ export function centersToDiscoverCenters(centers: CenterData[]): DiscoverCenter[
     }))
 }
 
-// ── Discover sample data (fallback, dev only) ──────────────────────────
+// ── Discover sample data (empty since we fetch from API) ──────────────────────────
 
-const today = new Date()
-const todayStr = today.toISOString().split('T')[0]
-
-const tomorrow = new Date(today)
-tomorrow.setDate(today.getDate() + 1)
-const tomorrowStr = tomorrow.toISOString().split('T')[0]
-
-const sunday = new Date(today)
-sunday.setDate(today.getDate() + ((7 - today.getDay()) % 7 || 7))
-const sundayStr = sunday.toISOString().split('T')[0]
-
-export const DISCOVER_SAMPLE_EVENTS: EventDisplay[] = __DEV__
-  ? [
-      {
-        id: 'evt-1',
-        title: 'Bhagavad Gita Study Circle - Chapter 12',
-        date: todayStr,
-        time: '10:30 AM - 11:30 AM',
-        location: 'Chinmaya Mission San Jose',
-        address: '10160 Clayton Rd, San Jose, CA 95127',
-        latitude: 37.2631,
-        longitude: -121.8031,
-        attendees: 14,
-        likes: 0,
-        comments: 0,
-        description: 'Join us for an in-depth study of Chapter 12 of the Bhagavad Gita.',
-        pointOfContact: 'Ramesh Ji',
-        isRegistered: true,
-        centerId: '1',
-      },
-      {
-        id: 'evt-2',
-        title: 'Hanuman Chalisa Chanting Marathon',
-        date: sundayStr,
-        time: '8:00 PM - 11:00 PM',
-        location: 'Chinmaya Mission West',
-        address: '299 Juanita Way, Sausalito, CA 94965',
-        latitude: 37.8699,
-        longitude: -122.4756,
-        attendees: 28,
-        likes: 0,
-        comments: 0,
-        description: 'Join us for a powerful chanting session of the Hanuman Chalisa.',
-        pointOfContact: 'Priya Devi',
-        isRegistered: false,
-        centerId: '2',
-      },
-      {
-        id: 'evt-3',
-        title: 'Yoga and Meditation Session',
-        date: tomorrowStr,
-        time: '7:00 AM - 8:30 AM',
-        location: 'Chinmaya Mission San Francisco',
-        address: '1 Hallidie Plaza, San Francisco, CA 94102',
-        latitude: 37.7849,
-        longitude: -122.4194,
-        attendees: 9,
-        likes: 0,
-        comments: 0,
-        description: 'Weekly yoga and meditation practice.',
-        pointOfContact: 'Anil Kumar',
-        isRegistered: true,
-        centerId: '3',
-      },
-      {
-        id: 'evt-4',
-        title: 'Vedanta for Beginners',
-        date: sundayStr,
-        time: '9:00 AM - 10:30 AM',
-        location: 'Chinmaya Mission San Jose',
-        latitude: 37.2531,
-        longitude: -121.7931,
-        attendees: 12,
-        likes: 0,
-        comments: 0,
-        isRegistered: false,
-        centerId: '1',
-      },
-    ]
-  : []
+export const DISCOVER_SAMPLE_EVENTS: EventDisplay[] = []
 
 export const DISCOVER_SAMPLE_CENTERS: DiscoverCenter[] = []

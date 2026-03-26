@@ -57,7 +57,6 @@ const AVATAR_COLORS = ['#E8862A', '#78716C', '#A8A29E', '#D6D3D1']
 function AttendeeAvatars({ count, attendees }: { count: number; attendees?: AttendeeInfo[] }) {
   if (count <= 0) return null
   const shown = Math.min(count, 4)
-  if (__DEV__) console.log('[AttendeeAvatars] count:', count, 'attendees:', attendees)
   
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
@@ -207,7 +206,6 @@ export default function DiscoverScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (__DEV__) console.log('[DiscoverScreen] focused, refreshing...')
       refresh()
     }, [refresh])
   )
