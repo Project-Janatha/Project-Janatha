@@ -1,5 +1,5 @@
 // Discover tab — mobile / native layout
-import React, { useState, Suspense, useRef } from 'react'
+import React, { useState, Suspense, useRef, useCallback } from 'react'
 import {
   View,
   Text,
@@ -17,12 +17,14 @@ import {
   Building2,
   Users,
 } from 'lucide-react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { useThemeContext } from '../../components/contexts'
 import { Badge, UnderlineTabBar, Avatar } from '../../components/ui'
+import { useUser } from '../../components/contexts/UserContext'
 import { useDiscoverData, type DiscoverFilter } from '../../hooks/useApiData'
 import type { EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
 import WeekCalendar from '../../components/WeekCalendar'
+
 
 // Lazy load Map to avoid loading heavy web dependencies on mobile web
 const Map = React.lazy(() => import('../../components/Map'))
@@ -194,7 +196,21 @@ export default function DiscoverScreen() {
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const { items, filteredPoints, loading, allEvents } = useDiscoverData(activeFilter, searchQuery)
+    const { user } = useUser()
+    const {
+    items,
+    filteredPoints,
+    loading,
+    allEvents,
+    refresh,
+  } = useDiscoverData(activeFilter, searchQuery, user?.id)
+
+  useFocusEffect(
+    useCallback(() => {
+      if (__DEV__) console.log('[DiscoverScreen] focused, refreshing...')
+      refresh()
+    }, [refresh])
+  )
 
   // ── Sheet snap points ──────────────────────────────────
   // Three positions (as translateY values from the expanded state):

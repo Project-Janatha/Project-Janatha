@@ -1,5 +1,14 @@
 // Discover tab — web desktop layout
-import React, { useState, useCallback, useMemo, useEffect, useRef, lazy, Suspense } from 'react'
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+  lazy,
+  Suspense,
+  use,
+} from 'react'
 import {
   View,
   Text,
@@ -10,7 +19,7 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { MapPin, Search, Building2, Users, ChevronUp, Plus } from 'lucide-react-native'
-import { useRouter, useLocalSearchParams } from 'expo-router'
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar, Avatar } from '../../components/ui'
 const Map = lazy(() => import('../../components/Map'))
@@ -60,37 +69,35 @@ function AttendeeAvatars({ count, attendees }: { count: number; attendees?: Atte
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
       <View style={{ flexDirection: 'row' }}>
-        {attendees && attendees.length > 0 ? (
-          attendees.slice(0, shown).map((attendee, i) => (
-            <Avatar
-              key={i}
-              image={attendee.image}
-              initials={attendee.initials}
-              name={attendee.name}
-              size={18}
-              style={{
-                marginLeft: i === 0 ? 0 : -6,
-                borderWidth: 1.5,
-                borderColor: 'white',
-              }}
-            />
-          ))
-        ) : (
-          Array.from({ length: shown }).map((_, i) => (
-            <View
-              key={i}
-              style={{
-                width: 18,
-                height: 18,
-                borderRadius: 9,
-                backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
-                marginLeft: i === 0 ? 0 : -6,
-                borderWidth: 1.5,
-                borderColor: 'white',
-              }}
-            />
-          ))
-        )}
+        {attendees && attendees.length > 0
+          ? attendees.slice(0, shown).map((attendee, i) => (
+              <Avatar
+                key={i}
+                image={attendee.image}
+                initials={attendee.initials}
+                name={attendee.name}
+                size={18}
+                style={{
+                  marginLeft: i === 0 ? 0 : -6,
+                  borderWidth: 1.5,
+                  borderColor: 'white',
+                }}
+              />
+            ))
+          : Array.from({ length: shown }).map((_, i) => (
+              <View
+                key={i}
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
+                  marginLeft: i === 0 ? 0 : -6,
+                  borderWidth: 1.5,
+                  borderColor: 'white',
+                }}
+              />
+            ))}
       </View>
       <Text className="text-stone-400 dark:text-stone-500 font-inter text-xs">{count} going</Text>
     </View>
@@ -199,27 +206,73 @@ function DetailPanelWrapper({
   onClose,
   onEventPress,
   onEditEvent,
+  onStatusChange,
 }: {
   selectedItem: { type: 'event' | 'center'; id: string }
   onClose: () => void
   onEventPress: (id: string) => void
   onEditEvent?: (id: string) => void
+  onStatusChange?: (id: string, registered: boolean, count: number) => void
 }) {
   if (selectedItem.type === 'event') {
-    return <EventPanelInner eventId={selectedItem.id} onClose={onClose} onEdit={onEditEvent} />
+    return (
+      <EventPanelInner
+        eventId={selectedItem.id}
+        onClose={onClose}
+        onEdit={onEditEvent}
+        onStatusChange={onStatusChange}
+      />
+    )
   }
   return (
     <CenterPanelInner centerId={selectedItem.id} onClose={onClose} onEventPress={onEventPress} />
   )
 }
 
-function EventPanelInner({ eventId, onClose, onEdit }: { eventId: string; onClose: () => void; onEdit?: (id: string) => void }) {
+function EventPanelInner({
+  eventId,
+  onClose,
+  onEdit,
+  onStatusChange,
+}: {
+  eventId: string
+  onClose: () => void
+  onEdit?: (id: string) => void
+  onStatusChange?: (
+    id: string,
+    registered: boolean,
+    count: number,
+    attendeesList: AttendeeInfo[]
+  ) => void
+}) {
   const { user } = useUser()
-  const { event, attendees, messages, loading, toggleRegistration, isToggling } =
-    useEventDetail(eventId, user?.username, user?.id)
+  const { event, attendees, messages, loading, toggleRegistration, isToggling } = useEventDetail(
+    eventId,
+    user?.username,
+    user?.id
+  )
   const colors = useDetailColors()
   const isAdmin = user?.username === ADMIN_NAME
   const canEdit = isAdmin || isLocal
+
+  // Propogate registration status change back to discover list
+  const prevRegisteredRef = useRef<boolean | undefined>(undefined)
+  useEffect(() => {
+    if (!event) return
+    if (prevRegisteredRef.current === undefined) {
+      prevRegisteredRef.current = event.isRegistered
+      return
+    }
+    if (event.isRegistered !== prevRegisteredRef.current) {
+      onStatusChange?.(
+        event.id,
+        event.isRegistered || false,
+        event.attendees || 0,
+        event.attendeesList || []
+      )
+      prevRegisteredRef.current = event.isRegistered
+    }
+  }, [event?.isRegistered, event?.attendees, attendees, onStatusChange])
 
   const handleToggleRegistration = async () => {
     if (!user?.username) return
@@ -315,7 +368,18 @@ function MobileDiscoverFallback() {
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const { items, filteredPoints, loading, allEvents } = useDiscoverData(activeFilter, searchQuery)
+  const { user } = useUser()
+  const { items, filteredPoints, loading, allEvents, refresh } = useDiscoverData(
+    activeFilter,
+    searchQuery,
+    user?.id
+  )
+
+  useFocusEffect(
+    useCallback(() => {
+      refresh()
+    }, [refresh])
+  )
 
   // Bottom sheet state
   const [sheetSnap, setSheetSnap] = useState<SheetSnap>('mid')
@@ -370,8 +434,7 @@ function MobileDiscoverFallback() {
     (e: React.TouchEvent) => {
       if (sheetTranslateY === null) return
       const positions = getSnapPositions()
-      const velocity =
-        e.changedTouches[0].clientY - dragStartY.current > 0 ? 1 : -1
+      const velocity = e.changedTouches[0].clientY - dragStartY.current > 0 ? 1 : -1
 
       // Snap to nearest position, biased by velocity
       let snapTo: SheetSnap
@@ -382,10 +445,7 @@ function MobileDiscoverFallback() {
       if (velocity > 0 && Math.abs(e.changedTouches[0].clientY - dragStartY.current) > 40) {
         // Swiped down fast
         snapTo = sheetSnap === 'expanded' ? 'mid' : 'collapsed'
-      } else if (
-        velocity < 0 &&
-        Math.abs(e.changedTouches[0].clientY - dragStartY.current) > 40
-      ) {
+      } else if (velocity < 0 && Math.abs(e.changedTouches[0].clientY - dragStartY.current) > 40) {
         // Swiped up fast
         snapTo = sheetSnap === 'collapsed' ? 'mid' : 'expanded'
       } else {
@@ -445,7 +505,13 @@ function MobileDiscoverFallback() {
     >
       {/* Map — full bleed behind the sheet */}
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-        <Suspense fallback={<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#E8862A" /></View>}>
+        <Suspense
+          fallback={
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator size="large" color="#E8862A" />
+            </View>
+          }
+        >
           <Map points={filteredPoints} onPointPress={handlePointPress} />
         </Suspense>
       </View>
@@ -615,9 +681,15 @@ export default function DiscoverScreenWeb() {
   )
   // Event form panel: null = hidden, { id?: string } = open (id present = edit, absent = create)
   const [formPanel, setFormPanel] = useState<{ id?: string } | null>(null)
-  const { items, filteredPoints, loading, allEvents, allCenters } = useDiscoverData(
-    activeFilter,
-    searchQuery
+  const { items, filteredPoints, loading, allEvents, allCenters, refresh, updateEventStatus } =
+    useDiscoverData(activeFilter, searchQuery, user?.id)
+
+  // Refetch data when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (__DEV__) console.log('[DiscoverScreenWeb] focused, refreshing...')
+      refresh()
+    }, [refresh])
   )
 
   const params = useLocalSearchParams<{ detail?: string; id?: string; action?: string }>()
@@ -639,7 +711,10 @@ export default function DiscoverScreenWeb() {
   // Listen for create event from header nav button
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const handler = () => { setSelectedItem(null); setFormPanel({}) }
+    const handler = () => {
+      setSelectedItem(null)
+      setFormPanel({})
+    }
     window.addEventListener('open-event-form', handler)
     return () => window.removeEventListener('open-event-form', handler)
   }, [])
@@ -678,7 +753,7 @@ export default function DiscoverScreenWeb() {
   } | null>(null)
 
   const viewportToContainer = useCallback((vx: number, vy: number) => {
-    const el = (mapPanelRef.current as any) as HTMLElement | null
+    const el = mapPanelRef.current as any as HTMLElement | null
     if (el?.getBoundingClientRect) {
       const r = el.getBoundingClientRect()
       return { x: vx - r.left, y: vy - r.top }
@@ -686,22 +761,28 @@ export default function DiscoverScreenWeb() {
     return { x: vx, y: vy }
   }, [])
 
-  const handlePointHover = useCallback((point: MapPoint | null, x?: number, y?: number) => {
-    if (point && x != null && y != null) {
-      const pos = viewportToContainer(x, y)
-      setHoverPopover({ point, x: pos.x, y: pos.y })
-    } else {
-      setHoverPopover(null)
-    }
-  }, [viewportToContainer])
+  const handlePointHover = useCallback(
+    (point: MapPoint | null, x?: number, y?: number) => {
+      if (point && x != null && y != null) {
+        const pos = viewportToContainer(x, y)
+        setHoverPopover({ point, x: pos.x, y: pos.y })
+      } else {
+        setHoverPopover(null)
+      }
+    },
+    [viewportToContainer]
+  )
 
-  const handlePointClick = useCallback((point: MapPoint, x?: number, y?: number) => {
-    setHoverPopover(null)
-    if (x != null && y != null) {
-      const pos = viewportToContainer(x, y)
-      setClickPopover({ point, x: pos.x, y: pos.y })
-    }
-  }, [viewportToContainer])
+  const handlePointClick = useCallback(
+    (point: MapPoint, x?: number, y?: number) => {
+      setHoverPopover(null)
+      if (x != null && y != null) {
+        const pos = viewportToContainer(x, y)
+        setClickPopover({ point, x: pos.x, y: pos.y })
+      }
+    },
+    [viewportToContainer]
+  )
 
   const handlePopoverView = useCallback(() => {
     if (!clickPopover) return
@@ -739,7 +820,13 @@ export default function DiscoverScreenWeb() {
       <View className="flex-row flex-1">
         {/* Map Panel */}
         <View ref={mapPanelRef} className="flex-1 relative">
-          <Suspense fallback={<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color="#E8862A" /></View>}>
+          <Suspense
+            fallback={
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#E8862A" />
+              </View>
+            }
+          >
             <Map
               points={filteredPoints}
               onPointPress={handlePointPress}
@@ -791,9 +878,16 @@ export default function DiscoverScreenWeb() {
         ) : selectedItem ? (
           <DetailPanelWrapper
             selectedItem={selectedItem}
-            onClose={() => { setSelectedItem(null); clearParams() }}
+            onClose={() => {
+              setSelectedItem(null)
+              clearParams()
+            }}
             onEventPress={(id) => setSelectedItem({ type: 'event', id })}
-            onEditEvent={(id) => { setSelectedItem(null); setFormPanel({ id }) }}
+            onEditEvent={(id) => {
+              setSelectedItem(null)
+              setFormPanel({ id })
+            }}
+            onStatusChange={updateEventStatus}
           />
         ) : (
           <View
@@ -820,7 +914,10 @@ export default function DiscoverScreenWeb() {
                 </View>
                 {canCreate && (
                   <Pressable
-                    onPress={() => { setSelectedItem(null); setFormPanel({}) }}
+                    onPress={() => {
+                      setSelectedItem(null)
+                      setFormPanel({})
+                    }}
                     style={{
                       width: 40,
                       height: 40,
