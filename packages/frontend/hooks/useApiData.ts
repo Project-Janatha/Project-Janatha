@@ -68,6 +68,7 @@ function apiEventToDisplay(e: EventData, _username?: string): EventDisplay {
     latitude: e.latitude,
     longitude: e.longitude,
     attendees: e.peopleAttending || 0,
+    attendeesList: (e as any).attendeesList,
     likes: 0,
     comments: 0,
     description: e.description || undefined,
@@ -216,7 +217,7 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
             setAttendees(users.map((u) => ({
               name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
               subtitle: '',
-              image: undefined, // Will use initials fallback in UI
+              image: u.profileImage ?? undefined,
               initials: u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : u.username.slice(0, 2).toUpperCase(),
             })))
             // Check if current user is in attendees list
@@ -253,20 +254,48 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
         // Already registered - unattend
         const result = await unattendEvent(eventId)
         setIsRegistered(false)
+        // Re-fetch attendees after unregistering
+        const updatedUsers = await fetchEventUsers(eventId)
+        const newAttendeesList = updatedUsers.slice(0, 4).map((u) => ({
+          name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
+          image: u.profileImage || undefined,
+          initials: u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : u.username.slice(0, 2).toUpperCase(),
+        }))
         setEvent((prev) =>
           prev
-            ? { ...prev, isRegistered: false, attendees: result.peopleAttending }
+            ? { ...prev, isRegistered: false, attendees: result.peopleAttending, attendeesList: newAttendeesList }
             : null,
         )
+        // Also update attendees state
+        setAttendees(updatedUsers.map((u) => ({
+          name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
+          subtitle: '',
+          image: u.profileImage ?? undefined,
+          initials: u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : u.username.slice(0, 2).toUpperCase(),
+        })))
       } else {
         // Not registered - attend
         const result = await attendEvent(eventId)
         setIsRegistered(true)
+        // Re-fetch attendees after registering
+        const updatedUsers = await fetchEventUsers(eventId)
+        const newAttendeesList = updatedUsers.slice(0, 4).map((u) => ({
+          name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
+          image: u.profileImage || undefined,
+          initials: u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : u.username.slice(0, 2).toUpperCase(),
+        }))
         setEvent((prev) =>
           prev
-            ? { ...prev, isRegistered: true, attendees: result.peopleAttending }
+            ? { ...prev, isRegistered: true, attendees: result.peopleAttending, attendeesList: newAttendeesList }
             : null,
         )
+        // Also update attendees state
+        setAttendees(updatedUsers.map((u) => ({
+          name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
+          subtitle: '',
+          image: u.profileImage ?? undefined,
+          initials: u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : u.username.slice(0, 2).toUpperCase(),
+        })))
       }
     } catch (error: any) {
       // If error says already registered, update UI
@@ -477,7 +506,22 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
         if (!mounted) return
         if (__DEV__) console.log('[useDiscoverData] Got events:', allApiEvents.length)
 
-        const fetchedEvents = allApiEvents.map((e) => apiEventToDisplay(e))
+        // Fetch attendees for each event
+        const eventsWithAttendees = await Promise.all(
+          allApiEvents.map(async (e) => {
+            const users = await fetchEventUsers(e.eventID)
+            return {
+              ...e,
+              attendeesList: users.slice(0, 4).map((u) => ({
+                name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
+                image: u.profileImage || undefined,
+                initials: u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : u.username.slice(0, 2).toUpperCase(),
+              })),
+            }
+          })
+        )
+
+        const fetchedEvents = eventsWithAttendees.map((e) => apiEventToDisplay(e))
 
         if (fetchedEvents.length > 0) {
           setAllEvents(fetchedEvents)
@@ -495,6 +539,44 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
     }
     load()
     return () => { mounted = false }
+  }, [])
+
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    try {
+      const apiCenters = await fetchCenters()
+      const discoverCenters = centersToDiscoverCenters(apiCenters)
+      if (discoverCenters.length > 0) {
+        setAllCenters(discoverCenters)
+      }
+
+      const allApiEvents = await fetchAllEvents()
+
+      const eventsWithAttendees = await Promise.all(
+        allApiEvents.map(async (e) => {
+          const users = await fetchEventUsers(e.eventID)
+          return {
+            ...e,
+            attendeesList: users.slice(0, 4).map((u) => ({
+              name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
+              image: u.profileImage || undefined,
+              initials: u.firstName ? `${u.firstName[0]}${u.lastName?.[0] || ''}`.toUpperCase() : u.username.slice(0, 2).toUpperCase(),
+            })),
+          }
+        })
+      )
+
+      const fetchedEvents = eventsWithAttendees.map((e) => apiEventToDisplay(e))
+      if (fetchedEvents.length > 0) {
+        setAllEvents(fetchedEvents)
+        setIsLive(true)
+      }
+    } catch (err: any) {
+      const message = err?.message || 'Failed to refresh discover data'
+      setError(message)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   const items = useMemo<DiscoverItem[]>(() => {
@@ -558,7 +640,7 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
     return allPoints
   }, [allCenters, allEvents, filter])
 
-  return { items, filteredPoints, loading, isLive, error, allEvents, allCenters }
+  return { items, filteredPoints, loading, isLive, error, allEvents, allCenters, refresh }
 }
 
 export { SAMPLE_ATTENDEES, SAMPLE_MESSAGES }

@@ -71,6 +71,12 @@ export interface MapPoint {
 
 // ── Discover-specific types ─────────────────────────────────────────────
 
+export interface AttendeeInfo {
+  name: string
+  image?: string
+  initials?: string
+}
+
 export interface EventDisplay {
   id: string
   title: string
@@ -81,6 +87,7 @@ export interface EventDisplay {
   latitude?: number
   longitude?: number
   attendees: number
+  attendeesList?: AttendeeInfo[]
   likes: number
   comments: number
   description?: string

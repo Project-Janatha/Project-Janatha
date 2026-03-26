@@ -12,7 +12,7 @@ import {
 import { MapPin, Search, Building2, Users, ChevronUp, Plus } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { useThemeContext, useUser } from '../../components/contexts'
-import { FilterChip, Badge, UnderlineTabBar } from '../../components/ui'
+import { FilterChip, Badge, UnderlineTabBar, Avatar } from '../../components/ui'
 const Map = lazy(() => import('../../components/Map'))
 import MapPopover from '../../components/MapPopover'
 import {
@@ -25,7 +25,7 @@ import EventDetailPanel from '../../components/web/EventDetailPanel'
 import EventFormPanel from '../../components/web/EventFormPanel'
 import CenterDetailPanel from '../../components/web/CenterDetailPanel'
 import { useDetailColors } from '../../hooks/useDetailColors'
-import type { MapPoint, EventDisplay, DiscoverCenter } from '../../utils/api'
+import type { MapPoint, EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
 import { WeekCalendar } from '../../components'
 
 const ADMIN_NAME = 'brahman'
@@ -53,26 +53,44 @@ function isToday(dateStr: string): boolean {
 
 const AVATAR_COLORS = ['#E8862A', '#78716C', '#A8A29E', '#D6D3D1']
 
-function AttendeeAvatars({ count }: { count: number }) {
+function AttendeeAvatars({ count, attendees }: { count: number; attendees?: AttendeeInfo[] }) {
   if (count <= 0) return null
   const shown = Math.min(count, 4)
+  if (__DEV__) console.log('[AttendeeAvatars web] count:', count, 'attendees:', attendees)
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
       <View style={{ flexDirection: 'row' }}>
-        {Array.from({ length: shown }).map((_, i) => (
-          <View
-            key={i}
-            style={{
-              width: 18,
-              height: 18,
-              borderRadius: 9,
-              backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
-              marginLeft: i === 0 ? 0 : -6,
-              borderWidth: 1.5,
-              borderColor: 'white',
-            }}
-          />
-        ))}
+        {attendees && attendees.length > 0 ? (
+          attendees.slice(0, shown).map((attendee, i) => (
+            <Avatar
+              key={i}
+              image={attendee.image}
+              initials={attendee.initials}
+              name={attendee.name}
+              size={18}
+              style={{
+                marginLeft: i === 0 ? 0 : -6,
+                borderWidth: 1.5,
+                borderColor: 'white',
+              }}
+            />
+          ))
+        ) : (
+          Array.from({ length: shown }).map((_, i) => (
+            <View
+              key={i}
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: 9,
+                backgroundColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
+                marginLeft: i === 0 ? 0 : -6,
+                borderWidth: 1.5,
+                borderColor: 'white',
+              }}
+            />
+          ))
+        )}
       </View>
       <Text className="text-stone-400 dark:text-stone-500 font-inter text-xs">{count} going</Text>
     </View>
@@ -127,7 +145,7 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
           </Text>
         </View>
         <View style={{ marginTop: 4 }}>
-          <AttendeeAvatars count={event.attendees} />
+          <AttendeeAvatars count={event.attendees} attendees={event.attendeesList} />
         </View>
       </View>
     </Pressable>

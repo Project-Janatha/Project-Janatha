@@ -7,9 +7,10 @@ interface AvatarProps {
   name?: string
   size?: number
   style?: object
+  backgroundColor?: string
 }
 
-export default function Avatar({ image, initials, name, size = 40, style }: AvatarProps) {
+export default function Avatar({ image, initials, name, size = 40, style, backgroundColor }: AvatarProps) {
   const getInitials = () => {
     if (initials) return initials
     if (name) {
@@ -23,6 +24,7 @@ export default function Avatar({ image, initials, name, size = 40, style }: Avat
   }
 
   const fontSize = size * 0.4
+  const bgColor = backgroundColor || '#C2410C'
 
   if (image) {
     return (
@@ -47,7 +49,7 @@ export default function Avatar({ image, initials, name, size = 40, style }: Avat
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: '#E8862A',
+          backgroundColor: bgColor,
           alignItems: 'center',
           justifyContent: 'center',
         },
