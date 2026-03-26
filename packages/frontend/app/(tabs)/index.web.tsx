@@ -198,7 +198,7 @@ function DetailPanelWrapper({
 function EventPanelInner({ eventId, onClose, onEdit }: { eventId: string; onClose: () => void; onEdit?: (id: string) => void }) {
   const { user } = useUser()
   const { event, attendees, messages, loading, toggleRegistration, isToggling } =
-    useEventDetail(eventId)
+    useEventDetail(eventId, user?.username, user?.id)
   const colors = useDetailColors()
   const isAdmin = user?.username === ADMIN_NAME
   const canEdit = isAdmin || isLocal

@@ -338,7 +338,7 @@ export async function getUserEvents(username: string): Promise<EventData[]> {
       return []
     }
     const data = await response.json()
-    if (__DEV__) console.log('[getUserEvents] Got events:', data.events?.length || 0)
+    if (__DEV__) console.log('[getUserEvents] Got events:', data.events?.length || 0, 'events:', data.events?.map((e: any) => e.eventID))
     return data.events || []
   } catch (err: any) {
     if (__DEV__) console.warn('[getUserEvents]', err?.message || err)

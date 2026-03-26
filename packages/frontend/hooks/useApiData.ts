@@ -202,34 +202,26 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
         if (__DEV__) console.log('[useEventDetail] Got event:', apiEvent)
 
         if (apiEvent) {
-          // Check if user is registered for this event
-          let userIsRegistered = false
-          if (username) {
-            if (__DEV__) console.log('[useEventDetail] Checking registration for:', username)
-            const userEvents = await getUserEvents(username)
-            if (__DEV__) console.log('[useEventDetail] User events:', userEvents.length)
-            userIsRegistered = userEvents.some((e) => e.eventID === eventId)
-          } else {
-            if (__DEV__) console.log('[useEventDetail] No username, skipping registration check')
-          }
-
           // Check if user is the creator
           const userIsCreator = !!(userId && apiEvent.createdBy === userId)
 
           const display = apiEventToDisplay(apiEvent)
-          display.isRegistered = userIsRegistered
           setEvent(display)
-          setIsRegistered(userIsRegistered)
           setIsCreator(userIsCreator)
           setIsLive(true)
 
+          // Fetch attendees and check if current user is registered
           const users = await fetchEventUsers(eventId)
-          if (users.length > 0 && mounted) {
+          if (mounted) {
             setAttendees(users.map((u) => ({
               name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username,
               subtitle: '',
               image: u.profileImage || `https://i.pravatar.cc/100?u=${u.username}`,
             })))
+            // Check if current user is in attendees list
+            const userIsRegistered = userId ? users.some((u) => u.id === userId) : false
+            setIsRegistered(userIsRegistered)
+            setEvent((prev) => prev ? { ...prev, isRegistered: userIsRegistered } : null)
           }
         }
       } catch (err: any) {
@@ -245,16 +237,19 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
 
     load()
     return () => { mounted = false }
-  }, [eventId, username])
+  }, [eventId, userId])
 
   const toggleRegistration = useCallback(async (_username: string) => {
     if (!event) return
     setIsToggling(true)
 
     try {
-      const currentlyRegistered = isRegistered
-
-      if (currentlyRegistered) {
+      // Check current registration status directly from API
+      const users = await fetchEventUsers(eventId)
+      const currentUserInAttendees = users.some((u) => u.id === userId)
+      
+      if (currentUserInAttendees) {
+        // Already registered - unattend
         const result = await unattendEvent(eventId)
         setIsRegistered(false)
         setEvent((prev) =>
@@ -263,6 +258,7 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
             : null,
         )
       } else {
+        // Not registered - attend
         const result = await attendEvent(eventId)
         setIsRegistered(true)
         setEvent((prev) =>
@@ -271,12 +267,17 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
             : null,
         )
       }
-    } catch (error) {
+    } catch (error: any) {
+      // If error says already registered, update UI
+      if (error?.message?.includes('Already registered')) {
+        setIsRegistered(true)
+        setEvent((prev) => prev ? { ...prev, isRegistered: true } : null)
+      }
       throw error
     } finally {
       setIsToggling(false)
     }
-  }, [event, eventId, isRegistered])
+  }, [event, eventId, userId])
 
   return { event, attendees, messages, loading, isLive, toggleRegistration, isToggling, isCreator, error }
 }

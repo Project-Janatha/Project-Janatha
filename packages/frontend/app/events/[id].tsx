@@ -415,12 +415,12 @@ function ActionBar({
 export default function EventDetailPage() {
   const { id } = useLocalSearchParams()
   const router = useRouter()
-  const { user } = useUser()
-  console.log('[EventDetailPage] Raw user from context:', JSON.stringify(user))
+  const userContext = useUser()
+  const { user, authStatus } = userContext
+  console.log('##### AUTH STATUS:', authStatus, 'USER:', user?.username, '#####')
   const [activeTab, setActiveTab] = useState('Details')
-  const username = user?.username
-  const userId = user?.id
-  console.log('[EventDetailPage] username:', username, 'userId:', userId)
+  const username = authStatus === 'authenticated' ? user?.username : undefined
+  const userId = authStatus === 'authenticated' ? user?.id : undefined
   const { event, attendees, messages, loading, toggleRegistration, isToggling, isCreator } = useEventDetail(
     id as string,
     username,
@@ -435,8 +435,15 @@ export default function EventDetailPage() {
     if (!user?.username) return
     try {
       await toggleRegistration(user.username)
-    } catch {
-      Alert.alert('Error', 'Failed to update registration. Please try again.')
+    } catch (err: any) {
+      const message = err?.message || ''
+      if (message.includes('Already registered')) {
+        Alert.alert('Already Registered', 'You are already registered for this event.')
+      } else if (message.includes('Not registered')) {
+        Alert.alert('Not Registered', 'You are not registered for this event.')
+      } else {
+        Alert.alert('Error', 'Failed to update registration. Please try again.')
+      }
     }
   }
 
@@ -471,12 +478,14 @@ export default function EventDetailPage() {
 
   // ── Derived state ────────────────────────────────────────────────────
 
-  const isPast = event.date ? new Date(event.date + 'T23:59:59') < new Date() : false
-  const isRegistered = !!event.isRegistered && !isPast
+  const isPast = event?.date ? new Date(event.date + 'T23:59:59') < new Date() : false
+  const isRegistered = !!event?.isRegistered && !isPast
+
+  console.log('##### RENDER:', { hasEvent: !!event, isRegistered, userId })
 
   // ── Registered state (with tabs) ─────────────────────────────────────
 
-  if (isRegistered) {
+  if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
         <HeaderBar
