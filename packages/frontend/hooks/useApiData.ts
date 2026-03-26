@@ -4,6 +4,7 @@ import {
   fetchCenter,
   fetchEvent,
   fetchEventsByCenter,
+  fetchAllEvents,
   fetchEventUsers,
   attendEvent,
   unattendEvent,
@@ -165,7 +166,7 @@ export function useMapPoints() {
         const centerPoints = centersToMapPoints(centers)
 
         if (centerPoints.length > 0) {
-          const allEvents = await fetchAllEventsFromCenters(centers)
+          const allEvents = await fetchAllEvents()
           if (!mounted) return
 
           const eventPoints = eventsToMapPoints(allEvents)
@@ -204,7 +205,7 @@ export function useEventList() {
         const centers = await fetchCenters()
         if (!mounted) return
 
-        const allApiEvents = await fetchAllEventsFromCenters(centers)
+        const allApiEvents = await fetchAllEvents()
         if (!mounted) return
 
         const allEvents = allApiEvents.map((e) => apiEventToDisplay(e))
@@ -595,8 +596,8 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string) {
           setAllCenters(discoverCenters)
         }
 
-        // Fetch events for all centers in parallel
-        const allApiEvents = await fetchAllEventsFromCenters(apiCenters)
+        // Fetch all events from API
+        const allApiEvents = await fetchAllEvents()
         if (!mounted) return
 
         const fetchedEvents = allApiEvents.map((e) => apiEventToDisplay(e))

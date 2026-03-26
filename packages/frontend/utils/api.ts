@@ -233,6 +233,18 @@ export async function fetchEventsByCenter(centerID: string): Promise<EventData[]
   }
 }
 
+export async function fetchAllEvents(): Promise<EventData[]> {
+  try {
+    const response = await apiFetch('/fetchAllEvents')
+    if (!response.ok) return []
+    const data = await response.json()
+    return data.events || []
+  } catch (err: any) {
+    if (__DEV__) console.warn('[fetchAllEvents]', err?.message || err)
+    return []
+  }
+}
+
 export async function fetchEventUsers(eventID: string): Promise<UserData[]> {
   try {
     const response = await apiFetch('/getEventUsers', {

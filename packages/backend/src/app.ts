@@ -847,6 +847,14 @@ app.post('/fetchEventsByCenter', cacheControl(30), async (c) => {
   })
 })
 
+app.get('/fetchAllEvents', cacheControl(30), async (c) => {
+  const events = await db.getAllEvents(c.env.DB)
+  return c.json({
+    message: 'Success',
+    events: events.map(eventRowToApi),
+  })
+})
+
 // ══════════════════════════════════════════════════════════════════════
 // PROFILE IMAGE ROUTES
 // ══════════════════════════════════════════════════════════════════════
