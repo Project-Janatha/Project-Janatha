@@ -416,11 +416,15 @@ export default function EventDetailPage() {
   const { id } = useLocalSearchParams()
   const router = useRouter()
   const { user } = useUser()
+  console.log('[EventDetailPage] Raw user from context:', JSON.stringify(user))
   const [activeTab, setActiveTab] = useState('Details')
+  const username = user?.username
+  const userId = user?.id
+  console.log('[EventDetailPage] username:', username, 'userId:', userId)
   const { event, attendees, messages, loading, toggleRegistration, isToggling, isCreator } = useEventDetail(
     id as string,
-    user?.username,
-    user?.id
+    username,
+    userId
   )
   const colors = useDetailColors()
 

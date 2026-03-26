@@ -195,15 +195,22 @@ export function useEventDetail(eventId: string, username?: string, userId?: stri
     const load = async () => {
       try {
         setError(null)
+        if (__DEV__) console.log('[useEventDetail] Loading event:', eventId, 'username:', username, 'userId:', userId)
         const apiEvent = await fetchEvent(eventId)
         if (!mounted) return
+
+        if (__DEV__) console.log('[useEventDetail] Got event:', apiEvent)
 
         if (apiEvent) {
           // Check if user is registered for this event
           let userIsRegistered = false
           if (username) {
+            if (__DEV__) console.log('[useEventDetail] Checking registration for:', username)
             const userEvents = await getUserEvents(username)
+            if (__DEV__) console.log('[useEventDetail] User events:', userEvents.length)
             userIsRegistered = userEvents.some((e) => e.eventID === eventId)
+          } else {
+            if (__DEV__) console.log('[useEventDetail] No username, skipping registration check')
           }
 
           // Check if user is the creator

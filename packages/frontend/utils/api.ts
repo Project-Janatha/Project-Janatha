@@ -328,12 +328,17 @@ export async function updateEvent(eventJSON: Record<string, any>): Promise<any> 
 
 export async function getUserEvents(username: string): Promise<EventData[]> {
   try {
+    if (__DEV__) console.log('[getUserEvents] Calling for:', username)
     const response = await authFetch('/getUserEvents', {
       method: 'POST',
       body: JSON.stringify({ username }),
     })
-    if (!response.ok) return []
+    if (!response.ok) {
+      if (__DEV__) console.warn('[getUserEvents] Response not ok:', response.status)
+      return []
+    }
     const data = await response.json()
+    if (__DEV__) console.log('[getUserEvents] Got events:', data.events?.length || 0)
     return data.events || []
   } catch (err: any) {
     if (__DEV__) console.warn('[getUserEvents]', err?.message || err)

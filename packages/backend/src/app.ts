@@ -750,10 +750,13 @@ app.post('/updateEvent', authMiddleware, async (c) => {
     return c.json({ message: 'Event not found' }, 404)
   }
 
-  // Allow admin or the event creator to edit
+  // Allow admin or the event creator to edit (or any logged-in user for events without creator)
   const isAdmin = user.username === ADMIN_NAME
+  console.log('[updateEvent] user.id:', user.id, 'existing.created_by:', existing.created_by, 'isAdmin:', isAdmin)
   const isCreator = existing.created_by === user.id
-  if (!isAdmin && !isCreator) {
+  const isEditable = isAdmin || isCreator || existing.created_by === null
+  console.log('[updateEvent] isCreator:', isCreator, 'isEditable:', isEditable)
+  if (!isEditable) {
     return c.json({ message: 'Insufficient permissions - only admin or event creator can edit' }, 401)
   }
 
