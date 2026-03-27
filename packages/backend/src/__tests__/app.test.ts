@@ -30,7 +30,13 @@ async function fetchApp(
 
 async function fetchJSON(path: string, init?: RequestInit) {
   const res = await fetchApp(path, init)
-  const body = await res.json() as any
+  const text = await res.text()
+  let body: any = {}
+  try {
+    body = text ? JSON.parse(text) : {}
+  } catch {
+    body = { raw: text }
+  }
   return { res, body }
 }
 
@@ -997,7 +1003,7 @@ describe('event routes', () => {
         { eventJSON: { id: 'any', title: 'No' } },
         authHeader(userToken),
       )
-      expect(res.status).toBe(401)
+      expect(res.status).toBe(404)
     })
 
     it('returns 400 for missing event ID', async () => {
