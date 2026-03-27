@@ -5,11 +5,7 @@
  * Covers auth, centers, events, admin, legacy routes, and error handling.
  */
 import { describe, it, expect, beforeEach } from 'vitest'
-import {
-  env,
-  createExecutionContext,
-  waitOnExecutionContext,
-} from 'cloudflare:test'
+import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test'
 import { applyMigration, dropAllTables } from './setup'
 import { app } from '../app'
 import { hashPassword } from '../auth'
@@ -17,10 +13,7 @@ import { clearRateLimits } from '../middleware'
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-async function fetchApp(
-  path: string,
-  init?: RequestInit,
-): Promise<Response> {
+async function fetchApp(path: string, init?: RequestInit): Promise<Response> {
   const req = new Request(`http://localhost${path}`, init)
   const ctx = createExecutionContext()
   const res = await app.fetch(req, env, ctx)
@@ -69,7 +62,7 @@ function jsonDelete(path: string, data: unknown, headers: Record<string, string>
  */
 async function registerAndLogin(
   username: string,
-  password: string,
+  password: string
 ): Promise<{ token: string; user: any }> {
   await jsonPost('/api/auth/register', { username, password })
   const { body } = await jsonPost('/api/auth/authenticate', {
@@ -305,7 +298,7 @@ describe('POST /api/auth/complete-onboarding', () => {
         lastName: 'Krishna',
         profileComplete: true,
       },
-      authHeader(token),
+      authHeader(token)
     )
     expect(res.status).toBe(200)
     expect(body.message).toBe('Profile completed successfully')
@@ -323,7 +316,7 @@ describe('POST /api/auth/complete-onboarding', () => {
         centerID: '',
         profileComplete: true,
       },
-      authHeader(token),
+      authHeader(token)
     )
     expect(res.status).toBe(200)
     expect(body.user.centerID).toBeNull()
@@ -351,7 +344,7 @@ describe('PUT /api/auth/update-profile', () => {
         lastName: 'Name',
         email: 'updated@example.com',
       },
-      authHeader(token),
+      authHeader(token)
     )
     expect(res.status).toBe(200)
     expect(body.user.firstName).toBe('Updated')
@@ -363,7 +356,7 @@ describe('PUT /api/auth/update-profile', () => {
     const { res, body } = await jsonPut(
       '/api/auth/update-profile',
       { centerID: '' },
-      authHeader(token),
+      authHeader(token)
     )
     expect(res.status).toBe(200)
     expect(body.user.centerID).toBeNull()
@@ -384,11 +377,7 @@ describe('PUT /api/auth/update-profile', () => {
 describe('DELETE /api/auth/delete-account', () => {
   it('deletes the authenticated user account', async () => {
     const { token } = await registerAndLogin('deleteuser', 'password123')
-    const { res, body } = await jsonDelete(
-      '/api/auth/delete-account',
-      {},
-      authHeader(token),
-    )
+    const { res, body } = await jsonDelete('/api/auth/delete-account', {}, authHeader(token))
     expect(res.status).toBe(200)
     expect(body.message).toBe('Account deleted successfully')
 
@@ -418,11 +407,15 @@ describe('GET /api/centers', () => {
 
   it('returns centers after creation', async () => {
     const { token } = await registerAndLogin('centeruser', 'password123')
-    await jsonPost('/api/addCenter', {
-      centerName: 'Test Center',
-      latitude: 37.0,
-      longitude: -121.0,
-    }, authHeader(token))
+    await jsonPost(
+      '/api/addCenter',
+      {
+        centerName: 'Test Center',
+        latitude: 37.0,
+        longitude: -121.0,
+      },
+      authHeader(token)
+    )
     const { body } = await fetchJSON('/api/centers')
     expect(body.centers).toHaveLength(1)
     expect(body.centers[0].name).toBe('Test Center')
@@ -432,11 +425,15 @@ describe('GET /api/centers', () => {
 describe('POST /api/addCenter', () => {
   it('creates a center successfully', async () => {
     const { token } = await registerAndLogin('centeruser', 'password123')
-    const { res, body } = await jsonPost('/api/addCenter', {
-      centerName: 'New Center',
-      latitude: 37.5,
-      longitude: -122.0,
-    }, authHeader(token))
+    const { res, body } = await jsonPost(
+      '/api/addCenter',
+      {
+        centerName: 'New Center',
+        latitude: 37.5,
+        longitude: -122.0,
+      },
+      authHeader(token)
+    )
     expect(res.status).toBe(200)
     expect(body.message).toBe('Operation successful')
     expect(body.id).toBeDefined()
@@ -453,31 +450,43 @@ describe('POST /api/addCenter', () => {
 
   it('rejects missing centerName (400)', async () => {
     const { token } = await registerAndLogin('centeruser', 'password123')
-    const { res } = await jsonPost('/api/addCenter', {
-      centerName: '',
-      latitude: 37.0,
-      longitude: -121.0,
-    }, authHeader(token))
+    const { res } = await jsonPost(
+      '/api/addCenter',
+      {
+        centerName: '',
+        latitude: 37.0,
+        longitude: -121.0,
+      },
+      authHeader(token)
+    )
     expect(res.status).toBe(400)
   })
 
   it('rejects invalid latitude (400)', async () => {
     const { token } = await registerAndLogin('centeruser', 'password123')
-    const { res } = await jsonPost('/api/addCenter', {
-      centerName: 'Bad Center',
-      latitude: 999,
-      longitude: -121.0,
-    }, authHeader(token))
+    const { res } = await jsonPost(
+      '/api/addCenter',
+      {
+        centerName: 'Bad Center',
+        latitude: 999,
+        longitude: -121.0,
+      },
+      authHeader(token)
+    )
     expect(res.status).toBe(400)
   })
 
   it('rejects invalid longitude (400)', async () => {
     const { token } = await registerAndLogin('centeruser', 'password123')
-    const { res } = await jsonPost('/api/addCenter', {
-      centerName: 'Bad Center',
-      latitude: 37.0,
-      longitude: -999,
-    }, authHeader(token))
+    const { res } = await jsonPost(
+      '/api/addCenter',
+      {
+        centerName: 'Bad Center',
+        latitude: 37.0,
+        longitude: -999,
+      },
+      authHeader(token)
+    )
     expect(res.status).toBe(400)
   })
 })
@@ -485,11 +494,15 @@ describe('POST /api/addCenter', () => {
 describe('POST /api/fetchCenter', () => {
   it('returns a center by ID', async () => {
     const { token } = await registerAndLogin('fetchcenteruser', 'password123')
-    const { body: addBody } = await jsonPost('/api/addCenter', {
-      centerName: 'Fetch Center',
-      latitude: 37.0,
-      longitude: -121.0,
-    }, authHeader(token))
+    const { body: addBody } = await jsonPost(
+      '/api/addCenter',
+      {
+        centerName: 'Fetch Center',
+        latitude: 37.0,
+        longitude: -121.0,
+      },
+      authHeader(token)
+    )
     const centerId = addBody.id
 
     const { res, body } = await jsonPost('/api/fetchCenter', { centerID: centerId })
@@ -511,8 +524,16 @@ describe('POST /api/fetchCenter', () => {
 describe('POST /api/fetchAllCenters', () => {
   it('returns all centers with centersList key', async () => {
     const { token } = await registerAndLogin('allcentersuser', 'password123')
-    await jsonPost('/api/addCenter', { centerName: 'C1', latitude: 37.0, longitude: -121.0 }, authHeader(token))
-    await jsonPost('/api/addCenter', { centerName: 'C2', latitude: 38.0, longitude: -122.0 }, authHeader(token))
+    await jsonPost(
+      '/api/addCenter',
+      { centerName: 'C1', latitude: 37.0, longitude: -121.0 },
+      authHeader(token)
+    )
+    await jsonPost(
+      '/api/addCenter',
+      { centerName: 'C2', latitude: 38.0, longitude: -122.0 },
+      authHeader(token)
+    )
 
     const { body } = await jsonPost('/api/fetchAllCenters', {})
     expect(body.message).toBe('Successful')
@@ -527,16 +548,20 @@ describe('POST /api/fetchAllCenters', () => {
 describe('POST /api/verifyCenter (admin only)', () => {
   it('admin can verify a center', async () => {
     const adminToken = await createAdmin()
-    const { body: addBody } = await jsonPost('/api/addCenter', {
-      centerName: 'Unverified Center',
-      latitude: 37.0,
-      longitude: -121.0,
-    }, authHeader(adminToken))
+    const { body: addBody } = await jsonPost(
+      '/api/addCenter',
+      {
+        centerName: 'Unverified Center',
+        latitude: 37.0,
+        longitude: -121.0,
+      },
+      authHeader(adminToken)
+    )
 
     const { res, body } = await jsonPost(
       '/api/verifyCenter',
       { centerID: addBody.id },
-      authHeader(adminToken),
+      authHeader(adminToken)
     )
     expect(res.status).toBe(200)
     expect(body.message).toBe('Successful verification!')
@@ -544,11 +569,7 @@ describe('POST /api/verifyCenter (admin only)', () => {
 
   it('non-admin is rejected (401)', async () => {
     const { token } = await registerAndLogin('normaluser', 'password123')
-    const { res } = await jsonPost(
-      '/api/verifyCenter',
-      { centerID: 'any' },
-      authHeader(token),
-    )
+    const { res } = await jsonPost('/api/verifyCenter', { centerID: 'any' }, authHeader(token))
     expect(res.status).toBe(401)
   })
 
@@ -557,7 +578,7 @@ describe('POST /api/verifyCenter (admin only)', () => {
     const { res } = await jsonPost(
       '/api/verifyCenter',
       { centerID: 'nonexistent' },
-      authHeader(adminToken),
+      authHeader(adminToken)
     )
     expect(res.status).toBe(404)
   })
@@ -566,16 +587,20 @@ describe('POST /api/verifyCenter (admin only)', () => {
 describe('POST /api/removeCenter (admin only)', () => {
   it('admin can remove a center', async () => {
     const adminToken = await createAdmin()
-    const { body: addBody } = await jsonPost('/api/addCenter', {
-      centerName: 'Removable Center',
-      latitude: 37.0,
-      longitude: -121.0,
-    }, authHeader(adminToken))
+    const { body: addBody } = await jsonPost(
+      '/api/addCenter',
+      {
+        centerName: 'Removable Center',
+        latitude: 37.0,
+        longitude: -121.0,
+      },
+      authHeader(adminToken)
+    )
 
     const { res, body } = await jsonPost(
       '/api/removeCenter',
       { centerID: addBody.id },
-      authHeader(adminToken),
+      authHeader(adminToken)
     )
     expect(res.status).toBe(200)
     expect(body.message).toBe('Successful removal!')
@@ -583,11 +608,7 @@ describe('POST /api/removeCenter (admin only)', () => {
 
   it('non-admin is rejected (401)', async () => {
     const { token } = await registerAndLogin('regular', 'password123')
-    const { res } = await jsonPost(
-      '/api/removeCenter',
-      { centerID: 'any' },
-      authHeader(token),
-    )
+    const { res } = await jsonPost('/api/removeCenter', { centerID: 'any' }, authHeader(token))
     expect(res.status).toBe(401)
   })
 })
@@ -604,7 +625,7 @@ describe('POST /api/verifyUser (admin only)', () => {
     const { res, body } = await jsonPost(
       '/api/verifyUser',
       { usernameToVerify: 'targetuser', verificationLevel: 54 },
-      authHeader(adminToken),
+      authHeader(adminToken)
     )
     expect(res.status).toBe(200)
     expect(body.message).toBe('Verification successful.')
@@ -615,7 +636,7 @@ describe('POST /api/verifyUser (admin only)', () => {
     const { res } = await jsonPost(
       '/api/verifyUser',
       { usernameToVerify: 'someone', verificationLevel: 54 },
-      authHeader(token),
+      authHeader(token)
     )
     expect(res.status).toBe(401)
   })
@@ -625,7 +646,7 @@ describe('POST /api/verifyUser (admin only)', () => {
     const { res } = await jsonPost(
       '/api/verifyUser',
       { usernameToVerify: 'ghost', verificationLevel: 54 },
-      authHeader(adminToken),
+      authHeader(adminToken)
     )
     expect(res.status).toBe(404)
   })
@@ -639,7 +660,7 @@ describe('POST /api/userUpdate (admin only)', () => {
     const { res, body } = await jsonPost(
       '/api/userUpdate',
       { username: 'targetuser2', userJSON: { firstName: 'Updated' } },
-      authHeader(adminToken),
+      authHeader(adminToken)
     )
     expect(res.status).toBe(200)
     expect(body.message).toBe('Operation successful.')
@@ -650,7 +671,7 @@ describe('POST /api/userUpdate (admin only)', () => {
     const { res } = await jsonPost(
       '/api/userUpdate',
       { username: 'normaluser2', userJSON: { points: 9999 } },
-      authHeader(token),
+      authHeader(token)
     )
     expect(res.status).toBe(401)
   })
@@ -662,7 +683,7 @@ describe('POST /api/updateRegistration (auth + self/admin)', () => {
     const { res, body } = await jsonPost(
       '/api/updateRegistration',
       { username: 'selfupdate', userJSON: { firstName: 'Self' } },
-      authHeader(token),
+      authHeader(token)
     )
     expect(res.status).toBe(200)
     expect(body.message).toBe('User updated')
@@ -674,7 +695,7 @@ describe('POST /api/updateRegistration (auth + self/admin)', () => {
     const { res } = await jsonPost(
       '/api/updateRegistration',
       { username: 'victim', userJSON: { firstName: 'Hacked' } },
-      authHeader(token),
+      authHeader(token)
     )
     expect(res.status).toBe(401)
   })
@@ -696,7 +717,7 @@ describe('POST /api/removeUser (admin only)', () => {
     const { res, body } = await jsonPost(
       '/api/removeUser',
       { username: 'removable' },
-      authHeader(adminToken),
+      authHeader(adminToken)
     )
     expect(res.status).toBe(200)
     expect(body.message).toBe('User removed')
@@ -704,11 +725,7 @@ describe('POST /api/removeUser (admin only)', () => {
 
   it('non-admin is rejected (401)', async () => {
     const { token } = await registerAndLogin('cantremove', 'password123')
-    const { res } = await jsonPost(
-      '/api/removeUser',
-      { username: 'cantremove' },
-      authHeader(token),
-    )
+    const { res } = await jsonPost('/api/removeUser', { username: 'cantremove' }, authHeader(token))
     expect(res.status).toBe(401)
   })
 })
@@ -728,18 +745,22 @@ describe('event routes', () => {
     userToken = token
 
     // Create a center for events (requires auth now)
-    const { body } = await jsonPost('/api/addCenter', {
-      centerName: 'Event Center',
-      latitude: 37.0,
-      longitude: -121.0,
-    }, authHeader(adminToken))
+    const { body } = await jsonPost(
+      '/api/addCenter',
+      {
+        centerName: 'Event Center',
+        latitude: 37.0,
+        longitude: -121.0,
+      },
+      authHeader(adminToken)
+    )
     centerId = body.id
   })
 
-  describe('POST /api/addevent', () => {
+  describe('POST /api/addEvent', () => {
     it('creates an event successfully', async () => {
       const { res, body } = await jsonPost(
-        '/api/addevent',
+        '/api/addEvent',
         {
           title: 'Test Event',
           description: 'A test event',
@@ -748,7 +769,7 @@ describe('event routes', () => {
           longitude: -121.0,
           centerID: centerId,
         },
-        authHeader(userToken),
+        authHeader(userToken)
       )
       expect(res.status).toBe(200)
       expect(body.id).toBeDefined()
@@ -757,7 +778,7 @@ describe('event routes', () => {
 
     it('rejects missing centerID (400)', async () => {
       const { res } = await jsonPost(
-        '/api/addevent',
+        '/api/addEvent',
         {
           title: 'Bad Event',
           date: '2025-06-01T10:00:00Z',
@@ -765,14 +786,14 @@ describe('event routes', () => {
           longitude: -121.0,
           centerID: '',
         },
-        authHeader(userToken),
+        authHeader(userToken)
       )
       expect(res.status).toBe(400)
     })
 
     it('rejects non-existent center (404)', async () => {
       const { res } = await jsonPost(
-        '/api/addevent',
+        '/api/addEvent',
         {
           title: 'Bad Event',
           date: '2025-06-01T10:00:00Z',
@@ -780,14 +801,14 @@ describe('event routes', () => {
           longitude: -121.0,
           centerID: 'nonexistent-center-id',
         },
-        authHeader(userToken),
+        authHeader(userToken)
       )
       expect(res.status).toBe(404)
     })
 
     it('rejects invalid coordinates (400)', async () => {
       const { res } = await jsonPost(
-        '/api/addevent',
+        '/api/addEvent',
         {
           title: 'Bad Event',
           date: '2025-06-01T10:00:00Z',
@@ -795,13 +816,13 @@ describe('event routes', () => {
           longitude: -121.0,
           centerID: centerId,
         },
-        authHeader(userToken),
+        authHeader(userToken)
       )
       expect(res.status).toBe(400)
     })
 
     it('requires authentication (401)', async () => {
-      const { res } = await jsonPost('/api/addevent', {
+      const { res } = await jsonPost('/api/addEvent', {
         title: 'No Auth',
         date: '2025-06-01T10:00:00Z',
         latitude: 37.0,
@@ -815,7 +836,7 @@ describe('event routes', () => {
   describe('POST /api/fetchEvent', () => {
     it('returns an event by ID', async () => {
       const { body: addBody } = await jsonPost(
-        '/api/addevent',
+        '/api/addEvent',
         {
           title: 'Fetchable Event',
           date: '2025-06-01T10:00:00Z',
@@ -823,7 +844,7 @@ describe('event routes', () => {
           longitude: -121.0,
           centerID: centerId,
         },
-        authHeader(userToken),
+        authHeader(userToken)
       )
 
       const { res, body } = await jsonPost('/api/fetchEvent', { id: addBody.id })
@@ -842,7 +863,7 @@ describe('event routes', () => {
 
     beforeEach(async () => {
       const { body } = await jsonPost(
-        '/api/addevent',
+        '/api/addEvent',
         {
           title: 'Attend Event',
           date: '2025-06-01T10:00:00Z',
@@ -850,7 +871,7 @@ describe('event routes', () => {
           longitude: -121.0,
           centerID: centerId,
         },
-        authHeader(userToken),
+        authHeader(userToken)
       )
       eventId = body.id
     })
@@ -859,7 +880,7 @@ describe('event routes', () => {
       const { res, body } = await jsonPost(
         '/api/attendEvent',
         { eventID: eventId },
-        authHeader(userToken),
+        authHeader(userToken)
       )
       expect(res.status).toBe(200)
       expect(body.message).toBe('Successfully registered for event')
@@ -872,7 +893,7 @@ describe('event routes', () => {
       const { res, body } = await jsonPost(
         '/api/unattendEvent',
         { eventID: eventId },
-        authHeader(userToken),
+        authHeader(userToken)
       )
       expect(res.status).toBe(200)
       expect(body.message).toBe('Successfully unregistered from event')
@@ -880,11 +901,7 @@ describe('event routes', () => {
     })
 
     it('rejects attend with missing eventID (400)', async () => {
-      const { res } = await jsonPost(
-        '/api/attendEvent',
-        { eventID: '' },
-        authHeader(userToken),
-      )
+      const { res } = await jsonPost('/api/attendEvent', { eventID: '' }, authHeader(userToken))
       expect(res.status).toBe(400)
     })
 
@@ -892,7 +909,7 @@ describe('event routes', () => {
       const { res } = await jsonPost(
         '/api/attendEvent',
         { eventID: 'ghost-event' },
-        authHeader(userToken),
+        authHeader(userToken)
       )
       expect(res.status).toBe(404)
     })
@@ -901,7 +918,7 @@ describe('event routes', () => {
   describe('POST /api/getEventUsers', () => {
     it('returns attendees for an event', async () => {
       const { body: addBody } = await jsonPost(
-        '/api/addevent',
+        '/api/addEvent',
         {
           title: 'Users Event',
           date: '2025-06-01T10:00:00Z',
@@ -909,7 +926,7 @@ describe('event routes', () => {
           longitude: -121.0,
           centerID: centerId,
         },
-        authHeader(userToken),
+        authHeader(userToken)
       )
 
       await jsonPost('/api/attendEvent', { eventID: addBody.id }, authHeader(userToken))
@@ -924,7 +941,7 @@ describe('event routes', () => {
   describe('POST /api/removeEvent', () => {
     it('admin can remove an event', async () => {
       const { body: addBody } = await jsonPost(
-        '/api/addevent',
+        '/api/addEvent',
         {
           title: 'Removable Event',
           date: '2025-06-01T10:00:00Z',
@@ -932,13 +949,13 @@ describe('event routes', () => {
           longitude: -121.0,
           centerID: centerId,
         },
-        authHeader(userToken),
+        authHeader(userToken)
       )
 
       const { res, body } = await jsonPost(
         '/api/removeEvent',
         { id: addBody.id },
-        authHeader(adminToken),
+        authHeader(adminToken)
       )
       expect(res.status).toBe(200)
       expect(body.message).toBe('Event removed')
@@ -950,7 +967,7 @@ describe('event routes', () => {
 
     it('non-admin is rejected (401)', async () => {
       const { body: addBody } = await jsonPost(
-        '/api/addevent',
+        '/api/addEvent',
         {
           title: 'Protected Event',
           date: '2025-06-01T10:00:00Z',
@@ -958,14 +975,10 @@ describe('event routes', () => {
           longitude: -121.0,
           centerID: centerId,
         },
-        authHeader(userToken),
+        authHeader(userToken)
       )
 
-      const { res } = await jsonPost(
-        '/api/removeEvent',
-        { id: addBody.id },
-        authHeader(userToken),
-      )
+      const { res } = await jsonPost('/api/removeEvent', { id: addBody.id }, authHeader(userToken))
       expect(res.status).toBe(401)
     })
   })
@@ -973,7 +986,7 @@ describe('event routes', () => {
   describe('POST /api/updateEvent', () => {
     it('admin can update event fields', async () => {
       const { body: addBody } = await jsonPost(
-        '/api/addevent',
+        '/api/addEvent',
         {
           title: 'Original Title',
           date: '2025-06-01T10:00:00Z',
@@ -981,13 +994,13 @@ describe('event routes', () => {
           longitude: -121.0,
           centerID: centerId,
         },
-        authHeader(userToken),
+        authHeader(userToken)
       )
 
       const { res, body } = await jsonPost(
         '/api/updateEvent',
         { eventJSON: { id: addBody.id, title: 'Updated Title' } },
-        authHeader(adminToken),
+        authHeader(adminToken)
       )
       expect(res.status).toBe(200)
       expect(body.message).toBe('Event updated')
@@ -1001,7 +1014,7 @@ describe('event routes', () => {
       const { res } = await jsonPost(
         '/api/updateEvent',
         { eventJSON: { id: 'any', title: 'No' } },
-        authHeader(userToken),
+        authHeader(userToken)
       )
       expect(res.status).toBe(404)
     })
@@ -1010,7 +1023,7 @@ describe('event routes', () => {
       const { res } = await jsonPost(
         '/api/updateEvent',
         { eventJSON: { title: 'No ID' } },
-        authHeader(adminToken),
+        authHeader(adminToken)
       )
       expect(res.status).toBe(400)
     })
@@ -1019,7 +1032,7 @@ describe('event routes', () => {
       const { res } = await jsonPost(
         '/api/updateEvent',
         { eventJSON: { id: 'nonexistent', title: 'Test' } },
-        authHeader(adminToken),
+        authHeader(adminToken)
       )
       expect(res.status).toBe(404)
     })
@@ -1028,7 +1041,7 @@ describe('event routes', () => {
   describe('POST /api/fetchEventsByCenter', () => {
     it('returns events for a specific center', async () => {
       await jsonPost(
-        '/api/addevent',
+        '/api/addEvent',
         {
           title: 'Center Event',
           date: '2025-06-01T10:00:00Z',
@@ -1036,7 +1049,7 @@ describe('event routes', () => {
           longitude: -121.0,
           centerID: centerId,
         },
-        authHeader(userToken),
+        authHeader(userToken)
       )
 
       const { body } = await jsonPost('/api/fetchEventsByCenter', { centerID: centerId })
@@ -1048,7 +1061,7 @@ describe('event routes', () => {
   describe('POST /api/getUserEvents', () => {
     it('returns events a user is attending', async () => {
       const { body: addBody } = await jsonPost(
-        '/api/addevent',
+        '/api/addEvent',
         {
           title: 'User Event',
           date: '2025-06-01T10:00:00Z',
@@ -1056,7 +1069,7 @@ describe('event routes', () => {
           longitude: -121.0,
           centerID: centerId,
         },
-        authHeader(userToken),
+        authHeader(userToken)
       )
 
       await jsonPost('/api/attendEvent', { eventID: addBody.id }, authHeader(userToken))
@@ -1064,7 +1077,7 @@ describe('event routes', () => {
       const { body } = await jsonPost(
         '/api/getUserEvents',
         { username: 'eventuser' },
-        authHeader(userToken),
+        authHeader(userToken)
       )
       expect(body.events).toHaveLength(1)
       expect(body.events[0].title).toBe('User Event')
@@ -1108,7 +1121,7 @@ describe('legacy routes', () => {
 // ═══════════════════════════════════════════════════════════════════════
 
 describe('POST /api/brewCoffee', () => {
-  it('returns 418 I\'m a teapot', async () => {
+  it("returns 418 I'm a teapot", async () => {
     const { res, body } = await jsonPost('/api/brewCoffee', {})
     expect(res.status).toBe(418)
     expect(body.message).toContain('teapot')
