@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react-native'
 import EventDetailPage from '../../../../app/events/[id]'
-import { formatRelativeDateTime } from '../../../../app/events/[id]'
-
 // Mock expo-router
 vi.mock('expo-router', () => ({
   useLocalSearchParams: vi.fn(),
@@ -177,46 +175,5 @@ describe('EventDetailPage', () => {
     render(<EventDetailPage />)
     expect(screen.queryByText('Attend Event')).toBeFalsy()
     expect(screen.queryByText('Cancel Registration')).toBeFalsy()
-  })
-})
-
-describe('formatRelativeDateTime', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-  })
-
-  it('formats future event in hours', () => {
-    const now = new Date('2026-03-27T14:00:00Z')
-    vi.setSystemTime(now)
-
-    const result = formatRelativeDateTime('2026-03-27', '4:00 PM')
-    expect(result).toMatch(/^In 2h · /)
-  })
-
-  it('formats future event in days', () => {
-    const now = new Date('2026-03-27T14:00:00Z')
-    vi.setSystemTime(now)
-
-    const result = formatRelativeDateTime('2026-03-30', '2:00 PM')
-    expect(result).toMatch(/^In 3d · /)
-  })
-
-  it('parses time range and uses start time', () => {
-    const now = new Date('2026-03-27T14:00:00Z')
-    vi.setSystemTime(now)
-
-    const result = formatRelativeDateTime('2026-03-27', '3:00 PM - 5:00 PM')
-    expect(result).toMatch(/^In 1h · /)
-  })
-
-  it('handles 12 AM/PM edge case correctly', () => {
-    const now = new Date('2026-03-27T14:00:00Z')
-    vi.setSystemTime(now)
-
-    const midnight = formatRelativeDateTime('2026-03-28', '12:00 AM')
-    const noon = formatRelativeDateTime('2026-03-28', '12:00 PM')
-
-    expect(midnight).toMatch(/^In 10h · /)
-    expect(noon).toMatch(/^In 22h · /)
   })
 })

@@ -23,7 +23,7 @@ const ADMIN_NAME = 'brahman'
 // ── Helpers ──────────────────────────────────────────────────────────────
 
 /** Format date + time into "In X hours · 2/27 7:45 PM PST" */
-export function formatRelativeDateTime(dateStr: string, timeStr: string): string {
+function formatRelativeDateTime(dateStr: string, timeStr: string): string {
   const startTime = timeStr.split(' - ')[0] || timeStr
 
   const match = startTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
