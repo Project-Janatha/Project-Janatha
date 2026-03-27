@@ -19,6 +19,8 @@ export interface User {
   interests?: string[] | null
   createdAt?: string
   updatedAt?: string
+  // Cached original image for re-editing in the current session
+  originalImage?: string | null
 }
 
 export interface AuthError {

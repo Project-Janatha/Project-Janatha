@@ -1,9 +1,0 @@
-services:
-  app:
-    image: ${ECR_IMAGE:?ECR_IMAGE is required}
-    platform: linux/amd64
-    network_mode: host
-    env_file:
-      - .env
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro

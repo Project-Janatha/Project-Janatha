@@ -1,17 +1,34 @@
 # Chinmaya Janata Backend
 
-This is the backend for Janata. We are using EC2 for hosting, with DynamoDB tables for record storage and JSON Web Tokens for persistent states.
+Cloudflare Worker backend built with Hono and D1.
 
-**Authentication**
+## Stack
 
-This is the Authentication portion of the project!
+- Runtime: Cloudflare Workers
+- API framework: Hono
+- Database: Cloudflare D1 (SQLite)
+- Auth: PBKDF2 + JWT (`jose`)
 
-It has the following basic functionality:
+## Key files
 
-1. Create Account, but only if account to create does not exist
-2. Log In, but only if account to login exists
-3. Delete Account
+- `src/worker.ts` — Worker entrypoint
+- `src/app.ts` — API routes and middleware wiring
+- `src/db.ts` — D1 data-access layer
+- `src/auth.ts` — password hashing and JWT helpers
+- `src/types.ts` — row + API mapping types
 
-**Authentication Procedure**
+## Local development
 
-Data is collected at the frontend. Username and password are concatenated and hashed. Username is also independently sent. The hash is sent to this authentication system, which salts the hash with the hash of a random string. The username is stored. The salt hash is stored, and the salted hash is rehashed. The salted hash's hash is stored along with the salt. When the user needs to log in, the same data used for account creation is sent. The salt is then retrieved. It is concatenated to the sent hash and hashed. This hash is then compared to the stored hash and a status is sent back to the front end along with a username.
+```bash
+npm run dev
+```
+
+Runs Wrangler dev server on `http://localhost:8787`.
+
+## Tests
+
+```bash
+npm test
+```
+
+Runs Vitest with Cloudflare Workers test pool.

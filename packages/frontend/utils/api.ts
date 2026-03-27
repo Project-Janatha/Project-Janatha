@@ -36,6 +36,7 @@ export interface EventData {
   pointOfContact: string | null
   image: string | null
   category: number | null
+  createdBy: string | null
   createdAt?: string
   updatedAt?: string
 }
@@ -70,6 +71,12 @@ export interface MapPoint {
 
 // ── Discover-specific types ─────────────────────────────────────────────
 
+export interface AttendeeInfo {
+  name: string
+  image?: string
+  initials?: string
+}
+
 export interface EventDisplay {
   id: string
   title: string
@@ -80,6 +87,7 @@ export interface EventDisplay {
   latitude?: number
   longitude?: number
   attendees: number
+  attendeesList?: AttendeeInfo[]
   likes: number
   comments: number
   description?: string
@@ -88,6 +96,7 @@ export interface EventDisplay {
   isRegistered?: boolean
   centerName?: string
   centerId?: string
+  createdBy?: string
 }
 
 export interface DiscoverCenter {
@@ -164,11 +173,9 @@ export async function fetchCenters(): Promise<CenterData[]> {
     try {
       const response = await apiFetch('/centers')
       if (!response.ok) {
-        if (__DEV__) console.warn('[fetchCenters] Response not ok:', response.status)
         return []
       }
       const data = await response.json()
-      if (__DEV__) console.log('[fetchCenters] Got', data.centers?.length || 0, 'centers')
       return data.centers || []
     } catch (err: any) {
       if (__DEV__) console.warn('[fetchCenters]', err?.message || err)
@@ -211,7 +218,11 @@ export async function fetchEvent(eventID: string): Promise<EventData | null> {
     })
     if (!response.ok) return null
     const data = await response.json()
-    return data.event || null
+    const event = data.event as EventData | null
+    if (event && event.image && event.image.startsWith('/')) {
+      event.image = `${API_BASE_URL}${event.image}`
+    }
+    return event
   } catch (err: any) {
     if (__DEV__) console.warn('[fetchEvent]', err?.message || err)
     return null
@@ -233,6 +244,26 @@ export async function fetchEventsByCenter(centerID: string): Promise<EventData[]
   }
 }
 
+export async function fetchAllEvents(): Promise<EventData[]> {
+  try {
+    const response = await apiFetch('/fetchAllEvents')
+    if (!response.ok) {
+      return []
+    }
+    const data = await response.json()
+    const events = (data.events || []) as EventData[]
+    return events.map((e) => {
+      if (e.image && e.image.startsWith('/')) {
+        return { ...e, image: `${API_BASE_URL}${e.image}` }
+      }
+      return e
+    })
+  } catch (err: any) {
+    if (__DEV__) console.warn('[fetchAllEvents]', err?.message || err)
+    return []
+  }
+}
+
 export async function fetchEventUsers(eventID: string): Promise<UserData[]> {
   try {
     const response = await apiFetch('/getEventUsers', {
@@ -241,7 +272,18 @@ export async function fetchEventUsers(eventID: string): Promise<UserData[]> {
     })
     if (!response.ok) return []
     const data = await response.json()
-    return data.users || []
+    const users = (data.users || []) as UserData[]
+
+    // Normalize profile images
+    return users.map((u) => {
+      if (u.profileImage && u.profileImage.startsWith('/')) {
+        return {
+          ...u,
+          profileImage: `${API_BASE_URL}${u.profileImage}`,
+        }
+      }
+      return u
+    })
   } catch (err: any) {
     if (__DEV__) console.warn('[fetchEventUsers]', err?.message || err)
     return []
@@ -284,7 +326,7 @@ export async function createEvent(data: {
   image?: string
   category?: number
 }): Promise<{ id: string; tier: number }> {
-  const response = await authFetch('/addevent', {
+  const response = await authFetch('/addEvent', {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -313,7 +355,9 @@ export async function getUserEvents(username: string): Promise<EventData[]> {
       method: 'POST',
       body: JSON.stringify({ username }),
     })
-    if (!response.ok) return []
+    if (!response.ok) {
+      return []
+    }
     const data = await response.json()
     return data.events || []
   } catch (err: any) {
@@ -361,123 +405,8 @@ export function centersToDiscoverCenters(centers: CenterData[]): DiscoverCenter[
     }))
 }
 
-// ── Discover sample data (fallback, dev only) ──────────────────────────
+// ── Discover sample data (empty since we fetch from API) ──────────────────────────
 
-const today = new Date()
-const todayStr = today.toISOString().split('T')[0]
+export const DISCOVER_SAMPLE_EVENTS: EventDisplay[] = []
 
-const tomorrow = new Date(today)
-tomorrow.setDate(today.getDate() + 1)
-const tomorrowStr = tomorrow.toISOString().split('T')[0]
-
-const sunday = new Date(today)
-sunday.setDate(today.getDate() + ((7 - today.getDay()) % 7 || 7))
-const sundayStr = sunday.toISOString().split('T')[0]
-
-export const DISCOVER_SAMPLE_EVENTS: EventDisplay[] = __DEV__
-  ? [
-      {
-        id: 'evt-1',
-        title: 'Bhagavad Gita Study Circle - Chapter 12',
-        date: todayStr,
-        time: '10:30 AM - 11:30 AM',
-        location: 'Chinmaya Mission San Jose',
-        address: '10160 Clayton Rd, San Jose, CA 95127',
-        latitude: 37.2631,
-        longitude: -121.8031,
-        attendees: 14,
-        likes: 0,
-        comments: 0,
-        description: 'Join us for an in-depth study of Chapter 12 of the Bhagavad Gita.',
-        pointOfContact: 'Ramesh Ji',
-        isRegistered: true,
-        centerId: '1',
-      },
-      {
-        id: 'evt-2',
-        title: 'Hanuman Chalisa Chanting Marathon',
-        date: sundayStr,
-        time: '8:00 PM - 11:00 PM',
-        location: 'Chinmaya Mission West',
-        address: '299 Juanita Way, Sausalito, CA 94965',
-        latitude: 37.8699,
-        longitude: -122.4756,
-        attendees: 28,
-        likes: 0,
-        comments: 0,
-        description: 'Join us for a powerful chanting session of the Hanuman Chalisa.',
-        pointOfContact: 'Priya Devi',
-        isRegistered: false,
-        centerId: '2',
-      },
-      {
-        id: 'evt-3',
-        title: 'Yoga and Meditation Session',
-        date: tomorrowStr,
-        time: '7:00 AM - 8:30 AM',
-        location: 'Chinmaya Mission San Francisco',
-        address: '1 Hallidie Plaza, San Francisco, CA 94102',
-        latitude: 37.7849,
-        longitude: -122.4194,
-        attendees: 9,
-        likes: 0,
-        comments: 0,
-        description: 'Weekly yoga and meditation practice.',
-        pointOfContact: 'Anil Kumar',
-        isRegistered: true,
-        centerId: '3',
-      },
-      {
-        id: 'evt-4',
-        title: 'Vedanta for Beginners',
-        date: sundayStr,
-        time: '9:00 AM - 10:30 AM',
-        location: 'Chinmaya Mission San Jose',
-        latitude: 37.2531,
-        longitude: -121.7931,
-        attendees: 12,
-        likes: 0,
-        comments: 0,
-        isRegistered: false,
-        centerId: '1',
-      },
-    ]
-  : []
-
-export const DISCOVER_SAMPLE_CENTERS: DiscoverCenter[] = __DEV__
-  ? [
-      {
-        id: '1',
-        name: 'Chinmaya Mission San Jose',
-        address: '2485 Calle San Lorenzo, San Jose, CA 95125',
-        latitude: 37.2431,
-        longitude: -121.7831,
-        memberCount: 320,
-        eventCount: 5,
-        isMember: true,
-        distanceMi: 2.4,
-      },
-      {
-        id: '2',
-        name: 'Chinmaya Mission West',
-        address: '625 Hillcrest Road, San Pablo, CA 94806',
-        latitude: 37.8599,
-        longitude: -122.4856,
-        memberCount: 180,
-        eventCount: 3,
-        isMember: false,
-        distanceMi: 18.7,
-      },
-      {
-        id: '3',
-        name: 'Chinmaya Mission San Francisco',
-        address: '1 Hallidie Plaza, San Francisco, CA 94102',
-        latitude: 37.7749,
-        longitude: -122.4194,
-        memberCount: 95,
-        eventCount: 2,
-        isMember: false,
-        distanceMi: 12.1,
-      },
-    ]
-  : []
+export const DISCOVER_SAMPLE_CENTERS: DiscoverCenter[] = []

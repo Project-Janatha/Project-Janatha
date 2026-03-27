@@ -3,49 +3,49 @@
  * Run: npx wrangler d1 execute chinmaya-janata-db --local --command "$(cat packages/backend/src/seed/centers.sql)"
  */
 
-const fs = require('fs');
-const csv = fs.readFileSync('../../centers.csv', 'utf-8');
+const fs = require('fs')
+const csv = fs.readFileSync(__dirname + '/../../../../data/centers.csv', 'utf-8')
 
 function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  
+  const result: string[] = []
+  let current = ''
+  let inQuotes = false
+
   for (let i = 0; i < line.length; i++) {
-    const char = line[i];
+    const char = line[i]
     if (char === '"') {
-      inQuotes = !inQuotes;
+      inQuotes = !inQuotes
     } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
+      result.push(current.trim())
+      current = ''
     } else {
-      current += char;
+      current += char
     }
   }
-  result.push(current.trim());
-  return result;
+  result.push(current.trim())
+  return result
 }
 
-const lines = csv.trim().split('\n');
-const headers = parseCSVLine(lines[0]);
+const lines = csv.trim().split('\n')
+const headers = parseCSVLine(lines[0])
 
-let sql = `-- Seed centers from CSV\n`;
-sql += `-- Run: npx wrangler d1 execute chinmaya-janata-db --local --file=packages/backend/src/seed/centers.sql\n\n`;
-sql += `DELETE FROM centers;\n\n`;
+let sql = `-- Seed centers from CSV\n`
+sql += `-- Run: npx wrangler d1 execute chinmaya-janata-db --local --file=packages/backend/src/seed/centers.sql\n\n`
+sql += `DELETE FROM centers;\n\n`
 
 for (let i = 1; i < lines.length; i++) {
-  const values = parseCSVLine(lines[i]);
-  if (values.length < 2) continue;
-  
-  const id = values[0];
-  const name = values[1].replace(/"/g, '').replace(/'/g, "''");
-  const lat = parseFloat(values[13]) || 0;
-  const lng = parseFloat(values[14]) || 0;
-  const address = (values[16] || '').replace(/"/g, '').replace(/'/g, "''");
-  const phone = values[10] || '';
-  
-  sql += `INSERT INTO centers (id, name, latitude, longitude, address, phone, is_verified) VALUES ('${id}', '${name}', ${lat}, ${lng}, '${address}', '${phone}', 1);\n`;
+  const values = parseCSVLine(lines[i])
+  if (values.length < 2) continue
+
+  const id = values[0]
+  const name = values[1].replace(/"/g, '').replace(/'/g, "''")
+  const lat = parseFloat(values[13]) || 0
+  const lng = parseFloat(values[14]) || 0
+  const address = (values[16] || '').replace(/"/g, '').replace(/'/g, "''")
+  const phone = values[10] || ''
+
+  sql += `INSERT INTO centers (id, name, latitude, longitude, address, phone, is_verified) VALUES ('${id}', '${name}', ${lat}, ${lng}, '${address}', '${phone}', 1);\n`
 }
 
-fs.writeFileSync('./centers.sql', sql);
-console.log('Generated centers.sql');
+fs.writeFileSync('./centers.sql', sql)
+console.log('Generated centers.sql')

@@ -28,3 +28,18 @@ vi.mock('../../components/utils/tokenStorage', () => ({
   removeStoredToken: vi.fn().mockResolvedValue(undefined),
   hasStoredToken: vi.fn().mockResolvedValue(false),
 }))
+
+vi.mock('expo-router', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+  }),
+  useSegments: () => [],
+  Slot: 'Slot',
+  Stack: 'Stack',
+  SplashScreen: {
+    preventAutoHideAsync: vi.fn(),
+    hideAsync: vi.fn(),
+  },
+}))

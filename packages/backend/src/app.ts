@@ -125,18 +125,13 @@ app.post('/userExistence', async (c) => {
 // ═══════════════════════════════════════════════════════════════════════
 
 app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
-  console.log('Register endpoint hit')
   const body = await c.req.json<{
     username: string
     password: string
   }>()
-  console.log('Parsed body:', body)
 
   const normalizedUsername = validate.username(body.username)
   const validPassword = validate.password(body.password)
-
-  console.log('normalizedUsername:', normalizedUsername)
-  console.log('validPassword:', validPassword ? 'present' : 'missing')
 
   if (!normalizedUsername || !validPassword) {
     return c.json({ message: 'Username and password are required' }, 400)
@@ -147,24 +142,18 @@ app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
   }
 
   const existingUser = await db.getUserByUsername(c.env.DB, normalizedUsername.toLowerCase())
-  console.log('existingUser:', existingUser ? 'found' : 'none')
   if (existingUser) {
     return c.json({ message: 'Username already exists' }, 409)
   }
 
-  console.log('Hashing password...')
   const hashedPassword = await hashPassword(validPassword)
-  console.log('Password hashed')
 
-  console.log('Creating user...')
-  console.log('DB:', c.env.DB)
   try {
     const created = await db.createUser(c.env.DB, {
       id: crypto.randomUUID(),
       username: normalizedUsername.toLowerCase(),
       password: hashedPassword,
     })
-    console.log('createUser result:', created)
 
     if (!created.success) {
     const status = created.error === 'User already exists' ? 409 : 500
@@ -239,10 +228,8 @@ app.get('/auth/verify', authMiddleware, (c) => {
 })
 
 app.post('/auth/complete-onboarding', authMiddleware, async (c) => {
-  console.log('complete-onboarding hit')
   try {
     const user = c.get('user')
-    console.log('user:', user.id, user.username)
     const body = await c.req.json<{
       firstName?: string
       lastName?: string
@@ -252,7 +239,6 @@ app.post('/auth/complete-onboarding', authMiddleware, async (c) => {
       phoneNumber?: string
       interests?: string[]
     }>()
-    console.log('body:', body)
 
     const updates: Partial<UserRow> = {}
     if (body.firstName !== undefined) updates.first_name = body.firstName
@@ -455,7 +441,7 @@ app.post('/removeCenter', authMiddleware, async (c) => {
   return c.json({ message: 'Removal failed' }, 500)
 })
 
-app.post('/fetchAllCenters', cacheControl(30), async (c) => {
+app.post('/fetchAllCenters', async (c) => {
   const centers = await db.getAllCenters(c.env.DB)
   return c.json({
     message: 'Successful',
@@ -463,7 +449,7 @@ app.post('/fetchAllCenters', cacheControl(30), async (c) => {
   })
 })
 
-app.post('/fetchCenter', cacheControl(30), async (c) => {
+app.post('/fetchCenter', async (c) => {
   const { centerID } = await c.req.json<{ centerID: string }>()
   if (!centerID) {
     return c.json({ message: 'Malformed centerID' }, 400)
@@ -614,7 +600,8 @@ app.post('/getUserEvents', authMiddleware, async (c) => {
 // EVENT ROUTES
 // ═══════════════════════════════════════════════════════════════════════
 
-app.post('/addevent', authMiddleware, async (c) => {
+app.post('/addEvent', authMiddleware, async (c) => {
+  const user = c.get('user')
   const data = await c.req.json<{
     title?: string
     description?: string
@@ -683,6 +670,7 @@ app.post('/addevent', authMiddleware, async (c) => {
     point_of_contact: data.pointOfContact ?? null,
     image: validImage ?? null,
     category: data.category ?? null,
+    created_by: user.id,
   })
 
   if (!result.success) {
@@ -724,7 +712,7 @@ app.post('/removeEvent', authMiddleware, async (c) => {
   return c.json({ message: 'Failed to remove event' }, 500)
 })
 
-app.post('/fetchEvent', cacheControl(30), async (c) => {
+app.post('/fetchEvent', async (c) => {
   const { id } = await c.req.json<{ id: string }>()
   const event = await db.getEventById(c.env.DB, id)
   if (!event) {
@@ -735,9 +723,6 @@ app.post('/fetchEvent', cacheControl(30), async (c) => {
 
 app.post('/updateEvent', authMiddleware, async (c) => {
   const user = c.get('user')
-  if (user.username !== ADMIN_NAME) {
-    return c.json({ message: 'Insufficient permissions' }, 401)
-  }
 
   const { eventJSON } = await c.req.json<{ eventJSON: any }>()
 
@@ -749,6 +734,14 @@ app.post('/updateEvent', authMiddleware, async (c) => {
   const existing = await db.getEventById(c.env.DB, eventId)
   if (!existing) {
     return c.json({ message: 'Event not found' }, 404)
+  }
+
+  // Allow admin or the event creator to edit (or any logged-in user for events without creator)
+  const isAdmin = user.username === ADMIN_NAME
+  const isCreator = existing.created_by === user.id
+  const isEditable = isAdmin || isCreator || existing.created_by === null
+  if (!isEditable) {
+    return c.json({ message: 'Insufficient permissions - only admin or event creator can edit' }, 401)
   }
 
   const updates: Partial<EventRow> = {}
@@ -770,7 +763,7 @@ app.post('/updateEvent', authMiddleware, async (c) => {
   return c.json({ message: 'Update failed' }, 400)
 })
 
-app.post('/getEventUsers', cacheControl(30), async (c) => {
+app.post('/getEventUsers', async (c) => {
   const { id } = await c.req.json<{ id: string }>()
   if (!id) {
     return c.json({ message: 'Bad request - missing id' }, 400)
@@ -799,6 +792,13 @@ app.post('/attendEvent', authMiddleware, async (c) => {
   const event = await db.getEventById(c.env.DB, eventID)
   if (!event) {
     return c.json({ message: 'Event not found' }, 404)
+  }
+
+  // Check if already registered
+  const attendees = await db.getEventAttendees(c.env.DB, eventID)
+  const alreadyRegistered = attendees.some((a) => a.id === user.id)
+  if (alreadyRegistered) {
+    return c.json({ message: 'Already registered for this event' }, 400)
   }
 
   const result = await db.addEventAttendee(c.env.DB, eventID, user.id)
@@ -838,9 +838,17 @@ app.post('/unattendEvent', authMiddleware, async (c) => {
   })
 })
 
-app.post('/fetchEventsByCenter', cacheControl(30), async (c) => {
+app.post('/fetchEventsByCenter', async (c) => {
   const { centerID } = await c.req.json<{ centerID: string }>()
   const events = await db.getEventsByCenterId(c.env.DB, centerID)
+  return c.json({
+    message: 'Success',
+    events: events.map(eventRowToApi),
+  })
+})
+
+app.get('/fetchAllEvents', cacheControl(30), async (c) => {
+  const events = await db.getAllEvents(c.env.DB)
   return c.json({
     message: 'Success',
     events: events.map(eventRowToApi),

@@ -236,8 +236,8 @@ export async function createEvent(
       .prepare(
         `INSERT INTO events (id, title, description, date, latitude, longitude, address,
           center_id, tier, people_attending, point_of_contact, image, category,
-          created_at, updated_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)`,
+          created_by, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)`,
       )
       .bind(
         event.id,
@@ -253,6 +253,7 @@ export async function createEvent(
         event.point_of_contact ?? null,
         event.image ?? null,
         event.category ?? null,
+        event.created_by ?? null,
         now,
         now,
       )
@@ -341,20 +342,27 @@ export async function addEventAttendee(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const now = new Date().toISOString()
-    await db.batch([
-      db
-        .prepare(
-          'INSERT OR IGNORE INTO event_attendees (event_id, user_id, created_at) VALUES (?1, ?2, ?3)',
-        )
-        .bind(eventId, userId, now),
-      db
-        .prepare(
-          `UPDATE events SET people_attending = (
-            SELECT COUNT(*) FROM event_attendees WHERE event_id = ?1
-          ), updated_at = ?2 WHERE id = ?1`,
-        )
-        .bind(eventId, now),
-    ])
+    // First ensure the record exists
+    await db
+      .prepare(
+        'INSERT OR IGNORE INTO event_attendees (event_id, user_id, created_at) VALUES (?1, ?2, ?3)',
+      )
+      .bind(eventId, userId, now)
+      .run()
+
+    // Then update the count from the actual table
+    await db
+      .prepare(
+        `UPDATE events SET people_attending = (
+          SELECT COUNT(*) FROM event_attendees WHERE event_id = ?1
+        ), updated_at = ?2 WHERE id = ?1`,
+      )
+      .bind(eventId, now)
+      .run()
+
+    // Wait briefly to ensure D1 consistency (optional, but safer in some environments)
+    // Actually, in D1, consecutive await run() calls are sequential.
+    
     return { success: true }
   } catch (err: any) {
     return { success: false, error: err?.message ?? 'Unknown error' }
@@ -368,18 +376,22 @@ export async function removeEventAttendee(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const now = new Date().toISOString()
-    await db.batch([
-      db
-        .prepare('DELETE FROM event_attendees WHERE event_id = ?1 AND user_id = ?2')
-        .bind(eventId, userId),
-      db
-        .prepare(
-          `UPDATE events SET people_attending = (
-            SELECT COUNT(*) FROM event_attendees WHERE event_id = ?1
-          ), updated_at = ?2 WHERE id = ?1`,
-        )
-        .bind(eventId, now),
-    ])
+    // First remove the record
+    await db
+      .prepare('DELETE FROM event_attendees WHERE event_id = ?1 AND user_id = ?2')
+      .bind(eventId, userId)
+      .run()
+
+    // Then update the count from the actual table
+    await db
+      .prepare(
+        `UPDATE events SET people_attending = (
+          SELECT COUNT(*) FROM event_attendees WHERE event_id = ?1
+        ), updated_at = ?2 WHERE id = ?1`,
+      )
+      .bind(eventId, now)
+      .run()
+
     return { success: true }
   } catch (err: any) {
     return { success: false, error: err?.message ?? 'Unknown error' }
@@ -409,7 +421,7 @@ export async function getEventAttendees(
       `SELECT u.* FROM users u
        JOIN event_attendees ea ON ea.user_id = u.id
        WHERE ea.event_id = ?1
-       ORDER BY ea.created_at`,
+       ORDER BY ea.created_at DESC`,
     )
     .bind(eventId)
     .all<UserRow>()
