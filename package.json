@@ -28,6 +28,8 @@
     "ios": "cd packages/frontend && npx expo run:ios",
     "test:frontend": "cd packages/frontend && npm run test",
     "test:backend": "cd packages/backend && npm run test",
+    "test:cloudflare": "cd packages/backend && npm run test:cloudflare --",
+    "test:cloudflare:app": "cd packages/backend && npm run test:cloudflare:app",
     "test:frontend:jest": "cd packages/frontend && npm run test:jest"
   },
   "devDependencies": {
