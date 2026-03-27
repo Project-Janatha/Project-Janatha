@@ -1,5 +1,5 @@
 const fs = require('fs');
-const csv = fs.readFileSync(__dirname + '/../../../../centers.csv', 'utf-8');
+const csv = fs.readFileSync(__dirname + '/../../../../data/centers.csv', 'utf-8');
 
 function parseCSVLine(line) {
   const result = [];
