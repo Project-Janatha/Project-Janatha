@@ -13,11 +13,10 @@ test.describe('Landing Page', () => {
     await page.goto('/landing')
     await page.waitForLoadState('networkidle')
 
-    // Nav brand text (use .first() since "Janata" appears multiple places)
-    await expect(page.getByText('Janata').first()).toBeVisible({ timeout: 10000 })
+    const brand = page.locator('text=Janata >> visible=true').first()
+    await expect(brand).toBeVisible({ timeout: 10000 })
 
-    // Get Started button in navbar (Pressable renders as div)
-    const getStartedBtn = page.getByText('Get Started')
+    const getStartedBtn = page.getByText('Get Started', { exact: true }).first()
     await expect(getStartedBtn).toBeVisible({ timeout: 10000 })
   })
 
@@ -37,7 +36,7 @@ test.describe('Landing Page', () => {
     await page.goto('/landing')
     await page.waitForLoadState('networkidle')
 
-    const getStartedBtn = page.getByText('Get Started')
+    const getStartedBtn = page.getByText('Get Started', { exact: true }).first()
     await expect(getStartedBtn).toBeVisible({ timeout: 10000 })
     await getStartedBtn.click()
 
