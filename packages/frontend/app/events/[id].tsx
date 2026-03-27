@@ -2,7 +2,17 @@ import React, { useState } from 'react'
 import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ChevronLeft, Share2, MapPin, Users, User, Clock, CheckCircle, Info, Pencil } from 'lucide-react-native'
+import {
+  ChevronLeft,
+  Share2,
+  MapPin,
+  Users,
+  User,
+  Clock,
+  CheckCircle,
+  Info,
+  Pencil,
+} from 'lucide-react-native'
 import { useEventDetail } from '../../hooks/useApiData'
 import { useUser } from '../../components/contexts'
 import { Badge, UnderlineTabBar, Avatar } from '../../components/ui'
@@ -90,7 +100,13 @@ function MetaIcon({
   )
 }
 
-function AvatarStack({ attendees, colors }: { attendees: { image?: string; initials?: string; name: string }[]; colors: DetailColors }) {
+function AvatarStack({
+  attendees,
+  colors,
+}: {
+  attendees: { image?: string; initials?: string; name: string }[]
+  colors: DetailColors
+}) {
   const shown = attendees.slice(0, 3)
   return (
     <View style={{ flexDirection: 'row', marginLeft: 4 }}>
@@ -148,7 +164,14 @@ function HeaderBar({
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Pressable
           onPress={onBack}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8, minHeight: 44, minWidth: 44 }}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            padding: 8,
+            minHeight: 44,
+            minWidth: 44,
+          }}
         >
           <ChevronLeft size={20} color={colors.iconHeader} />
           <Text
@@ -166,13 +189,28 @@ function HeaderBar({
           {eventId && (
             <Pressable
               onPress={() => router.push(`/events/form?id=${eventId}`)}
-              style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+              style={{
+                padding: 8,
+                minHeight: 44,
+                minWidth: 44,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
               <Pencil size={18} color={colors.iconHeader} />
             </Pressable>
           )}
           {!isPast && (
-            <Pressable onPress={() => {}} style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
+            <Pressable
+              onPress={() => {}}
+              style={{
+                padding: 8,
+                minHeight: 44,
+                minWidth: 44,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <Share2 size={18} color={colors.iconHeader} />
             </Pressable>
           )}
@@ -216,9 +254,7 @@ function MetaSection({
   colors: DetailColors
 }) {
   const iconColor = isPast ? colors.textMuted : '#E8862A'
-  const attendLabel = isPast
-    ? `${event.attendees} attended`
-    : `${event.attendees} attending`
+  const attendLabel = isPast ? `${event.attendees} attended` : `${event.attendees} attending`
 
   return (
     <View style={{ gap: 16 }}>
@@ -230,7 +266,9 @@ function MetaSection({
             {event.location}
           </Text>
           {event.address ? (
-            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: colors.textSecondary }}>
+            <Text
+              style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: colors.textSecondary }}
+            >
               {event.address}
             </Text>
           ) : null}
@@ -276,7 +314,14 @@ function AboutSection({ description, colors }: { description?: string; colors: D
       >
         About
       </Text>
-      <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: colors.textSecondary, lineHeight: 20 }}>
+      <Text
+        style={{
+          fontFamily: 'Inter-Regular',
+          fontSize: 14,
+          color: colors.textSecondary,
+          lineHeight: 20,
+        }}
+      >
         {description}
       </Text>
     </View>
@@ -303,7 +348,9 @@ function AttendedBanner({ count, colors }: { count: number; colors: DetailColors
         </Text>
       </View>
       {count > 1 && (
-        <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: '#059669', marginLeft: 26 }}>
+        <Text
+          style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: '#059669', marginLeft: 26 }}
+        >
           Along with {count - 1} others
         </Text>
       )}
@@ -420,11 +467,8 @@ export default function EventDetailPage() {
   const [activeTab, setActiveTab] = useState('Details')
   const username = authStatus === 'authenticated' ? user?.username : undefined
   const userId = authStatus === 'authenticated' ? user?.id : undefined
-  const { event, attendees, messages, loading, toggleRegistration, isToggling, isCreator } = useEventDetail(
-    id as string,
-    username,
-    userId
-  )
+  const { event, attendees, messages, loading, toggleRegistration, isToggling, isCreator } =
+    useEventDetail(id as string, username, userId)
   const colors = useDetailColors()
 
   const isAdmin = user?.username === ADMIN_NAME
@@ -463,12 +507,26 @@ export default function EventDetailPage() {
   if (!event) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}>
-          <Text style={{ fontSize: 22, fontFamily: 'Inter-SemiBold', color: colors.text, marginBottom: 16 }}>
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}
+        >
+          <Text
+            style={{
+              fontSize: 22,
+              fontFamily: 'Inter-SemiBold',
+              color: colors.text,
+              marginBottom: 16,
+            }}
+          >
             Event not found
           </Text>
-          <Pressable onPress={() => router.back()} style={{ marginTop: 8, minHeight: 44, justifyContent: 'center' }}>
-            <Text style={{ fontSize: 16, fontFamily: 'Inter-Medium', color: '#E8862A' }}>Go Back</Text>
+          <Pressable
+            onPress={() => router.back()}
+            style={{ marginTop: 8, minHeight: 44, justifyContent: 'center' }}
+          >
+            <Text style={{ fontSize: 16, fontFamily: 'Inter-Medium', color: '#E8862A' }}>
+              Go Back
+            </Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -525,14 +583,26 @@ export default function EventDetailPage() {
 
           {activeTab === 'People' && (
             <View style={{ paddingTop: 16, paddingHorizontal: 20 }}>
-              <Text style={{ fontFamily: 'Inter-Medium', fontSize: 13, color: colors.textSecondary, marginBottom: 12 }}>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Medium',
+                  fontSize: 13,
+                  color: colors.textSecondary,
+                  marginBottom: 12,
+                }}
+              >
                 {event.attendees} people attending
               </Text>
               {attendees.length > 0 ? (
                 attendees.map((attendee, index) => (
                   <View
                     key={index}
-                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 12 }}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingVertical: 12,
+                      gap: 12,
+                    }}
                   >
                     <Avatar
                       image={attendee.image}
@@ -541,11 +611,19 @@ export default function EventDetailPage() {
                       size={42}
                     />
                     <View style={{ flex: 1, gap: 2 }}>
-                      <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: colors.text }}>
+                      <Text
+                        style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: colors.text }}
+                      >
                         {attendee.name}
                       </Text>
                       {attendee.subtitle ? (
-                        <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: colors.textSecondary }}>
+                        <Text
+                          style={{
+                            fontFamily: 'Inter-Regular',
+                            fontSize: 12,
+                            color: colors.textSecondary,
+                          }}
+                        >
                           {attendee.subtitle}
                         </Text>
                       ) : null}
@@ -556,7 +634,14 @@ export default function EventDetailPage() {
               ) : (
                 <View style={{ alignItems: 'center', paddingVertical: 32 }}>
                   <Users size={48} color={colors.textMuted} />
-                  <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: colors.textSecondary, marginTop: 12 }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Inter-Regular',
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginTop: 12,
+                    }}
+                  >
                     No attendees yet
                   </Text>
                 </View>
@@ -580,10 +665,23 @@ export default function EventDetailPage() {
                         source={{ uri: message.image }}
                         style={{ width: 30, height: 30, borderRadius: 15 }}
                       />
-                      <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: colors.text, flex: 1 }}>
+                      <Text
+                        style={{
+                          fontFamily: 'Inter-SemiBold',
+                          fontSize: 14,
+                          color: colors.text,
+                          flex: 1,
+                        }}
+                      >
                         {message.author}
                       </Text>
-                      <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: colors.textMuted }}>
+                      <Text
+                        style={{
+                          fontFamily: 'Inter-Regular',
+                          fontSize: 12,
+                          color: colors.textMuted,
+                        }}
+                      >
                         {message.timestamp}
                       </Text>
                     </View>
@@ -598,7 +696,14 @@ export default function EventDetailPage() {
                         marginLeft: 38,
                       }}
                     >
-                      <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: colors.text, lineHeight: 20 }}>
+                      <Text
+                        style={{
+                          fontFamily: 'Inter-Regular',
+                          fontSize: 14,
+                          color: colors.text,
+                          lineHeight: 20,
+                        }}
+                      >
                         {message.text}
                       </Text>
                     </View>
@@ -607,7 +712,14 @@ export default function EventDetailPage() {
               ) : (
                 <View style={{ alignItems: 'center', paddingVertical: 32 }}>
                   <Info size={48} color={colors.textMuted} />
-                  <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: colors.textSecondary, marginTop: 12 }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Inter-Regular',
+                      fontSize: 14,
+                      color: colors.textSecondary,
+                      marginTop: 12,
+                    }}
+                  >
                     No messages yet
                   </Text>
                 </View>
@@ -660,14 +772,22 @@ export default function EventDetailPage() {
             />
           )}
           <View style={{ position: 'absolute', bottom: 16, left: 16 }}>
-            <Badge label={isPast ? 'Past Event' : 'Upcoming'} variant={isPast ? 'past' : 'upcoming'} />
+            <Badge
+              label={isPast ? 'Past Event' : 'Upcoming'}
+              variant={isPast ? 'past' : 'upcoming'}
+            />
           </View>
         </View>
       ) : null}
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: isPast ? 40 : 100, gap: 20 }}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 20,
+          paddingBottom: isPast ? 40 : 100,
+          gap: 20,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* Attended banner (past only) */}

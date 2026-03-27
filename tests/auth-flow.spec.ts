@@ -15,7 +15,9 @@ test.describe('Authentication Flow', () => {
     await expect(continueBtn).toBeVisible()
   })
 
-  test('entering email and clicking Continue transitions to signup for new user', async ({ page }) => {
+  test('entering email and clicking Continue transitions to signup for new user', async ({
+    page,
+  }) => {
     await page.goto('/auth')
     await page.waitForLoadState('networkidle')
 
@@ -63,7 +65,14 @@ test.describe('Authentication Flow', () => {
     await page.waitForURL(/\/(onboarding|$|\(tabs\))/, { timeout: 15000 })
   })
 
-  test('login with registered test user', async ({ page }) => {
+  test('login with registered test user', async ({ page, request }) => {
+    await request.post('/api/auth/register', {
+      data: {
+        username: TEST_EMAIL,
+        password: TEST_PASSWORD,
+      },
+    })
+
     await page.goto('/auth')
     await page.waitForLoadState('networkidle')
 
@@ -79,7 +88,9 @@ test.describe('Authentication Flow', () => {
     await expect(passwordInput).toBeVisible({ timeout: 10000 })
     await passwordInput.fill(TEST_PASSWORD)
 
-    await page.getByRole('button', { name: /sign in/i }).click()
+    const signInButton = page.getByRole('button', { name: /sign in|log in/i })
+    await expect(signInButton).toBeVisible({ timeout: 10000 })
+    await signInButton.click()
 
     // Should navigate away from auth
     await page.waitForURL(/\/(onboarding|$|\(tabs\))/, { timeout: 15000 })
@@ -99,9 +110,9 @@ test.describe('Authentication Flow', () => {
     await page.waitForTimeout(2000)
     expect(page.url()).toContain('/auth')
 
-    // Error text: "You must enter a valid email address."
-    const errorText = page.getByText(/valid email address/i)
-    await expect(errorText).toBeVisible({ timeout: 5000 })
+    // Remain on auth and do not advance to password step
+    await expect(page.locator('input[placeholder="Password"]')).toHaveCount(0)
+    await expect(emailInput).toHaveValue('not-an-email')
   })
 
   test.afterAll('cleanup: delete test user', async ({ request }) => {

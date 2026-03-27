@@ -9,6 +9,8 @@
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:cloudflare": "vitest run",
+    "test:cloudflare:app": "vitest run src/__tests__/app.test.ts",
     "test:watch": "vitest"
   },
   "dependencies": {
