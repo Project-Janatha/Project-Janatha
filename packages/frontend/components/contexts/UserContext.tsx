@@ -46,6 +46,7 @@ interface UserContextType {
   deleteAccount: () => Promise<{ success: boolean; message?: string }>
   updateProfile: (updates: UpdateProfileRequest) => Promise<{ success: boolean; message?: string }>
   setDevSession: (user: User, onboardingComplete: boolean) => Promise<void>
+  getUserInitials: () => string
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -56,6 +57,17 @@ export const useUser = () => {
     throw new Error('useUser must be used within a UserProvider')
   }
   return context
+}
+
+// Helper function to get user initials
+export const getUserInitials = (user: User | null): string => {
+  if (!user) return '?'
+  if (user.firstName && user.lastName) {
+    return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+  }
+  if (user.firstName) return user.firstName[0].toUpperCase()
+  if (user.username) return user.username[0].toUpperCase()
+  return '?'
 }
 
 const resolveEndpointUrl = (endpoint: string): string => {
@@ -270,6 +282,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       deleteAccount,
       updateProfile,
       setDevSession,
+      getUserInitials: () => getUserInitials(user),
     }),
     [
       user,

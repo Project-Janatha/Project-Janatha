@@ -3,6 +3,7 @@ import { View, Text, Image, ScrollView, Pressable, ActivityIndicator } from 'rea
 import { MapPin, Users, User, Share2, Clock, CheckCircle, Info, ChevronLeft, Pencil } from 'lucide-react-native'
 import Badge from '../ui/Badge'
 import UnderlineTabBar from '../ui/UnderlineTabBar'
+import Avatar from '../ui/Avatar'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
 
 // ---------------------------------------------------------------------------
@@ -73,7 +74,8 @@ function formatRelativeDateTime(dateStr: string, timeStr: string): string {
 type Attendee = {
   name: string
   subtitle: string
-  image: string
+  image?: string
+  initials?: string
 }
 
 type Message = {
@@ -143,13 +145,13 @@ function AvatarStack({ attendees, colors }: { attendees: Attendee[]; colors: Det
   return (
     <View className="flex-row" style={{ marginLeft: 4 }}>
       {shown.map((a, i) => (
-        <Image
+        <Avatar
           key={i}
-          source={{ uri: a.image }}
+          image={a.image}
+          initials={a.initials}
+          name={a.name}
+          size={24}
           style={{
-            width: 24,
-            height: 24,
-            borderRadius: 12,
             borderWidth: 2,
             borderColor: colors.avatarBorder,
             marginLeft: i === 0 ? 0 : -8,
@@ -491,9 +493,11 @@ function PeopleTab({ attendees, colors }: { attendees: Attendee[]; colors: Detai
             className="flex-row items-center"
             style={{ paddingVertical: 12, gap: 12 }}
           >
-            <Image
-              source={{ uri: a.image }}
-              style={{ width: 42, height: 42, borderRadius: 21 }}
+            <Avatar
+              image={a.image}
+              initials={a.initials}
+              name={a.name}
+              size={42}
             />
             <View style={{ flex: 1, gap: 2 }}>
               <Text

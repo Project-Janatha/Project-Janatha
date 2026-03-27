@@ -5,6 +5,7 @@ import { useUser, useThemeContext } from '../../components/contexts'
 import { User, Settings, LogOut, Plus } from 'lucide-react-native'
 import SettingsPanel from '../../components/SettingsPanel'
 import Logo from '../../components/ui/Logo'
+import { Avatar } from '../../components/ui'
 
 /**
  * TabLayout Component - The main layout for the tab-based navigation.
@@ -51,8 +52,16 @@ export default function TabLayout() {
         </Link>
       )
     }
-    if (Platform.OS === 'web') {
-      return (
+if (Platform.OS === 'web') {
+    const webProfileImage = user?.profileImage
+    const getInitials = () => {
+      if (user?.firstName && user?.lastName) return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+      if (user?.firstName) return user.firstName[0].toUpperCase()
+      if (user?.username) return user.username[0].toUpperCase()
+      return '?'
+    }
+
+    return (
         <View className="flex-row items-center" style={{ gap: 8 }}>
           {canCreate && (
             <Pressable
@@ -70,11 +79,30 @@ export default function TabLayout() {
               </Text>
             </Pressable>
           )}
-          <Pressable
-            className="mr-4 p-2 rounded-full bg-gray-200 dark:bg-gray-700"
+<Pressable
+            className="mr-4 rounded-full overflow-hidden"
+            style={{ width: 36, height: 36 }}
             onPress={() => setSettingsVisible(true)}
           >
-            <User size={20} color={isDark ? '#fff' : '#9A3412'} />
+            {webProfileImage ? (
+              <Image
+                source={{ uri: webProfileImage }}
+                style={{ width: 36, height: 36 }}
+              />
+            ) : (
+              <View style={{ 
+                width: 36, 
+                height: 36, 
+                borderRadius: 18, 
+                backgroundColor: '#C2410C', 
+                alignItems: 'center', 
+                justifyContent: 'center' 
+              }}>
+                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>
+                  {getInitials()}
+                </Text>
+              </View>
+            )}
           </Pressable>
           <SettingsPanel
             visible={settingsVisible}
@@ -85,11 +113,10 @@ export default function TabLayout() {
       )
     }
 
-    // Mobile: show profile button with popover menu
+// Mobile: show profile button with popover menu
     const displayName =
       user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || ''
-    const profileImage =
-      user?.profileImage || `https://i.pravatar.cc/150?u=${user?.username || 'default'}`
+    const profileImage = user?.profileImage
 
     return (
       <View style={{ position: 'relative' }}>
@@ -97,7 +124,11 @@ export default function TabLayout() {
           className="mr-4 p-2"
           onPress={() => setSettingsVisible(!settingsVisible)}
         >
-          <User size={22} color={isDark ? '#fff' : '#9A3412'} />
+          <Avatar
+            image={profileImage || undefined}
+            name={displayName}
+            size={26}
+          />
         </Pressable>
 
         {settingsVisible && (
@@ -128,11 +159,13 @@ export default function TabLayout() {
                 padding: 6,
               }}
             >
-              {/* Profile info */}
+{/* Profile info */}
               <View className="flex-row items-center px-2.5 py-3" style={{ borderBottomWidth: 1, borderBottomColor: isDark ? '#262626' : '#F0EDE8', marginBottom: 4 }}>
-                <Image
-                  source={{ uri: profileImage }}
-                  className="w-10 h-10 rounded-full mr-3 bg-gray-300"
+                <Avatar
+                  image={profileImage || undefined}
+                  name={displayName}
+                  size={40}
+                  style={{ marginRight: 12 }}
                 />
                 <View className="flex-1">
                   <Text className="text-[15px] font-inter-semibold text-content dark:text-content-dark">

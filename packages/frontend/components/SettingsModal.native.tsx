@@ -10,8 +10,9 @@ import {
   Image,
 } from 'react-native'
 import { useRouter } from 'expo-router'
-import { X, User, Settings, LogOut, Sun, Moon, Monitor } from 'lucide-react-native'
+import { X, User, MapPin, Settings, LogOut, Bell, HelpCircle } from 'lucide-react-native'
 import { useUser, useThemeContext } from './contexts'
+import { Avatar } from './ui'
 
 export default function SettingsModal({ visible, onClose, onLogout }) {
   const router = useRouter()
@@ -26,7 +27,6 @@ export default function SettingsModal({ visible, onClose, onLogout }) {
   const displayName = user?.firstName && user?.lastName 
     ? `${user.firstName} ${user.lastName}` 
     : 'User'
-  const profileImage = user?.profileImage || 'https://via.placeholder.com/150'
 
   const handleNavigate = useCallback((path: string) => {
     onClose()
@@ -61,9 +61,11 @@ export default function SettingsModal({ visible, onClose, onLogout }) {
           {/* Profile Section */}
           <View style={{ padding: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-              <Image 
-                source={{ uri: profileImage }} 
-                style={{ width: 60, height: 60, borderRadius: 30, marginRight: 12 }} 
+              <Avatar 
+                image={user?.profileImage || undefined}
+                name={displayName}
+                size={60}
+                style={{ marginRight: 12 }}
               />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 18, fontWeight: '600', color: textColor }}>
