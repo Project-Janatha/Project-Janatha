@@ -106,6 +106,24 @@ export const authService = {
     return { success: true, user: result.data.user }
   },
 
+  async uploadProfileImage(file: Blob, fileName?: string): Promise<{
+    success: boolean
+    message?: string
+    imageUrl?: string
+  }> {
+    const token = await getStoredToken()
+    if (!token) {
+      return { success: false, message: 'No authentication token found' }
+    }
+
+    const result = await authClient.uploadProfileImage(token, file, fileName)
+    if (!result.success) {
+      return { success: false, message: result.error.message }
+    }
+
+    return { success: true, imageUrl: result.data.imageUrl }
+  },
+
   async deleteAccount(): Promise<{ success: boolean; message?: string }> {
     const token = await getStoredToken()
     if (!token) {

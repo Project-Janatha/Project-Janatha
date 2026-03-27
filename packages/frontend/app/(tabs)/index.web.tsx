@@ -37,7 +37,7 @@ import { useDetailColors } from '../../hooks/useDetailColors'
 import type { MapPoint, EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
 import { WeekCalendar } from '../../components'
 
-const ADMIN_NAME = 'brahman'
+const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
 const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
 
 const FILTERS: { label: DiscoverFilter }[] = [
