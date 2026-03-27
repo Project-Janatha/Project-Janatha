@@ -182,7 +182,9 @@ test.describe('Live App Walkthrough', () => {
     expect(user.firstName).toBe('E2E')
     expect(user.lastName).toBe('TestUser')
     expect(user.profileComplete).toBe(true)
-    console.log(`✅ Profile persisted: ${user.firstName} ${user.lastName}, complete=${user.profileComplete}`)
+    console.log(
+      `✅ Profile persisted: ${user.firstName} ${user.lastName}, complete=${user.profileComplete}`
+    )
 
     const centersRes = await request.get('/api/centers')
     expect(centersRes.ok()).toBeTruthy()

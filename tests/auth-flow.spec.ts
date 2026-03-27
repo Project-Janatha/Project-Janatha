@@ -15,7 +15,9 @@ test.describe('Authentication Flow', () => {
     await expect(continueBtn).toBeVisible()
   })
 
-  test('entering email and clicking Continue transitions to signup for new user', async ({ page }) => {
+  test('entering email and clicking Continue transitions to signup for new user', async ({
+    page,
+  }) => {
     await page.goto('/auth')
     await page.waitForLoadState('networkidle')
 
