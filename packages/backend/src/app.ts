@@ -53,6 +53,8 @@ app.use(
       if (!origin) return '*'
       const allowed = [
         'https://chinmaya-janata.pages.dev',
+        'https://chinmayajanata.org',
+        'https://www.chinmayajanata.org',
         'http://localhost:8081',
         'http://localhost:8787',
         'http://localhost:19006',
