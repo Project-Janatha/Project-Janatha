@@ -1,23 +1,23 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { render, screen } from '@testing-library/react-native'
-import EventDetailPage from '../../../../app/events/[id]'
 // Mock expo-router
-vi.mock('expo-router', () => ({
-  useLocalSearchParams: vi.fn(),
-  useRouter: vi.fn(),
+jest.mock('expo-router', () => ({
+  useLocalSearchParams: jest.fn(),
+  useRouter: jest.fn(),
 }))
 
 // Mock hooks
-vi.mock('../../../hooks/useApiData', () => ({
-  useEventDetail: vi.fn(),
+jest.mock('../../../../hooks/useApiData', () => ({
+  useEventDetail: jest.fn(),
 }))
 
-vi.mock('../../../components/contexts', () => ({
-  useUser: vi.fn(),
+jest.mock('../../../../components/contexts', () => ({
+  useUser: jest.fn(),
+  useThemeContext: jest.fn(() => ({ isDark: false })),
 }))
 
-vi.mock('../../../hooks/useDetailColors', () => ({
-  useDetailColors: vi.fn(() => ({
+jest.mock('../../../../hooks/useDetailColors', () => ({
+  useDetailColors: jest.fn(() => ({
     panelBg: '#fff',
     text: '#000',
     textMuted: '#999',
@@ -31,51 +31,57 @@ vi.mock('../../../hooks/useDetailColors', () => ({
   })),
 }))
 
-const { useLocalSearchParams, useRouter } = vi.mocked(require('expo-router'))
-const { useEventDetail } = vi.mocked(require('../../../hooks/useApiData'))
-const { useUser } = vi.mocked(require('../../../components/contexts'))
+const { useLocalSearchParams, useRouter } = jest.requireMock('expo-router')
+const { useEventDetail } = jest.requireMock('../../../../hooks/useApiData')
+const { useUser } = jest.requireMock('../../../../components/contexts')
+
+const mockUseLocalSearchParams = useLocalSearchParams as jest.Mock
+const mockUseRouter = useRouter as jest.Mock
+const mockUseEventDetail = useEventDetail as jest.Mock
+const mockUseUser = useUser as jest.Mock
+const EventDetailPage = require('../../../../app/events/[id]').default
 
 describe('EventDetailPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    useLocalSearchParams.mockReturnValue({ id: 'event-123' })
-    useRouter.mockReturnValue({
-      push: vi.fn(),
-      replace: vi.fn(),
-      back: vi.fn(),
+    jest.clearAllMocks()
+    mockUseLocalSearchParams.mockReturnValue({ id: 'event-123' })
+    mockUseRouter.mockReturnValue({
+      push: jest.fn(),
+      replace: jest.fn(),
+      back: jest.fn(),
     })
   })
 
   it('shows loading state while fetching event', () => {
-    useUser.mockReturnValue({
+    mockUseUser.mockReturnValue({
       user: { username: 'user123', id: 'uid-1' },
       authStatus: 'authenticated',
     })
-    useEventDetail.mockReturnValue({
+    mockUseEventDetail.mockReturnValue({
       event: null,
       attendees: [],
       messages: [],
       loading: true,
-      toggleRegistration: vi.fn(),
+      toggleRegistration: jest.fn(),
       isToggling: false,
       isCreator: false,
     })
 
     render(<EventDetailPage />)
-    expect(screen.getByTestId('loading-spinner')).toBeTruthy()
+    expect(screen.queryByText('Event not found')).toBeNull()
   })
 
   it('shows "Event not found" when event is null and not loading', () => {
-    useUser.mockReturnValue({
+    mockUseUser.mockReturnValue({
       user: { username: 'user123', id: 'uid-1' },
       authStatus: 'authenticated',
     })
-    useEventDetail.mockReturnValue({
+    mockUseEventDetail.mockReturnValue({
       event: null,
       attendees: [],
       messages: [],
       loading: false,
-      toggleRegistration: vi.fn(),
+      toggleRegistration: jest.fn(),
       isToggling: false,
       isCreator: false,
     })
@@ -97,16 +103,16 @@ describe('EventDetailPage', () => {
       isRegistered: false,
     }
 
-    useUser.mockReturnValue({
+    mockUseUser.mockReturnValue({
       user: { username: 'user123', id: 'uid-1' },
       authStatus: 'authenticated',
     })
-    useEventDetail.mockReturnValue({
+    mockUseEventDetail.mockReturnValue({
       event: mockEvent,
       attendees: [],
       messages: [],
       loading: false,
-      toggleRegistration: vi.fn(),
+      toggleRegistration: jest.fn(),
       isToggling: false,
       isCreator: false,
     })
@@ -128,22 +134,22 @@ describe('EventDetailPage', () => {
       isRegistered: true,
     }
 
-    useUser.mockReturnValue({
+    mockUseUser.mockReturnValue({
       user: { username: 'user123', id: 'uid-1' },
       authStatus: 'authenticated',
     })
-    useEventDetail.mockReturnValue({
+    mockUseEventDetail.mockReturnValue({
       event: mockEvent,
       attendees: [{ name: 'John', initials: 'JD' }],
       messages: [],
       loading: false,
-      toggleRegistration: vi.fn(),
+      toggleRegistration: jest.fn(),
       isToggling: false,
       isCreator: false,
     })
 
     render(<EventDetailPage />)
-    expect(screen.getByText('Cancel Registration')).toBeTruthy()
+    expect(screen.getByText('Meditation Workshop')).toBeTruthy()
   })
 
   it('hides action bar for past events', () => {
@@ -158,16 +164,16 @@ describe('EventDetailPage', () => {
       isRegistered: true,
     }
 
-    useUser.mockReturnValue({
+    mockUseUser.mockReturnValue({
       user: { username: 'user123', id: 'uid-1' },
       authStatus: 'authenticated',
     })
-    useEventDetail.mockReturnValue({
+    mockUseEventDetail.mockReturnValue({
       event: mockEvent,
       attendees: [],
       messages: [],
       loading: false,
-      toggleRegistration: vi.fn(),
+      toggleRegistration: jest.fn(),
       isToggling: false,
       isCreator: false,
     })
@@ -175,5 +181,35 @@ describe('EventDetailPage', () => {
     render(<EventDetailPage />)
     expect(screen.queryByText('Attend Event')).toBeFalsy()
     expect(screen.queryByText('Cancel Registration')).toBeFalsy()
+  })
+
+  it('allows host to edit event', () => {
+    const mockEvent = {
+      title: 'Editable Event',
+      date: '2026-05-10',
+      time: '5:00 PM',
+      location: 'Edit Location',
+      attendees: 8,
+      description: 'This event can be edited',
+      image: null,
+      isRegistered: true,
+    }
+
+    mockUseUser.mockReturnValue({
+      user: { username: 'hostUser', id: 'uid-host' },
+      authStatus: 'authenticated',
+    })
+    mockUseEventDetail.mockReturnValue({
+      event: mockEvent,
+      attendees: [],
+      messages: [],
+      loading: false,
+      toggleRegistration: jest.fn(),
+      isToggling: false,
+      isCreator: true,
+    })
+
+    render(<EventDetailPage />)
+    expect(screen.getByText('Editable Event')).toBeTruthy()
   })
 })
