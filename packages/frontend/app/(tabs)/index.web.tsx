@@ -256,7 +256,7 @@ function EventPanelInner({
     user?.id
   )
   const colors = useDetailColors()
-  const isAdmin = user?.username === ADMIN_NAME
+  const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
   const canEdit = isAdmin || isLocal
 
   // Propogate registration status change back to discover list
@@ -675,7 +675,7 @@ export default function DiscoverScreenWeb() {
   const router = useRouter()
   const { isDark } = useThemeContext()
   const { user } = useUser()
-  const isAdmin = user?.username === ADMIN_NAME
+  const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
   const canCreate = isAdmin || isLocal
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')

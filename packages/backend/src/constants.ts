@@ -8,7 +8,15 @@
  */
 
 // Admin
-export const ADMIN_NAME = 'brahman' // lowercase-normalized
+export const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
+
+// Developer emails that get elevated permissions on signup
+export const DEVELOPER_EMAILS = [
+  'kishparikh18@gmail.com',
+  'ramachandran.abhiram@gmail.com',
+  'p.vaish97@gmail.com',
+  'sahanavasairamesh@gmail.com',
+]
 
 // Verification levels
 export const NORMAL_USER = 45
