@@ -833,7 +833,7 @@ export default function DiscoverScreenWeb() {
             }
           >
             <Map
-              initialCenter={userCenter ? [userCenter.latitude, userCenter.longitude] : undefined}
+              initialCenter={userCenter?.latitude && userCenter?.longitude ? [userCenter.latitude, userCenter.longitude] : undefined}
               points={filteredPoints}
               onPointPress={handlePointPress}
               onPointHover={handlePointHover}
