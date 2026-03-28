@@ -37,7 +37,7 @@ import { useDetailColors } from '../../hooks/useDetailColors'
 import type { MapPoint, EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
 import { WeekCalendar } from '../../components'
 
-const ADMIN_NAME = 'brahman'
+const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
 const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
 
 const FILTERS: { label: DiscoverFilter }[] = [
@@ -256,7 +256,7 @@ function EventPanelInner({
     user?.id
   )
   const colors = useDetailColors()
-  const isAdmin = user?.username === ADMIN_NAME
+  const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
   const canEdit = isAdmin || isLocal
 
   // Propogate registration status change back to discover list
@@ -675,7 +675,7 @@ export default function DiscoverScreenWeb() {
   const router = useRouter()
   const { isDark } = useThemeContext()
   const { user } = useUser()
-  const isAdmin = user?.username === ADMIN_NAME
+  const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
   const canCreate = isAdmin || isLocal
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')

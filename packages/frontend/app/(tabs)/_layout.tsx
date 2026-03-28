@@ -11,7 +11,7 @@ import { Avatar } from '../../components/ui'
  * TabLayout Component - The main layout for the tab-based navigation.
  * @return {JSX.Element} A TabLayout component that sets up tab navigation with theming.
  */
-const ADMIN_NAME = 'brahman'
+const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
 const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
 
 export default function TabLayout() {
@@ -19,7 +19,7 @@ export default function TabLayout() {
   const { user, logout } = useUser()
   const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
-  const canCreate = user?.username === ADMIN_NAME || isLocal
+  const canCreate = !!(user?.verificationLevel && user.verificationLevel >= 107) || user?.email === ADMIN_EMAIL || isLocal
 
   const handleLogout = async () => {
     await logout()
