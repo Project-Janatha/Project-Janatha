@@ -13,6 +13,7 @@ import React, { useState, useCallback, memo, useRef, useMemo, useEffect } from '
 import Map, { Marker, MapRef, AttributionControl } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useThemeContext } from './contexts'
+import { getLocationAccess, getCurrentPosition } from '../utils/locationServices'
 
 // Type definitions
 export interface MapPoint {
@@ -202,17 +203,13 @@ const MapComponent = memo<MapProps>(
         } catch {}
       }
 
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords
-            setViewState({ latitude, longitude, zoom: initialZoom })
-            localStorage.setItem('userLocation', JSON.stringify({ latitude, longitude }))
-          },
-          () => {},
-          { enableHighAccuracy: false, timeout: 5000 }
-        )
-      }
+      getCurrentPosition().then((coords) => {
+        if (coords && coords.length === 2) {
+          const [longitude, latitude] = coords
+          setViewState({ latitude, longitude, zoom: initialZoom })
+          localStorage.setItem('userLocation', JSON.stringify({ latitude, longitude }))
+        }
+      })
     }, [initialZoom])
 
     const handleMove = useCallback((evt: any) => {
