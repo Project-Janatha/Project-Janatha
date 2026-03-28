@@ -18,7 +18,7 @@ import { useUser } from '../../components/contexts'
 import { Badge, UnderlineTabBar, Avatar } from '../../components/ui'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
 
-const ADMIN_NAME = 'brahman'
+const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -471,7 +471,7 @@ export default function EventDetailPage() {
     useEventDetail(id as string, username, userId)
   const colors = useDetailColors()
 
-  const isAdmin = user?.username === ADMIN_NAME
+  const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
   const canEdit = isAdmin || isCreator
 
   const handleToggleRegistration = async () => {

@@ -20,7 +20,7 @@ import {
   verifyToken,
 } from './auth'
 import * as db from './db'
-import { ADMIN_NAME, NORMAL_USER, SEVAK, BRAHMACHARI, TIER_DESCALE } from './constants'
+import { ADMIN_EMAIL, NORMAL_USER, SEVAK, BRAHMACHARI, TIER_DESCALE, ADMIN_CUTOFF, DEVELOPER_EMAILS } from './constants'
 import { rateLimit, cacheControl, securityHeaders, validate } from './middleware'
 
 // ── Hono app type with CF bindings ────────────────────────────────────
@@ -33,6 +33,12 @@ type HonoEnv = {
 }
 
 export const app = new Hono<HonoEnv>().basePath('/api')
+
+// ── Helper: Check if user is admin ─────────────────────────────────────
+
+function isAdmin(user: { email: string | null; verification_level: number }): boolean {
+  return user.email === ADMIN_EMAIL || user.verification_level >= ADMIN_CUTOFF
+}
 
 // ── Global error handler ──────────────────────────────────────────────
 
@@ -53,12 +59,16 @@ app.use(
       if (!origin) return '*'
       const allowed = [
         'https://chinmaya-janata.pages.dev',
+        'https://chinmayajanata.org',
+        'https://www.chinmayajanata.org',
+        'https://main.project-janatha.pages.dev',
         'http://localhost:8081',
         'http://localhost:8787',
         'http://localhost:19006',
       ]
       if (allowed.includes(origin)) return origin
       if (origin.endsWith('.chinmaya-janata.pages.dev')) return origin
+      if (origin.endsWith('.project-janatha.pages.dev')) return origin
       return ''
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -148,11 +158,19 @@ app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
 
   const hashedPassword = await hashPassword(validPassword)
 
+  // Check if this is a developer email (username is the email)
+  const isDeveloper = DEVELOPER_EMAILS.includes(normalizedUsername.toLowerCase())
+  const verificationLevel = isDeveloper ? BRAHMACHARI : NORMAL_USER
+  const isVerified = isDeveloper ? 1 : 0
+
   try {
     const created = await db.createUser(c.env.DB, {
       id: crypto.randomUUID(),
       username: normalizedUsername.toLowerCase(),
       password: hashedPassword,
+      email: normalizedUsername.toLowerCase(),
+      verification_level: verificationLevel,
+      is_verified: isVerified,
     })
 
     if (!created.success) {
@@ -406,7 +424,7 @@ app.post('/addCenter', authMiddleware, async (c) => {
 
 app.post('/verifyCenter', authMiddleware, async (c) => {
   const user = c.get('user')
-  if (user.username !== ADMIN_NAME) {
+  if (!isAdmin(user)) {
     return c.json({ message: 'User is not authorized to verify or verification failed.' }, 401)
   }
 
@@ -428,7 +446,7 @@ app.post('/verifyCenter', authMiddleware, async (c) => {
 
 app.post('/removeCenter', authMiddleware, async (c) => {
   const user = c.get('user')
-  if (user.username !== ADMIN_NAME) {
+  if (!isAdmin(user)) {
     return c.json({ message: 'Insufficient permissions' }, 401)
   }
 
@@ -469,7 +487,7 @@ app.post('/fetchCenter', async (c) => {
 
 app.post('/verifyUser', authMiddleware, async (c) => {
   const adminUser = c.get('user')
-  if (adminUser.username !== ADMIN_NAME) {
+  if (!isAdmin(adminUser)) {
     return c.json({ message: 'Insufficient permission to authorize.' }, 401)
   }
 
@@ -496,7 +514,7 @@ app.post('/verifyUser', authMiddleware, async (c) => {
 
 app.post('/userUpdate', authMiddleware, async (c) => {
   const user = c.get('user')
-  if (user.username !== ADMIN_NAME) {
+  if (!isAdmin(user)) {
     return c.json({ message: 'Insufficient permissions' }, 401)
   }
 
@@ -539,7 +557,7 @@ app.post('/updateRegistration', authMiddleware, async (c) => {
     userJSON: any
   }>()
 
-  if (user.username !== username && user.username !== ADMIN_NAME) {
+  if (user.username !== username && !isAdmin(user)) {
     return c.json({ message: 'Insufficient permissions' }, 401)
   }
 
@@ -565,7 +583,7 @@ app.post('/updateRegistration', authMiddleware, async (c) => {
 
 app.post('/removeUser', authMiddleware, async (c) => {
   const user = c.get('user')
-  if (user.username !== ADMIN_NAME) {
+  if (!isAdmin(user)) {
     return c.json({ message: 'Insufficient permissions' }, 401)
   }
 
@@ -700,7 +718,7 @@ app.post('/addEvent', authMiddleware, async (c) => {
 
 app.post('/removeEvent', authMiddleware, async (c) => {
   const user = c.get('user')
-  if (user.username !== ADMIN_NAME) {
+  if (!isAdmin(user)) {
     return c.json({ message: 'Insufficient permissions' }, 401)
   }
 
@@ -737,9 +755,9 @@ app.post('/updateEvent', authMiddleware, async (c) => {
   }
 
   // Allow admin or the event creator to edit (or any logged-in user for events without creator)
-  const isAdmin = user.username === ADMIN_NAME
+  const userIsAdmin = isAdmin(user)
   const isCreator = existing.created_by === user.id
-  const isEditable = isAdmin || isCreator || existing.created_by === null
+  const isEditable = userIsAdmin || isCreator || existing.created_by === null
   if (!isEditable) {
     return c.json({ message: 'Insufficient permissions - only admin or event creator can edit' }, 401)
   }

@@ -234,6 +234,46 @@ export const authClient = {
     }
   },
 
+  async uploadProfileImage(
+    token: string,
+    file: Blob,
+    fileName = 'avatar.jpg'
+  ): AsyncResult<{ imageUrl: string }> {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUTS.standard)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file, fileName)
+
+      const response = await fetch(buildUrl('/profile/uploadImage'), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+        signal: controller.signal,
+        credentials: 'include',
+      })
+
+      const data = await safeJson<{ imageUrl?: string; message?: string }>(response)
+
+      if (!response.ok || !data?.imageUrl) {
+        return {
+          success: false,
+          error: toError(data?.message || 'Failed to upload profile image', response.status),
+        }
+      }
+
+      return { success: true, data: { imageUrl: data.imageUrl } }
+    } catch (error: any) {
+      if (error?.name === 'AbortError') {
+        return { success: false, error: toError('Upload timeout. Please check your connection.') }
+      }
+      return { success: false, error: toError('Network error. Please try again.') }
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  },
+
   async deleteAccount(token: string): AsyncResult<GenericSuccessResponse> {
     try {
       const response = await withTimeout(

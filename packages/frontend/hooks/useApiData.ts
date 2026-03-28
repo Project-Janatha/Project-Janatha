@@ -388,6 +388,8 @@ export interface CenterDisplay {
   upcomingEvents: number
   pointOfContact: string
   acharya: string
+  latitude?: number
+  longitude?: number
 }
 
 const SAMPLE_CENTER_DETAILS: Record<string, CenterDisplay> = {}
@@ -402,6 +404,13 @@ export function useCenterDetail(centerId: string) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!centerId) {
+      setCenter(null)
+      setEvents([])
+      setLoading(false)
+      return
+    }
+
     let mounted = true
 
     const load = async () => {
@@ -424,6 +433,8 @@ export function useCenterDetail(centerId: string) {
             upcomingEvents: apiEvents.length,
             pointOfContact: apiCenter.pointOfContact || '',
             acharya: apiCenter.acharya || '',
+            latitude: apiCenter.latitude,
+            longitude: apiCenter.longitude,
           })
           setIsLive(true)
         }
