@@ -222,6 +222,9 @@ const MapComponent = memo<MapProps>(
 
     const getMarkerViewportCoords = useCallback(
       (domEvent: MouseEvent) => {
+        if (!domEvent) {
+          return { x: 0, y: 0 }
+        }
         const target = domEvent.target as HTMLElement
         const markerEl = target?.closest('.maplibregl-marker') as HTMLElement
         if (markerEl) {
