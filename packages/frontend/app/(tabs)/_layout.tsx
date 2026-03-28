@@ -64,9 +64,7 @@ if (Platform.OS === 'web') {
 
     return (
         <View className="flex-row items-center" style={{ gap: 8 }}>
-          {canCreate && (
-            <Text style={{color: 'red', fontSize: 10}}>DEBUG: canCreate=true level={user?.verificationLevel}</Text>
-          )}
+          <Text style={{color: 'red', fontSize: 10}}>DEBUG: canCreate={String(canCreate)} level={user?.verificationLevel} email={user?.email}</Text>
           {canCreate && (
             <Pressable
               className="px-3 py-2 rounded-lg flex-row items-center"
