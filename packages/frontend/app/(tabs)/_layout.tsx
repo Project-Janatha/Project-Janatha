@@ -19,8 +19,6 @@ export default function TabLayout() {
   const { user, logout } = useUser()
   const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
-  const [debugInfo, setDebugInfo] = useState('')
-  if (!debugInfo) setDebugInfo('user=' + JSON.stringify(user))
   const canCreate = !!(user?.verificationLevel && user.verificationLevel >= 107) || user?.email === ADMIN_EMAIL || isLocal
 
   const handleLogout = async () => {
@@ -65,7 +63,6 @@ if (Platform.OS === 'web') {
 
     return (
         <View className="flex-row items-center" style={{ gap: 8 }}>
-          <Text style={{color: 'red', fontSize: 10}}>DEBUG: {debugInfo}</Text>
           {canCreate && (
             <Pressable
               className="px-3 py-2 rounded-lg flex-row items-center"

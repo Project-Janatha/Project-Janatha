@@ -57,7 +57,19 @@ app.use(
   cors({
     origin: (origin) => {
       if (!origin) return '*'
-      return '*'
+      const allowed = [
+        'https://chinmaya-janata.pages.dev',
+        'https://chinmayajanata.org',
+        'https://www.chinmayajanata.org',
+        'https://main.project-janatha.pages.dev',
+        'http://localhost:8081',
+        'http://localhost:8787',
+        'http://localhost:19006',
+      ]
+      if (allowed.includes(origin)) return origin
+      if (origin.endsWith('.chinmaya-janata.pages.dev')) return origin
+      if (origin.endsWith('.project-janatha.pages.dev')) return origin
+      return ''
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
