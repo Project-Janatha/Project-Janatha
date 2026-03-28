@@ -66,10 +66,10 @@ app.use(
         'http://localhost:8787',
         'http://localhost:19006',
       ]
+      console.log('CORS origin:', origin)
       if (allowed.includes(origin)) return origin
-      if (origin.endsWith('.chinmaya-janata.pages.dev')) return origin
-      if (origin.endsWith('.project-janatha.pages.dev')) return origin
-      return ''
+      if (origin && (origin.endsWith('.chinmaya-janata.pages.dev') || origin.endsWith('.project-janatha.pages.dev'))) return origin
+      return '*'
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
