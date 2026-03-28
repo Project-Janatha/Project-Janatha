@@ -68,6 +68,7 @@ app.use(
       ]
       if (allowed.includes(origin)) return origin
       if (origin.endsWith('.chinmaya-janata.pages.dev')) return origin
+      if (origin.endsWith('.project-janatha.pages.dev')) return origin
       return ''
     },
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
