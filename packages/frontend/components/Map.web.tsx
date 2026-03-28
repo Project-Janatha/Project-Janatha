@@ -9,7 +9,7 @@
  * Web-only map component using react-map-gl with OpenStreetMap tiles.
  * Native platforms (iOS/Android) use Map.tsx with react-native-maps.
  */
-import React, { useState, useCallback, memo, useRef, useMemo } from 'react'
+import React, { useState, useCallback, memo, useRef, useMemo, useEffect } from 'react'
 import Map, { Marker, MapRef, AttributionControl } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useThemeContext } from './contexts'
@@ -181,14 +181,39 @@ const MapComponent = memo<MapProps>(
     const { isDark } = useThemeContext()
     const mapRef = useRef<MapRef>(null)
 
-    const center = initialCenter
+    const defaultCenter = initialCenter
       ? { longitude: initialCenter[1], latitude: initialCenter[0] }
       : { longitude: DEFAULT_CENTER.longitude, latitude: DEFAULT_CENTER.latitude }
 
     const [viewState, setViewState] = useState({
-      ...center,
+      ...defaultCenter,
       zoom: initialZoom,
     })
+
+    useEffect(() => {
+      const storedLocation = localStorage.getItem('userLocation')
+      if (storedLocation) {
+        try {
+          const { latitude, longitude } = JSON.parse(storedLocation)
+          if (latitude && longitude) {
+            setViewState({ latitude, longitude, zoom: initialZoom })
+            return
+          }
+        } catch {}
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords
+            setViewState({ latitude, longitude, zoom: initialZoom })
+            localStorage.setItem('userLocation', JSON.stringify({ latitude, longitude }))
+          },
+          () => {},
+          { enableHighAccuracy: false, timeout: 5000 }
+        )
+      }
+    }, [initialZoom])
 
     const handleMove = useCallback((evt: any) => {
       setViewState(evt.viewState)
