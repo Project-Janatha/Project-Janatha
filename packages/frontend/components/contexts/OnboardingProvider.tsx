@@ -75,8 +75,8 @@ export default function OnboardingProvider({ children }: { children: React.React
         throw new Error(data.message || 'Failed to complete onboarding')
       }
 
-      // Update UserContext so the route guard redirects to home
-      setUser({ ...user!, firstName, lastName, centerID, profileComplete: true })
+      const data = await response.json()
+      setUser(data.user)
       router.replace('/')
     } catch (error: any) {
       setSubmitError(error.message || 'Something went wrong. Please try again.')
