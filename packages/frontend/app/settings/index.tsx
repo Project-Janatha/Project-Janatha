@@ -483,7 +483,7 @@ export default function Profile() {
           <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
             {user?.username || 'user'}
           </Text>
-          {isEditing && user?.email && (
+          {isEditing && user?.email && user.email !== user.username && (
             <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
               {user.email}
             </Text>
@@ -963,7 +963,7 @@ export default function Profile() {
             <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
               {user?.username || 'user'}
             </Text>
-            {isEditing && user?.email && (
+            {isEditing && user?.email && user.email !== user.username && (
               <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
                 {user.email}
               </Text>
