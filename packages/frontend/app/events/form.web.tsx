@@ -34,7 +34,7 @@ import {
   type CenterData,
 } from '../../utils/api'
 
-const ADMIN_NAME = 'brahman'
+const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
 
 const CATEGORY_OPTIONS = [
   { value: undefined, label: 'None' },
@@ -127,7 +127,7 @@ export default function EventFormPage() {
   const [image, setImage] = useState('')
   const [category, setCategory] = useState<number | undefined>(undefined)
 
-  const isAdmin = user?.username === ADMIN_NAME
+  const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
 
   useEffect(() => {
     let mounted = true
