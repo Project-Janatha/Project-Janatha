@@ -19,7 +19,8 @@ export default function TabLayout() {
   const { user, logout } = useUser()
   const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
-  const canCreate = (user?.verificationLevel !== undefined && user.verificationLevel >= 107) || user?.email === ADMIN_EMAIL || isLocal
+  console.log('DEBUG user:', JSON.stringify(user))
+  const canCreate = !!(user?.verificationLevel && user.verificationLevel >= 107) || user?.email === ADMIN_EMAIL || isLocal
 
   const handleLogout = async () => {
     await logout()
