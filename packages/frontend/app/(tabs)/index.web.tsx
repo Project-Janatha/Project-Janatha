@@ -178,12 +178,12 @@ function extractCityState(address?: string): string | null {
 
 // ─── Center Item (Desktop) ──────────────────────────────
 
-function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () => void }) {
+function CenterItem({ center, onPress, isMyCenter }: { center: DiscoverCenter; onPress: () => void; isMyCenter?: boolean }) {
   return (
     <Pressable
       onPress={onPress}
       className={`flex-row gap-4 p-4 rounded-2xl active:opacity-80 border border-transparent hover:border-stone-200 dark:hover:border-neutral-700 ${
-        center.isMember ? 'bg-orange-50/80 dark:bg-orange-950/20' : 'bg-white dark:bg-neutral-900'
+        center.isMember || isMyCenter ? 'bg-orange-50/80 dark:bg-orange-950/20' : 'bg-white dark:bg-neutral-900'
       }`}
       style={{ minHeight: 72 }}
     >
@@ -201,7 +201,8 @@ function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () =
           >
             {center.name}
           </Text>
-          {center.isMember && <Badge label="Member" variant="member" />}
+          {isMyCenter && <Badge label="My Center" variant="going" />}
+          {!isMyCenter && center.isMember && <Badge label="Member" variant="member" />}
         </View>
         <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm">
           {extractCityState(center.address) || 'Center'}{center.distanceMi != null ? ` · ${center.distanceMi} mi` : ''}
@@ -670,6 +671,7 @@ function MobileDiscoverFallback() {
                 <CenterItem
                   key={`center-${item.data.id}`}
                   center={item.data as DiscoverCenter}
+                  isMyCenter={!!user?.centerID && item.data.id === user.centerID}
                   onPress={() => router.push(`/center/${item.data.id}`)}
                 />
               )
@@ -1004,6 +1006,7 @@ export default function DiscoverScreenWeb() {
                   <CenterItem
                     key={`center-${item.data.id}`}
                     center={item.data as DiscoverCenter}
+                    isMyCenter={!!user?.centerID && item.data.id === user.centerID}
                     onPress={() => setSelectedItem({ type: 'center', id: item.data.id })}
                   />
                 )
