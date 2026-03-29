@@ -77,10 +77,11 @@ function authHeader(token: string) {
 }
 
 /**
- * Create the admin user (username: 'brahman') and return their token.
+ * Create the admin user and return their token.
+ * Uses the ADMIN_EMAIL as the username so isAdmin() recognizes it.
  */
 async function createAdmin(): Promise<string> {
-  const { token } = await registerAndLogin('brahman', 'adminpassword123')
+  const { token } = await registerAndLogin('chinmayajanata@gmail.com', 'adminpassword123')
   return token
 }
 
