@@ -10,7 +10,6 @@ import {
   User,
   Clock,
   CheckCircle,
-  Info,
   Pencil,
 } from 'lucide-react-native'
 import { useEventDetail } from '../../hooks/useApiData'
@@ -467,7 +466,7 @@ export default function EventDetailPage() {
   const [activeTab, setActiveTab] = useState('Details')
   const username = authStatus === 'authenticated' ? user?.username : undefined
   const userId = authStatus === 'authenticated' ? user?.id : undefined
-  const { event, attendees, messages, loading, toggleRegistration, isToggling, isCreator } =
+  const { event, attendees, loading, toggleRegistration, isToggling, isCreator } =
     useEventDetail(id as string, username, userId)
   const colors = useDetailColors()
 
@@ -555,7 +554,7 @@ export default function EventDetailPage() {
 
         <View style={{ paddingTop: 8 }}>
           <UnderlineTabBar
-            tabs={['Details', 'People', 'Messages']}
+            tabs={['Details', 'People']}
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />
@@ -649,83 +648,6 @@ export default function EventDetailPage() {
             </View>
           )}
 
-          {activeTab === 'Messages' && (
-            <View style={{ paddingTop: 16, paddingHorizontal: 20, gap: 20 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Info size={16} color="#E8862A" />
-                <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#E8862A' }}>
-                  Only the host can post messages
-                </Text>
-              </View>
-              {messages.length > 0 ? (
-                messages.map((message, index) => (
-                  <View key={index} style={{ gap: 8 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Image
-                        source={{ uri: message.image }}
-                        style={{ width: 30, height: 30, borderRadius: 15 }}
-                      />
-                      <Text
-                        style={{
-                          fontFamily: 'Inter-SemiBold',
-                          fontSize: 14,
-                          color: colors.text,
-                          flex: 1,
-                        }}
-                      >
-                        {message.author}
-                      </Text>
-                      <Text
-                        style={{
-                          fontFamily: 'Inter-Regular',
-                          fontSize: 12,
-                          color: colors.textMuted,
-                        }}
-                      >
-                        {message.timestamp}
-                      </Text>
-                    </View>
-                    <View
-                      style={{
-                        backgroundColor: colors.cardBg,
-                        borderTopLeftRadius: 4,
-                        borderTopRightRadius: 16,
-                        borderBottomLeftRadius: 16,
-                        borderBottomRightRadius: 16,
-                        padding: 12,
-                        marginLeft: 38,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontFamily: 'Inter-Regular',
-                          fontSize: 14,
-                          color: colors.text,
-                          lineHeight: 20,
-                        }}
-                      >
-                        {message.text}
-                      </Text>
-                    </View>
-                  </View>
-                ))
-              ) : (
-                <View style={{ alignItems: 'center', paddingVertical: 32 }}>
-                  <Info size={48} color={colors.textMuted} />
-                  <Text
-                    style={{
-                      fontFamily: 'Inter-Regular',
-                      fontSize: 14,
-                      color: colors.textSecondary,
-                      marginTop: 12,
-                    }}
-                  >
-                    No messages yet
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
         </ScrollView>
 
         <ActionBar
