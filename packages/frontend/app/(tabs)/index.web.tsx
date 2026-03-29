@@ -250,7 +250,7 @@ function EventPanelInner({
   ) => void
 }) {
   const { user } = useUser()
-  const { event, attendees, messages, loading, toggleRegistration, isToggling } = useEventDetail(
+  const { event, attendees, loading, toggleRegistration, isToggling } = useEventDetail(
     eventId,
     user?.username,
     user?.id
@@ -311,7 +311,6 @@ function EventPanelInner({
     <EventDetailPanel
       event={event}
       attendees={attendees}
-      messages={messages}
       isPast={isPast}
       isAdmin={isAdmin}
       onClose={onClose}
