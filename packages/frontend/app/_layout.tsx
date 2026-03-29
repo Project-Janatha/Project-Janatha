@@ -87,7 +87,8 @@ function RootLayoutNav() {
 
     if (!isAuthenticated) {
       // User is NOT authenticated — show landing page by default
-      if (!inAuthGroup && !inLandingPage) {
+      // But allow access to legal pages and auth without redirect
+      if (!inAuthGroup && !inLandingPage && !pathname.startsWith('/privacy') && !pathname.startsWith('/terms') && !pathname.startsWith('/cookies')) {
         router.replace('/landing')
       }
     } else {
@@ -159,6 +160,18 @@ function RootLayoutNav() {
           options={{
             headerShown: false,
           }}
+        />
+        <Stack.Screen
+          name="privacy"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="terms"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="cookies"
+          options={{ headerShown: false }}
         />
       </Stack>
     </NavigationThemeProvider>

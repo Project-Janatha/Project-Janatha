@@ -1,31 +1,56 @@
 import React from 'react'
 import { View, Text, Pressable, useWindowDimensions } from 'react-native'
+import { useRouter } from 'expo-router'
 import Logo from '../ui/Logo'
+
+interface FooterLink {
+  label: string
+  url?: string
+}
 
 interface FooterColumn {
   title: string
-  links: string[]
+  links: FooterLink[]
 }
 
 const COLUMNS: FooterColumn[] = [
   {
     title: 'Product',
-    links: ['Features', 'Centers', 'Events', 'Mobile App'],
+    links: [
+      { label: 'Features', url: 'https://chinmaya-janata.org/#features' },
+      { label: 'Centers', url: 'https://chinmaya-janata.org/#centers' },
+      { label: 'Events', url: 'https://chinmaya-janata.org/#events' },
+      { label: 'Mobile App', url: 'https://chinmaya-janata.org/#download' },
+    ],
   },
   {
     title: 'Community',
-    links: ['About Us', 'CHYKs', 'Chinmaya Mission', 'Contact'],
+    links: [
+      { label: 'About Us', url: 'https://chinmaya-janata.org/#about' },
+      { label: 'CHYKs', url: 'https://chinmaya-janata.org/#chyk' },
+      { label: 'Chinmaya Mission', url: 'https://chinmaya.org' },
+      { label: 'Contact', url: 'https://chinmaya-janata.org/#contact' },
+    ],
   },
   {
     title: 'Legal',
-    links: ['Privacy Policy', 'Terms of Service', 'Cookie Policy'],
+    links: [
+      { label: 'Privacy Policy', url: '/privacy' },
+      { label: 'Terms of Service', url: '/terms' },
+      { label: 'Cookie Policy', url: '/cookies' },
+    ],
   },
 ]
 
 export function Footer() {
+  const router = useRouter()
   const { width } = useWindowDimensions()
   const isMobile = width < 768
   const isTablet = width >= 768 && width < 1024
+
+  const handlePrivacy = () => router.push('/privacy')
+  const handleTerms = () => router.push('/terms')
+  const handleCookies = () => router.push('/cookies')
 
   return (
     <View style={{ backgroundColor: '#FAFAF7' }}>
@@ -80,20 +105,15 @@ export function Footer() {
                 {column.title}
               </Text>
               <View style={{ gap: 10 }}>
-                {column.links.map((link) => (
-                  <Pressable key={link}>
-                    <Text
-                      style={{
-                        fontFamily: 'Inter, sans-serif',
-                        fontWeight: '400',
-                        fontSize: 14,
-                        color: '#78716C',
-                      }}
-                    >
-                      {link}
-                    </Text>
-                  </Pressable>
-                ))}
+                <Pressable onPress={handlePrivacy}>
+                  <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: 14, color: '#78716C' }}>Privacy Policy</Text>
+                </Pressable>
+                <Pressable onPress={handleTerms}>
+                  <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: 14, color: '#78716C' }}>Terms of Service</Text>
+                </Pressable>
+                <Pressable onPress={handleCookies}>
+                  <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '400', fontSize: 14, color: '#78716C' }}>Cookie Policy</Text>
+                </Pressable>
               </View>
             </View>
           ))}
