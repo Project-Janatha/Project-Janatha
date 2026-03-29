@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, Pressable, Image, useWindowDimensions } from 'react-native'
+import { View, Text, Pressable, useWindowDimensions } from 'react-native'
 import { useRouter } from 'expo-router'
 
 export function FinalCTA() {
@@ -27,19 +27,16 @@ export function FinalCTA() {
           position: 'relative',
         }}
       >
-        {/* Subtle background image */}
-        <Image
-          source={require('../../assets/images/landing/Swami Chinmayananda Option 2.jpeg')}
-          resizeMode="cover"
+        {/* Subtle radial gradient background */}
+        <div
           style={{
             position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            width: '100%',
-            height: '100%',
-            opacity: 0.08,
+            background: 'radial-gradient(ellipse at 50% 0%, rgba(194,65,12,0.08) 0%, transparent 70%)',
+            pointerEvents: 'none',
           }}
         />
         <Text
@@ -75,7 +72,7 @@ export function FinalCTA() {
         <Pressable
           onPress={() => router.push('/auth')}
           style={{
-            backgroundColor: '#C2410C',
+            backgroundColor: '#EA580C',
             paddingHorizontal: 32,
             paddingVertical: 16,
             borderRadius: 100,
@@ -102,7 +99,7 @@ export function FinalCTA() {
             color: '#A8A29E',
           }}
         >
-          Available on iOS, Android, and Web
+          Currently in beta · Available on web
         </Text>
       </View>
     </View>
