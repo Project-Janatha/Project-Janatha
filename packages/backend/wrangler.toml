@@ -13,7 +13,6 @@
 
 name = "chinmaya-janata-api"
 main = "src/worker.ts"
-root = "."
 compatibility_date = "2026-02-26"
 
 [[d1_databases]]
