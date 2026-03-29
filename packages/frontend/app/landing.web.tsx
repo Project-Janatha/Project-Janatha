@@ -1,5 +1,11 @@
 import React from 'react'
-import { ScrollView } from 'react-native'
+import { ScrollView, Platform } from 'react-native'
+
+// Prevent overscroll bounce on web
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  document.documentElement.style.overscrollBehavior = 'none'
+  document.body.style.overscrollBehavior = 'none'
+}
 import { NavBar } from '../components/landing/NavBar'
 import { Hero } from '../components/landing/Hero'
 import { AppPreview } from '../components/landing/AppPreview'
@@ -12,6 +18,8 @@ export default function LandingPage() {
     <ScrollView
       style={{ flex: 1, backgroundColor: '#FAFAF7' }}
       contentContainerStyle={{ minHeight: '100%' }}
+      bounces={false}
+      overScrollMode="never"
     >
       <NavBar />
       <Hero />

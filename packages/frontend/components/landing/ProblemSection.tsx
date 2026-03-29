@@ -29,7 +29,7 @@ export function ProblemSection() {
         }}
       >
         <Image
-          source={require('../../assets/images/landing/community-gathering.jpg')}
+          source={require('../../assets/images/landing/challenge-yatra.jpg')}
           resizeMode="cover"
           style={{ width: '100%', height: '100%' }}
         />

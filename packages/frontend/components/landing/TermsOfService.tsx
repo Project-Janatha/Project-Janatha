@@ -174,12 +174,6 @@ export function TermsOfService() {
           Website: chinmayajanata.org/contact{'\n'}
           Address: Chinmaya Mission West, P.O. Box 129, Piercy, CA 95587
         </Text>
-
-        <View style={{ marginTop: 48, paddingTop: 24, borderTopWidth: 1, borderTopColor: '#E7E5E4' }}>
-          <Text style={{ fontSize: 13, color: '#A8A29E' }}>
-            © 2026 Chinmaya Janata. Built with love by CHYKs.
-          </Text>
-        </View>
       </View>
     </ScrollView>
   )

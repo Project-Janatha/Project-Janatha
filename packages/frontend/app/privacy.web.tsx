@@ -97,12 +97,6 @@ export default function PrivacyPolicyWeb() {
           Address: Chinmaya Mission West, 83900 Highway 271, Piercy, CA 95587{'\n'}
           Phone: 707-247-3488
         </Text>
-
-        <View style={{ marginTop: 48, paddingTop: 24, borderTopWidth: 1, borderTopColor: '#E7E5E4' }}>
-          <Text style={{ fontSize: 13, color: '#A8A29E' }}>
-            © 2026 Chinmaya Janata. Built with love by CHYKs.
-          </Text>
-        </View>
       </View>
       <Footer />
     </ScrollView>
