@@ -206,7 +206,9 @@ export default function AuthScreen() {
             )}
 
             {/* Janata Wordmark */}
-            <Logo size={32} style={{ marginBottom: 40 }} />
+            <Pressable onPress={() => router.push('/landing')}>
+              <Logo size={32} style={{ marginBottom: 40 }} />
+            </Pressable>
 
             {/* Heading & Subtitle */}
             <View className="mb-8">
