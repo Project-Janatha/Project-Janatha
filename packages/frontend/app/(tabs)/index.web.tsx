@@ -269,14 +269,14 @@ function EventPanelInner({
   ) => void
 }) {
   const { user } = useUser()
-  const { event, attendees, loading, toggleRegistration, isToggling } = useEventDetail(
+  const { event, attendees, loading, toggleRegistration, isToggling, isCreator } = useEventDetail(
     eventId,
     user?.username,
     user?.id
   )
   const colors = useDetailColors()
   const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
-  const canEdit = isAdmin || isLocal
+  const canEdit = isAdmin || isCreator
 
   // Propogate registration status change back to discover list
   const prevRegisteredRef = useRef<boolean | undefined>(undefined)
