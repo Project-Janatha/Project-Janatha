@@ -302,7 +302,11 @@ export default function AuthScreen() {
           )}
 
           {/* Janata logo */}
-          <div style={{ marginBottom: isMobile ? 32 : 48 }}>
+          <div
+            onClick={() => router.push('/landing')}
+            role="link"
+            style={{ marginBottom: isMobile ? 32 : 48, cursor: 'pointer' }}
+          >
             <Logo size={isMobile ? 28 : 32} />
           </div>
 
