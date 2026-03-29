@@ -2,52 +2,51 @@
 
 ## Architecture
 
-| Service | Platform | Details |
-|---|---|---|
-| **Frontend (web)** | Cloudflare Pages | `chinmaya-janata` project, Git-connected |
-| **Backend API** | Cloudflare Worker | `chinmaya-janata-api` |
-| **Database** | Cloudflare D1 | `chinmaya-janata-db` |
-| **File Storage** | Cloudflare R2 | `chinmaya-janata-avatars` bucket |
-| **Mobile** | Expo | Native iOS/Android (not on Cloudflare) |
+| Service | Platform | Staging | Production |
+|---|---|---|---|
+| **Frontend** | Cloudflare Pages | `staging.chinmayajanata.org` | `chinmayajanata.org` |
+| **Backend API** | Cloudflare Workers | `chinmaya-janata-api-staging` | `chinmaya-janata-api` |
+| **Database** | Cloudflare D1 | `chinmaya-janata-db` (shared) | `chinmaya-janata-db` (shared) |
+| **File Storage** | Cloudflare R2 | `chinmaya-janata-avatars` (shared) | `chinmaya-janata-avatars` (shared) |
 
-**Custom domains:** `chinmayajanata.org`, `www.chinmayajanata.org`
+## Workflow
 
-## Frontend Deployment (automatic)
-
-Cloudflare Pages is connected to GitHub and auto-deploys on every push:
+There is one branch: **`main`**. All PRs merge here.
 
 ```
-feature branch  →  push  →  preview deploy (https://<branch>.project-janatha.pages.dev)
-merge to main   →          preview deploy (https://main.project-janatha.pages.dev)
-merge to prod   →          production deploy (chinmayajanata.org)
+feature branch → PR → merge to main → auto-deploys to staging
+                                        ↓ (manual)
+                                    deploys to production
 ```
 
-- **Production branch:** `prod` (not `main`)
-- Every branch/PR gets its own preview URL automatically
-- Build command: `expo export --platform web`
+### Staging (automatic)
 
-## Backend Deployment (manual)
+Every push to `main`:
+- **Frontend**: Cloudflare Pages auto-deploys to `staging.chinmayajanata.org`
+- **Backend**: GitHub Actions auto-deploys `chinmaya-janata-api-staging` worker
 
-The Worker has no auto-deploy. Deploy manually:
+### Production (manual)
+
+To promote staging to production, either:
 
 ```bash
-npm run deploy:backend    # runs wrangler deploy
+# Option 1: GitHub Actions UI
+# Go to Actions → Deploy → Run workflow → select "production"
+
+# Option 2: CLI
+gh workflow run deploy.yml -f environment=production
 ```
 
-## Deploy Everything (manual)
-
-```bash
-npm run deploy            # backend first, then frontend
-```
+This deploys the production backend worker. For the frontend, promote the latest
+staging Pages deployment to production via the Cloudflare dashboard.
 
 ## CI Checks
 
-GitHub Actions (`.github/workflows/test.yml`) runs on every push and PR:
-
+GitHub Actions runs on every push and PR:
 1. TypeScript check (backend)
-2. Build frontend (Expo web export)
-
-These are **checks only** — they don't deploy anything.
+2. Backend tests (vitest)
+3. Frontend tests (vitest)
+4. Build frontend (Expo web export)
 
 ## Database Migrations
 
@@ -62,4 +61,19 @@ Migration SQL files live in `migrations/`.
 
 ## Secrets
 
-Backend secrets (JWT keys, etc.) are set via `wrangler secret put <NAME>`.
+Backend secrets are set via `wrangler secret put <NAME>` for each worker:
+- `chinmaya-janata-api` (production)
+- `chinmaya-janata-api-staging` (staging)
+
+GitHub Actions requires the `CLOUDFLARE_API_TOKEN` repository secret.
+
+## Cloudflare Setup
+
+### Pages (frontend)
+- **Production branch**: `__release` (never pushed to directly — production is promoted manually)
+- **`main` branch**: auto-deploys as preview → `staging.chinmayajanata.org`
+- Custom domains: `chinmayajanata.org`, `www.chinmayajanata.org`, `staging.chinmayajanata.org`
+
+### Workers (backend)
+- Production: `chinmaya-janata-api` (config: `packages/backend/wrangler.toml`)
+- Staging: `chinmaya-janata-api-staging` (config: `packages/backend/wrangler.staging.toml`)
