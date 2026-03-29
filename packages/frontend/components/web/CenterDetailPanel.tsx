@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, Image, ScrollView, Pressable, Linking } from 'react-native'
-import { MapPin, Globe, Phone, User, Share2, ChevronLeft } from 'lucide-react-native'
+import { MapPin, Globe, Phone, User, ChevronLeft } from 'lucide-react-native'
 import type { CenterDisplay } from '../../hooks/useApiData'
 import type { EventDisplay } from '../../utils/api'
 import { useDetailColors } from '../../hooks/useDetailColors'
@@ -34,16 +34,6 @@ export default function CenterDetailPanel({
   onEventPress,
 }: CenterDetailPanelProps) {
   const colors = useDetailColors()
-
-  const handleShare = async () => {
-    if (center.website) {
-      try {
-        await Linking.openURL(center.website)
-      } catch {
-        // silently ignore
-      }
-    }
-  }
 
   const handleAddressPress = () => {
     const query = encodeURIComponent(center.address)
@@ -89,8 +79,8 @@ export default function CenterDetailPanel({
           gap: 10,
         }}
       >
-        {/* Top row: back + share/close */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Top row: back */}
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Pressable
             onPress={onClose}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8, minHeight: 44, minWidth: 44 }}
@@ -106,14 +96,6 @@ export default function CenterDetailPanel({
             >
               Back
             </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={handleShare}
-            style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
-            accessibilityLabel="Share"
-          >
-            <Share2 size={18} color={colors.iconHeader} />
           </Pressable>
         </View>
 
