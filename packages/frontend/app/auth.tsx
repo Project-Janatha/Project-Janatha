@@ -16,8 +16,8 @@ import { useUser, useThemeContext } from '../components/contexts'
 import { validateEmail, validatePassword } from '../utils'
 import { PasswordStrength } from '../components'
 import DevPanel from '../components/DevPanel'
-// @ts-ignore -- __DEV__ is a React Native global
-const isDev = typeof __DEV__ !== 'undefined' ? __DEV__ : process.env.NODE_ENV !== 'production'
+// __DEV__ is a React Native/Expo global — always false in production builds
+const isDev = typeof __DEV__ !== 'undefined' && __DEV__
 
 type AuthStep = 'initial' | 'login' | 'signup'
 
