@@ -74,7 +74,7 @@ describe('API_URL generation', () => {
       Platform: { OS: 'web', select: (obj: any) => obj.web ?? obj.default },
     }))
     const api = await import('../../utils/api')
-    expect(api.API_URL).toBe('https://chinmaya-janata-api.chinmayajanata.workers.dev/api')
+    expect(api.API_URL).toBe('https://api.chinmayajanata.org/api')
   })
 
   it('returns backend Worker URL for native in production', async () => {
@@ -83,7 +83,7 @@ describe('API_URL generation', () => {
       Platform: { OS: 'ios', select: (obj: any) => obj.ios ?? obj.default },
     }))
     const api = await import('../../utils/api')
-    expect(api.API_URL).toBe('https://chinmaya-janata-api.chinmayajanata.workers.dev/api')
+    expect(api.API_URL).toBe('https://api.chinmayajanata.org/api')
   })
 })
 
