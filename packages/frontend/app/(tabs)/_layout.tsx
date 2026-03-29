@@ -66,15 +66,15 @@ if (Platform.OS === 'web') {
           {canCreate && (
             <Pressable
               className="px-3 py-2 rounded-lg flex-row items-center"
-              style={{ backgroundColor: '#E8862A', gap: 6 }}
+              style={{ borderWidth: 1.5, borderColor: '#E8862A', backgroundColor: 'transparent', gap: 6 }}
               onPress={() => {
                 if (typeof window !== 'undefined') {
                   window.dispatchEvent(new CustomEvent('open-event-form'))
                 }
               }}
             >
-              <Plus size={16} color="#fff" />
-              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: '#fff' }}>
+              <Plus size={16} color="#E8862A" />
+              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: '#E8862A' }}>
                 Create Event
               </Text>
             </Pressable>

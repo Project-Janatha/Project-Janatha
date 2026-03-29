@@ -18,7 +18,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native'
-import { MapPin, Search, Building2, Users, ChevronUp, Plus } from 'lucide-react-native'
+import { MapPin, Search, Building2, Users, ChevronUp } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar, Avatar } from '../../components/ui'
@@ -933,25 +933,6 @@ export default function DiscoverScreenWeb() {
                     style={{ paddingVertical: 8 }}
                   />
                 </View>
-                {canCreate && (
-                  <Pressable
-                    onPress={() => {
-                      setSelectedItem(null)
-                      setFormPanel({})
-                    }}
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 12,
-                      backgroundColor: '#E8862A',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    accessibilityLabel="Create event"
-                  >
-                    <Plus size={20} color="#FFFFFF" />
-                  </Pressable>
-                )}
               </View>
             </View>
 
