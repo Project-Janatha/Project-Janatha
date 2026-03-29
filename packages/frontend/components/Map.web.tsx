@@ -182,6 +182,9 @@ const MapComponent = memo<MapProps>(
     const { isDark } = useThemeContext()
     const mapRef = useRef<MapRef>(null)
 
+    // Disable cooperative gestures on mobile so pinch-to-zoom works
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+
     const defaultCenter = initialCenter
       ? { longitude: initialCenter[1], latitude: initialCenter[0] }
       : { longitude: DEFAULT_CENTER.longitude, latitude: DEFAULT_CENTER.latitude }
@@ -218,12 +221,12 @@ const MapComponent = memo<MapProps>(
     }, [onMapMove])
 
     const getMarkerViewportCoords = useCallback(
-      (domEvent: MouseEvent) => {
+      (domEvent: MouseEvent | undefined) => {
         if (!domEvent) {
           return { x: 0, y: 0 }
         }
-        const target = domEvent.target as HTMLElement
-        const markerEl = target?.closest('.maplibregl-marker') as HTMLElement
+        const target = domEvent.target as HTMLElement | null
+        const markerEl = target?.closest('.maplibregl-marker') as HTMLElement | null
         if (markerEl) {
           const mRect = markerEl.getBoundingClientRect()
           return {
@@ -306,7 +309,7 @@ const MapComponent = memo<MapProps>(
           style={{ width: '100%', height: '100%' }}
           reuseMaps
           attributionControl={false}
-          cooperativeGestures={true}
+          cooperativeGestures={!isMobile}
         >
           {markers}
           <AttributionControl

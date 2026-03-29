@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -10,9 +10,9 @@ import {
   User,
   Clock,
   CheckCircle,
-  Info,
   Pencil,
 } from 'lucide-react-native'
+import { usePostHog } from 'posthog-react-native'
 import { useEventDetail } from '../../hooks/useApiData'
 import { useUser } from '../../components/contexts'
 import { Badge, UnderlineTabBar, Avatar } from '../../components/ui'
@@ -137,6 +137,7 @@ function HeaderBar({
   isAdmin,
   eventId,
   onBack,
+  onEdit,
   colors,
 }: {
   title: string
@@ -145,6 +146,7 @@ function HeaderBar({
   isAdmin?: boolean
   eventId?: string
   onBack: () => void
+  onEdit?: () => void
   colors: DetailColors
 }) {
   const router = useRouter()
@@ -188,7 +190,10 @@ function HeaderBar({
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
           {eventId && (
             <Pressable
-              onPress={() => router.push(`/events/form?id=${eventId}`)}
+              onPress={() => {
+                onEdit?.()
+                router.push(`/events/form?id=${eventId}`)
+              }}
               style={{
                 padding: 8,
                 minHeight: 44,
@@ -462,24 +467,47 @@ function ActionBar({
 export default function EventDetailPage() {
   const { id } = useLocalSearchParams()
   const router = useRouter()
+  const posthog = usePostHog()
   const userContext = useUser()
   const { user, authStatus } = userContext
   const [activeTab, setActiveTab] = useState('Details')
   const username = authStatus === 'authenticated' ? user?.username : undefined
   const userId = authStatus === 'authenticated' ? user?.id : undefined
-  const { event, attendees, messages, loading, toggleRegistration, isToggling, isCreator } =
+  const { event, attendees, loading, toggleRegistration, isToggling, isCreator } =
     useEventDetail(id as string, username, userId)
   const colors = useDetailColors()
+  const hasTrackedView = useRef(false)
 
   const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
   const canEdit = isAdmin || isCreator
 
+  const isPast = event?.date ? new Date(event.date + 'T23:59:59') < new Date() : false
+
+  // Track event viewed
+  useEffect(() => {
+    if (!loading && event && !hasTrackedView.current) {
+      hasTrackedView.current = true
+      posthog.capture('event_viewed', { eventId: id, title: event.title, isPast })
+    }
+  }, [loading, event, id, isPast, posthog])
+
+  const handleTabChange = (newTab: string) => {
+    posthog.capture('event_tab_changed', { tab: newTab, eventId: id })
+    setActiveTab(newTab)
+  }
+
+  const handleEditPress = () => {
+    posthog.capture('event_edit_opened', { eventId: id })
+  }
+
   const handleToggleRegistration = async () => {
     if (!user?.username) return
     try {
+      posthog.capture(event?.isRegistered ? 'event_unregistered' : 'event_registered', { eventId: id })
       await toggleRegistration(user.username)
     } catch (err: any) {
       const message = err?.message || ''
+      posthog.capture('event_registration_failed', { eventId: id, error: message })
       if (message.includes('Already registered')) {
         Alert.alert('Already Registered', 'You are already registered for this event.')
       } else if (message.includes('Not registered')) {
@@ -535,7 +563,6 @@ export default function EventDetailPage() {
 
   // ── Derived state ────────────────────────────────────────────────────
 
-  const isPast = event?.date ? new Date(event.date + 'T23:59:59') < new Date() : false
   const isRegistered = !!event?.isRegistered && !isPast
 
   // ── Registered state (with tabs) ─────────────────────────────────────
@@ -550,14 +577,15 @@ export default function EventDetailPage() {
           isAdmin={canEdit}
           eventId={id as string}
           onBack={() => router.back()}
+          onEdit={handleEditPress}
           colors={colors}
         />
 
         <View style={{ paddingTop: 8 }}>
           <UnderlineTabBar
-            tabs={['Details', 'People', 'Messages']}
+            tabs={['Details', 'People']}
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={handleTabChange}
           />
         </View>
 
@@ -649,83 +677,6 @@ export default function EventDetailPage() {
             </View>
           )}
 
-          {activeTab === 'Messages' && (
-            <View style={{ paddingTop: 16, paddingHorizontal: 20, gap: 20 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Info size={16} color="#E8862A" />
-                <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#E8862A' }}>
-                  Only the host can post messages
-                </Text>
-              </View>
-              {messages.length > 0 ? (
-                messages.map((message, index) => (
-                  <View key={index} style={{ gap: 8 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <Image
-                        source={{ uri: message.image }}
-                        style={{ width: 30, height: 30, borderRadius: 15 }}
-                      />
-                      <Text
-                        style={{
-                          fontFamily: 'Inter-SemiBold',
-                          fontSize: 14,
-                          color: colors.text,
-                          flex: 1,
-                        }}
-                      >
-                        {message.author}
-                      </Text>
-                      <Text
-                        style={{
-                          fontFamily: 'Inter-Regular',
-                          fontSize: 12,
-                          color: colors.textMuted,
-                        }}
-                      >
-                        {message.timestamp}
-                      </Text>
-                    </View>
-                    <View
-                      style={{
-                        backgroundColor: colors.cardBg,
-                        borderTopLeftRadius: 4,
-                        borderTopRightRadius: 16,
-                        borderBottomLeftRadius: 16,
-                        borderBottomRightRadius: 16,
-                        padding: 12,
-                        marginLeft: 38,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontFamily: 'Inter-Regular',
-                          fontSize: 14,
-                          color: colors.text,
-                          lineHeight: 20,
-                        }}
-                      >
-                        {message.text}
-                      </Text>
-                    </View>
-                  </View>
-                ))
-              ) : (
-                <View style={{ alignItems: 'center', paddingVertical: 32 }}>
-                  <Info size={48} color={colors.textMuted} />
-                  <Text
-                    style={{
-                      fontFamily: 'Inter-Regular',
-                      fontSize: 14,
-                      color: colors.textSecondary,
-                      marginTop: 12,
-                    }}
-                  >
-                    No messages yet
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
         </ScrollView>
 
         <ActionBar
@@ -748,6 +699,7 @@ export default function EventDetailPage() {
         isAdmin={canEdit}
         eventId={id as string}
         onBack={() => router.back()}
+        onEdit={handleEditPress}
         colors={colors}
       />
 

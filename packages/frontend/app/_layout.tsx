@@ -8,6 +8,7 @@ import {
   ThemeProvider as NavigationThemeProvider,
 } from '@react-navigation/native'
 import { SplashScreen, Stack, usePathname, useRouter } from 'expo-router'
+import { PostHogProvider } from 'posthog-react-native'
 import {
   UserProvider,
   useUser,
@@ -63,11 +64,18 @@ export default function RootLayout() {
   }
 
   return (
-    <CustomThemeProvider>
-      <UserProvider>
-        <RootLayoutNav />
-      </UserProvider>
-    </CustomThemeProvider>
+    <PostHogProvider
+      apiKey="phc_5o67MgFjj113GN0QKduyyIs0BmEQkpWc8D2eDi6ju7Q"
+      options={{
+        host: 'https://us.i.posthog.com',
+      }}
+    >
+      <CustomThemeProvider>
+        <UserProvider>
+          <RootLayoutNav />
+        </UserProvider>
+      </CustomThemeProvider>
+    </PostHogProvider>
   )
 }
 
@@ -87,7 +95,8 @@ function RootLayoutNav() {
 
     if (!isAuthenticated) {
       // User is NOT authenticated — show landing page by default
-      if (!inAuthGroup && !inLandingPage) {
+      // But allow access to legal pages and auth without redirect
+      if (!inAuthGroup && !inLandingPage && !pathname.startsWith('/privacy') && !pathname.startsWith('/terms') && !pathname.startsWith('/cookies')) {
         router.replace('/landing')
       }
     } else {
@@ -159,6 +168,18 @@ function RootLayoutNav() {
           options={{
             headerShown: false,
           }}
+        />
+        <Stack.Screen
+          name="privacy"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="terms"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="cookies"
+          options={{ headerShown: false }}
         />
       </Stack>
     </NavigationThemeProvider>

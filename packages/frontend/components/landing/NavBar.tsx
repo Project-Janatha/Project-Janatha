@@ -19,7 +19,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
   }
 }
 
-const NAV_LINKS = ['Features', 'Community', 'About'] as const
+const NAV_LINKS: string[] = []
 
 export function NavBar() {
   const router = useRouter()
@@ -47,7 +47,7 @@ export function NavBar() {
           alignItems: 'center',
           justifyContent: 'space-between',
           paddingHorizontal,
-          paddingVertical: 24,
+          paddingVertical: 14,
         }}
       >
         {/* Left: Logo + Name */}
@@ -97,100 +97,8 @@ export function NavBar() {
             </Text>
           </Pressable>
 
-          {/* Hamburger button -- mobile only */}
-          {isMobile && (
-            <Pressable
-              onPress={() => setMenuOpen(!menuOpen)}
-              style={{
-                width: 44,
-                height: 44,
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 8,
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={menuOpen ? 'Close menu' : 'Open menu'}
-            >
-              <View style={{ width: 22, gap: menuOpen ? 0 : 5, alignItems: 'center' }}>
-                <View
-                  style={{
-                    width: 22,
-                    height: 2,
-                    backgroundColor: '#1C1917',
-                    borderRadius: 1,
-                    ...(menuOpen
-                      ? { transform: 'translateY(1px) rotate(45deg)' as any }
-                      : {}),
-                    transitionDuration: '200ms' as any,
-                    transitionProperty: 'transform' as any,
-                  }}
-                />
-                {!menuOpen && (
-                  <View
-                    style={{
-                      width: 22,
-                      height: 2,
-                      backgroundColor: '#1C1917',
-                      borderRadius: 1,
-                    }}
-                  />
-                )}
-                <View
-                  style={{
-                    width: 22,
-                    height: 2,
-                    backgroundColor: '#1C1917',
-                    borderRadius: 1,
-                    ...(menuOpen
-                      ? { transform: 'translateY(-1px) rotate(-45deg)' as any }
-                      : {}),
-                    transitionDuration: '200ms' as any,
-                    transitionProperty: 'transform' as any,
-                  }}
-                />
-              </View>
-            </Pressable>
-          )}
         </View>
       </View>
-
-      {/* Mobile dropdown menu */}
-      {isMobile && menuOpen && (
-        <div style={{ animation: 'navSlideDown 0.2s ease-out' }}>
-          <View
-            style={{
-              paddingHorizontal,
-              paddingBottom: 24,
-              gap: 4,
-              borderTopWidth: 1,
-              borderTopColor: '#E7E5E4',
-            }}
-          >
-            {NAV_LINKS.map((link) => (
-              <Pressable
-                key={link}
-                onPress={() => setMenuOpen(false)}
-                style={{
-                  paddingVertical: 14,
-                  minHeight: 48,
-                  justifyContent: 'center',
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: '"Inclusive Sans", sans-serif',
-                    fontWeight: '400',
-                    fontSize: 16,
-                    color: '#1C1917',
-                  }}
-                >
-                  {link}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </div>
-      )}
     </View>
   )
 }

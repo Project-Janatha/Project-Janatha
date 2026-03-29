@@ -28,5 +28,11 @@ jobs:
         run: npx tsc --noEmit
         working-directory: packages/backend
 
+      - name: Run backend tests
+        run: npm run test:backend
+
+      - name: Run frontend tests
+        run: npm run test:frontend
+
       - name: Build frontend
         run: npm run build:frontend

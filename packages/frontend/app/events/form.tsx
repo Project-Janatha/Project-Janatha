@@ -19,13 +19,13 @@ import {
   Clock,
   MapPin,
   Navigation,
-  Users,
   User,
   Image as ImageIcon,
   Tag,
   Building2,
   AlertTriangle,
 } from 'lucide-react-native'
+import { usePostHog } from 'posthog-react-native'
 import { useUser } from '../../components/contexts'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
 import {
@@ -154,6 +154,7 @@ export default function EventFormPage() {
   const router = useRouter()
   const { user } = useUser()
   const colors = useDetailColors()
+  const posthog = usePostHog()
 
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
@@ -281,6 +282,7 @@ export default function EventFormPage() {
           image: image.trim() || undefined,
           category,
         })
+        posthog.capture('event_updated', { eventId, title: title.trim() })
         if (Platform.OS === 'web') {
           alert('Event updated successfully')
         } else {
@@ -299,6 +301,7 @@ export default function EventFormPage() {
           image: image.trim() || undefined,
           category,
         })
+        posthog.capture('event_created', { title: title.trim(), centerID })
         if (Platform.OS === 'web') {
           alert('Event created successfully')
         } else {
@@ -308,6 +311,7 @@ export default function EventFormPage() {
       router.back()
     } catch (err: any) {
       const msg = err?.message || 'Something went wrong'
+      posthog.capture('event_create_failed', { error: msg, isEdit })
       if (Platform.OS === 'web') {
         alert(msg)
       } else {

@@ -17,6 +17,47 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
         0% { transform: translateX(0); }
         100% { transform: translateX(-50%); }
       }
+      .avatar-wrap {
+        position: relative;
+      }
+      .avatar-wrap .avatar-tooltip {
+        position: absolute;
+        bottom: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%) scale(0.9);
+        background: #1C1917;
+        color: #fff;
+        font-family: Inter, sans-serif;
+        font-size: 11px;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s ease, transform 0.15s ease;
+      }
+      .avatar-wrap .avatar-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 4px solid transparent;
+        border-top-color: #1C1917;
+      }
+      .avatar-wrap:hover .avatar-tooltip {
+        opacity: 1;
+        transform: translateX(-50%) scale(1);
+      }
+      .avatar-wrap {
+        transition: transform 0.15s ease, z-index 0s;
+        z-index: 0;
+      }
+      .avatar-wrap:hover {
+        transform: scale(1.25);
+        z-index: 10;
+      }
     `
     document.head.appendChild(style)
   }
@@ -41,16 +82,16 @@ const CARDS: CardData[] = [
     image: require('../../assets/images/landing/Swami Chinmayananda.jpg'),
   },
   { type: 'center', title: 'CM San Jose', subtitle: 'San Jose, CA', color: '#F5F0EB', icon: 'S' },
-  { type: 'event', title: 'Youth Retreat', subtitle: 'Apr 2 · 9:00 AM', color: '#BFDBFE' },
+  { type: 'event', title: 'Youth Retreat', subtitle: 'Apr 2 · 9:00 AM', color: '#BFDBFE', image: require('../../assets/images/landing/youth-group.jpg') },
   { type: 'map', title: '12 Centers', subtitle: 'Within 50 miles', color: '#E8E4DF' },
   { type: 'stat', title: '1,240 Members', subtitle: 'Active this month', color: '#F0FDF4', stat: '1,240' },
-  { type: 'event', title: 'Vedanta Course', subtitle: 'Mar 22 · 7:00 PM', color: '#D9F99D' },
+  { type: 'event', title: 'Vedanta Course', subtitle: 'Mar 22 · 7:00 PM', color: '#D9F99D', image: require('../../assets/images/landing/vedanta-class.jpg') },
   { type: 'center', title: 'CM Houston', subtitle: 'Houston, TX', color: '#F5F0EB', icon: 'H' },
-  { type: 'event', title: 'Bala Vihar', subtitle: 'Every Sunday · 10 AM', color: '#FBCFE8' },
+  { type: 'event', title: 'Bala Vihar', subtitle: 'Every Sunday · 10 AM', color: '#FBCFE8', image: require('../../assets/images/landing/bala-vihar.jpg') },
   { type: 'stat', title: '86 Events', subtitle: 'This month', color: '#EFF6FF', stat: '86' },
   { type: 'center', title: 'CM Chicago', subtitle: 'Chicago, IL', color: '#F5F0EB', icon: 'C' },
-  { type: 'event', title: 'Devi Group', subtitle: 'Mar 18 · 7:30 PM', color: '#FDE68A' },
-  { type: 'event', title: 'Meditation', subtitle: 'Daily · 6:00 AM', color: '#E9D5FF' },
+  { type: 'event', title: 'Devi Group', subtitle: 'Mar 18 · 7:30 PM', color: '#FDE68A', image: require('../../assets/images/landing/devi-group.jpg') },
+  { type: 'event', title: 'Meditation', subtitle: 'Daily · 6:00 AM', color: '#E9D5FF', image: require('../../assets/images/landing/meditation.jpg') },
 ]
 
 function ScrollCard({ card }: { card: CardData }) {
@@ -71,7 +112,7 @@ function ScrollCard({ card }: { card: CardData }) {
             resizeMode="cover"
             style={{
               width: '100%',
-              height: 48,
+              height: 100,
               borderRadius: 8,
               marginBottom: 10,
             }}
@@ -80,7 +121,7 @@ function ScrollCard({ card }: { card: CardData }) {
           <View
             style={{
               width: '100%',
-              height: 48,
+              height: 100,
               borderRadius: 8,
               backgroundColor: card.color,
               marginBottom: 10,
@@ -275,23 +316,50 @@ function InfiniteScrollColumn({
   )
 }
 
+const TEAM = [
+  { name: 'Abhiram', image: require('../../assets/images/landing/abhiram.jpg') },
+  { name: 'Kish', image: require('../../assets/images/landing/kish.jpg') },
+  { name: 'Sahanav', image: require('../../assets/images/landing/sahanav.jpg') },
+  { name: 'Divita', image: require('../../assets/images/landing/divita.jpg') },
+  { name: 'Pranav', image: require('../../assets/images/landing/pranav.jpg') },
+]
+
 function AvatarStack() {
-  const colors = ['#C2410C', '#78716C', '#1C1917', '#A8A29E']
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      {colors.map((bg, i) => (
-        <View
-          key={i}
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 14,
-            backgroundColor: bg,
-            borderWidth: 2,
-            borderColor: '#FAFAF7',
-            marginLeft: i > 0 ? -8 : 0,
-          }}
-        />
+      {TEAM.map((person, i) => (
+        <div key={person.name} className="avatar-wrap" style={{ marginLeft: i > 0 ? -10 : 0, cursor: 'default' }}>
+          <div className="avatar-tooltip">{person.name}</div>
+          {person.image ? (
+            <Image
+              source={person.image}
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 19,
+                borderWidth: 2,
+                borderColor: '#FAFAF7',
+              }}
+            />
+          ) : (
+            <View
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 19,
+                backgroundColor: person.color,
+                borderWidth: 2,
+                borderColor: '#FAFAF7',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '600', fontSize: 14, color: '#FFFFFF' }}>
+                {person.name[0]}
+              </Text>
+            </View>
+          )}
+        </div>
       ))}
     </View>
   )
@@ -346,6 +414,46 @@ export function Hero() {
     >
       {/* Left column */}
       <View style={{ flex: isMobile ? undefined : 1, maxWidth: isMobile ? undefined : 560, zIndex: 1 }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 16,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: '#FFF7ED',
+              borderWidth: 1,
+              borderColor: '#FDBA74',
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 100,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '600',
+                fontSize: 12,
+                color: '#C2410C',
+              }}
+            >
+              Beta
+            </Text>
+          </View>
+          <Text
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontSize: 13,
+              color: '#A8A29E',
+            }}
+          >
+            Currently available on web
+          </Text>
+        </View>
+
         <Text
           style={{
             fontFamily: '"Inclusive Sans", sans-serif',
@@ -386,7 +494,7 @@ export function Hero() {
           <Pressable
             onPress={() => router.push('/auth')}
             style={{
-              backgroundColor: '#C2410C',
+              backgroundColor: '#EA580C',
               paddingHorizontal: 28,
               paddingVertical: 14,
               borderRadius: 100,
@@ -409,37 +517,13 @@ export function Hero() {
             </Text>
           </Pressable>
 
-          <Pressable
-            style={{
-              borderWidth: 1,
-              borderColor: '#D6D3D1',
-              paddingHorizontal: 28,
-              paddingVertical: 14,
-              borderRadius: 100,
-              alignItems: 'center',
-              justifyContent: 'center',
-              ...(isMobile ? { width: '100%' } : {}),
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: '500',
-                fontSize: 16,
-                color: '#1C1917',
-              }}
-            >
-              Explore platform
-            </Text>
-          </Pressable>
         </View>
 
         {/* Avatar stack + tagline */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <AvatarStack />
           <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#78716C' }}>
-            A project built by CHYKs, for CHYKs.{' '}
-            <Text style={{ color: '#C2410C', fontWeight: '500' }}>Learn more</Text>
+            A project built by CHYKs, for CHYKs.
           </Text>
         </View>
 

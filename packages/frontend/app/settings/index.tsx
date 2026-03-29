@@ -153,7 +153,14 @@ export default function Profile() {
         centerID: user.centerID || prev.centerID,
       }))
     }
-  }, [user?.firstName, user?.lastName, user?.profileImage, user?.bio, user?.interests, user?.centerID])
+  }, [
+    user?.firstName,
+    user?.lastName,
+    user?.profileImage,
+    user?.bio,
+    user?.interests,
+    user?.centerID,
+  ])
 
   useEffect(() => {
     const loadCenters = async () => {
@@ -186,19 +193,19 @@ export default function Profile() {
             if (data.length > 0) {
               const userLat = parseFloat(data[0].lat)
               const userLon = parseFloat(data[0].lon)
-              
+
               const centersWithDistance = allCenters
                 .filter((c) => c.latitude && c.longitude)
                 .map((center) => ({
                   ...center,
                   distance: Math.sqrt(
                     Math.pow((center.latitude - userLat) * 69, 2) +
-                    Math.pow((center.longitude - userLon) * 54.6, 2)
+                      Math.pow((center.longitude - userLon) * 54.6, 2)
                   ),
                 }))
                 .sort((a, b) => a.distance - b.distance)
                 .slice(0, 5)
-              
+
               setCenterResults(centersWithDistance)
               setShowCenterPicker(true)
             }
@@ -238,7 +245,6 @@ export default function Profile() {
     const drafts = readDrafts()
     const newErrors: { [key: string]: string } = {}
     if (!drafts.name.trim()) newErrors.name = 'Name is required'
-    if (!drafts.bio.trim()) newErrors.bio = 'Bio is required'
     if (!drafts.birthday) newErrors.birthday = 'Birthday is required'
     if (profileData.interests.length === 0)
       newErrors.interests = 'At least one interest must be selected'
@@ -279,7 +285,7 @@ export default function Profile() {
     setIsSaving(true)
     try {
       const nameParts = drafts.name.trim().split(' ')
-      
+
       // Prepare profile image if changed
       let profileImageBase64: string | undefined
       if (profileImageChanged && profileData.profileImage) {
@@ -297,7 +303,10 @@ export default function Profile() {
           })
         } catch (e) {
           console.error('Error converting image:', e)
-          setErrors((prev) => ({ ...prev, profileImage: 'Failed to upload image. Please try again.' }))
+          setErrors((prev) => ({
+            ...prev,
+            profileImage: 'Failed to upload image. Please try again.',
+          }))
           setIsSaving(false)
           return
         }
@@ -312,7 +321,7 @@ export default function Profile() {
         ...(drafts.birthday ? { dateOfBirth: drafts.birthday.toISOString().split('T')[0] } : {}),
         ...(profileImageBase64 ? { profileImage: profileImageBase64 } : {}),
       })
-      
+
       if (!result.success) {
         setErrors((prev) => ({ ...prev, form: result.message || 'Failed to save profile' }))
         setIsSaving(false)
@@ -474,15 +483,24 @@ export default function Profile() {
           <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
             {user?.username || 'user'}
           </Text>
-          {isEditing && user?.email && (
+          {isEditing && user?.email && user.email !== user.username && (
             <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
               {user.email}
             </Text>
           )}
           {isEditing ? (
-            <View style={{ marginTop: 4, marginBottom: showCenterPicker && centerResults.length > 0 ? 220 : 0 }}>
+            <View
+              style={{
+                marginTop: 4,
+                marginBottom: showCenterPicker && centerResults.length > 0 ? 220 : 0,
+              }}
+            >
               <TextInput
-                value={centerSearch || allCenters.find((c) => c.centerID === profileData.centerID)?.name || ''}
+                value={
+                  centerSearch ||
+                  allCenters.find((c) => c.centerID === profileData.centerID)?.name ||
+                  ''
+                }
                 onChangeText={(text) => {
                   setCenterSearch(text)
                   if (text.length < 3) {
@@ -549,7 +567,10 @@ export default function Profile() {
                         paddingVertical: 12,
                         borderBottomWidth: 1,
                         borderBottomColor: borderColor,
-                        backgroundColor: profileData.centerID === center.centerID ? '#C2410C' + '20' : 'transparent',
+                        backgroundColor:
+                          profileData.centerID === center.centerID
+                            ? '#C2410C' + '20'
+                            : 'transparent',
                       }}
                     >
                       <Text
@@ -762,7 +783,7 @@ export default function Profile() {
                 )}
               </Pressable>
             </View>
-        )}
+          )}
         </View>
       </ScrollView>
     )
@@ -830,7 +851,13 @@ export default function Profile() {
             ) : (
               <>
                 <Pencil size={16} color={isEditing ? '#FFFFFF' : isDark ? '#1C1917' : '#FFFFFF'} />
-                <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: isEditing ? '#FFFFFF' : isDark ? '#1C1917' : '#FFFFFF' }}>
+                <Text
+                  style={{
+                    fontFamily: 'Inter-SemiBold',
+                    fontSize: 14,
+                    color: isEditing ? '#FFFFFF' : isDark ? '#1C1917' : '#FFFFFF',
+                  }}
+                >
                   {isEditing ? 'Save Changes' : 'Edit Profile'}
                 </Text>
               </>
@@ -896,12 +923,14 @@ export default function Profile() {
           </View>
           <View style={{ gap: 4, alignItems: isNarrowWeb ? 'center' : 'flex-start', flex: 1 }}>
             {isEditing ? (
-              <View style={{ 
-                borderBottomWidth: 2, 
-                borderBottomColor: '#C2410C', 
-                paddingBottom: 2,
-                width: '100%',
-              }}>
+              <View
+                style={{
+                  borderBottomWidth: 2,
+                  borderBottomColor: '#C2410C',
+                  paddingBottom: 2,
+                  width: '100%',
+                }}
+              >
                 <TextInput
                   defaultValue={profileData.name}
                   onChangeText={(v) => {
@@ -934,15 +963,24 @@ export default function Profile() {
             <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
               {user?.username || 'user'}
             </Text>
-            {isEditing && user?.email && (
+            {isEditing && user?.email && user.email !== user.username && (
               <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
                 {user.email}
               </Text>
             )}
             {isEditing ? (
-              <View style={{ marginTop: 4, marginBottom: showCenterPicker && centerResults.length > 0 ? 220 : 0 }}>
+              <View
+                style={{
+                  marginTop: 4,
+                  marginBottom: showCenterPicker && centerResults.length > 0 ? 220 : 0,
+                }}
+              >
                 <TextInput
-                  value={centerSearch || allCenters.find((c) => c.centerID === profileData.centerID)?.name || ''}
+                  value={
+                    centerSearch ||
+                    allCenters.find((c) => c.centerID === profileData.centerID)?.name ||
+                    ''
+                  }
                   onChangeText={(text) => {
                     setCenterSearch(text)
                     if (text.length < 3) {
@@ -1010,14 +1048,18 @@ export default function Profile() {
                             paddingVertical: 12,
                             borderBottomWidth: 1,
                             borderBottomColor: borderColor,
-                            backgroundColor: profileData.centerID === center.centerID ? '#C2410C' + '20' : 'transparent',
+                            backgroundColor:
+                              profileData.centerID === center.centerID
+                                ? '#C2410C' + '20'
+                                : 'transparent',
                           }}
                         >
                           <Text
                             style={{
                               fontFamily: 'Inter-Regular',
                               fontSize: 14,
-                              color: profileData.centerID === center.centerID ? '#C2410C' : textColor,
+                              color:
+                                profileData.centerID === center.centerID ? '#C2410C' : textColor,
                             }}
                           >
                             {center.name}
@@ -1041,7 +1083,7 @@ export default function Profile() {
 
         {/* Birthday only */}
         <View style={{ flexDirection: isNarrowWeb ? 'column' : 'row', gap: isNarrowWeb ? 20 : 28 }}>
-            <View style={{ flex: 1, gap: 8 }}>
+          <View style={{ flex: 1, gap: 8 }}>
             <Text style={labelStyle}>Birthday</Text>
             {isEditing ? (
               <View>

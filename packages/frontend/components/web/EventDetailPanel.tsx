@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { View, Text, Image, ScrollView, Pressable, ActivityIndicator } from 'react-native'
-import { MapPin, Users, User, Share2, Clock, CheckCircle, Info, ChevronLeft, Pencil } from 'lucide-react-native'
+import { MapPin, Users, User, Clock, CheckCircle, ChevronLeft, Pencil } from 'lucide-react-native'
 import Badge from '../ui/Badge'
 import UnderlineTabBar from '../ui/UnderlineTabBar'
 import Avatar from '../ui/Avatar'
@@ -78,13 +78,6 @@ type Attendee = {
   initials?: string
 }
 
-type Message = {
-  author: string
-  timestamp: string
-  text: string
-  image: string
-}
-
 type EventDetailPanelProps = {
   event: {
     id: string
@@ -100,7 +93,6 @@ type EventDetailPanelProps = {
     isRegistered?: boolean
   }
   attendees: Attendee[]
-  messages: Message[]
   isPast?: boolean
   isAdmin?: boolean
   onClose: () => void
@@ -224,15 +216,6 @@ function HeaderBar({
               accessibilityLabel="Edit event"
             >
               <Pencil size={18} color={colors.iconHeader} />
-            </Pressable>
-          )}
-          {!isPast && (
-            <Pressable
-              onPress={() => {}}
-              style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
-              accessibilityLabel="Share event"
-            >
-              <Share2 size={18} color={colors.iconHeader} />
             </Pressable>
           )}
         </View>
@@ -529,85 +512,6 @@ function PeopleTab({ attendees, colors }: { attendees: Attendee[]; colors: Detai
   )
 }
 
-// ---------------------------------------------------------------------------
-// Messages tab content
-// ---------------------------------------------------------------------------
-
-function MessagesTab({ messages, colors }: { messages: Message[]; colors: DetailColors }) {
-  return (
-    <View style={{ paddingHorizontal: 24, paddingTop: 16, gap: 20 }}>
-      {/* Notice banner */}
-      <View className="flex-row items-center" style={{ gap: 8 }}>
-        <Info size={16} color="#E8862A" />
-        <Text
-          style={{
-            fontFamily: 'Inter-Regular',
-            fontSize: 13,
-            color: '#E8862A',
-          }}
-        >
-          Only the host can post messages
-        </Text>
-      </View>
-
-      {/* Message list */}
-      {messages.map((m, i) => (
-        <View key={i} style={{ gap: 8 }}>
-          {/* Author row */}
-          <View className="flex-row items-center" style={{ gap: 8 }}>
-            <Image
-              source={{ uri: m.image }}
-              style={{ width: 30, height: 30, borderRadius: 15 }}
-            />
-            <Text
-              style={{
-                fontFamily: 'Inter-SemiBold',
-                fontSize: 14,
-                color: colors.text,
-                flex: 1,
-              }}
-            >
-              {m.author}
-            </Text>
-            <Text
-              style={{
-                fontFamily: 'Inter-Regular',
-                fontSize: 12,
-                color: colors.textMuted,
-              }}
-            >
-              {m.timestamp}
-            </Text>
-          </View>
-
-          {/* Message bubble */}
-          <View
-            style={{
-              backgroundColor: colors.cardBg,
-              borderTopLeftRadius: 4,
-              borderTopRightRadius: 16,
-              borderBottomLeftRadius: 16,
-              borderBottomRightRadius: 16,
-              paddingVertical: 12,
-              paddingHorizontal: 14,
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: 'Inter-Regular',
-                fontSize: 14,
-                color: colors.text,
-                lineHeight: 20,
-              }}
-            >
-              {m.text}
-            </Text>
-          </View>
-        </View>
-      ))}
-    </View>
-  )
-}
 
 // ---------------------------------------------------------------------------
 // Default content (unregistered / past)
@@ -667,12 +571,10 @@ function DefaultContent({
 function RegisteredContent({
   event,
   attendees,
-  messages,
   colors,
 }: {
   event: EventDetailPanelProps['event']
   attendees: Attendee[]
-  messages: Message[]
   colors: DetailColors
 }) {
   const [activeTab, setActiveTab] = useState('Details')
@@ -681,7 +583,7 @@ function RegisteredContent({
     <View style={{ flex: 1 }}>
       <View style={{ paddingTop: 8 }}>
         <UnderlineTabBar
-          tabs={['Details', 'People', 'Messages']}
+          tabs={['Details', 'People']}
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
@@ -723,9 +625,6 @@ function RegisteredContent({
 
         {activeTab === 'People' && <PeopleTab attendees={attendees} colors={colors} />}
 
-        {activeTab === 'Messages' && (
-          <MessagesTab messages={messages} colors={colors} />
-        )}
       </ScrollView>
     </View>
   )
@@ -847,7 +746,6 @@ function ActionBar({
 export default function EventDetailPanel({
   event,
   attendees,
-  messages,
   isPast,
   isAdmin,
   onClose,
@@ -887,7 +785,6 @@ export default function EventDetailPanel({
         <RegisteredContent
           event={event}
           attendees={attendees}
-          messages={messages}
           colors={colors}
         />
       ) : (

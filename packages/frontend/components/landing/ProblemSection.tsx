@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, useWindowDimensions } from 'react-native'
+import { View, Text, Image, useWindowDimensions } from 'react-native'
 
 export function ProblemSection() {
   const { width } = useWindowDimensions()
@@ -17,7 +17,7 @@ export function ProblemSection() {
         alignItems: 'center',
       }}
     >
-      {/* Left: Placeholder image */}
+      {/* Left: Community photo */}
       <View
         style={{
           width: isMobile ? '100%' : 383,
@@ -26,40 +26,13 @@ export function ProblemSection() {
           backgroundColor: '#F5F0EB',
           flexShrink: 0,
           overflow: 'hidden',
-          alignItems: 'center',
-          justifyContent: 'center',
         }}
       >
-        {/* Decorative content to represent community photo */}
-        <View
-          style={{
-            width: 120,
-            height: 120,
-            borderRadius: 60,
-            backgroundColor: '#E7E5E4',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <View
-            style={{
-              width: 60,
-              height: 60,
-              borderRadius: 30,
-              backgroundColor: '#D6D3D1',
-            }}
-          />
-        </View>
-        <Text
-          style={{
-            fontFamily: 'Inter, sans-serif',
-            fontSize: 13,
-            color: '#A8A29E',
-            marginTop: 20,
-          }}
-        >
-          Community together
-        </Text>
+        <Image
+          source={require('../../assets/images/landing/challenge-yatra.jpg')}
+          resizeMode="cover"
+          style={{ width: '100%', height: '100%' }}
+        />
       </View>
 
       {/* Right: Text content */}

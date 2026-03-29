@@ -4,12 +4,15 @@ import { useUser } from '../components/contexts'
 import { validateEmail, validatePassword } from '../utils'
 import PasswordStrength from '../components/PasswordStrength'
 import { ImageCarousel } from '../components/auth/ImageCarousel'
-import DevPanel from '../components/DevPanel'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const swamiChinmayanandaJpg = require('../assets/images/landing/Swami Chinmayananda.jpg')
 const swamiChinmayanandaAlt = require('../assets/images/landing/Swami Chinmayananda (1).jpg')
 const swamiChinmayanandaOption2 = require('../assets/images/landing/Swami Chinmayananda Option 2.jpeg')
+import DevPanel from '../components/DevPanel'
 import Logo from '../components/ui/Logo'
+
+// __DEV__ is a React Native/Expo global — always false in production builds
+const isDev = typeof __DEV__ !== 'undefined' && __DEV__
 
 // Inject CSS for placeholder, hover, and mobile-specific styles (web only)
 if (typeof document !== 'undefined') {
@@ -48,7 +51,6 @@ export default function AuthScreen() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [showDevPanel, setShowDevPanel] = useState(false)
-
   // Focus state for input styling
   const [emailFocused, setEmailFocused] = useState(false)
   const [passwordFocused, setPasswordFocused] = useState(false)
@@ -300,7 +302,11 @@ export default function AuthScreen() {
           )}
 
           {/* Janata logo */}
-          <div style={{ marginBottom: isMobile ? 32 : 48 }}>
+          <div
+            onClick={() => router.push('/landing')}
+            role="link"
+            style={{ marginBottom: isMobile ? 32 : 48, cursor: 'pointer' }}
+          >
             <Logo size={isMobile ? 28 : 32} />
           </div>
 
@@ -527,6 +533,37 @@ export default function AuthScreen() {
             </p>
           )}
 
+          {/* Developer Mode button — dev only */}
+          {isDev && (
+            <button
+              onClick={() => setShowDevPanel(true)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                backgroundColor: '#F5F5F4',
+                padding: '10px 16px',
+                borderRadius: 8,
+                border: 'none',
+                cursor: 'pointer',
+                marginTop: 24,
+                width: '100%',
+                fontSize: 14,
+                fontFamily: 'Inter, sans-serif',
+                color: '#57534E',
+              }}
+            >
+              <span style={{ fontFamily: 'monospace', fontSize: 16 }}>&lt;/&gt;</span>
+              Developer Mode
+            </button>
+          )}
+
+          {/* DevPanel */}
+          {isDev && showDevPanel && (
+            <DevPanel visible={showDevPanel} onClose={() => setShowDevPanel(false)} />
+          )}
+
           {/* Footer text */}
           <p
             style={{
@@ -541,34 +578,6 @@ export default function AuthScreen() {
             By continuing, you agree to our Terms of Service and Privacy Policy
           </p>
 
-          {/* Developer Mode button */}
-          <button
-            onClick={() => setShowDevPanel(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              backgroundColor: '#F5F5F4',
-              padding: '10px 16px',
-              borderRadius: 8,
-              border: 'none',
-              cursor: 'pointer',
-              marginTop: 24,
-              width: '100%',
-              fontSize: 14,
-              fontFamily: 'Inter, sans-serif',
-              color: '#57534E',
-            }}
-          >
-            <span style={{ fontFamily: 'monospace', fontSize: 16 }}>&lt;/&gt;</span>
-            Developer Mode
-          </button>
-
-          {/* DevPanel */}
-          {showDevPanel && (
-            <DevPanel visible={showDevPanel} onClose={() => setShowDevPanel(false)} />
-          )}
         </div>
       </div>
     </div>

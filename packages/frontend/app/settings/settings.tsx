@@ -16,6 +16,7 @@ import { useUser, useThemeContext } from '../../components/contexts'
 import { useRouter } from 'expo-router'
 import { DestructiveButton } from '../../components/ui'
 import ThemeSelector from '../../components/ThemeSelector'
+import { usePostHog } from 'posthog-react-native'
 
 export default function Settings() {
   const { isDark } = useThemeContext()
@@ -23,6 +24,7 @@ export default function Settings() {
   const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const posthog = usePostHog()
 
   const iconColor = isDark ? '#a1a1aa' : '#71717a'
   const textColor = isDark ? '#F5F5F5' : '#1C1917'
@@ -89,7 +91,10 @@ export default function Settings() {
           <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl overflow-hidden">
             <Pressable
               className="flex-row items-center justify-between p-5 border-b border-stone-200 dark:border-stone-700 active:opacity-70"
-              onPress={() => Linking.openURL('https://chinmayajanata.org/privacy')}
+              onPress={() => {
+                posthog.capture('privacy_policy_viewed')
+                router.push('/privacy')
+              }}
             >
               <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
                 Privacy Policy
@@ -98,10 +103,25 @@ export default function Settings() {
             </Pressable>
             <Pressable
               className="flex-row items-center justify-between p-5 active:opacity-70"
-              onPress={() => Linking.openURL('https://chinmayajanata.org/terms')}
+              onPress={() => {
+                posthog.capture('terms_viewed')
+                router.push('/terms')
+              }}
             >
               <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
                 Terms of Service
+              </Text>
+              <ExternalLink size={18} color={iconColor} />
+            </Pressable>
+            <Pressable
+              className="flex-row items-center justify-between p-5 active:opacity-70"
+              onPress={() => {
+                posthog.capture('cookie_policy_viewed')
+                router.push('/cookies')
+              }}
+            >
+              <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
+                Cookie Policy
               </Text>
               <ExternalLink size={18} color={iconColor} />
             </Pressable>
@@ -148,7 +168,10 @@ export default function Settings() {
               <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#DC2626' }}>Danger Zone</Text>
               <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: mutedTextColor }}>Permanently delete your account and all data</Text>
             </View>
-            <DestructiveButton onPress={() => setShowDeleteModal(true)}>
+            <DestructiveButton onPress={() => {
+              posthog.capture('delete_account_started')
+              setShowDeleteModal(true)
+            }}>
               Delete Account
             </DestructiveButton>
           </View>

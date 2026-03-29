@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { View, Text, Pressable, Platform, useWindowDimensions, ScrollView } from 'react-native'
+import { View, Text, Pressable, Image, Platform, useWindowDimensions, ScrollView } from 'react-native'
 
 const TAB_DURATION = 5000 // 5 seconds per tab
 
-// Inject CSS keyframes for progress bar animation (web only)
+// Inject CSS keyframes (web only)
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
   const id = 'apppreview-keyframes'
   if (!document.getElementById(id)) {
@@ -22,10 +22,6 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
         0% { opacity: 0; transform: scale(0.85) translateY(8px); }
         60% { transform: scale(1.02) translateY(-2px); }
         100% { opacity: 1; transform: scale(1) translateY(0); }
-      }
-      @keyframes pulseGlow {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(194,65,12,0.3); }
-        50% { box-shadow: 0 0 0 8px rgba(194,65,12,0); }
       }
     `
     document.head.appendChild(style)
@@ -53,13 +49,6 @@ const FEATURES: FeatureTab[] = [
     heading: 'Never miss a study group or celebration',
     description:
       'Browse upcoming events across all your centers. Register with one tap, get reminders, and see who else is attending before you arrive.',
-  },
-  {
-    number: '03',
-    title: 'Build Community',
-    heading: 'Grow together with fellow seekers',
-    description:
-      'Connect with CHYKs in your area, join seva projects, and track your community\'s growth. See real-time activity and find your people wherever you go.',
   },
 ]
 
@@ -91,7 +80,6 @@ function TabPill({
         borderColor: isActive ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.42)',
       }}
     >
-      {/* Progress bar underline */}
       {isActive && (
         <div
           key={`prog-${cycleKey}`}
@@ -131,59 +119,20 @@ function TabPill({
   )
 }
 
-// ------- Per-tab Visuals -------
+// ─── App-like mockup visuals (light theme matching landing page) ───
 
-function Badge({
-  label,
-  accent,
-  delay,
-}: {
-  label: string
-  accent?: boolean
-  delay?: number
-}) {
-  return (
-    <div style={{ animation: `popIn 0.4s ease-out ${delay || 0}ms both` }}>
-      <View
-        style={{
-          backgroundColor: accent ? '#C2410C' : '#FFFFFF',
-          paddingHorizontal: 12,
-          paddingVertical: 6,
-          borderRadius: 8,
-          boxShadow: accent ? 'none' : '0 2px 8px rgba(0,0,0,0.06)',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 5,
-        }}
-      >
-        {accent && (
-          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FED7AA' }} />
-        )}
-        <Text
-          style={{
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: '500',
-            fontSize: 11,
-            color: accent ? '#FFFFFF' : '#57534E',
-          }}
-        >
-          {label}
-        </Text>
-      </View>
-    </div>
-  )
-}
-
-function BentoContainer({ children, isMobile }: { children: React.ReactNode; isMobile: boolean }) {
+function MockupShell({ children }: { children: React.ReactNode }) {
   return (
     <View
       style={{
-        backgroundColor: 'rgba(255,255,255,0.35)',
+        backgroundColor: '#FFFFFF',
         borderRadius: 20,
-        padding: isMobile ? 16 : 24,
-        marginTop: isMobile ? 24 : 40,
+        overflow: 'hidden',
+        boxShadow: '0 4px 30px rgba(0,0,0,0.08)',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.5)',
+        borderColor: '#E7E5E4',
+        flex: 1,
+        minHeight: 420,
       }}
     >
       {children}
@@ -191,713 +140,573 @@ function BentoContainer({ children, isMobile }: { children: React.ReactNode; isM
   )
 }
 
-function DiscoverVisual({ isMobile }: { isMobile: boolean }) {
+function MockupSearchBar() {
   return (
-    <div key="discover" style={{ animation: 'fadeSlideIn 0.4s ease-out' }}>
-      <BentoContainer isMobile={isMobile}>
-        {/* Badges row */}
-        {!isMobile && (
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-            <Badge label="Nearest to you" accent delay={200} />
-            <Badge label="342 active members" delay={400} />
-            <Badge label="12 centers nearby" delay={600} />
-          </View>
-        )}
-
-        <View
-          style={{
-            flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? 16 : 20,
-            alignItems: isMobile ? 'stretch' : 'stretch',
-          }}
-        >
-          {/* Map mockup */}
-          <View
-            style={{
-              flex: isMobile ? undefined : 1,
-              height: isMobile ? 200 : 300,
-              borderRadius: 14,
-              backgroundColor: '#FFFFFF',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-              overflow: 'hidden',
-              position: 'relative',
-            }}
-          >
-            <View style={{ flex: 1, backgroundColor: '#F3F1EE' }}>
-              {(isMobile ? [0, 1, 2, 3] : [0, 1, 2, 3, 4]).map((i) => (
-                <View
-                  key={`h-${i}`}
-                  style={{
-                    position: 'absolute',
-                    top: i * (isMobile ? 50 : 60) + 20,
-                    left: 0,
-                    right: 0,
-                    height: 1,
-                    backgroundColor: '#E7E5E4',
-                    opacity: 0.5,
-                  }}
-                />
-              ))}
-              {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-                <View
-                  key={`v-${i}`}
-                  style={{
-                    position: 'absolute',
-                    left: i * 72 + 30,
-                    top: 0,
-                    bottom: 0,
-                    width: 1,
-                    backgroundColor: '#E7E5E4',
-                    opacity: 0.5,
-                  }}
-                />
-              ))}
-
-              <div style={{ animation: 'pulseGlow 2s ease-in-out infinite' }}>
-                <View
-                  style={{
-                    position: 'absolute',
-                    top: isMobile ? 60 : 100,
-                    left: isMobile ? '35%' : '30%',
-                    width: 16,
-                    height: 16,
-                    borderRadius: 8,
-                    backgroundColor: '#C2410C',
-                    borderWidth: 3,
-                    borderColor: '#FFFFFF',
-                  }}
-                />
-              </div>
-              <View
-                style={{
-                  position: 'absolute',
-                  top: isMobile ? 100 : 160,
-                  left: isMobile ? '60%' : '55%',
-                  width: 12,
-                  height: 12,
-                  borderRadius: 6,
-                  backgroundColor: '#C2410C',
-                  opacity: 0.6,
-                  borderWidth: 2,
-                  borderColor: '#FFFFFF',
-                }}
-              />
-              <View
-                style={{
-                  position: 'absolute',
-                  top: isMobile ? 45 : 70,
-                  left: isMobile ? '75%' : '72%',
-                  width: 12,
-                  height: 12,
-                  borderRadius: 6,
-                  backgroundColor: '#C2410C',
-                  opacity: 0.6,
-                  borderWidth: 2,
-                  borderColor: '#FFFFFF',
-                }}
-              />
-              <View
-                style={{
-                  position: 'absolute',
-                  top: isMobile ? 130 : 200,
-                  left: isMobile ? '22%' : '20%',
-                  width: 10,
-                  height: 10,
-                  borderRadius: 5,
-                  backgroundColor: '#C2410C',
-                  opacity: 0.4,
-                  borderWidth: 2,
-                  borderColor: '#FFFFFF',
-                }}
-              />
-            </View>
-
-            {/* Search bar overlay */}
-            <View
-              style={{
-                position: 'absolute',
-                top: 14,
-                left: 14,
-                right: 14,
-                height: 38,
-                borderRadius: 10,
-                backgroundColor: '#FFFFFF',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                paddingHorizontal: 12,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
-              <View
-                style={{
-                  width: 14,
-                  height: 14,
-                  borderRadius: 7,
-                  borderWidth: 2,
-                  borderColor: '#A8A29E',
-                }}
-              />
-              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#A8A29E' }}>
-                Search centers near you...
-              </Text>
-            </View>
-          </View>
-
-          {/* Side panel — center detail card */}
-          <View
-            style={{
-              width: isMobile ? '100%' : 200,
-              backgroundColor: '#FFFFFF',
-              borderRadius: 14,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-              overflow: 'hidden',
-            }}
-          >
-            <View style={{ height: isMobile ? 44 : 72, backgroundColor: '#FFF7ED' }} />
-            <View style={{ padding: isMobile ? 12 : 14, gap: 6 }}>
-              <Text
-                style={{
-                  fontFamily: 'Inter, sans-serif',
-                  fontWeight: '600',
-                  fontSize: 13,
-                  color: '#1C1917',
-                }}
-              >
-                CM San Jose
-              </Text>
-              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
-                San Jose, CA
-              </Text>
-              <View style={{ height: 1, backgroundColor: '#F5F5F4', marginVertical: 3 }} />
-              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
-                5 upcoming events
-              </Text>
-              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
-                342 members
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Mobile badges at bottom */}
-        {isMobile && (
-          <View style={{ flexDirection: 'row', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-            <Badge label="Nearest to you" accent delay={200} />
-            <Badge label="342 active members" delay={400} />
-          </View>
-        )}
-      </BentoContainer>
-    </div>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 16,
+        marginBottom: 10,
+        paddingHorizontal: 12,
+        height: 36,
+        borderRadius: 10,
+        backgroundColor: '#F3F4F6',
+        gap: 8,
+      }}
+    >
+      <View
+        style={{
+          width: 14,
+          height: 14,
+          borderRadius: 7,
+          borderWidth: 1.5,
+          borderColor: '#9CA3AF',
+        }}
+      />
+      <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#9CA3AF' }}>
+        Search events and centers...
+      </Text>
+    </View>
   )
 }
 
-function EventsVisual({ isMobile }: { isMobile: boolean }) {
-  const events = [
-    { title: 'Bhagavad Gita Study', time: 'Today · 10:30 AM', attendees: 14, color: '#FFF7ED' },
-    { title: 'Youth Retreat', time: 'Sat, Apr 2 · 9:00 AM', attendees: 48, color: '#EFF6FF' },
-    { title: 'Devi Group', time: 'Mon, Mar 18 · 7:30 PM', attendees: 22, color: '#F5F3FF' },
-  ]
-
+function MockupFilterTabs({ active }: { active: string }) {
+  const tabs = ['All', 'Going', 'Centers']
   return (
-    <div key="events" style={{ animation: 'fadeSlideIn 0.4s ease-out' }}>
-      <BentoContainer isMobile={isMobile}>
-        {/* Badges row */}
-        {!isMobile && (
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-            <Badge label="One-tap registration" accent delay={300} />
-            <Badge label="Chapter-by-chapter tracking" delay={500} />
-          </View>
-        )}
-
+    <View
+      style={{
+        flexDirection: 'row',
+        marginHorizontal: 16,
+        marginBottom: 12,
+        gap: 0,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+      }}
+    >
+      {tabs.map((tab) => (
         <View
+          key={tab}
           style={{
-            flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? 16 : 20,
-            alignItems: 'stretch',
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            borderBottomWidth: 2,
+            borderBottomColor: tab === active ? '#E8862A' : 'transparent',
           }}
         >
-          {/* Event list */}
-          <View
+          <Text
             style={{
-              flex: isMobile ? undefined : 1,
-              backgroundColor: '#FFFFFF',
-              borderRadius: 14,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-              overflow: 'hidden',
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: tab === active ? '600' : '400',
+              fontSize: 13,
+              color: tab === active ? '#E8862A' : '#9CA3AF',
             }}
           >
-            <View
+            {tab}
+          </Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
+function MockupDragHandle() {
+  return (
+    <View style={{ alignItems: 'center', paddingTop: 10, paddingBottom: 8 }}>
+      <View
+        style={{
+          width: 36,
+          height: 4,
+          borderRadius: 2,
+          backgroundColor: '#D1D5DB',
+        }}
+      />
+    </View>
+  )
+}
+
+function MockupDatePill({ month, day, accent }: { month: string; day: string; accent?: boolean }) {
+  return (
+    <View
+      style={{
+        width: 44,
+        height: 50,
+        borderRadius: 12,
+        backgroundColor: accent ? '#FFF7ED' : '#F3F4F6',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      }}
+    >
+      <Text
+        style={{
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: '600',
+          fontSize: 9,
+          color: '#E8862A',
+          letterSpacing: 0.5,
+        }}
+      >
+        {month}
+      </Text>
+      <Text
+        style={{
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: '700',
+          fontSize: 16,
+          color: '#1C1917',
+        }}
+      >
+        {day}
+      </Text>
+    </View>
+  )
+}
+
+function MockupAvatarDots({ count }: { count: number }) {
+  const colors = ['#E8862A', '#78716C', '#A8A29E', '#D6D3D1']
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+      <View style={{ flexDirection: 'row' }}>
+        {Array.from({ length: Math.min(count, 3) }).map((_, i) => (
+          <View
+            key={i}
+            style={{
+              width: 14,
+              height: 14,
+              borderRadius: 7,
+              backgroundColor: colors[i],
+              marginLeft: i === 0 ? 0 : -4,
+              borderWidth: 1.5,
+              borderColor: '#FFFFFF',
+            }}
+          />
+        ))}
+      </View>
+      <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#A8A29E' }}>
+        {count} going
+      </Text>
+    </View>
+  )
+}
+
+function MockupEventItem({
+  month,
+  day,
+  title,
+  time,
+  location,
+  attendees,
+  isRegistered,
+  delay,
+}: {
+  month: string
+  day: string
+  title: string
+  time: string
+  location: string
+  attendees: number
+  isRegistered?: boolean
+  delay?: number
+}) {
+  return (
+    <div style={{ animation: `fadeSlideIn 0.3s ease-out ${delay || 0}ms both` }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          gap: 10,
+          padding: 10,
+          borderRadius: 14,
+          backgroundColor: isRegistered ? '#FFF7ED' : 'transparent',
+        }}
+      >
+        <MockupDatePill month={month} day={day} accent={isRegistered} />
+        <View style={{ flex: 1, gap: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text
               style={{
-                paddingHorizontal: 18,
-                paddingVertical: 14,
-                borderBottomWidth: 1,
-                borderBottomColor: '#F5F5F4',
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '600',
+                fontSize: 13,
+                color: '#1C1917',
+                flex: 1,
               }}
+              numberOfLines={1}
             >
-              <Text
-                style={{
-                  fontFamily: 'Inter, sans-serif',
-                  fontWeight: '600',
-                  fontSize: 14,
-                  color: '#1C1917',
-                }}
-              >
-                Upcoming Events
-              </Text>
+              {title}
+            </Text>
+            {isRegistered && (
               <View
                 style={{
-                  backgroundColor: '#FFF7ED',
-                  paddingHorizontal: 10,
-                  paddingVertical: 3,
-                  borderRadius: 100,
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontWeight: '600',
-                    fontSize: 10,
-                    color: '#C2410C',
-                  }}
-                >
-                  3 this week
-                </Text>
-              </View>
-            </View>
-
-            {events.map((evt, i) => (
-              <div
-                key={evt.title}
-                style={{ animation: `fadeSlideIn 0.3s ease-out ${200 + i * 150}ms both` }}
-              >
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 12,
-                    paddingHorizontal: 18,
-                    paddingVertical: 12,
-                    borderBottomWidth: i < events.length - 1 ? 1 : 0,
-                    borderBottomColor: '#F5F5F4',
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 10,
-                      backgroundColor: evt.color,
-                    }}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontFamily: 'Inter, sans-serif',
-                        fontWeight: '500',
-                        fontSize: 13,
-                        color: '#1C1917',
-                        marginBottom: 2,
-                      }}
-                    >
-                      {evt.title}
-                    </Text>
-                    <Text
-                      style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}
-                    >
-                      {evt.time}
-                    </Text>
-                  </View>
-                  <Text
-                    style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#A8A29E' }}
-                  >
-                    {evt.attendees} going
-                  </Text>
-                </View>
-              </div>
-            ))}
-          </View>
-
-          {/* Event detail card */}
-          <View
-            style={{
-              width: isMobile ? '100%' : 260,
-              backgroundColor: '#FFFFFF',
-              borderRadius: 14,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-              overflow: 'hidden',
-            }}
-          >
-            <View style={{ height: isMobile ? 52 : 80, backgroundColor: '#FFF7ED' }} />
-            <View style={{ padding: isMobile ? 14 : 16, gap: 8 }}>
-              <Text
-                style={{
-                  fontFamily: 'Inter, sans-serif',
-                  fontWeight: '600',
-                  fontSize: isMobile ? 13 : 15,
-                  color: '#1C1917',
-                }}
-              >
-                Bhagavad Gita Study
-              </Text>
-              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#78716C' }}>
-                Chapter 12 — The Yoga of Devotion
-              </Text>
-              <View style={{ height: 1, backgroundColor: '#F5F5F4', marginVertical: 2 }} />
-              <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
-                <View
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: 4,
-                    backgroundColor: '#22C55E',
-                  }}
-                />
-                <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
-                  14 people attending
-                </Text>
-              </View>
-              <View
-                style={{
-                  backgroundColor: '#C2410C',
-                  paddingVertical: 9,
-                  borderRadius: 10,
-                  alignItems: 'center',
-                  marginTop: 4,
+                  backgroundColor: 'rgba(232,134,42,0.15)',
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  borderRadius: 6,
                 }}
               >
                 <Text
                   style={{
                     fontFamily: 'Inter, sans-serif',
                     fontWeight: '500',
-                    fontSize: 12,
-                    color: '#FFFFFF',
+                    fontSize: 9,
+                    color: '#E8862A',
                   }}
                 >
-                  Register — Free
+                  Going
                 </Text>
               </View>
-            </View>
+            )}
           </View>
-        </View>
-
-        {/* Mobile badges at bottom */}
-        {isMobile && (
-          <View style={{ flexDirection: 'row', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-            <Badge label="One-tap registration" accent delay={300} />
-            <Badge label="Chapter tracking" delay={500} />
-          </View>
-        )}
-      </BentoContainer>
-    </div>
-  )
-}
-
-function CommunityVisual({ isMobile }: { isMobile: boolean }) {
-  const people = [
-    { name: 'Arjun K.', role: 'CHYK Leader', tone: '#E7B28B', shirt: '#C2410C' },
-    { name: 'Priya S.', role: 'Study Group', tone: '#DFA487', shirt: '#7C3AED' },
-    { name: 'Rohan M.', role: 'Seva Volunteer', tone: '#CB8F72', shirt: '#0891B2' },
-    { name: 'Ananya R.', role: 'New Member', tone: '#E2AA86', shirt: '#059669' },
-  ]
-
-  return (
-    <div key="community" style={{ animation: 'fadeSlideIn 0.4s ease-out' }}>
-      <BentoContainer isMobile={isMobile}>
-        {/* Badges row */}
-        {!isMobile && (
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-            <Badge label="Real-time activity" accent delay={400} />
-            <Badge label="+12% monthly growth" delay={600} />
-          </View>
-        )}
-
-        <View
-          style={{
-            flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? 16 : 22,
-            alignItems: 'stretch',
-          }}
-        >
-          {/* People collage */}
-          <View
-            style={{
-              flex: isMobile ? undefined : 1.4,
-              backgroundColor: '#FFFFFF',
-              borderRadius: 14,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-              padding: isMobile ? 12 : 18,
-              position: 'relative',
-              minHeight: isMobile ? 330 : 350,
-              overflow: 'hidden',
-            }}
-          >
+          <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
+            {time}
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 1 }}>
             <View
               style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: '#F8F2EF',
+                width: 3,
+                height: 3,
+                borderRadius: 1.5,
+                backgroundColor: '#E8862A',
               }}
             />
-
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: isMobile ? 8 : 12, zIndex: 1 }}>
-              {people.slice(0, 2).map((p, i) => (
-                <div key={p.name} style={{ animation: `fadeSlideIn 0.35s ease-out ${180 + i * 120}ms both`, flex: 1 }}>
-                  <View
-                    style={{
-                      height: isMobile ? 136 : 156,
-                      borderRadius: 12,
-                      backgroundColor: '#EFE7E1',
-                      overflow: 'hidden',
-                      position: 'relative',
-                    }}
-                  >
-                    <View
-                      style={{
-                        position: 'absolute',
-                        top: 18,
-                        left: '35%',
-                        width: 42,
-                        height: 42,
-                        borderRadius: 21,
-                        backgroundColor: p.tone,
-                      }}
-                    />
-                    <View
-                      style={{
-                        position: 'absolute',
-                        top: 56,
-                        left: '28%',
-                        width: 60,
-                        height: 72,
-                        borderTopLeftRadius: 30,
-                        borderTopRightRadius: 30,
-                        borderBottomLeftRadius: 10,
-                        borderBottomRightRadius: 10,
-                        backgroundColor: p.shirt,
-                      }}
-                    />
-                    <View
-                      style={{
-                        position: 'absolute',
-                        left: 10,
-                        right: 10,
-                        bottom: 10,
-                      }}
-                    >
-                      <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '600', fontSize: 11, color: '#1C1917' }}>
-                        {p.name}
-                      </Text>
-                      <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#57534E' }}>
-                        {p.role}
-                      </Text>
-                    </View>
-                  </View>
-                </div>
-              ))}
-            </View>
-
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 10, zIndex: 1 }}>
-              {people.slice(2).map((p, i) => (
-                <div key={p.name} style={{ animation: `fadeSlideIn 0.35s ease-out ${420 + i * 120}ms both`, flex: 1 }}>
-                  <View
-                    style={{
-                      height: isMobile ? 136 : 156,
-                      borderRadius: 12,
-                      backgroundColor: '#EFE7E1',
-                      overflow: 'hidden',
-                      position: 'relative',
-                    }}
-                  >
-                    <View
-                      style={{
-                        position: 'absolute',
-                        top: 18,
-                        left: '35%',
-                        width: 42,
-                        height: 42,
-                        borderRadius: 21,
-                        backgroundColor: p.tone,
-                      }}
-                    />
-                    <View
-                      style={{
-                        position: 'absolute',
-                        top: 56,
-                        left: '28%',
-                        width: 60,
-                        height: 72,
-                        borderTopLeftRadius: 30,
-                        borderTopRightRadius: 30,
-                        borderBottomLeftRadius: 10,
-                        borderBottomRightRadius: 10,
-                        backgroundColor: p.shirt,
-                      }}
-                    />
-                    <View
-                      style={{
-                        position: 'absolute',
-                        left: 10,
-                        right: 10,
-                        bottom: 10,
-                      }}
-                    >
-                      <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '600', fontSize: 11, color: '#1C1917' }}>
-                        {p.name}
-                      </Text>
-                      <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#57534E' }}>
-                        {p.role}
-                      </Text>
-                    </View>
-                  </View>
-                </div>
-              ))}
-            </View>
-
-            <div style={{ animation: 'popIn 0.4s ease-out 500ms both' }}>
-              <View
-                style={{
-                  position: 'absolute',
-                  right: isMobile ? 12 : 18,
-                  top: isMobile ? 16 : 24,
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: 10,
-                  paddingHorizontal: 10,
-                  paddingVertical: 8,
-                  boxShadow: '0 8px 22px rgba(0,0,0,0.1)',
-                }}
-              >
-                <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '600', fontSize: 10, color: '#1C1917' }}>
-                  24 new joins
-                </Text>
-                <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#78716C' }}>
-                  this week
-                </Text>
-              </View>
-            </div>
-
-            <div style={{ animation: 'popIn 0.4s ease-out 700ms both' }}>
-              <View
-                style={{
-                  position: 'absolute',
-                  left: isMobile ? 14 : 22,
-                  bottom: isMobile ? 14 : 22,
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: 10,
-                  paddingHorizontal: 10,
-                  paddingVertical: 8,
-                  boxShadow: '0 8px 22px rgba(0,0,0,0.1)',
-                }}
-              >
-                <Text style={{ fontFamily: 'Inter, sans-serif', fontWeight: '600', fontSize: 10, color: '#1C1917' }}>
-                  Seva projects
-                </Text>
-                <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#78716C' }}>
-                  8 active teams
-                </Text>
-              </View>
-            </div>
+            <Text
+              style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#78716C' }}
+              numberOfLines={1}
+            >
+              {location}
+            </Text>
           </View>
-
-          {/* Small floating cards */}
-          <View
-            style={{
-              width: isMobile ? '100%' : 200,
-              gap: isMobile ? 12 : 12,
-              flexDirection: isMobile ? 'row' : 'column',
-              flexWrap: isMobile ? 'wrap' : undefined,
-            }}
-          >
-            {[
-              { value: '1,240', label: 'Active members', sub: 'across 12 centers' },
-              { value: '86', label: 'Events this month', sub: '+12% from last month' },
-              { value: '34', label: 'Study groups', sub: 'currently running' },
-            ].map((stat, i) => (
-              <div
-                key={stat.label}
-                style={{
-                  animation: `popIn 0.4s ease-out ${300 + i * 200}ms both`,
-                  flex: isMobile ? '1 1 45%' : undefined,
-                }}
-              >
-                <View
-                  style={{
-                    backgroundColor: '#FFFFFF',
-                    borderRadius: 14,
-                    padding: isMobile ? 12 : 14,
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.04)',
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: '"Inclusive Sans", sans-serif',
-                      fontWeight: '400',
-                      fontSize: isMobile ? 20 : 26,
-                      color: '#C2410C',
-                      marginBottom: 2,
-                    }}
-                  >
-                    {stat.value}
-                  </Text>
-                  <Text
-                    style={{
-                      fontFamily: 'Inter, sans-serif',
-                      fontWeight: '600',
-                      fontSize: isMobile ? 11 : 12,
-                      color: '#1C1917',
-                      marginBottom: 2,
-                    }}
-                  >
-                    {stat.label}
-                  </Text>
-                  {!isMobile && (
-                    <Text
-                      style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}
-                    >
-                      {stat.sub}
-                    </Text>
-                  )}
-                </View>
-              </div>
-            ))}
-          </View>
+          <MockupAvatarDots count={attendees} />
         </View>
-
-        {/* Mobile badges at bottom */}
-        {isMobile && (
-          <View style={{ flexDirection: 'row', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-            <Badge label="Real-time activity" accent delay={400} />
-            <Badge label="+12% growth" delay={600} />
-          </View>
-        )}
-      </BentoContainer>
+      </View>
     </div>
   )
 }
 
-function EmptyTabVisual({ isMobile, tabKey }: { isMobile: boolean; tabKey: string }) {
+function MockupCenterItem({
+  name,
+  distance,
+  events,
+  isMember,
+  delay,
+}: {
+  name: string
+  distance: string
+  events: number
+  isMember?: boolean
+  delay?: number
+}) {
   return (
-    <div key={tabKey} style={{ animation: 'fadeSlideIn 0.35s ease-out' }}>
-      <BentoContainer isMobile={isMobile}>
+    <div style={{ animation: `fadeSlideIn 0.3s ease-out ${delay || 0}ms both` }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          gap: 10,
+          padding: 10,
+          borderRadius: 14,
+          backgroundColor: isMember ? '#FFF7ED' : 'transparent',
+        }}
+      >
         <View
           style={{
-            height: isMobile ? 220 : 320,
-            borderRadius: 14,
-            backgroundColor: 'rgba(255,255,255,0.45)',
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.65)',
+            width: 44,
+            height: 50,
+            borderRadius: 12,
+            backgroundColor: 'rgba(232,134,42,0.12)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
           }}
-        />
-      </BentoContainer>
+        >
+          <Text style={{ fontSize: 18 }}>🏛</Text>
+        </View>
+        <View style={{ flex: 1, gap: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '600',
+                fontSize: 13,
+                color: '#1C1917',
+                flex: 1,
+              }}
+            >
+              {name}
+            </Text>
+            {isMember && (
+              <View
+                style={{
+                  backgroundColor: 'rgba(232,134,42,0.15)',
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  borderRadius: 6,
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: 'Inter, sans-serif',
+                    fontWeight: '500',
+                    fontSize: 9,
+                    color: '#E8862A',
+                  }}
+                >
+                  Member
+                </Text>
+              </View>
+            )}
+          </View>
+          <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
+            Center · {distance}
+          </Text>
+          {events > 0 && (
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontSize: 10,
+                color: '#E8862A',
+                marginTop: 1,
+              }}
+            >
+              {events} events this week
+            </Text>
+          )}
+        </View>
+      </View>
     </div>
   )
 }
+
+// ─── Per-tab visuals ───
+
+function DiscoverVisual() {
+  return (
+    <div key="discover" style={{ animation: 'fadeSlideIn 0.4s ease-out' }}>
+      <MockupShell>
+        {/* Map area */}
+        <View style={{ height: 160, position: 'relative', overflow: 'hidden' }}>
+          <Image
+            source={require('../../assets/images/landing/map-preview.jpg')}
+            resizeMode="cover"
+            style={{ width: '100%', height: '100%' }}
+          />
+          {/* Map pins overlay */}
+          <View
+            style={{
+              position: 'absolute',
+              top: 50,
+              left: '30%',
+              width: 14,
+              height: 14,
+              borderRadius: 7,
+              backgroundColor: '#E8862A',
+              borderWidth: 2,
+              borderColor: '#FFFFFF',
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: 80,
+              left: '55%',
+              width: 10,
+              height: 10,
+              borderRadius: 5,
+              backgroundColor: '#E8862A',
+              opacity: 0.7,
+              borderWidth: 2,
+              borderColor: '#FFFFFF',
+            }}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: 35,
+              left: '70%',
+              width: 10,
+              height: 10,
+              borderRadius: 5,
+              backgroundColor: '#E8862A',
+              opacity: 0.6,
+              borderWidth: 2,
+              borderColor: '#FFFFFF',
+            }}
+          />
+        </View>
+        {/* Bottom sheet */}
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: '#FFFFFF',
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            marginTop: -16,
+            boxShadow: '0 -2px 10px rgba(0,0,0,0.04)',
+          }}
+        >
+          <MockupDragHandle />
+          <MockupSearchBar />
+          <MockupFilterTabs active="Centers" />
+          <View style={{ paddingHorizontal: 12, gap: 2 }}>
+            <MockupCenterItem name="CM San Jose" distance="2.4 mi" events={5} isMember delay={200} />
+            <MockupCenterItem name="CM Fremont" distance="8.1 mi" events={3} delay={350} />
+            <MockupCenterItem name="CM Palo Alto" distance="12 mi" events={2} delay={500} />
+          </View>
+        </View>
+      </MockupShell>
+    </div>
+  )
+}
+
+function MockupEventDetail({ delay }: { delay?: number }) {
+  return (
+    <div style={{ animation: `popIn 0.4s ease-out ${delay || 0}ms both` }}>
+      <View
+        style={{
+          position: 'absolute',
+          top: 40,
+          left: 16,
+          right: 16,
+          bottom: 16,
+          backgroundColor: '#FFFFFF',
+          borderRadius: 16,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
+          zIndex: 10,
+          overflow: 'hidden',
+        }}
+      >
+        {/* Event header image */}
+        <View
+          style={{
+            height: 100,
+            backgroundColor: '#FFF7ED',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text style={{ fontSize: 32 }}>📖</Text>
+        </View>
+        <View style={{ padding: 16, gap: 10 }}>
+          <Text
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: '700',
+              fontSize: 16,
+              color: '#1C1917',
+            }}
+          >
+            Bhagavad Gita Study
+          </Text>
+          <View style={{ gap: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={{ fontSize: 12 }}>📅</Text>
+              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#57534E' }}>
+                Today · 10:30 AM – 12:00 PM
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={{ fontSize: 12 }}>📍</Text>
+              <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#57534E' }}>
+                CM San Jose · 1050 Park Ave
+              </Text>
+            </View>
+          </View>
+          <Text
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontSize: 12,
+              lineHeight: 18,
+              color: '#78716C',
+              marginTop: 2,
+            }}
+          >
+            Join us for Chapter 12: The Yoga of Devotion. Open to all levels.
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+            <MockupAvatarDots count={14} />
+          </View>
+          <View
+            style={{
+              backgroundColor: '#E8862A',
+              paddingVertical: 10,
+              borderRadius: 10,
+              alignItems: 'center',
+              marginTop: 6,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '600',
+                fontSize: 13,
+                color: '#FFFFFF',
+              }}
+            >
+              Registered ✓
+            </Text>
+          </View>
+        </View>
+      </View>
+    </div>
+  )
+}
+
+function EventsVisual() {
+  return (
+    <div key="events" style={{ animation: 'fadeSlideIn 0.4s ease-out' }}>
+      <MockupShell>
+        <View style={{ position: 'relative', flex: 1 }}>
+          <MockupDragHandle />
+          <MockupSearchBar />
+          <MockupFilterTabs active="All" />
+          <View style={{ paddingHorizontal: 12, gap: 2 }}>
+            <MockupEventItem
+              month="MAR"
+              day="29"
+              title="Bhagavad Gita Study"
+              time="Today · 10:30 AM"
+              location="CM San Jose"
+              attendees={14}
+              isRegistered
+              delay={200}
+            />
+            <MockupEventItem
+              month="APR"
+              day="2"
+              title="Youth Retreat"
+              time="Sat · 9:00 AM"
+              location="CM Fremont"
+              attendees={48}
+              delay={350}
+            />
+            <MockupEventItem
+              month="APR"
+              day="5"
+              title="Devi Group"
+              time="Mon · 7:30 PM"
+              location="CM San Jose"
+              attendees={22}
+              delay={500}
+            />
+            <MockupEventItem
+              month="APR"
+              day="8"
+              title="Vedanta Course"
+              time="Thu · 7:00 PM"
+              location="CM Palo Alto"
+              attendees={18}
+              delay={650}
+            />
+          </View>
+          {/* Event detail overlay */}
+          <MockupEventDetail delay={900} />
+        </View>
+      </MockupShell>
+    </div>
+  )
+}
+
+
+// ─── Main export ───
 
 export function AppPreview() {
   const { width } = useWindowDimensions()
@@ -908,20 +717,15 @@ export function AppPreview() {
   const [cycleKey, setCycleKey] = useState(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const goToTab = useCallback(
-    (index: number) => {
-      setActiveIndex(index)
-      setCycleKey((k) => k + 1)
-    },
-    []
-  )
+  const goToTab = useCallback((index: number) => {
+    setActiveIndex(index)
+    setCycleKey((k) => k + 1)
+  }, [])
 
-  // Auto-cycle tabs
   useEffect(() => {
     timerRef.current = setTimeout(() => {
       goToTab((activeIndex + 1) % FEATURES.length)
     }, TAB_DURATION)
-
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
@@ -933,17 +737,14 @@ export function AppPreview() {
   }
 
   const activeFeature = FEATURES[activeIndex]
-
   const sectionPadding = isMobile ? 20 : isTablet ? 40 : 80
 
   const renderVisual = () => {
     switch (activeIndex) {
       case 0:
-        return <EmptyTabVisual isMobile={isMobile} tabKey="discover-empty" />
+        return <DiscoverVisual />
       case 1:
-        return <EmptyTabVisual isMobile={isMobile} tabKey="events-empty" />
-      case 2:
-        return <EmptyTabVisual isMobile={isMobile} tabKey="community-empty" />
+        return <EventsVisual />
       default:
         return null
     }
@@ -967,70 +768,113 @@ export function AppPreview() {
         paddingVertical: sectionPadding,
       }}
     >
-      {/* Section label */}
-      <Text
-        style={{
-          fontFamily: 'Inter, sans-serif',
-          fontWeight: '600',
-          fontSize: 12,
-          letterSpacing: 1.5,
-          textTransform: 'uppercase',
-          color: '#C2410C',
-          marginBottom: 20,
-        }}
-      >
-        THE PLATFORM
-      </Text>
-
-      {/* Tab pills */}
-      {isMobile ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ marginBottom: 32 }}
-          contentContainerStyle={{ flexDirection: 'row', gap: 10 }}
-        >
-          {tabPills}
-        </ScrollView>
-      ) : (
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 32 }}>
-          {tabPills}
-        </View>
+      {/* Mobile: section label + tabs above, then content stacked */}
+      {isMobile && (
+        <>
+          <Text
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: '600',
+              fontSize: 12,
+              letterSpacing: 1.5,
+              textTransform: 'uppercase',
+              color: '#C2410C',
+              marginBottom: 20,
+            }}
+          >
+            THE PLATFORM
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginBottom: 32 }}
+            contentContainerStyle={{ flexDirection: 'row', gap: 10 }}
+          >
+            {tabPills}
+          </ScrollView>
+        </>
       )}
 
-      {/* Dynamic heading + description */}
-      <div key={`text-${cycleKey}`} style={{ animation: 'fadeSlideIn 0.35s ease-out', display: 'flex', flexDirection: 'column' }}>
-        <Text
+      {/* Side-by-side: text left, visual right */}
+      <View
+        style={{
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 32 : isTablet ? 40 : 60,
+          alignItems: isMobile ? 'stretch' : 'center',
+        }}
+      >
+        {/* Left: section label, tabs, heading + description */}
+        <View
           style={{
-            fontFamily: '"Inclusive Sans", sans-serif',
-            fontWeight: '400',
-            fontSize: isMobile ? 28 : isTablet ? 32 : 40,
-            lineHeight: isMobile ? 36 : isTablet ? 40 : 48,
-            color: '#1C1917',
-            marginBottom: 16,
-            maxWidth: 640,
+            flex: isMobile ? undefined : 1,
           }}
         >
-          {activeFeature.heading}
-        </Text>
+          {/* Desktop: section label + tabs inside left column */}
+          {!isMobile && (
+            <>
+              <Text
+                style={{
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: '600',
+                  fontSize: 12,
+                  letterSpacing: 1.5,
+                  textTransform: 'uppercase',
+                  color: '#C2410C',
+                  marginBottom: 20,
+                }}
+              >
+                THE PLATFORM
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 32, flexWrap: 'wrap' }}>
+                {tabPills}
+              </View>
+            </>
+          )}
 
-        <Text
+          <div
+            key={`text-${cycleKey}`}
+            style={{
+              animation: 'fadeSlideIn 0.35s ease-out',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: '"Inclusive Sans", sans-serif',
+                fontWeight: '400',
+                fontSize: isMobile ? 28 : isTablet ? 32 : 40,
+                lineHeight: isMobile ? 36 : isTablet ? 40 : 48,
+                color: '#1C1917',
+                marginBottom: 16,
+              }}
+            >
+              {activeFeature.heading}
+            </Text>
+
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '400',
+                fontSize: isMobile ? 15 : 18,
+                lineHeight: isMobile ? 24 : 28,
+                color: '#57534E',
+              }}
+            >
+              {activeFeature.description}
+            </Text>
+          </div>
+        </View>
+
+        {/* Right: app mockup */}
+        <View
           style={{
-            fontFamily: 'Inter, sans-serif',
-            fontWeight: '400',
-            fontSize: isMobile ? 15 : 18,
-            lineHeight: isMobile ? 24 : 28,
-            color: '#57534E',
-            marginBottom: 8,
-            maxWidth: 600,
+            flex: isMobile ? undefined : 1,
           }}
         >
-          {activeFeature.description}
-        </Text>
-      </div>
-
-      {/* Visual for active tab */}
-      {renderVisual()}
+          {renderVisual()}
+        </View>
+      </View>
     </View>
   )
 }
