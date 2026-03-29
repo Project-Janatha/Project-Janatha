@@ -320,7 +320,7 @@ const TEAM = [
   { name: 'Abhiram', image: require('../../assets/images/landing/abhiram.jpg') },
   { name: 'Kish', image: require('../../assets/images/landing/kish.jpg') },
   { name: 'Sahanav', image: require('../../assets/images/landing/sahanav.jpg') },
-  { name: 'Divita', image: null, color: '#C2410C' },
+  { name: 'Divita', image: require('../../assets/images/landing/divita.jpg') },
   { name: 'Pranav', image: require('../../assets/images/landing/pranav.jpg') },
 ]
 
