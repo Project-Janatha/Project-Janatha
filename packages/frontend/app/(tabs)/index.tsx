@@ -151,12 +151,12 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
 
 // ─── Center Item ────────────────────────────────────────
 
-function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () => void }) {
+function CenterItem({ center, onPress, isMyCenter }: { center: DiscoverCenter; onPress: () => void; isMyCenter?: boolean }) {
   return (
     <Pressable
       onPress={onPress}
       className={`flex-row gap-3 p-3 rounded-2xl active:opacity-70 ${
-        center.isMember
+        center.isMember || isMyCenter
           ? 'bg-orange-50 dark:bg-orange-950/20'
           : 'bg-white dark:bg-neutral-900'
       }`}
@@ -172,7 +172,8 @@ function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () =
           <Text className="text-content dark:text-content-dark font-inter-semibold text-base leading-tight flex-1" numberOfLines={1}>
             {center.name}
           </Text>
-          {center.isMember && <Badge label="Member" variant="member" />}
+          {isMyCenter && <Badge label="My Center" variant="going" />}
+          {!isMyCenter && center.isMember && <Badge label="Member" variant="member" />}
         </View>
         <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm">
           Center{center.distanceMi != null ? ` · ${center.distanceMi} mi` : ''}
@@ -432,6 +433,7 @@ export default function DiscoverScreen() {
                 <CenterItem
                   key={`center-${item.data.id}`}
                   center={item.data as DiscoverCenter}
+                  isMyCenter={!!user?.centerID && item.data.id === user.centerID}
                   onPress={() => router.push(`/center/${item.data.id}`)}
                 />
               )
