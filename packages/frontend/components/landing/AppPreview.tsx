@@ -939,11 +939,11 @@ export function AppPreview() {
   const renderVisual = () => {
     switch (activeIndex) {
       case 0:
-        return <EmptyTabVisual isMobile={isMobile} tabKey="discover-empty" />
+        return <DiscoverVisual isMobile={isMobile} />
       case 1:
-        return <EmptyTabVisual isMobile={isMobile} tabKey="events-empty" />
+        return <EventsVisual isMobile={isMobile} />
       case 2:
-        return <EmptyTabVisual isMobile={isMobile} tabKey="community-empty" />
+        return <CommunityVisual isMobile={isMobile} />
       default:
         return null
     }
