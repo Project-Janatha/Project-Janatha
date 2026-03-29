@@ -41,16 +41,16 @@ const CARDS: CardData[] = [
     image: require('../../assets/images/landing/Swami Chinmayananda.jpg'),
   },
   { type: 'center', title: 'CM San Jose', subtitle: 'San Jose, CA', color: '#F5F0EB', icon: 'S' },
-  { type: 'event', title: 'Youth Retreat', subtitle: 'Apr 2 · 9:00 AM', color: '#BFDBFE' },
+  { type: 'event', title: 'Youth Retreat', subtitle: 'Apr 2 · 9:00 AM', color: '#BFDBFE', image: require('../../assets/images/landing/youth-group.jpg') },
   { type: 'map', title: '12 Centers', subtitle: 'Within 50 miles', color: '#E8E4DF' },
   { type: 'stat', title: '1,240 Members', subtitle: 'Active this month', color: '#F0FDF4', stat: '1,240' },
-  { type: 'event', title: 'Vedanta Course', subtitle: 'Mar 22 · 7:00 PM', color: '#D9F99D' },
+  { type: 'event', title: 'Vedanta Course', subtitle: 'Mar 22 · 7:00 PM', color: '#D9F99D', image: require('../../assets/images/landing/vedanta-class.jpg') },
   { type: 'center', title: 'CM Houston', subtitle: 'Houston, TX', color: '#F5F0EB', icon: 'H' },
-  { type: 'event', title: 'Bala Vihar', subtitle: 'Every Sunday · 10 AM', color: '#FBCFE8' },
+  { type: 'event', title: 'Bala Vihar', subtitle: 'Every Sunday · 10 AM', color: '#FBCFE8', image: require('../../assets/images/landing/bala-vihar.jpg') },
   { type: 'stat', title: '86 Events', subtitle: 'This month', color: '#EFF6FF', stat: '86' },
   { type: 'center', title: 'CM Chicago', subtitle: 'Chicago, IL', color: '#F5F0EB', icon: 'C' },
-  { type: 'event', title: 'Devi Group', subtitle: 'Mar 18 · 7:30 PM', color: '#FDE68A' },
-  { type: 'event', title: 'Meditation', subtitle: 'Daily · 6:00 AM', color: '#E9D5FF' },
+  { type: 'event', title: 'Devi Group', subtitle: 'Mar 18 · 7:30 PM', color: '#FDE68A', image: require('../../assets/images/landing/devi-group.jpg') },
+  { type: 'event', title: 'Meditation', subtitle: 'Daily · 6:00 AM', color: '#E9D5FF', image: require('../../assets/images/landing/meditation.jpg') },
 ]
 
 function ScrollCard({ card }: { card: CardData }) {
