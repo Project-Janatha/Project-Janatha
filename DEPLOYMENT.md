@@ -4,7 +4,7 @@
 
 | Service | Platform | Staging | Production |
 |---|---|---|---|
-| **Frontend** | Cloudflare Pages | `staging.chinmayajanata.org` | `chinmayajanata.org` |
+| **Frontend** | Cloudflare Pages | `main.project-janatha.pages.dev` | `chinmayajanata.org` |
 | **Backend API** | Cloudflare Workers | `chinmaya-janata-api-staging` | `chinmaya-janata-api` |
 | **Database** | Cloudflare D1 | `chinmaya-janata-db` (shared) | `chinmaya-janata-db` (shared) |
 | **File Storage** | Cloudflare R2 | `chinmaya-janata-avatars` (shared) | `chinmaya-janata-avatars` (shared) |
@@ -15,19 +15,21 @@ There is one branch: **`main`**. All PRs merge here.
 
 ```
 feature branch → PR → merge to main → auto-deploys to staging
+                                        ↓
+                         test on main.project-janatha.pages.dev
                                         ↓ (manual)
-                                    deploys to production
+                                    deploy to production
 ```
 
 ### Staging (automatic)
 
 Every push to `main`:
-- **Frontend**: Cloudflare Pages auto-deploys to `staging.chinmayajanata.org`
+- **Frontend**: Cloudflare Pages auto-deploys to `main.project-janatha.pages.dev`
 - **Backend**: GitHub Actions auto-deploys `chinmaya-janata-api-staging` worker
 
 ### Production (manual)
 
-To promote staging to production, either:
+To promote to production (deploys both frontend and backend):
 
 ```bash
 # Option 1: GitHub Actions UI
@@ -36,9 +38,6 @@ To promote staging to production, either:
 # Option 2: CLI
 gh workflow run deploy.yml -f environment=production
 ```
-
-This deploys the production backend worker. For the frontend, promote the latest
-staging Pages deployment to production via the Cloudflare dashboard.
 
 ## CI Checks
 
@@ -70,9 +69,9 @@ GitHub Actions requires the `CLOUDFLARE_API_TOKEN` repository secret.
 ## Cloudflare Setup
 
 ### Pages (frontend)
-- **Production branch**: `__release` (never pushed to directly — production is promoted manually)
-- **`main` branch**: auto-deploys as preview → `staging.chinmayajanata.org`
-- Custom domains: `chinmayajanata.org`, `www.chinmayajanata.org`, `staging.chinmayajanata.org`
+- **Production branch**: `__release` (never pushed to directly — production is promoted via GitHub Actions)
+- **`main` branch**: auto-deploys as preview → `main.project-janatha.pages.dev`
+- Custom domains: `chinmayajanata.org`, `www.chinmayajanata.org`
 
 ### Workers (backend)
 - Production: `chinmaya-janata-api` (config: `packages/backend/wrangler.toml`)

@@ -8,16 +8,15 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deploy to production'
+        description: 'Deploy to'
         required: true
         type: choice
         options:
-          - staging
           - production
 
 jobs:
   deploy-staging:
-    if: github.event_name == 'push' || inputs.environment == 'staging'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: staging
 
@@ -68,6 +67,14 @@ jobs:
 
       - name: Run backend tests
         run: npm run test:backend
+
+      - name: Build frontend
+        run: npm run build:frontend
+
+      - name: Deploy production frontend
+        run: npx wrangler pages deploy dist --project-name chinmaya-janata --branch __release
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
       - name: Deploy production backend worker
         run: npm run deploy:backend
