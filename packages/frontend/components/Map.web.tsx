@@ -9,7 +9,7 @@
  * Web-only map component using react-map-gl with OpenStreetMap tiles.
  * Native platforms (iOS/Android) use Map.tsx with react-native-maps.
  */
-import React, { useState, useCallback, memo, useRef, useMemo } from 'react'
+import React, { useState, useCallback, memo, useRef, useMemo, useEffect } from 'react'
 import Map, { Marker, MapRef, AttributionControl } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useThemeContext } from './contexts'
@@ -181,6 +181,9 @@ const MapComponent = memo<MapProps>(
     const { isDark } = useThemeContext()
     const mapRef = useRef<MapRef>(null)
 
+    // Disable cooperative gestures on mobile so pinch-to-zoom works
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+
     const center = initialCenter
       ? { longitude: initialCenter[1], latitude: initialCenter[0] }
       : { longitude: DEFAULT_CENTER.longitude, latitude: DEFAULT_CENTER.latitude }
@@ -284,7 +287,7 @@ const MapComponent = memo<MapProps>(
           style={{ width: '100%', height: '100%' }}
           reuseMaps
           attributionControl={false}
-          cooperativeGestures={true}
+          cooperativeGestures={!isMobile}
         >
           {markers}
           <AttributionControl
