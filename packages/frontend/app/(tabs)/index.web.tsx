@@ -158,6 +158,24 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
   )
 }
 
+// ─── Center helpers ─────────────────────────────────────
+
+/** Extract "City, ST" from a full address string, or return fallback */
+function extractCityState(address?: string): string | null {
+  if (!address) return null
+  // Try to match "City, State ZIP" or "City, ST" patterns
+  const parts = address.split(',').map((s) => s.trim())
+  if (parts.length >= 2) {
+    const city = parts[parts.length - 2]
+    // State part may include ZIP — extract just the state abbreviation or name
+    const stateZip = parts[parts.length - 1]
+    const stateMatch = stateZip.match(/^([A-Za-z\s]+)/)
+    const state = stateMatch ? stateMatch[1].trim() : stateZip
+    return `${city}, ${state}`
+  }
+  return null
+}
+
 // ─── Center Item (Desktop) ──────────────────────────────
 
 function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () => void }) {
@@ -186,7 +204,7 @@ function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () =
           {center.isMember && <Badge label="Member" variant="member" />}
         </View>
         <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm">
-          Center{center.distanceMi != null ? ` · ${center.distanceMi} mi` : ''}
+          {extractCityState(center.address) || 'Center'}{center.distanceMi != null ? ` · ${center.distanceMi} mi` : ''}
         </Text>
         {center.eventCount != null && center.eventCount > 0 && (
           <Text className="text-primary font-inter text-xs">
