@@ -21,6 +21,7 @@ import React, {
   useMemo,
   useCallback,
 } from 'react'
+import { usePostHog } from 'posthog-react-native'
 import { getStoredToken, removeStoredToken } from '../utils/tokenStorage'
 import {
   clearOnboardingComplete,
@@ -89,7 +90,16 @@ const resolveEndpointUrl = (endpoint: string): string => {
   return `${normalizedBase}/${normalizedEndpoint}`
 }
 
+/** Helper to build the PostHog person properties from a User object */
+const userTraits = (u: User) => ({
+  email: u.email,
+  firstName: u.firstName,
+  lastName: u.lastName,
+  profileComplete: u.profileComplete,
+})
+
 export const UserProvider = ({ children }: { children: ReactNode }) => {
+  const posthog = usePostHog()
   const [user, setUser] = useState<User | null>(null)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('booting')
   const [onboardingComplete, setOnboardingCompleteState] = useState(false)
@@ -98,32 +108,42 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const login = useCallback(async (username: string, password: string) => {
     const result = await authService.login(username, password)
     if (!result.success) {
+      posthog.capture('login_failed', { reason: result.message })
       return { success: false, message: result.message }
     }
 
     setUser(result.user || null)
     setAuthStatus('authenticated')
+    if (result.user) {
+      posthog.identify(result.user.username, userTraits(result.user))
+    }
+    posthog.capture('login_success')
     return { success: true }
-  }, [])
+  }, [posthog])
 
   const signup = useCallback(async (username: string, password: string) => {
     const result = await authService.signup(username, password)
     if (!result.success || !result.user) {
+      posthog.capture('signup_failed', { reason: result.message })
       return { success: false, message: result.message || 'Signup failed. Please try again.' }
     }
 
     setUser(result.user)
     setAuthStatus('authenticated')
+    posthog.identify(result.user.username, userTraits(result.user))
+    posthog.capture('signup_success')
     return { success: true }
-  }, [])
+  }, [posthog])
 
   const logout = useCallback(async () => {
+    posthog.capture('logout')
+    posthog.reset()
     await authService.logout()
     await clearOnboardingComplete()
     setUser(null)
     setAuthStatus('unauthenticated')
     setOnboardingCompleteState(false)
-  }, [])
+  }, [posthog])
 
   const checkUserExists = useCallback(async (username: string) => {
     const result = await authService.checkUserExists(username)
@@ -177,15 +197,18 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const deleteAccount = useCallback(async () => {
     const result = await authService.deleteAccount()
     if (!result.success) {
+      posthog.capture('delete_account_failed', { reason: result.message })
       return { success: false, message: result.message || 'Failed to delete account' }
     }
 
+    posthog.capture('account_deleted')
+    posthog.reset()
     await clearOnboardingComplete()
     setUser(null)
     setAuthStatus('unauthenticated')
     setOnboardingCompleteState(false)
     return { success: true, message: result.message || 'Account deleted successfully' }
-  }, [])
+  }, [posthog])
 
   const updateProfile = useCallback(async (updates: UpdateProfileRequest) => {
     // Save previous user state for rollback on failure
@@ -199,16 +222,18 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     if (!result.success || !result.user) {
       // Rollback optimistic update on failure
       setUser(previousUser)
+      posthog.capture('profile_update_failed', { reason: result.message })
       return { success: false, message: result.message || 'Failed to update profile' }
     }
 
     setUser(result.user)
+    posthog.capture('profile_updated', { fields: Object.keys(updates) })
     if (updates.profileComplete || result.user.profileComplete) {
       await setOnboardingComplete(true)
       setOnboardingCompleteState(true)
     }
     return { success: true }
-  }, [])
+  }, [posthog])
 
   const setDevSession = useCallback(async (devUser: User, completed: boolean) => {
     setUser(devUser)
@@ -241,6 +266,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         setUser(session.user)
         setAuthStatus(session.authStatus)
 
+        // Identify returning user in PostHog
+        if (session.user && session.authStatus === 'authenticated') {
+          posthog.identify(session.user.username, userTraits(session.user))
+        }
+
         const storedOnboarding = await getOnboardingComplete()
         const derivedComplete =
           session.user?.profileComplete === true ||
@@ -264,7 +294,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [posthog])
 
   const contextValue = useMemo(
     () => ({

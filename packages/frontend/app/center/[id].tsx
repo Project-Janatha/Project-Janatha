@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ChevronLeft, Share2, MapPin, Globe, Phone, User } from 'lucide-react-native'
+import { usePostHog } from 'posthog-react-native'
 import { useCenterDetail } from '../../hooks/useApiData'
 import { Badge } from '../../components/ui'
 import type { EventDisplay } from '../../utils/api'
@@ -123,14 +124,23 @@ function HeaderBar({
 export default function CenterDetailPage() {
   const { id } = useLocalSearchParams()
   const router = useRouter()
+  const posthog = usePostHog()
   const { center, events, loading } = useCenterDetail(id as string)
   const colors = useDetailColors()
 
+  useEffect(() => {
+    if (!loading && center) {
+      posthog.capture('center_viewed', { centerId: id, name: center.name })
+    }
+  }, [loading, center, id, posthog])
+
   const handleEventPress = (event: EventDisplay) => {
+    posthog.capture('center_event_pressed', { centerId: id, eventId: event.id })
     router.push(`/events/${event.id}`)
   }
 
   const handleShare = async () => {
+    posthog.capture('center_shared', { centerId: id })
     try {
       await Share.share({
         message: center
@@ -144,11 +154,13 @@ export default function CenterDetailPage() {
 
   const handleAddressPress = () => {
     if (!center?.address) return
+    posthog.capture('center_address_pressed', { centerId: id })
     Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(center.address)}`)
   }
 
   const handleWebsitePress = () => {
     if (!center?.website) return
+    posthog.capture('center_website_pressed', { centerId: id })
     const url = center.website.startsWith('http')
       ? center.website
       : `https://${center.website}`
@@ -157,6 +169,7 @@ export default function CenterDetailPage() {
 
   const handlePhonePress = () => {
     if (!center?.phone) return
+    posthog.capture('center_phone_pressed', { centerId: id })
     Linking.openURL(`tel:${center.phone}`)
   }
 
