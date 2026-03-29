@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, Pressable, useWindowDimensions } from 'react-native'
+import { View, Text, Pressable, Image, useWindowDimensions } from 'react-native'
 import { useRouter } from 'expo-router'
 
 export function FinalCTA() {
@@ -23,8 +23,25 @@ export function FinalCTA() {
           paddingHorizontal: isMobile ? 24 : isTablet ? 40 : 80,
           paddingVertical: isMobile ? 40 : isTablet ? 60 : 80,
           alignItems: 'center',
+          overflow: 'hidden',
+          position: 'relative',
         }}
       >
+        {/* Subtle background image */}
+        <Image
+          source={require('../../assets/images/landing/Swami Chinmayananda Option 2.jpeg')}
+          resizeMode="cover"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            opacity: 0.08,
+          }}
+        />
         <Text
           style={{
             fontFamily: '"Inclusive Sans", sans-serif',
