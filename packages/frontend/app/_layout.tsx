@@ -8,6 +8,7 @@ import {
   ThemeProvider as NavigationThemeProvider,
 } from '@react-navigation/native'
 import { SplashScreen, Stack, usePathname, useRouter } from 'expo-router'
+import { PostHogProvider } from 'posthog-react-native'
 import {
   UserProvider,
   useUser,
@@ -63,11 +64,18 @@ export default function RootLayout() {
   }
 
   return (
-    <CustomThemeProvider>
-      <UserProvider>
-        <RootLayoutNav />
-      </UserProvider>
-    </CustomThemeProvider>
+    <PostHogProvider
+      apiKey="phc_5o67MgFjj113GN0QKduyyIs0BmEQkpWc8D2eDi6ju7Q"
+      options={{
+        host: 'https://us.i.posthog.com',
+      }}
+    >
+      <CustomThemeProvider>
+        <UserProvider>
+          <RootLayoutNav />
+        </UserProvider>
+      </CustomThemeProvider>
+    </PostHogProvider>
   )
 }
 

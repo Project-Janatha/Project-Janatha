@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Code, ArrowLeft } from 'lucide-react-native'
+import { usePostHog } from 'posthog-react-native'
 import { AuthInput, Logo } from '../components/ui'
 import { useUser, useThemeContext } from '../components/contexts'
 import { validateEmail, validatePassword } from '../utils'
@@ -24,6 +25,7 @@ export default function AuthScreen() {
   const router = useRouter()
   const { isDark } = useThemeContext()
   const { checkUserExists, login, signup, loading } = useUser()
+  const posthog = usePostHog()
 
   const [authStep, setAuthStep] = useState<AuthStep>('initial')
   const [username, setUsername] = useState('')
@@ -44,16 +46,20 @@ export default function AuthScreen() {
       return
     }
     try {
+      posthog.capture('auth_email_submitted')
       const exists = await checkUserExists(username)
       if (exists) {
+        posthog.capture('auth_user_exists')
         setAuthStep('login')
       } else {
+        posthog.capture('auth_user_new')
         setAuthStep('signup')
       }
     } catch (e: any) {
+      posthog.capture('auth_check_failed')
       setErrors({ form: e.message || 'Failed to connect to server.' })
     }
-  }, [username, checkUserExists])
+  }, [username, checkUserExists, posthog])
 
   const handleLogin = useCallback(async () => {
     setErrors({})

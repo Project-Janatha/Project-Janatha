@@ -6,6 +6,7 @@ import { User, Settings, LogOut, Plus } from 'lucide-react-native'
 import SettingsPanel from '../../components/SettingsPanel'
 import Logo from '../../components/ui/Logo'
 import { Avatar } from '../../components/ui'
+import { usePostHog } from 'posthog-react-native'
 
 /**
  * TabLayout Component - The main layout for the tab-based navigation.
@@ -20,8 +21,10 @@ export default function TabLayout() {
   const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
   const canCreate = !!(user?.verificationLevel && user.verificationLevel >= 107) || user?.email === ADMIN_EMAIL || isLocal
+  const posthog = usePostHog()
 
   const handleLogout = async () => {
+    posthog.capture('nav_logout')
     await logout()
     router.replace('/auth')
   }
@@ -68,6 +71,7 @@ if (Platform.OS === 'web') {
               className="px-3 py-2 rounded-lg flex-row items-center"
               style={{ borderWidth: 1.5, borderColor: '#E8862A', backgroundColor: 'transparent', gap: 6 }}
               onPress={() => {
+                posthog.capture('nav_create_event')
                 if (typeof window !== 'undefined') {
                   window.dispatchEvent(new CustomEvent('open-event-form'))
                 }
@@ -82,7 +86,10 @@ if (Platform.OS === 'web') {
 <Pressable
             className="mr-4 rounded-full overflow-hidden"
             style={{ width: 36, height: 36 }}
-            onPress={() => setSettingsVisible(true)}
+            onPress={() => {
+              posthog.capture('nav_menu_opened')
+              setSettingsVisible(true)
+            }}
           >
             {webProfileImage ? (
               <Image
@@ -90,13 +97,13 @@ if (Platform.OS === 'web') {
                 style={{ width: 36, height: 36 }}
               />
             ) : (
-              <View style={{ 
-                width: 36, 
-                height: 36, 
-                borderRadius: 18, 
-                backgroundColor: '#C2410C', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
+              <View style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: '#C2410C',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}>
                 <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>
                   {getInitials()}
@@ -122,7 +129,12 @@ if (Platform.OS === 'web') {
       <View style={{ position: 'relative' }}>
         <Pressable
           className="mr-4 p-2"
-          onPress={() => setSettingsVisible(!settingsVisible)}
+          onPress={() => {
+            if (!settingsVisible) {
+              posthog.capture('nav_menu_opened')
+            }
+            setSettingsVisible(!settingsVisible)
+          }}
         >
           <Avatar
             image={profileImage || undefined}
@@ -178,6 +190,7 @@ if (Platform.OS === 'web') {
               <Pressable
                 className="flex-row items-center py-2.5 px-3 rounded-[10px]"
                 onPress={() => {
+                  posthog.capture('nav_profile_opened')
                   setSettingsVisible(false)
                   router.push('/settings')
                 }}
@@ -192,6 +205,7 @@ if (Platform.OS === 'web') {
               <Pressable
                 className="flex-row items-center py-2.5 px-3 rounded-[10px]"
                 onPress={() => {
+                  posthog.capture('nav_settings_opened')
                   setSettingsVisible(false)
                   router.push('/settings/settings')
                 }}

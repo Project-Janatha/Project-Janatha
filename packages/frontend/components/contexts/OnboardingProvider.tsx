@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from 'react'
 import { router } from 'expo-router'
 import { useUser } from './UserContext'
+import { usePostHog } from 'posthog-react-native'
 
 interface OnboardingContextType {
   currentStep: number
@@ -30,6 +31,7 @@ export default function OnboardingProvider({ children }: { children: React.React
   const { user, setUser, authenticatedFetch } = useUser()
   const [currentStep, setCurrentStep] = useState(1)
   const totalSteps = 5 // Total form steps (not including Complete screen)
+  const posthog = usePostHog()
 
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -41,6 +43,7 @@ export default function OnboardingProvider({ children }: { children: React.React
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const goToNextStep = () => {
+    posthog.capture('onboarding_step_completed', { step: currentStep })
     // Allow incrementing past totalSteps to show Complete screen
     setCurrentStep(currentStep + 1)
   }
@@ -78,7 +81,9 @@ export default function OnboardingProvider({ children }: { children: React.React
       const data = await response.json()
       setUser(data.user)
       router.replace('/')
+      posthog.capture('onboarding_completed')
     } catch (error: any) {
+      posthog.capture('onboarding_failed', { error: error.message })
       setSubmitError(error.message || 'Something went wrong. Please try again.')
     } finally {
       setIsSubmitting(false)
