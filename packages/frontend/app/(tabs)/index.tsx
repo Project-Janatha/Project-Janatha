@@ -149,6 +149,21 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
   )
 }
 
+// ─── Center helpers ─────────────────────────────────────
+
+function extractCityState(address?: string): string | null {
+  if (!address) return null
+  const parts = address.split(',').map((s) => s.trim())
+  if (parts.length >= 2) {
+    const city = parts[parts.length - 2]
+    const stateZip = parts[parts.length - 1]
+    const stateMatch = stateZip.match(/^([A-Za-z\s]+)/)
+    const state = stateMatch ? stateMatch[1].trim() : stateZip
+    return `${city}, ${state}`
+  }
+  return null
+}
+
 // ─── Center Item ────────────────────────────────────────
 
 function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () => void }) {
@@ -175,7 +190,7 @@ function CenterItem({ center, onPress }: { center: DiscoverCenter; onPress: () =
           {center.isMember && <Badge label="Member" variant="member" />}
         </View>
         <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm">
-          Center{center.distanceMi != null ? ` · ${center.distanceMi} mi` : ''}
+          {extractCityState(center.address) || 'Center'}{center.distanceMi != null ? ` · ${center.distanceMi} mi` : ''}
         </Text>
         {center.eventCount != null && center.eventCount > 0 && (
           <Text className="text-primary font-inter text-xs mt-0.5">
