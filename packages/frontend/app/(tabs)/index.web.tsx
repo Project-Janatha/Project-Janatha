@@ -707,6 +707,9 @@ export default function DiscoverScreenWeb() {
   const { items, filteredPoints, loading, allEvents, allCenters, refresh, updateEventStatus } =
     useDiscoverData(activeFilter, searchQuery, user?.id)
 
+  // Get user's center for map initial location
+  const { center: userCenter } = useCenterDetail(user?.centerID || '')
+
   useFocusEffect(
     useCallback(() => {
       refresh()
@@ -849,6 +852,7 @@ export default function DiscoverScreenWeb() {
             }
           >
             <Map
+              initialCenter={userCenter?.latitude && userCenter?.longitude ? [userCenter.latitude, userCenter.longitude] : undefined}
               points={filteredPoints}
               onPointPress={handlePointPress}
               onPointHover={handlePointHover}

@@ -25,9 +25,6 @@ function standardizeName(name, city, state) {
   // Leave "Chinmayam" as is
   if (name.toLowerCase().includes('chinmayam')) return name
 
-  // Piercy = Saandeepany
-  if (city === 'Piercy') return 'Chinmaya Saandeepany'
-
   // Already starts with Chinmaya or Chinmaya Mission
   if (
     name.toLowerCase().startsWith('chinmaya') ||

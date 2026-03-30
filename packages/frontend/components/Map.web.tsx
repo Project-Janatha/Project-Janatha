@@ -13,6 +13,7 @@ import React, { useState, useCallback, memo, useRef, useMemo, useEffect } from '
 import Map, { Marker, MapRef, AttributionControl } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useThemeContext } from './contexts'
+import { getLocationAccess, getCurrentPosition } from '../utils/locationServices'
 
 // Type definitions
 export interface MapPoint {
@@ -184,14 +185,35 @@ const MapComponent = memo<MapProps>(
     // Disable cooperative gestures on mobile so pinch-to-zoom works
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-    const center = initialCenter
+    const defaultCenter = initialCenter
       ? { longitude: initialCenter[1], latitude: initialCenter[0] }
       : { longitude: DEFAULT_CENTER.longitude, latitude: DEFAULT_CENTER.latitude }
 
     const [viewState, setViewState] = useState({
-      ...center,
+      ...defaultCenter,
       zoom: initialZoom,
     })
+
+    useEffect(() => {
+      const storedLocation = localStorage.getItem('userLocation')
+      if (storedLocation) {
+        try {
+          const { latitude, longitude } = JSON.parse(storedLocation)
+          if (latitude && longitude) {
+            setViewState({ latitude, longitude, zoom: initialZoom })
+            return
+          }
+        } catch {}
+      }
+
+      getCurrentPosition().then((coords) => {
+        if (coords && coords.length === 2) {
+          const [longitude, latitude] = coords
+          setViewState({ latitude, longitude, zoom: initialZoom })
+          localStorage.setItem('userLocation', JSON.stringify({ latitude, longitude }))
+        }
+      })
+    }, [initialZoom])
 
     const handleMove = useCallback((evt: any) => {
       setViewState(evt.viewState)
