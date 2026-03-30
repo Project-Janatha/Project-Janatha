@@ -173,6 +173,32 @@ export async function getRole(
   return result ?? null
 }
 
+export async function getCenterAdmins(db: D1Database, centerId: string): Promise<UserRow[]> {
+  const result = await db
+    .prepare(
+      `SELECT u.* FROM users u
+       JOIN user_roles ur ON ur.user_id = u.id
+       WHERE ur.role = 'center_admin' AND ur.resource_type = 'center' AND ur.resource_id = ?1
+       ORDER BY ur.created_at DESC`
+    )
+    .bind(centerId)
+    .all<UserRow>()
+  return result.results ?? []
+}
+
+export async function getEventAdmins(db: D1Database, eventId: string): Promise<UserRow[]> {
+  const result = await db
+    .prepare(
+      `SELECT u.* FROM users u
+       JOIN user_roles ur ON ur.user_id = u.id
+       WHERE ur.role = 'event_admin' AND ur.resource_type = 'event' AND ur.resource_id = ?1
+       ORDER BY ur.created_at DESC`
+    )
+    .bind(eventId)
+    .all<UserRow>()
+  return result.results ?? []
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // CENTERS
 // ═══════════════════════════════════════════════════════════════════════
