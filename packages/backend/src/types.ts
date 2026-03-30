@@ -122,6 +122,16 @@ export interface UserApiResponse {
   updatedAt: string
 }
 
+export interface RoleApiResponse {
+  id: string
+  userID: string
+  role: 'center_admin' | 'event_admin'
+  resourceType: 'center' | 'event'
+  resourceID: string
+  grantedBy: string | null
+  createdAt: string
+}
+
 export interface CenterApiResponse {
   centerID: string
   name: string
