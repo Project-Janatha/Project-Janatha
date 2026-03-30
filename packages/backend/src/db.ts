@@ -9,6 +9,7 @@
  */
 import type {
   UserRow,
+  UserRoleRow,
   CenterRow,
   EventRow,
   EventAttendeeRow,
@@ -21,7 +22,7 @@ import type {
 
 export async function createUser(
   db: D1Database,
-  user: Pick<UserRow, 'id' | 'username' | 'password'> & Partial<UserRow>,
+  user: Pick<UserRow, 'id' | 'username' | 'password'> & Partial<UserRow>
 ): Promise<{ success: boolean; id?: string; error?: string }> {
   try {
     const now = new Date().toISOString()
@@ -31,7 +32,7 @@ export async function createUser(
           date_of_birth, phone_number, profile_image, bio, center_id, points,
           is_verified, verification_level, is_active, profile_complete,
           interests, created_at, updated_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)`,
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)`
       )
       .bind(
         user.id,
@@ -52,7 +53,7 @@ export async function createUser(
         user.profile_complete ?? 0,
         user.interests ?? null,
         now,
-        now,
+        now
       )
       .run()
     return { success: true, id: user.id }
@@ -64,10 +65,7 @@ export async function createUser(
   }
 }
 
-export async function getUserByUsername(
-  db: D1Database,
-  username: string,
-): Promise<UserRow | null> {
+export async function getUserByUsername(db: D1Database, username: string): Promise<UserRow | null> {
   const normalized = username.trim().toLowerCase()
   const result = await db
     .prepare('SELECT * FROM users WHERE username = ?1')
@@ -76,21 +74,15 @@ export async function getUserByUsername(
   return result ?? null
 }
 
-export async function getUserById(
-  db: D1Database,
-  userId: string,
-): Promise<UserRow | null> {
-  const result = await db
-    .prepare('SELECT * FROM users WHERE id = ?1')
-    .bind(userId)
-    .first<UserRow>()
+export async function getUserById(db: D1Database, userId: string): Promise<UserRow | null> {
+  const result = await db.prepare('SELECT * FROM users WHERE id = ?1').bind(userId).first<UserRow>()
   return result ?? null
 }
 
 export async function updateUser(
   db: D1Database,
   userId: string,
-  updates: Partial<Omit<UserRow, 'id' | 'created_at'>>,
+  updates: Partial<Omit<UserRow, 'id' | 'created_at'>>
 ): Promise<{ success: boolean; error?: string }> {
   const fields = Object.keys(updates).filter((k) => k !== 'id' && k !== 'created_at')
   if (fields.length === 0) return { success: true }
@@ -116,12 +108,46 @@ export async function updateUser(
 
 export async function deleteUser(
   db: D1Database,
-  userId: string,
+  userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     await db.prepare('DELETE FROM users WHERE id = ?1').bind(userId).run()
     return { success: true }
   } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Unknown error' }
+  }
+}
+// ═══════════════════════════════════════════════════════════════════════
+// USER ROLES
+// ═══════════════════════════════════════════════════════════════════════
+
+export async function createRole(
+  db: D1Database,
+  role: Pick<UserRoleRow, 'id' | 'user_id' | 'role' | 'resource_type' | 'resource_id'> &
+    Partial<UserRoleRow>
+): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const now = new Date().toISOString()
+    await db
+      .prepare(
+        `INSERT INTO user_roles (id, user_id, role, resource_type, resource_id, granted_by, created_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`
+      )
+      .bind(
+        role.id,
+        role.user_id,
+        role.role,
+        role.resource_type,
+        role.resource_id,
+        role.granted_by ?? null,
+        now
+      )
+      .run()
+    return { success: true, id: role.id }
+  } catch (err: any) {
+    if (err?.message?.includes('UNIQUE constraint failed')) {
+      return { success: false, error: 'Role already exists' }
+    }
     return { success: false, error: err?.message ?? 'Unknown error' }
   }
 }
@@ -132,14 +158,14 @@ export async function deleteUser(
 
 export async function createCenter(
   db: D1Database,
-  center: Pick<CenterRow, 'id' | 'name' | 'latitude' | 'longitude'> & Partial<CenterRow>,
+  center: Pick<CenterRow, 'id' | 'name' | 'latitude' | 'longitude'> & Partial<CenterRow>
 ): Promise<{ success: boolean; centerID?: string; error?: string }> {
   try {
     const now = new Date().toISOString()
     await db
       .prepare(
         `INSERT INTO centers (id, name, latitude, longitude, address, website, phone, image, acharya, point_of_contact, member_count, is_verified, created_at, updated_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`,
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`
       )
       .bind(
         center.id,
@@ -155,7 +181,7 @@ export async function createCenter(
         center.member_count ?? 0,
         center.is_verified ?? 0,
         now,
-        now,
+        now
       )
       .run()
     return { success: true, centerID: center.id }
@@ -167,10 +193,7 @@ export async function createCenter(
   }
 }
 
-export async function getCenterById(
-  db: D1Database,
-  centerId: string,
-): Promise<CenterRow | null> {
+export async function getCenterById(db: D1Database, centerId: string): Promise<CenterRow | null> {
   const result = await db
     .prepare('SELECT * FROM centers WHERE id = ?1')
     .bind(centerId)
@@ -186,7 +209,7 @@ export async function getAllCenters(db: D1Database): Promise<CenterRow[]> {
 export async function updateCenter(
   db: D1Database,
   centerId: string,
-  updates: Partial<Omit<CenterRow, 'id' | 'created_at'>>,
+  updates: Partial<Omit<CenterRow, 'id' | 'created_at'>>
 ): Promise<{ success: boolean; error?: string }> {
   const fields = Object.keys(updates).filter((k) => k !== 'id' && k !== 'created_at')
   if (fields.length === 0) return { success: true }
@@ -211,7 +234,7 @@ export async function updateCenter(
 
 export async function deleteCenter(
   db: D1Database,
-  centerId: string,
+  centerId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     await db.prepare('DELETE FROM centers WHERE id = ?1').bind(centerId).run()
@@ -227,8 +250,7 @@ export async function deleteCenter(
 
 export async function createEvent(
   db: D1Database,
-  event: Pick<EventRow, 'id' | 'title' | 'date' | 'latitude' | 'longitude'> &
-    Partial<EventRow>,
+  event: Pick<EventRow, 'id' | 'title' | 'date' | 'latitude' | 'longitude'> & Partial<EventRow>
 ): Promise<{ success: boolean; eventID?: string; error?: string }> {
   try {
     const now = new Date().toISOString()
@@ -237,7 +259,7 @@ export async function createEvent(
         `INSERT INTO events (id, title, description, date, latitude, longitude, address,
           center_id, tier, people_attending, point_of_contact, image, category,
           created_by, created_at, updated_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)`,
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)`
       )
       .bind(
         event.id,
@@ -255,7 +277,7 @@ export async function createEvent(
         event.category ?? null,
         event.created_by ?? null,
         now,
-        now,
+        now
       )
       .run()
     return { success: true, eventID: event.id }
@@ -264,10 +286,7 @@ export async function createEvent(
   }
 }
 
-export async function getEventById(
-  db: D1Database,
-  eventId: string,
-): Promise<EventRow | null> {
+export async function getEventById(db: D1Database, eventId: string): Promise<EventRow | null> {
   const result = await db
     .prepare('SELECT * FROM events WHERE id = ?1')
     .bind(eventId)
@@ -276,16 +295,11 @@ export async function getEventById(
 }
 
 export async function getAllEvents(db: D1Database): Promise<EventRow[]> {
-  const result = await db
-    .prepare('SELECT * FROM events ORDER BY date DESC')
-    .all<EventRow>()
+  const result = await db.prepare('SELECT * FROM events ORDER BY date DESC').all<EventRow>()
   return result.results ?? []
 }
 
-export async function getEventsByCenterId(
-  db: D1Database,
-  centerId: string,
-): Promise<EventRow[]> {
+export async function getEventsByCenterId(db: D1Database, centerId: string): Promise<EventRow[]> {
   const result = await db
     .prepare('SELECT * FROM events WHERE center_id = ?1 ORDER BY date DESC')
     .bind(centerId)
@@ -296,7 +310,7 @@ export async function getEventsByCenterId(
 export async function updateEvent(
   db: D1Database,
   eventId: string,
-  updates: Partial<Omit<EventRow, 'id' | 'created_at'>>,
+  updates: Partial<Omit<EventRow, 'id' | 'created_at'>>
 ): Promise<{ success: boolean; error?: string }> {
   const fields = Object.keys(updates).filter((k) => k !== 'id' && k !== 'created_at')
   if (fields.length === 0) return { success: true }
@@ -321,7 +335,7 @@ export async function updateEvent(
 
 export async function deleteEvent(
   db: D1Database,
-  eventId: string,
+  eventId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     await db.prepare('DELETE FROM events WHERE id = ?1').bind(eventId).run()
@@ -338,14 +352,14 @@ export async function deleteEvent(
 export async function addEventAttendee(
   db: D1Database,
   eventId: string,
-  userId: string,
+  userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const now = new Date().toISOString()
     // First ensure the record exists
     await db
       .prepare(
-        'INSERT OR IGNORE INTO event_attendees (event_id, user_id, created_at) VALUES (?1, ?2, ?3)',
+        'INSERT OR IGNORE INTO event_attendees (event_id, user_id, created_at) VALUES (?1, ?2, ?3)'
       )
       .bind(eventId, userId, now)
       .run()
@@ -355,14 +369,14 @@ export async function addEventAttendee(
       .prepare(
         `UPDATE events SET people_attending = (
           SELECT COUNT(*) FROM event_attendees WHERE event_id = ?1
-        ), updated_at = ?2 WHERE id = ?1`,
+        ), updated_at = ?2 WHERE id = ?1`
       )
       .bind(eventId, now)
       .run()
 
     // Wait briefly to ensure D1 consistency (optional, but safer in some environments)
     // Actually, in D1, consecutive await run() calls are sequential.
-    
+
     return { success: true }
   } catch (err: any) {
     return { success: false, error: err?.message ?? 'Unknown error' }
@@ -372,7 +386,7 @@ export async function addEventAttendee(
 export async function removeEventAttendee(
   db: D1Database,
   eventId: string,
-  userId: string,
+  userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const now = new Date().toISOString()
@@ -387,7 +401,7 @@ export async function removeEventAttendee(
       .prepare(
         `UPDATE events SET people_attending = (
           SELECT COUNT(*) FROM event_attendees WHERE event_id = ?1
-        ), updated_at = ?2 WHERE id = ?1`,
+        ), updated_at = ?2 WHERE id = ?1`
       )
       .bind(eventId, now)
       .run()
@@ -401,43 +415,35 @@ export async function removeEventAttendee(
 export async function isUserAttending(
   db: D1Database,
   eventId: string,
-  userId: string,
+  userId: string
 ): Promise<boolean> {
   const result = await db
-    .prepare(
-      'SELECT 1 FROM event_attendees WHERE event_id = ?1 AND user_id = ?2',
-    )
+    .prepare('SELECT 1 FROM event_attendees WHERE event_id = ?1 AND user_id = ?2')
     .bind(eventId, userId)
     .first()
   return result !== null
 }
 
-export async function getEventAttendees(
-  db: D1Database,
-  eventId: string,
-): Promise<UserRow[]> {
+export async function getEventAttendees(db: D1Database, eventId: string): Promise<UserRow[]> {
   const result = await db
     .prepare(
       `SELECT u.* FROM users u
        JOIN event_attendees ea ON ea.user_id = u.id
        WHERE ea.event_id = ?1
-       ORDER BY ea.created_at DESC`,
+       ORDER BY ea.created_at DESC`
     )
     .bind(eventId)
     .all<UserRow>()
   return result.results ?? []
 }
 
-export async function getUserEvents(
-  db: D1Database,
-  userId: string,
-): Promise<EventRow[]> {
+export async function getUserEvents(db: D1Database, userId: string): Promise<EventRow[]> {
   const result = await db
     .prepare(
       `SELECT e.* FROM events e
        JOIN event_attendees ea ON ea.event_id = e.id
        WHERE ea.user_id = ?1
-       ORDER BY e.date DESC`,
+       ORDER BY e.date DESC`
     )
     .bind(userId)
     .all<EventRow>()
@@ -451,12 +457,12 @@ export async function getUserEvents(
 export async function addEventEndorser(
   db: D1Database,
   eventId: string,
-  userId: string,
+  userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     await db
       .prepare(
-        'INSERT OR IGNORE INTO event_endorsers (event_id, user_id, created_at) VALUES (?1, ?2, ?3)',
+        'INSERT OR IGNORE INTO event_endorsers (event_id, user_id, created_at) VALUES (?1, ?2, ?3)'
       )
       .bind(eventId, userId, new Date().toISOString())
       .run()
@@ -466,16 +472,13 @@ export async function addEventEndorser(
   }
 }
 
-export async function getEventEndorsers(
-  db: D1Database,
-  eventId: string,
-): Promise<UserRow[]> {
+export async function getEventEndorsers(db: D1Database, eventId: string): Promise<UserRow[]> {
   const result = await db
     .prepare(
       `SELECT u.* FROM users u
        JOIN event_endorsers ee ON ee.user_id = u.id
        WHERE ee.event_id = ?1
-       ORDER BY ee.created_at`,
+       ORDER BY ee.created_at`
     )
     .bind(eventId)
     .all<UserRow>()
