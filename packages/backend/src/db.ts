@@ -152,6 +152,27 @@ export async function createRole(
   }
 }
 
+export async function getRolesByUserId(db: D1Database, userId: string): Promise<UserRoleRow[]> {
+  const result = await db
+    .prepare('SELECT * FROM user_roles WHERE user_id = ?1 ORDER BY created_at DESC')
+    .bind(userId)
+    .all<UserRoleRow>()
+  return result.results ?? []
+}
+
+export async function getRole(
+  db: D1Database,
+  userId: string,
+  role: string,
+  resourceId: string
+): Promise<UserRoleRow | null> {
+  const result = await db
+    .prepare('SELECT * FROM user_roles WHERE user_id = ?1 AND role = ?2 AND resource_id = ?3')
+    .bind(userId, role, resourceId)
+    .first<UserRoleRow>()
+  return result ?? null
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // CENTERS
 // ═══════════════════════════════════════════════════════════════════════
