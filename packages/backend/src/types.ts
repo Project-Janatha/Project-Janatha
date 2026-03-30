@@ -39,6 +39,16 @@ export interface UserRow {
   updated_at: string
 }
 
+export interface UserRoleRow {
+  id: string
+  user_id: string
+  role: 'center_admin' | 'event_admin'
+  resource_type: 'center' | 'event'
+  resource_id: string
+  granted_by: string | null
+  created_at: string
+}
+
 export interface CenterRow {
   id: string
   name: string
