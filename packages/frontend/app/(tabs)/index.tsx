@@ -40,6 +40,7 @@ const FILTERS: { label: DiscoverFilter }[] = [
  */
 function formatDatePill(dateStr: string): { month: string; day: string } {
   const d = new Date(dateStr + 'T00:00:00')
+  if (isNaN(d.getTime())) return { month: '', day: '' }
   const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()
   const day = String(d.getDate())
   return { month, day }
@@ -134,8 +135,7 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
           {event.isRegistered && <Badge label="Going" variant="going" />}
         </View>
         <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm">
-          {todayLabel ? 'Today' : month + ' ' + day}
-          {event.time ? ' · ' + event.time : ''}
+          {todayLabel ? 'Today · ' : ''}{event.time || ''}
         </Text>
         <View className="flex-row items-center gap-1 mt-0.5">
           <MapPin size={12} color="#E8862A" />
@@ -320,13 +320,13 @@ export default function DiscoverScreen() {
   }, [items, selectedDate])
 
   const handleFilterPress = (f: DiscoverFilter) => {
-    posthog.capture('discover_filter_changed', { filter: f })
+    posthog?.capture('discover_filter_changed', { filter: f })
     setActiveFilter(f)
     setSelectedDate(null)
   }
 
   const handlePointPress = (point: { id: string; type: 'center' | 'event' }) => {
-    posthog.capture('map_point_pressed', { type: point.type, id: point.id })
+    posthog?.capture('map_point_pressed', { type: point.type, id: point.id })
     if (point.type === 'center') {
       router.push(`/center/${point.id}`)
     } else {
@@ -399,7 +399,7 @@ export default function DiscoverScreen() {
                 onChangeText={setSearchQuery}
                 onEndEditing={() => {
                   if (searchQuery.trim()) {
-                    posthog.capture('discover_search', { query: searchQuery.trim() })
+                    posthog?.capture('discover_search', { query: searchQuery.trim() })
                   }
                 }}
               />
@@ -422,7 +422,7 @@ export default function DiscoverScreen() {
                 onSelectDate={(date) => {
                   setSelectedDate(date)
                   if (date) {
-                    posthog.capture('discover_date_selected', { date })
+                    posthog?.capture('discover_date_selected', { date })
                   }
                 }}
               />
@@ -456,7 +456,7 @@ export default function DiscoverScreen() {
                   key={`event-${item.data.id}`}
                   event={item.data as EventDisplay}
                   onPress={() => {
-                    posthog.capture('event_list_item_pressed', { eventId: item.data.id, source: 'discover' })
+                    posthog?.capture('event_list_item_pressed', { eventId: item.data.id, source: 'discover' })
                     router.push(`/events/${item.data.id}`)
                   }}
                 />
@@ -466,7 +466,7 @@ export default function DiscoverScreen() {
                   center={item.data as DiscoverCenter}
                   isMyCenter={!!user?.centerID && item.data.id === user.centerID}
                   onPress={() => {
-                    posthog.capture('center_list_item_pressed', { centerId: item.data.id, source: 'discover' })
+                    posthog?.capture('center_list_item_pressed', { centerId: item.data.id, source: 'discover' })
                     router.push(`/center/${item.data.id}`)
                   }}
                 />
