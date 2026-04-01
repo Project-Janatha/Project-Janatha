@@ -604,7 +604,9 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
     if (filter === 'Centers') {
       result = allCenters.map((c) => ({ type: 'center' as const, data: c }))
     } else if (filter === 'Going') {
-      const goingEvents = allEvents.filter((e) => e.isRegistered)
+      const goingEvents = allEvents
+        .filter((e) => e.isRegistered)
+        .sort((a, b) => b.date.localeCompare(a.date))
       const memberCenters = allCenters.filter((c) => c.isMember)
       result = [
         ...goingEvents.map((e) => ({ type: 'event' as const, data: e })),
@@ -612,8 +614,11 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
       ]
     } else {
       // All: registered events first, then others, then centers
-      const registered = allEvents.filter((e) => e.isRegistered)
-      const unregistered = allEvents.filter((e) => !e.isRegistered)
+      // Within each group, sort by date descending (upcoming first)
+      const sortByDate = (a: EventDisplay, b: EventDisplay) =>
+        b.date.localeCompare(a.date)
+      const registered = allEvents.filter((e) => e.isRegistered).sort(sortByDate)
+      const unregistered = allEvents.filter((e) => !e.isRegistered).sort(sortByDate)
 
       result = [
         ...registered.map((e) => ({ type: 'event' as const, data: e })),
@@ -651,7 +656,7 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
       longitude: c.longitude,
     }))
     const eventPoints: MapPoint[] = allEvents
-      .filter((e) => e.latitude && e.longitude)
+      .filter((e) => e.latitude != null && e.longitude != null)
       .map((e) => ({
         id: e.id,
         type: 'event' as const,

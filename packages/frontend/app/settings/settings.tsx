@@ -92,7 +92,7 @@ export default function Settings() {
             <Pressable
               className="flex-row items-center justify-between p-5 border-b border-stone-200 dark:border-stone-700 active:opacity-70"
               onPress={() => {
-                posthog.capture('privacy_policy_viewed')
+                posthog?.capture('privacy_policy_viewed')
                 router.push('/privacy')
               }}
             >
@@ -104,7 +104,7 @@ export default function Settings() {
             <Pressable
               className="flex-row items-center justify-between p-5 active:opacity-70"
               onPress={() => {
-                posthog.capture('terms_viewed')
+                posthog?.capture('terms_viewed')
                 router.push('/terms')
               }}
             >
@@ -116,7 +116,7 @@ export default function Settings() {
             <Pressable
               className="flex-row items-center justify-between p-5 active:opacity-70"
               onPress={() => {
-                posthog.capture('cookie_policy_viewed')
+                posthog?.capture('cookie_policy_viewed')
                 router.push('/cookies')
               }}
             >
@@ -169,7 +169,7 @@ export default function Settings() {
               <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: mutedTextColor }}>Permanently delete your account and all data</Text>
             </View>
             <DestructiveButton onPress={() => {
-              posthog.capture('delete_account_started')
+              posthog?.capture('delete_account_started')
               setShowDeleteModal(true)
             }}>
               Delete Account

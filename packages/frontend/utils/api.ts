@@ -370,7 +370,7 @@ export async function getUserEvents(username: string): Promise<EventData[]> {
 
 export function centersToMapPoints(centers: CenterData[]): MapPoint[] {
   return centers
-    .filter((c) => c.latitude && c.longitude)
+    .filter((c) => c.latitude != null && c.longitude != null)
     .map((c) => ({
       id: c.centerID,
       type: 'center' as const,
@@ -382,7 +382,7 @@ export function centersToMapPoints(centers: CenterData[]): MapPoint[] {
 
 export function eventsToMapPoints(events: EventData[]): MapPoint[] {
   return events
-    .filter((e) => e.latitude && e.longitude)
+    .filter((e) => e.latitude != null && e.longitude != null)
     .map((e) => ({
       id: e.eventID,
       type: 'event' as const,
@@ -394,7 +394,7 @@ export function eventsToMapPoints(events: EventData[]): MapPoint[] {
 
 export function centersToDiscoverCenters(centers: CenterData[]): DiscoverCenter[] {
   return centers
-    .filter((c) => c.latitude && c.longitude)
+    .filter((c) => c.latitude != null && c.longitude != null)
     .map((c) => ({
       id: c.centerID,
       name: c.name || 'Unknown Center',

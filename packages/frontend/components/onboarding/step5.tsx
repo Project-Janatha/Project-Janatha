@@ -1,4 +1,5 @@
-import { View, Text, Pressable, SafeAreaView } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useState } from 'react'
 import { useOnboarding } from '../contexts'
 
@@ -85,9 +86,9 @@ export default function Step4() {
           <Pressable
             onPress={handleContinue}
             disabled={!memberType}
-            className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8 transition-transform duration-150 ${
+            className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8 ${
               memberType
-                ? 'bg-primary active:bg-primary-press hover:scale-105 active:scale-95'
+                ? 'bg-primary active:bg-primary-press'
                 : 'bg-orange-300'
             }`}
           >
