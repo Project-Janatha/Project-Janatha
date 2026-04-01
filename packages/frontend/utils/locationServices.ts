@@ -10,8 +10,6 @@
 
 import { Platform } from 'react-native'
 
-const defaultLocation: [number, number] = [76.3594513732331, 32.17654435811957] // Default loc - Saandeepany [longitude, latitude]
-
 /**
  * Gets location access.
  * @return {boolean} A boolean representing if location access is present or not.
@@ -34,16 +32,16 @@ async function getLocationAccess() {
 async function getCurrentPosition() {
   if (Platform.OS === 'web') {
     // Use browser's Geolocation API
-    return new Promise<[number, number]>((resolve, reject) => {
+    return new Promise<[number, number] | []>((resolve) => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             // Return [longitude, latitude] for consistency with maps
             resolve([position.coords.longitude, position.coords.latitude])
           },
-          (error) => {
-            // Return default location on error
-            resolve(defaultLocation)
+          () => {
+            // Return empty array so callers can apply their own fallback
+            resolve([])
           },
           {
             enableHighAccuracy: true,
@@ -52,7 +50,7 @@ async function getCurrentPosition() {
           }
         )
       } else {
-        resolve(defaultLocation)
+        resolve([])
       }
     })
   } else {

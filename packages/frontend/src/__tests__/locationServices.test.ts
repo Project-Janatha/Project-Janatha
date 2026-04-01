@@ -50,11 +50,11 @@ describe('getCurrentPosition', () => {
     const { getCurrentPosition } = await import('../../utils/locationServices')
     const result = await getCurrentPosition()
 
-    // Default location is [longitude, latitude] = [76.3594513732331, 32.17654435811957]
-    expect(result).toEqual([76.3594513732331, 32.17654435811957])
+    // Returns empty array so callers can apply their own fallback
+    expect(result).toEqual([])
   })
 
-  it('should return default location when geolocation is not available', async () => {
+  it('should return empty array when geolocation is not available', async () => {
     vi.stubGlobal('navigator', {
       geolocation: undefined,
     })
@@ -62,7 +62,7 @@ describe('getCurrentPosition', () => {
     const { getCurrentPosition } = await import('../../utils/locationServices')
     const result = await getCurrentPosition()
 
-    // Default location is [longitude, latitude] = [76.3594513732331, 32.17654435811957]
-    expect(result).toEqual([76.3594513732331, 32.17654435811957])
+    // Returns empty array so callers can apply their own fallback
+    expect(result).toEqual([])
   })
 })

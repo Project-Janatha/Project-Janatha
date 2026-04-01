@@ -348,7 +348,7 @@ export default function DiscoverScreen() {
             </View>
           }
         >
-          <Map points={filteredPoints} onPointPress={handlePointPress} />
+          <Map points={filteredPoints} onPointPress={handlePointPress} userCenterID={user?.centerID} bottomPadding={90} />
         </Suspense>
       </View>
 
