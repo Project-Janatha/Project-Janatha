@@ -34,6 +34,10 @@ export interface MapProps {
   initialCenter?: [number, number]
   initialZoom?: number
   showUserLocation?: boolean
+  /** ID of the user's home center — map falls back to this center's location when device location is unavailable */
+  userCenterID?: string | null
+  /** Extra bottom padding so controls stay above a bottom sheet (native only, ignored on web) */
+  bottomPadding?: number
 }
 
 // Default center - San Francisco Bay Area
@@ -89,8 +93,8 @@ const CustomControls = memo<CustomControlsProps>(({ mapRef, isDark }) => {
 
   return (
     <>
-      {/* Zoom controls - bottom right */}
-      <div className="absolute bottom-[52px] right-2.5 z-[1000] pointer-events-auto">
+      {/* Zoom controls - top right on mobile, bottom right on desktop */}
+      <div className="absolute top-2.5 md:top-auto md:bottom-[52px] right-2.5 z-[1000] pointer-events-auto">
         <div className="flex flex-col gap-0.5">
           <button
             className={`w-9 h-9 border-none rounded-t cursor-pointer flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-all duration-200 outline-none
@@ -136,8 +140,8 @@ const CustomControls = memo<CustomControlsProps>(({ mapRef, isDark }) => {
         </div>
       </div>
 
-      {/* Location button - bottom right */}
-      <div className="absolute bottom-2.5 right-2.5 z-[1000] pointer-events-auto">
+      {/* Location button - below zoom on mobile, bottom right on desktop */}
+      <div className="absolute top-[92px] md:top-auto md:bottom-2.5 right-2.5 z-[1000] pointer-events-auto">
         <button
           className={`w-9 h-9 border-none rounded cursor-pointer flex items-center justify-center shadow-[0_2px_6px_rgba(0,0,0,0.3)] transition-all duration-200 outline-none
             ${isDark ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-700'}
@@ -178,9 +182,12 @@ const MapComponent = memo<MapProps>(
     initialCenter,
     initialZoom = DEFAULT_ZOOM,
     showUserLocation = false,
+    userCenterID,
   }) => {
     const { isDark } = useThemeContext()
     const mapRef = useRef<MapRef>(null)
+    const pointsRef = useRef(points)
+    pointsRef.current = points
 
     // Disable cooperative gestures on mobile so pinch-to-zoom works
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
@@ -199,21 +206,43 @@ const MapComponent = memo<MapProps>(
       if (storedLocation) {
         try {
           const { latitude, longitude } = JSON.parse(storedLocation)
-          if (latitude && longitude) {
+          // Reject stale default (Saandeepany, India) that was cached before the fix
+          const isOldDefault = Math.abs(latitude - 32.1765) < 0.01 && Math.abs(longitude - 76.3595) < 0.01
+          if (latitude && longitude && !isOldDefault) {
             setViewState({ latitude, longitude, zoom: initialZoom })
             return
           }
+          if (isOldDefault) localStorage.removeItem('userLocation')
         } catch {}
+      }
+
+      const fallbackToCenter = () => {
+        const homeCenter = userCenterID
+          ? pointsRef.current.find((p) => p.id === userCenterID && p.type === 'center')
+          : undefined
+        if (homeCenter && isValidCoordinate(homeCenter.latitude, homeCenter.longitude)) {
+          setViewState({
+            latitude: homeCenter.latitude,
+            longitude: homeCenter.longitude,
+            zoom: initialZoom,
+          })
+        }
+        // Otherwise keep the existing default viewState
       }
 
       getCurrentPosition().then((coords) => {
         if (coords && coords.length === 2) {
           const [longitude, latitude] = coords
-          setViewState({ latitude, longitude, zoom: initialZoom })
-          localStorage.setItem('userLocation', JSON.stringify({ latitude, longitude }))
+          if (isValidCoordinate(latitude, longitude)) {
+            setViewState({ latitude, longitude, zoom: initialZoom })
+            localStorage.setItem('userLocation', JSON.stringify({ latitude, longitude }))
+            return
+          }
         }
+        // Location unavailable or denied — fall back to user's home center
+        fallbackToCenter()
       })
-    }, [initialZoom])
+    }, [initialZoom, userCenterID])
 
     const handleMove = useCallback((evt: any) => {
       setViewState(evt.viewState)

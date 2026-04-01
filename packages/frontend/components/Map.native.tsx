@@ -1,27 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback, memo } from 'react'
-import { StyleSheet, View, ActivityIndicator, Platform } from 'react-native'
+import { StyleSheet, View, Platform } from 'react-native'
 import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps'
 import { getCurrentPosition } from '../utils'
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  map: {
-    width: '100%',
-    height: '100%',
-  },
-  loadingContainer: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f3f4f6',
-  },
-})
 
 export interface MapPoint {
   id: string
@@ -39,6 +19,10 @@ export interface MapProps {
   onPointClick?: (point: MapPoint, x?: number, y?: number) => void
   initialRegion?: Region
   showUserLocation?: boolean
+  /** ID of the user's home center — map falls back to this center's location when device location is unavailable */
+  userCenterID?: string | null
+  /** Extra bottom padding so controls stay above a bottom sheet (native only, ignored on web) */
+  bottomPadding?: number
 }
 
 const DEFAULT_REGION: Region = {
@@ -47,6 +31,16 @@ const DEFAULT_REGION: Region = {
   latitudeDelta: 0.5,
   longitudeDelta: 0.5,
 }
+
+const isValidCoord = (lat: number, lng: number): boolean =>
+  typeof lat === 'number' &&
+  typeof lng === 'number' &&
+  !isNaN(lat) &&
+  !isNaN(lng) &&
+  lat >= -90 &&
+  lat <= 90 &&
+  lng >= -180 &&
+  lng <= 180
 
 const PIN_COLORS = {
   center: '#dc2626',
@@ -60,61 +54,46 @@ const Map = memo<MapProps>(function Map({
   onPointClick,
   initialRegion,
   showUserLocation = true,
+  userCenterID,
+  bottomPadding = 0,
 }) {
   const mapRef = useRef<MapView>(null)
-  const [region, setRegion] = useState<Region | null>(initialRegion || null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
+  const pointsRef = useRef(points)
+  pointsRef.current = points
 
+  // Compute initial region synchronously — user's center > SF default
+  const computeInitialRegion = (): Region => {
+    if (initialRegion) return initialRegion
+    const homeCenter = userCenterID
+      ? points.find((p) => p.id === userCenterID && p.type === 'center')
+      : undefined
+    if (homeCenter && isValidCoord(homeCenter.latitude, homeCenter.longitude)) {
+      return { latitude: homeCenter.latitude, longitude: homeCenter.longitude, latitudeDelta: 0.2, longitudeDelta: 0.2 }
+    }
+    return DEFAULT_REGION
+  }
+
+  const [region] = useState<Region>(computeInitialRegion)
+
+  // Async: try to get device location and fly to it
   useEffect(() => {
     let mounted = true
 
-    const loadLocation = async () => {
-      try {
-        const position = await getCurrentPosition()
+    getCurrentPosition()
+      .then((position) => {
+        if (!mounted || !position || !Array.isArray(position) || position.length !== 2) return
+        const [longitude, latitude] = position
+        if (!isValidCoord(latitude, longitude)) return
 
-        if (mounted && position && Array.isArray(position) && position.length === 2) {
-          const [longitude, latitude] = position
+        mapRef.current?.animateToRegion(
+          { latitude, longitude, latitudeDelta: 0.1, longitudeDelta: 0.1 },
+          500
+        )
+      })
+      .catch(() => {})
 
-          if (
-            typeof latitude === 'number' &&
-            typeof longitude === 'number' &&
-            !isNaN(latitude) &&
-            !isNaN(longitude) &&
-            latitude >= -90 &&
-            latitude <= 90 &&
-            longitude >= -180 &&
-            longitude <= 180
-          ) {
-            setUserLocation([longitude, latitude])
-
-            if (!initialRegion) {
-              setRegion({
-                latitude,
-                longitude,
-                latitudeDelta: 0.1,
-                longitudeDelta: 0.1,
-              })
-            }
-          }
-        }
-      } catch (error) {
-        if (mounted && !initialRegion) {
-          setRegion(DEFAULT_REGION)
-        }
-      } finally {
-        if (mounted) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    loadLocation()
-
-    return () => {
-      mounted = false
-    }
-  }, [initialRegion])
+    return () => { mounted = false }
+  }, [])
 
   const handleMarkerPress = useCallback(
     (point: MapPoint) => {
@@ -129,23 +108,13 @@ const Map = memo<MapProps>(function Map({
     return PIN_COLORS[type] || PIN_COLORS.event
   }, [])
 
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#dc2626" />
-      </View>
-    )
-  }
-
-  const effectiveRegion = region || DEFAULT_REGION
-
   return (
     <View style={styles.container}>
       <MapView
         ref={mapRef}
         style={styles.map}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-        initialRegion={effectiveRegion}
+        initialRegion={region}
         showsUserLocation={showUserLocation}
         showsMyLocationButton={true}
         showsCompass={true}
@@ -161,39 +130,36 @@ const Map = memo<MapProps>(function Map({
         toolbarEnabled={false}
         minZoomLevel={2}
         maxZoomLevel={20}
+        mapPadding={{ top: 0, right: 0, bottom: bottomPadding, left: 0 }}
       >
-        {points.map((point) => {
-          if (
-            typeof point.latitude !== 'number' ||
-            typeof point.longitude !== 'number' ||
-            isNaN(point.latitude) ||
-            isNaN(point.longitude) ||
-            point.latitude < -90 ||
-            point.latitude > 90 ||
-            point.longitude < -180 ||
-            point.longitude > 180
-          ) {
-            return null
-          }
-
-          return (
+        {points
+          .filter((p) => isValidCoord(p.latitude, p.longitude))
+          .map((point) => (
             <Marker
               key={point.id}
-              coordinate={{
-                latitude: point.latitude,
-                longitude: point.longitude,
-              }}
+              coordinate={{ latitude: point.latitude, longitude: point.longitude }}
               title={point.name}
               description={point.description || point.type}
               pinColor={getPinColor(point.type)}
               onPress={() => handleMarkerPress(point)}
               identifier={point.id}
             />
-          )
-        })}
+          ))}
       </MapView>
     </View>
   )
 })
 
 export default Map
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+})

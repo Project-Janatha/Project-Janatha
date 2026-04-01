@@ -533,7 +533,7 @@ function MobileDiscoverFallback() {
             </View>
           }
         >
-          <Map points={filteredPoints} onPointPress={handlePointPress} />
+          <Map points={filteredPoints} onPointPress={handlePointPress} userCenterID={user?.centerID} />
         </Suspense>
       </View>
 
@@ -857,6 +857,7 @@ export default function DiscoverScreenWeb() {
               onPointHover={handlePointHover}
               onPointClick={handlePointClick}
               onMapMove={handleMapMove}
+              userCenterID={user?.centerID}
             />
           </Suspense>
 
