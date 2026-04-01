@@ -58,8 +58,6 @@ const Map = memo<MapProps>(function Map({
   bottomPadding = 0,
 }) {
   const mapRef = useRef<MapView>(null)
-  const pointsRef = useRef(points)
-  pointsRef.current = points
 
   // Compute initial region synchronously — user's center > SF default
   const computeInitialRegion = (): Region => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Linking, useWindowDimensions } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ChevronLeft, Share2, MapPin, Globe, Phone, User } from 'lucide-react-native'
@@ -13,13 +13,15 @@ export default function CenterDetailWeb() {
   const { width } = useWindowDimensions()
   const isMobile = width < 768
 
+  const initiallyMobile = useRef(isMobile)
+
   useEffect(() => {
-    if (!isMobile && id) {
+    if (!initiallyMobile.current && id) {
       router.replace(`/?detail=center&id=${id}`)
     } else if (!id) {
       router.replace('/')
     }
-  }, [id, router, isMobile])
+  }, [id, router])
 
   if (!isMobile) {
     return (
