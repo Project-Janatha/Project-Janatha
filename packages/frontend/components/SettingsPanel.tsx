@@ -187,7 +187,7 @@ function SettingsPanel({ visible, onClose, onLogout }) {
             className="flex-row items-center mb-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
             onPress={() => {
               onClose()
-              router.push('/admin')
+              router.push('/admin' as any)
             }}
           >
             <Shield size={16} color="#E8862A" className="mr-3" />

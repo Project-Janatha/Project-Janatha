@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { View, Text } from 'react-native'
 import { useUser, useThemeContext } from '../components/contexts'
 import { router } from 'expo-router'
@@ -13,8 +13,14 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>('Centers')
 
   const isSuperAdmin = !!user && (user.verificationLevel ?? 0) >= 107
+
+  useEffect(() => {
+    if (!loading && !isSuperAdmin) {
+      router.replace('/(tabs)')
+    }
+  }, [loading, isSuperAdmin])
+
   if (!loading && !isSuperAdmin) {
-    router.replace('/(tabs)')
     return null
   }
 
