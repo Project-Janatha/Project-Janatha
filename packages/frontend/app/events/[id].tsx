@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Alert } from 'react-native'
+import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Alert, Share } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
@@ -188,7 +188,7 @@ function HeaderBar({
         </Pressable>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          {eventId && (
+          {eventId && !isPast && isAdmin && (
             <Pressable
               onPress={() => {
                 onEdit?.()
@@ -207,7 +207,11 @@ function HeaderBar({
           )}
           {!isPast && (
             <Pressable
-              onPress={() => {}}
+              onPress={() => {
+                Share.share({
+                  message: `Check out ${title} on Chinmaya Janata!`,
+                }).catch(() => {})
+              }}
               style={{
                 padding: 8,
                 minHeight: 44,
@@ -465,7 +469,8 @@ function ActionBar({
 // ── Main component ───────────────────────────────────────────────────────
 
 export default function EventDetailPage() {
-  const { id } = useLocalSearchParams()
+  const { id: rawId } = useLocalSearchParams()
+  const id = Array.isArray(rawId) ? rawId[0] : rawId
   const router = useRouter()
   const posthog = usePostHog()
   const userContext = useUser()
@@ -487,27 +492,27 @@ export default function EventDetailPage() {
   useEffect(() => {
     if (!loading && event && !hasTrackedView.current) {
       hasTrackedView.current = true
-      posthog.capture('event_viewed', { eventId: id, title: event.title, isPast })
+      posthog?.capture('event_viewed', { eventId: id, title: event.title, isPast })
     }
   }, [loading, event, id, isPast, posthog])
 
   const handleTabChange = (newTab: string) => {
-    posthog.capture('event_tab_changed', { tab: newTab, eventId: id })
+    posthog?.capture('event_tab_changed', { tab: newTab, eventId: id })
     setActiveTab(newTab)
   }
 
   const handleEditPress = () => {
-    posthog.capture('event_edit_opened', { eventId: id })
+    posthog?.capture('event_edit_opened', { eventId: id })
   }
 
   const handleToggleRegistration = async () => {
     if (!user?.username) return
     try {
-      posthog.capture(event?.isRegistered ? 'event_unregistered' : 'event_registered', { eventId: id })
+      posthog?.capture(event?.isRegistered ? 'event_unregistered' : 'event_registered', { eventId: id })
       await toggleRegistration(user.username)
     } catch (err: any) {
       const message = err?.message || ''
-      posthog.capture('event_registration_failed', { eventId: id, error: message })
+      posthog?.capture('event_registration_failed', { eventId: id, error: message })
       if (message.includes('Already registered')) {
         Alert.alert('Already Registered', 'You are already registered for this event.')
       } else if (message.includes('Not registered')) {
@@ -567,7 +572,7 @@ export default function EventDetailPage() {
 
   // ── Registered state (with tabs) ─────────────────────────────────────
 
-  if (loading) {
+  if (isRegistered) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
         <HeaderBar
@@ -619,7 +624,7 @@ export default function EventDetailPage() {
                   marginBottom: 12,
                 }}
               >
-                {event.attendees} people attending
+                {event.attendees} {event.attendees === 1 ? 'person' : 'people'} attending
               </Text>
               {attendees.length > 0 ? (
                 attendees.map((attendee, index) => (
@@ -742,8 +747,8 @@ export default function EventDetailPage() {
         }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Attended banner (past only) */}
-        {isPast && <AttendedBanner count={event.attendees} colors={colors} />}
+        {/* Attended banner (past + user was registered) */}
+        {isPast && isRegistered && <AttendedBanner count={event.attendees} colors={colors} />}
 
         {/* Date & time */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -761,6 +766,7 @@ export default function EventDetailPage() {
       </ScrollView>
 
       <ActionBar
+        isRegistered={isRegistered}
         isPast={isPast}
         onToggle={handleToggleRegistration}
         isToggling={isToggling}

@@ -37,7 +37,7 @@ export function EventCard({ event, onPress, variant = 'compact' }: EventCardProp
             {event.title}
           </Text>
           <Text className="text-content dark:text-content-dark text-base font-medium mt-2">
-            {event.attendees} people attending
+            {event.attendees} {event.attendees === 1 ? 'person' : 'people'} attending
           </Text>
         </View>
 
@@ -70,7 +70,7 @@ export function EventCard({ event, onPress, variant = 'compact' }: EventCardProp
           {event.title}
         </Text>
         <Text className="text-content dark:text-content-dark text-sm mt-1">
-          {event.attendees} people
+          {event.attendees} {event.attendees === 1 ? 'person' : 'people'}
         </Text>
       </View>
 

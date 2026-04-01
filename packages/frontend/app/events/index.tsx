@@ -15,7 +15,7 @@ export default function EventsListPage() {
   const posthog = usePostHog()
 
   useEffect(() => {
-    posthog.capture('event_list_viewed')
+    posthog?.capture('event_list_viewed')
   }, [])
 
   const handleRefresh = async () => {
@@ -25,7 +25,7 @@ export default function EventsListPage() {
   }
 
   const handleEventPress = (event: EventDisplay) => {
-    posthog.capture('event_list_item_pressed', { eventId: event.id })
+    posthog?.capture('event_list_item_pressed', { eventId: event.id })
     router.push(`/events/${event.id}`)
   }
 
@@ -60,7 +60,7 @@ export default function EventsListPage() {
                     {event.title}
                   </Text>
                   <Text className="text-content dark:text-content-dark text-sm mt-1">
-                    {event.attendees} people
+                    {event.attendees} {event.attendees === 1 ? 'person' : 'people'}
                   </Text>
                 </View>
               </Card>
