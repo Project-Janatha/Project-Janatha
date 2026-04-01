@@ -110,6 +110,20 @@ export const useThemeContext = () => {
     }
   }, [])
 
+  // React to system appearance changes when in 'system' mode
+  useEffect(() => {
+    if (themePreference === 'system' && systemScheme) {
+      setColorScheme(systemScheme as 'light' | 'dark')
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        if (systemScheme === 'dark') {
+          document.documentElement.classList.add('dark')
+        } else {
+          document.documentElement.classList.remove('dark')
+        }
+      }
+    }
+  }, [themePreference, systemScheme, setColorScheme])
+
   const setThemePreference = useCallback(
     async (mode: 'light' | 'dark' | 'system') => {
       try {

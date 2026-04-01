@@ -100,6 +100,9 @@ export default function Profile() {
   const draftName = useRef(profileData.name)
   const draftBio = useRef(profileData.bio)
   const draftBirthday = useRef<Date | null>(profileData.birthday)
+  const savedInterests = useRef<string[]>(profileData.interests)
+  const savedProfileImage = useRef<string | null>(profileData.profileImage)
+  const savedCenterID = useRef<string | null>(profileData.centerID)
 
   const [cropperImage, setCropperImage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -195,7 +198,7 @@ export default function Profile() {
               const userLon = parseFloat(data[0].lon)
 
               const centersWithDistance = allCenters
-                .filter((c) => c.latitude && c.longitude)
+                .filter((c) => c.latitude != null && c.longitude != null)
                 .map((center) => ({
                   ...center,
                   distance: Math.sqrt(
@@ -259,6 +262,9 @@ export default function Profile() {
     draftName.current = profileData.name
     draftBio.current = profileData.bio
     draftBirthday.current = profileData.birthday
+    savedInterests.current = [...profileData.interests]
+    savedProfileImage.current = profileData.profileImage
+    savedCenterID.current = profileData.centerID
     setIsEditing(true)
   }
 
@@ -269,6 +275,13 @@ export default function Profile() {
       if (bioRef.current) bioRef.current.value = profileData.bio
     }
     draftBirthday.current = profileData.birthday
+    setProfileData((prev) => ({
+      ...prev,
+      interests: savedInterests.current,
+      profileImage: savedProfileImage.current,
+      centerID: savedCenterID.current,
+    }))
+    setProfileImageChanged(false)
     setErrors({})
     setIsEditing(false)
   }
@@ -741,6 +754,28 @@ export default function Profile() {
             >
               {errors.form || errors.profileImage}
             </Text>
+          )}
+
+          {!isEditing && (
+            <Pressable
+              onPress={handleEdit}
+              style={{
+                marginTop: 16,
+                paddingVertical: 14,
+                borderRadius: 12,
+                minHeight: 48,
+                backgroundColor: isDark ? '#F5F5F5' : '#1C1917',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'row',
+                gap: 8,
+              }}
+            >
+              <Pencil size={16} color={isDark ? '#1C1917' : '#FFFFFF'} />
+              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: isDark ? '#1C1917' : '#FFFFFF' }}>
+                Edit Profile
+              </Text>
+            </Pressable>
           )}
 
           {isEditing && (
