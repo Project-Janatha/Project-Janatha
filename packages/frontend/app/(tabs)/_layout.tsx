@@ -24,7 +24,7 @@ export default function TabLayout() {
   const posthog = usePostHog()
 
   const handleLogout = async () => {
-    posthog.capture('nav_logout')
+    posthog?.capture('nav_logout')
     await logout()
     router.replace('/auth')
   }
@@ -71,7 +71,7 @@ if (Platform.OS === 'web') {
               className="px-3 py-2 rounded-lg flex-row items-center"
               style={{ borderWidth: 1.5, borderColor: '#E8862A', backgroundColor: 'transparent', gap: 6 }}
               onPress={() => {
-                posthog.capture('nav_create_event')
+                posthog?.capture('nav_create_event')
                 if (typeof window !== 'undefined') {
                   window.dispatchEvent(new CustomEvent('open-event-form'))
                 }
@@ -87,7 +87,7 @@ if (Platform.OS === 'web') {
             className="mr-4 rounded-full overflow-hidden"
             style={{ width: 36, height: 36 }}
             onPress={() => {
-              posthog.capture('nav_menu_opened')
+              posthog?.capture('nav_menu_opened')
               setSettingsVisible(true)
             }}
           >
@@ -131,7 +131,7 @@ if (Platform.OS === 'web') {
           className="mr-4 p-2"
           onPress={() => {
             if (!settingsVisible) {
-              posthog.capture('nav_menu_opened')
+              posthog?.capture('nav_menu_opened')
             }
             setSettingsVisible(!settingsVisible)
           }}
@@ -190,7 +190,7 @@ if (Platform.OS === 'web') {
               <Pressable
                 className="flex-row items-center py-2.5 px-3 rounded-[10px]"
                 onPress={() => {
-                  posthog.capture('nav_profile_opened')
+                  posthog?.capture('nav_profile_opened')
                   setSettingsVisible(false)
                   router.push('/settings')
                 }}
@@ -205,7 +205,7 @@ if (Platform.OS === 'web') {
               <Pressable
                 className="flex-row items-center py-2.5 px-3 rounded-[10px]"
                 onPress={() => {
-                  posthog.capture('nav_settings_opened')
+                  posthog?.capture('nav_settings_opened')
                   setSettingsVisible(false)
                   router.push('/settings/settings')
                 }}

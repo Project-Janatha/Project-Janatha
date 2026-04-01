@@ -85,7 +85,7 @@ export default function Step3() {
 
       // Calculate distances for all centers and sort by distance
       const centersWithDistance: CenterWithDistance[] = allCenters
-        .filter((c) => c.latitude && c.longitude)
+        .filter((c) => c.latitude != null && c.longitude != null)
         .map((center) => ({
           id: center.centerID,
           name: center.name,
@@ -138,6 +138,7 @@ export default function Step3() {
   const handleSelectCenter = (center: CenterWithDistance) => {
     setSelectedCenter(center)
     setCenterID(center.id)
+    setShowSuggestions(false)
   }
 
   const handleContinue = () => {
@@ -202,7 +203,7 @@ export default function Step3() {
                       <Pressable
                         key={center.id}
                         onPress={() => handleSelectCenter(center)}
-                        className={`px-5 py-4 hover:scale-[1.02] active:scale-95 transition-transform duration-150 ${
+                        className={`px-5 py-4 ${
                           index !== nearbyCenters.length - 1
                             ? 'border-b border-stone-200 dark:border-stone-700'
                             : ''
@@ -261,9 +262,9 @@ export default function Step3() {
           <Pressable
             onPress={handleContinue}
             disabled={!selectedCenter}
-            className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8 transition-transform duration-150 ${
+            className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8 ${
               selectedCenter
-                ? 'bg-primary active:bg-primary-press hover:scale-105 active:scale-95'
+                ? 'bg-primary active:bg-primary-press'
                 : 'bg-orange-300'
             }`}
           >

@@ -138,8 +138,7 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
           {event.isRegistered && <Badge label="Going" variant="going" />}
         </View>
         <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm">
-          {event.date && isToday(event.date) ? 'Today' : month + ' ' + day}
-          {event.time ? ' · ' + event.time : ''}
+          {event.date && isToday(event.date) ? 'Today · ' : ''}{event.time || ''}
         </Text>
         <View className="flex-row items-center gap-1.5">
           <MapPin size={12} color="#E8862A" />
@@ -335,7 +334,7 @@ function EventPanelInner({
       onClose={onClose}
       onToggleRegistration={handleToggleRegistration}
       isToggling={isToggling}
-      onEdit={canEdit ? onEdit : undefined}
+      onEdit={canEdit && !isPast ? onEdit : undefined}
     />
   )
 }
