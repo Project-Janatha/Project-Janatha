@@ -328,7 +328,7 @@ function AvatarStack() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       {TEAM.map((person, i) => (
-        <div key={person.name} className="avatar-wrap" style={{ marginLeft: i > 0 ? -10 : 0, cursor: 'default' }}>
+        <div key={person.name} className="avatar-wrap" style={{ marginLeft: i > 0 ? -10 : 0, cursor: 'default', zIndex: TEAM.length - i }}>
           <div className="avatar-tooltip">{person.name}</div>
           {person.image ? (
             <Image
@@ -527,8 +527,8 @@ export function Hero() {
           </Text>
         </View>
 
-        {/* Horizontal scrolling card row on mobile */}
-        {isMobile && <HorizontalScrollRow />}
+        {/* Horizontal scrolling card row on mobile — hidden for now */}
+        {/* {isMobile && <HorizontalScrollRow />} */}
       </View>
 
       {/* Infinite scrolling card columns -- rotated (hidden on mobile) */}
