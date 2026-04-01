@@ -449,22 +449,21 @@ describe('centersToMapPoints', () => {
     expect(result[0]).toEqual({ id: '1', type: 'center', name: 'A', latitude: 37.0, longitude: -122.0 })
   })
 
-  it('filters out entries without latitude', () => {
+  it('keeps entries with latitude=0 (valid coordinate)', () => {
     const centers = [
       { centerID: '1', name: 'A', latitude: 0, longitude: -122.0, address: null, memberCount: 10, isVerified: true },
       { centerID: '2', name: 'B', latitude: 38.0, longitude: -121.0, address: null, memberCount: 5, isVerified: false },
     ]
     const result = api.centersToMapPoints(centers)
-    expect(result).toHaveLength(1)
-    expect(result[0].id).toBe('2')
+    expect(result).toHaveLength(2)
   })
 
-  it('filters out entries without longitude', () => {
+  it('keeps entries with longitude=0 (valid coordinate)', () => {
     const centers = [
       { centerID: '1', name: 'A', latitude: 37.0, longitude: 0, address: null, memberCount: 10, isVerified: true },
     ]
     const result = api.centersToMapPoints(centers)
-    expect(result).toHaveLength(0)
+    expect(result).toHaveLength(1)
   })
 
   it('uses "Unknown Center" when name is empty', () => {
@@ -497,13 +496,13 @@ describe('eventsToMapPoints', () => {
     expect(result[0]).toEqual({ id: 'e1', type: 'event', name: 'Ev1', latitude: 37.0, longitude: -122.0 })
   })
 
-  it('filters out entries without lat/lng', () => {
+  it('keeps entries with lat/lng=0 (valid coordinates)', () => {
     const events = [
       { eventID: 'e1', title: 'Ev1', description: '', date: '2025-01-01', latitude: 0, longitude: -122.0, address: null, centerID: null, tier: 1, peopleAttending: 0, pointOfContact: null, image: null, category: null },
       { eventID: 'e2', title: 'Ev2', description: '', date: '2025-01-01', latitude: 37.0, longitude: 0, address: null, centerID: null, tier: 1, peopleAttending: 0, pointOfContact: null, image: null, category: null },
     ]
     const result = api.eventsToMapPoints(events)
-    expect(result).toHaveLength(0)
+    expect(result).toHaveLength(2)
   })
 
   it('uses description as fallback when title is empty', () => {
@@ -545,14 +544,13 @@ describe('centersToDiscoverCenters', () => {
     ])
   })
 
-  it('filters out entries without lat/lng', () => {
+  it('keeps entries with lat/lng=0 (valid coordinates)', () => {
     const centers = [
       { centerID: '1', name: 'A', latitude: 0, longitude: -122.0, address: null, memberCount: 10, isVerified: true },
       { centerID: '2', name: 'B', latitude: 37.0, longitude: -122.0, address: null, memberCount: 5, isVerified: false },
     ]
     const result = api.centersToDiscoverCenters(centers)
-    expect(result).toHaveLength(1)
-    expect(result[0].id).toBe('2')
+    expect(result).toHaveLength(2)
   })
 
   it('converts null address to undefined', () => {
