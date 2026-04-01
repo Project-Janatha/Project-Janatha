@@ -43,7 +43,7 @@ export default function OnboardingProvider({ children }: { children: React.React
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const goToNextStep = () => {
-    posthog.capture('onboarding_step_completed', { step: currentStep })
+    posthog?.capture('onboarding_step_completed', { step: currentStep })
     // Allow incrementing past totalSteps to show Complete screen
     setCurrentStep(currentStep + 1)
   }
@@ -81,9 +81,9 @@ export default function OnboardingProvider({ children }: { children: React.React
       const data = await response.json()
       setUser(data.user)
       router.replace('/')
-      posthog.capture('onboarding_completed')
+      posthog?.capture('onboarding_completed')
     } catch (error: any) {
-      posthog.capture('onboarding_failed', { error: error.message })
+      posthog?.capture('onboarding_failed', { error: error.message })
       setSubmitError(error.message || 'Something went wrong. Please try again.')
     } finally {
       setIsSubmitting(false)

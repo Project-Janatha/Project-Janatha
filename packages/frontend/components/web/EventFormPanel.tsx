@@ -172,8 +172,8 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
             }
 
             setAddress(event.address || '')
-            setLatitude(String(event.latitude || ''))
-            setLongitude(String(event.longitude || ''))
+            setLatitude(event.latitude != null ? String(event.latitude) : '')
+            setLongitude(event.longitude != null ? String(event.longitude) : '')
             setCenterID(event.centerID || '')
             setPointOfContact(event.pointOfContact || '')
             setImage(event.image || '')

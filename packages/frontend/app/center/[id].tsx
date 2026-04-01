@@ -22,6 +22,7 @@ import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
 
 function formatDateCallout(dateStr: string): { month: string; day: string } {
   const d = new Date(dateStr + 'T00:00:00')
+  if (isNaN(d.getTime())) return { month: '', day: '' }
   const month = d
     .toLocaleDateString('en-US', { month: 'short' })
     .toUpperCase()
@@ -122,7 +123,8 @@ function HeaderBar({
 // ── Main page component ─────────────────────────────────────────────────
 
 export default function CenterDetailPage() {
-  const { id } = useLocalSearchParams()
+  const { id: rawId } = useLocalSearchParams()
+  const id = Array.isArray(rawId) ? rawId[0] : rawId
   const router = useRouter()
   const posthog = usePostHog()
   const { center, events, loading } = useCenterDetail(id as string)
@@ -130,17 +132,17 @@ export default function CenterDetailPage() {
 
   useEffect(() => {
     if (!loading && center) {
-      posthog.capture('center_viewed', { centerId: id, name: center.name })
+      posthog?.capture('center_viewed', { centerId: id, name: center.name })
     }
   }, [loading, center, id, posthog])
 
   const handleEventPress = (event: EventDisplay) => {
-    posthog.capture('center_event_pressed', { centerId: id, eventId: event.id })
+    posthog?.capture('center_event_pressed', { centerId: id, eventId: event.id })
     router.push(`/events/${event.id}`)
   }
 
   const handleShare = async () => {
-    posthog.capture('center_shared', { centerId: id })
+    posthog?.capture('center_shared', { centerId: id })
     try {
       await Share.share({
         message: center
@@ -154,13 +156,13 @@ export default function CenterDetailPage() {
 
   const handleAddressPress = () => {
     if (!center?.address) return
-    posthog.capture('center_address_pressed', { centerId: id })
+    posthog?.capture('center_address_pressed', { centerId: id })
     Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(center.address)}`)
   }
 
   const handleWebsitePress = () => {
     if (!center?.website) return
-    posthog.capture('center_website_pressed', { centerId: id })
+    posthog?.capture('center_website_pressed', { centerId: id })
     const url = center.website.startsWith('http')
       ? center.website
       : `https://${center.website}`
@@ -169,7 +171,7 @@ export default function CenterDetailPage() {
 
   const handlePhonePress = () => {
     if (!center?.phone) return
-    posthog.capture('center_phone_pressed', { centerId: id })
+    posthog?.capture('center_phone_pressed', { centerId: id })
     Linking.openURL(`tel:${center.phone}`)
   }
 
@@ -199,7 +201,7 @@ export default function CenterDetailPage() {
   }
 
   // Strip protocol for website display
-  const displayWebsite = center.website
+  const displayWebsite = (center.website ?? '')
     .replace(/^https?:\/\//, '')
     .replace(/\/$/, '')
 

@@ -214,7 +214,7 @@ export default function PasswordStrength({ password, show }: PasswordStrengthPro
         {/* Progress Bar */}
         <View className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <View
-            className={`h-full ${getStrengthColor()} transition-all duration-300`}
+            className={`h-full ${getStrengthColor()}`}
             style={{ width: `${percent}%` }}
           />
         </View>

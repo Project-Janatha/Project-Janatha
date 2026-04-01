@@ -205,8 +205,8 @@ export default function EventFormPage() {
             }
 
             setAddress(event.address || '')
-            setLatitude(String(event.latitude || ''))
-            setLongitude(String(event.longitude || ''))
+            setLatitude(event.latitude != null ? String(event.latitude) : '')
+            setLongitude(event.longitude != null ? String(event.longitude) : '')
             setCenterID(event.centerID || '')
             setPointOfContact(event.pointOfContact || '')
             setImage(event.image || '')
@@ -282,7 +282,7 @@ export default function EventFormPage() {
           image: image.trim() || undefined,
           category,
         })
-        posthog.capture('event_updated', { eventId, title: title.trim() })
+        posthog?.capture('event_updated', { eventId, title: title.trim() })
         if (Platform.OS === 'web') {
           alert('Event updated successfully')
         } else {
@@ -301,7 +301,7 @@ export default function EventFormPage() {
           image: image.trim() || undefined,
           category,
         })
-        posthog.capture('event_created', { title: title.trim(), centerID })
+        posthog?.capture('event_created', { title: title.trim(), centerID })
         if (Platform.OS === 'web') {
           alert('Event created successfully')
         } else {
@@ -311,7 +311,7 @@ export default function EventFormPage() {
       router.back()
     } catch (err: any) {
       const msg = err?.message || 'Something went wrong'
-      posthog.capture('event_create_failed', { error: msg, isEdit })
+      posthog?.capture('event_create_failed', { error: msg, isEdit })
       if (Platform.OS === 'web') {
         alert(msg)
       } else {

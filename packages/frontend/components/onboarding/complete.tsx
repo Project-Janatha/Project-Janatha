@@ -1,4 +1,5 @@
-import { View, Text, Pressable, SafeAreaView, Image, ActivityIndicator } from 'react-native'
+import { View, Text, Pressable, Image, ActivityIndicator } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useEffect, useState } from 'react'
 import { useOnboarding } from '../contexts'
 import { useThemeContext } from '../contexts'
@@ -39,7 +40,7 @@ export default function Complete() {
             <View
               className={`mb-12 ${
                 showLogo ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
-              } transition-all duration-700`}
+              }`}
             >
               {isDark ? (
                 <Image
@@ -58,7 +59,7 @@ export default function Complete() {
             <View
               className={`items-center ${
                 showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              } transition-all duration-500`}
+              }`}
             >
               <Text className="text-4xl font-inter font-bold text-content dark:text-content-dark text-center mb-4 tracking-tight">
                 Welcome to Janata!
@@ -84,7 +85,7 @@ export default function Complete() {
           <Pressable
             onPress={handleGetStarted}
             disabled={isSubmitting}
-            className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8 bg-primary active:bg-primary-press hover:scale-105 active:scale-95 transition-transform duration-150 shadow-lg ${
+            className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8 bg-primary active:bg-primary-press shadow-lg ${
               isSubmitting ? 'opacity-70' : ''
             }`}
           >

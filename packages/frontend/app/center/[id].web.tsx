@@ -3,11 +3,16 @@ import { View, ActivityIndicator } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 
 export default function CenterDetailWeb() {
-  const { id } = useLocalSearchParams()
+  const { id: rawId } = useLocalSearchParams()
+  const id = Array.isArray(rawId) ? rawId[0] : rawId
   const router = useRouter()
 
   useEffect(() => {
-    router.replace(`/?detail=center&id=${id}`)
+    if (id) {
+      router.replace(`/?detail=center&id=${id}`)
+    } else {
+      router.replace('/')
+    }
   }, [id, router])
 
   return (

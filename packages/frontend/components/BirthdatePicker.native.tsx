@@ -56,7 +56,10 @@ export default function BirthdatePicker({ value, onChange }: BirthdatePickerProp
           {/* iOS needs a done button */}
           {Platform.OS === 'ios' && (
             <Pressable
-              onPress={() => setShow(false)}
+              onPress={() => {
+                onChange(date)
+                setShow(false)
+              }}
               className="bg-primary py-3 px-4 rounded-lg mt-2"
             >
               <Text className="font-inter text-base text-white text-center font-semibold">
