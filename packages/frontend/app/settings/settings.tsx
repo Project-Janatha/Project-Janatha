@@ -14,7 +14,7 @@ import {
 import { Eye, Shield, Info, ExternalLink, AlertTriangle } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
 import { useRouter } from 'expo-router'
-import { DestructiveButton } from '../../components/ui'
+import { DestructiveButton, SecondaryButton } from '../../components/ui'
 import ThemeSelector from '../../components/ThemeSelector'
 import { usePostHog } from 'posthog-react-native'
 
@@ -192,24 +192,23 @@ export default function Settings() {
               </Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-              <Pressable
-                onPress={() => setShowDeleteModal(false)}
-                disabled={isDeleting}
-                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: isDark ? '#262626' : '#F3F0ED', alignItems: 'center' }}
-              >
-                <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: textColor }}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleDeleteAccount}
-                disabled={isDeleting}
-                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#DC2626', alignItems: 'center' }}
-              >
-                {isDeleting ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#FFFFFF' }}>Delete Forever</Text>
-                )}
-              </Pressable>
+              <View style={{ flex: 1 }}>
+                <SecondaryButton
+                  onPress={() => setShowDeleteModal(false)}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </SecondaryButton>
+              </View>
+              <View style={{ flex: 1 }}>
+                <DestructiveButton
+                  onPress={handleDeleteAccount}
+                  disabled={isDeleting}
+                  loading={isDeleting}
+                >
+                  Delete Forever
+                </DestructiveButton>
+              </View>
             </View>
           </View>
         </View>

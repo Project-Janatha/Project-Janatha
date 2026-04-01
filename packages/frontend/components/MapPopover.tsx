@@ -113,7 +113,7 @@ export default function MapPopover({
         {/* CTA */}
         <button
           onClick={onViewPress}
-          className="w-full py-2 rounded-lg text-xs font-semibold text-white border-none cursor-pointer transition-opacity hover:opacity-90"
+          className="w-full py-2 rounded-full text-xs font-semibold text-white border-none cursor-pointer transition-opacity hover:opacity-90"
           style={{ backgroundColor: accent }}
         >
           View {isCenter ? 'Center' : 'Event'}

@@ -1,7 +1,8 @@
-import { View, Text, Pressable, TextInput } from 'react-native'
+import { View, Text, TextInput } from 'react-native'
 import { useOnboarding } from '../contexts'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useState } from 'react'
+import { PrimaryButton } from '../ui'
 
 export default function StepOne() {
   const { goToNextStep, firstName, setFirstName, lastName, setLastName } = useOnboarding()
@@ -99,19 +100,13 @@ export default function StepOne() {
 
         {/* Button Area */}
         <View className="pb-6">
-          <Pressable
+          <PrimaryButton
             onPress={handleContinue}
             disabled={!firstName.trim() || !lastName.trim()}
-            className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8
-              ${
-                !firstName.trim() || !lastName.trim()
-                  ? 'bg-orange-300'
-                  : 'bg-primary active:bg-primary-press'
-              }
-            `}
+            style={{ width: '100%', maxWidth: 448, alignSelf: 'center' }}
           >
-            <Text className="text-white font-inter font-semibold text-base">Continue</Text>
-          </Pressable>
+            Continue
+          </PrimaryButton>
         </View>
       </View>
     </SafeAreaView>

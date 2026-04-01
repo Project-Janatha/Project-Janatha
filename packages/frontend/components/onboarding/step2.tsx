@@ -1,8 +1,9 @@
 import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { View, Text, Pressable, Platform } from 'react-native'
+import { View, Text, Platform } from 'react-native'
 import { useOnboarding } from '../contexts'
 import BirthdatePicker from '../BirthdatePicker'
+import { PrimaryButton } from '../ui'
 
 export default function Step2() {
   const { goToNextStep, birthdate, setBirthdate } = useOnboarding()
@@ -32,19 +33,13 @@ export default function Step2() {
 
         {/* --- Continue Button --- */}
         <View className="pb-6">
-          <Pressable
+          <PrimaryButton
             disabled={!isDateSelected}
             onPress={goToNextStep}
-            className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8
-              ${
-                !isDateSelected
-                  ? 'bg-orange-300'
-                  : 'bg-primary active:bg-primary-press'
-              }
-            `}
+            style={{ width: '100%', maxWidth: 448, alignSelf: 'center' }}
           >
-            <Text className="text-white font-inter font-semibold text-base">Continue</Text>
-          </Pressable>
+            Continue
+          </PrimaryButton>
         </View>
       </View>
     </SafeAreaView>

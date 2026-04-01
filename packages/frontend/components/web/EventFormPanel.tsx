@@ -11,6 +11,8 @@ import {
   ChevronDown,
 } from 'lucide-react-native'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
+import PrimaryButton from '../ui/buttons/PrimaryButton'
+import SecondaryButton from '../ui/buttons/SecondaryButton'
 import {
   fetchEvent,
   fetchCenters,
@@ -623,42 +625,20 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
           gap: 10,
         }}
       >
-        <Pressable
+        <SecondaryButton
           onPress={onClose}
-          style={{
-            paddingHorizontal: 20,
-            paddingVertical: 10,
-            borderRadius: 10,
-            backgroundColor: colors.iconBoxBg,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          style={{ paddingHorizontal: 20, paddingVertical: 10 }}
         >
-          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: colors.text }}>
-            Cancel
-          </Text>
-        </Pressable>
-        <Pressable
+          Cancel
+        </SecondaryButton>
+        <PrimaryButton
           onPress={handleSave}
           disabled={saving}
-          style={{
-            paddingHorizontal: 24,
-            paddingVertical: 10,
-            borderRadius: 10,
-            backgroundColor: '#E8862A',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: saving ? 0.6 : 1,
-          }}
+          loading={saving}
+          style={{ paddingHorizontal: 24, paddingVertical: 10 }}
         >
-          {saving ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: '#FFFFFF' }}>
-              {isEdit ? 'Save Changes' : 'Create Event'}
-            </Text>
-          )}
-        </Pressable>
+          {isEdit ? 'Save Changes' : 'Create Event'}
+        </PrimaryButton>
       </View>
     </View>
   )

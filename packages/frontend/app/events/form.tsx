@@ -27,6 +27,7 @@ import {
 } from 'lucide-react-native'
 import { usePostHog } from 'posthog-react-native'
 import { useUser } from '../../components/contexts'
+import { PrimaryButton } from '../../components/ui'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
 import {
   fetchEvent,
@@ -660,26 +661,13 @@ export default function EventFormPage() {
           backgroundColor: colors.panelBg,
         }}
       >
-        <Pressable
+        <PrimaryButton
           onPress={handleSave}
           disabled={saving}
-          style={{
-            height: 48,
-            borderRadius: 10,
-            backgroundColor: '#E8862A',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: saving ? 0.6 : 1,
-          }}
+          loading={saving}
         >
-          {saving ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#FFFFFF' }}>
-              {isEdit ? 'Save Changes' : 'Create Event'}
-            </Text>
-          )}
-        </Pressable>
+          {isEdit ? 'Save Changes' : 'Create Event'}
+        </PrimaryButton>
       </View>
     </SafeAreaView>
   )

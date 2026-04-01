@@ -1,27 +1,33 @@
-/**
- * AuthInput.tsx
- *
- * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
- * @author Abhiram Ramachandran
- * @date October 13, 2025
- * @description A Pressable component styled for destructive actions.
- * @requires react-native
- *
- */
-import { Pressable, Text } from 'react-native'
+import { Pressable, Text, ActivityIndicator } from 'react-native'
+import React from 'react'
 
-/**
- * Renders DestructiveButton component.
- * @param children - The content to be displayed inside the button.
- * @param props - Additional props to be passed to the Pressable component.
- * @returns TSX.Element
- */
-export default function DestructiveButton({ children, ...props }) {
+interface DestructiveButtonProps {
+  children: React.ReactNode
+  onPress?: () => void
+  disabled?: boolean
+  loading?: boolean
+  style?: any
+  [key: string]: any
+}
+
+export default function DestructiveButton({ children, onPress, disabled, loading, style, ...props }: DestructiveButtonProps) {
+  const isDisabled = disabled || loading
+
   return (
-    <Pressable className="bg-red-600 px-4 py-3 rounded-full active:bg-red-700" {...props}>
-      <Text className="text-backgroundStrong font-inter text-bold text-gray-100 text-center">
-        {children}
-      </Text>
+    <Pressable
+      onPress={!isDisabled ? onPress : undefined}
+      disabled={isDisabled}
+      className="bg-red-600 px-4 py-3 rounded-full active:bg-red-700 disabled:opacity-50"
+      style={style}
+      {...props}
+    >
+      {loading ? (
+        <ActivityIndicator size="small" color="#FFFFFF" />
+      ) : (
+        <Text className="text-backgroundStrong font-inter text-bold text-gray-100 leading-4 text-center">
+          {children}
+        </Text>
+      )}
     </Pressable>
   )
 }
