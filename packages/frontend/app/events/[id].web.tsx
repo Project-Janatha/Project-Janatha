@@ -7,6 +7,8 @@ import { useEventDetail } from '../../hooks/useApiData'
 import Avatar from '../../components/ui/Avatar'
 import Badge from '../../components/ui/Badge'
 import UnderlineTabBar from '../../components/ui/UnderlineTabBar'
+import PrimaryButton from '../../components/ui/buttons/PrimaryButton'
+import DestructiveButton from '../../components/ui/buttons/DestructiveButton'
 import { useDetailColors } from '../../hooks/useDetailColors'
 
 export default function EventDetailWeb() {
@@ -168,20 +170,23 @@ function MobileEventDetail({ eventId }: { eventId: string }) {
       {/* Action button */}
       {!isPast && (
         <View style={{ padding: 16 }}>
-          <Pressable
-            onPress={() => user?.username && toggleRegistration(user.username)}
-            disabled={isToggling}
-            style={{
-              backgroundColor: event.isRegistered ? '#FEE2E2' : '#E8862A',
-              paddingVertical: 14,
-              borderRadius: 12,
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{ color: event.isRegistered ? '#DC2626' : '#FFFFFF', fontWeight: '600', fontSize: 16 }}>
-              {isToggling ? 'Updating...' : event.isRegistered ? 'Cancel Registration' : 'Register'}
-            </Text>
-          </Pressable>
+          {event.isRegistered ? (
+            <DestructiveButton
+              onPress={() => user?.username && toggleRegistration(user.username)}
+              disabled={isToggling}
+              loading={isToggling}
+            >
+              Cancel Registration
+            </DestructiveButton>
+          ) : (
+            <PrimaryButton
+              onPress={() => user?.username && toggleRegistration(user.username)}
+              disabled={isToggling}
+              loading={isToggling}
+            >
+              Register
+            </PrimaryButton>
+          )}
         </View>
       )}
     </View>

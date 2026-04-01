@@ -15,7 +15,7 @@ import {
 import { usePostHog } from 'posthog-react-native'
 import { useEventDetail } from '../../hooks/useApiData'
 import { useUser } from '../../components/contexts'
-import { Badge, UnderlineTabBar, Avatar } from '../../components/ui'
+import { Badge, UnderlineTabBar, Avatar, PrimaryButton, DestructiveButton } from '../../components/ui'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
 
 const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
@@ -396,26 +396,13 @@ function ActionBar({
           backgroundColor: colors.panelBg,
         }}
       >
-        <Pressable
+        <DestructiveButton
           onPress={onToggle}
           disabled={isToggling}
-          style={{
-            height: 48,
-            borderRadius: 10,
-            backgroundColor: 'rgba(239,68,68,0.1)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: isToggling ? 0.6 : 1,
-          }}
+          loading={isToggling}
         >
-          {isToggling ? (
-            <ActivityIndicator size="small" color="#EF4444" />
-          ) : (
-            <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: '#EF4444' }}>
-              Cancel Registration
-            </Text>
-          )}
-        </Pressable>
+          Cancel Registration
+        </DestructiveButton>
       </View>
     )
   }
@@ -431,26 +418,13 @@ function ActionBar({
         backgroundColor: colors.panelBg,
       }}
     >
-      <Pressable
+      <PrimaryButton
         onPress={onToggle}
         disabled={isToggling}
-        style={{
-          height: 48,
-          borderRadius: 10,
-          backgroundColor: '#E8862A',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: isToggling ? 0.6 : 1,
-        }}
+        loading={isToggling}
       >
-        {isToggling ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#FFFFFF' }}>
-            Attend Event
-          </Text>
-        )}
-      </Pressable>
+        Attend Event
+      </PrimaryButton>
       <Text
         style={{
           fontFamily: 'Inter-Regular',

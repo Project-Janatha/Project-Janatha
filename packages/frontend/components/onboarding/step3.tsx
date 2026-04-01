@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import { calculateDistance } from '../../utils/distance'
 import { fetchCenters, CenterData } from '../../utils/api'
 import { Check } from 'lucide-react-native'
+import { PrimaryButton } from '../ui'
 
 interface CenterWithDistance {
   id: string
@@ -259,17 +260,13 @@ export default function Step3() {
 
         {/* Button */}
         <View className="pb-6">
-          <Pressable
+          <PrimaryButton
             onPress={handleContinue}
             disabled={!selectedCenter}
-            className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8 ${
-              selectedCenter
-                ? 'bg-primary active:bg-primary-press'
-                : 'bg-orange-300'
-            }`}
+            style={{ width: '100%', maxWidth: 448, alignSelf: 'center' }}
           >
-            <Text className="text-white font-inter font-semibold text-base">Continue</Text>
-          </Pressable>
+            Continue
+          </PrimaryButton>
         </View>
       </View>
     </SafeAreaView>

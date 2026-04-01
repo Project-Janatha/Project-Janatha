@@ -12,7 +12,7 @@ import {
 import { useRouter } from 'expo-router'
 import { Code, ArrowLeft } from 'lucide-react-native'
 import { usePostHog } from 'posthog-react-native'
-import { AuthInput, Logo } from '../components/ui'
+import { AuthInput, Logo, PrimaryButton } from '../components/ui'
 import { useUser, useThemeContext } from '../components/contexts'
 import { validateEmail, validatePassword } from '../utils'
 import { PasswordStrength } from '../components'
@@ -297,26 +297,18 @@ export default function AuthScreen() {
               )}
 
               {/* Submit Button */}
-              <Pressable
+              <PrimaryButton
                 onPress={handleSubmit}
                 disabled={isButtonDisabled}
-                className={`items-center justify-center mt-2 rounded-lg ${
-                  isButtonDisabled
-                    ? 'bg-primary/40 dark:bg-primary/30'
-                    : 'bg-primary active:bg-primary-press'
-                } px-8`}
-                style={{ height: 48 }}
+                loading={loading}
+                style={{ marginTop: 8 }}
               >
-                <Text className="text-white font-inter font-bold text-md">
-                  {loading
-                    ? 'Please wait...'
-                    : authStep === 'login'
-                    ? 'Log In'
-                    : authStep === 'signup'
-                    ? 'Sign Up'
-                    : 'Continue'}
-                </Text>
-              </Pressable>
+                {authStep === 'login'
+                  ? 'Log In'
+                  : authStep === 'signup'
+                  ? 'Sign Up'
+                  : 'Continue'}
+              </PrimaryButton>
 
               {/* Forgot Password (only on login) */}
               {authStep === 'login' && (
