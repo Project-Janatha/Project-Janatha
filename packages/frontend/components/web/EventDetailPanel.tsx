@@ -466,48 +466,63 @@ function PeopleTab({ attendees, colors }: { attendees: Attendee[]; colors: Detai
           marginBottom: 12,
         }}
       >
-        {attendees.length} people attending
+        {attendees.length} {attendees.length === 1 ? 'person' : 'people'} attending
       </Text>
 
-      <View style={{ gap: 4 }}>
-        {attendees.map((a, i) => (
-          <View
-            key={i}
-            className="flex-row items-center"
-            style={{ paddingVertical: 12, gap: 12 }}
+      {attendees.length === 0 ? (
+        <View style={{ alignItems: 'center', paddingTop: 32, gap: 8 }}>
+          <Users size={32} color={colors.textMuted} />
+          <Text
+            style={{
+              fontFamily: 'Inter-Regular',
+              fontSize: 14,
+              color: colors.textSecondary,
+            }}
           >
-            <Avatar
-              image={a.image}
-              initials={a.initials}
-              name={a.name}
-              size={42}
-            />
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text
-                style={{
-                  fontFamily: 'Inter-Medium',
-                  fontSize: 14,
-                  color: colors.text,
-                }}
-              >
-                {a.name}
-              </Text>
-              <Text
-                style={{
-                  fontFamily: 'Inter-Regular',
-                  fontSize: 12,
-                  color: colors.textSecondary,
-                }}
-              >
-                {a.subtitle}
-              </Text>
+            No attendees yet
+          </Text>
+        </View>
+      ) : (
+        <View style={{ gap: 4 }}>
+          {attendees.map((a, i) => (
+            <View
+              key={i}
+              className="flex-row items-center"
+              style={{ paddingVertical: 12, gap: 12 }}
+            >
+              <Avatar
+                image={a.image}
+                initials={a.initials}
+                name={a.name}
+                size={42}
+              />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text
+                  style={{
+                    fontFamily: 'Inter-Medium',
+                    fontSize: 14,
+                    color: colors.text,
+                  }}
+                >
+                  {a.name}
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: 'Inter-Regular',
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                  }}
+                >
+                  {a.subtitle}
+                </Text>
+              </View>
+              {i === 0 && (
+                <Badge label="HOST" variant="host" />
+              )}
             </View>
-            {i === 0 && (
-              <Badge label="HOST" variant="host" />
-            )}
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      )}
     </View>
   )
 }
@@ -534,8 +549,8 @@ function DefaultContent({
       contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24, gap: 20 }}
       showsVerticalScrollIndicator={false}
     >
-      {/* Attended banner (past state) */}
-      {isPast && (
+      {/* Attended banner (past + user was registered) */}
+      {isPast && event.isRegistered && (
         <AttendedBanner count={event.attendees} colors={colors} />
       )}
 
