@@ -1,5 +1,5 @@
 import { Link, Tabs, useRouter } from 'expo-router'
-import { Platform, View, Text, Pressable, Image, useWindowDimensions } from 'react-native'
+import { Platform, View, Text, Pressable, Image } from 'react-native'
 import { useState } from 'react'
 import { useUser, useThemeContext } from '../../components/contexts'
 import { User, Settings, LogOut, Plus } from 'lucide-react-native'

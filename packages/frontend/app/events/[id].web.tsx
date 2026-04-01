@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { View, Text, ScrollView, Pressable, ActivityIndicator, useWindowDimensions } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ChevronLeft, Share2, MapPin, Users, User, Clock, CheckCircle } from 'lucide-react-native'
@@ -16,13 +16,15 @@ export default function EventDetailWeb() {
   const { width } = useWindowDimensions()
   const isMobile = width < 768
 
+  const initiallyMobile = useRef(isMobile)
+
   useEffect(() => {
-    if (!isMobile && id) {
+    if (!initiallyMobile.current && id) {
       router.replace(`/?detail=event&id=${id}`)
     } else if (!id) {
       router.replace('/')
     }
-  }, [id, router, isMobile])
+  }, [id, router])
 
   // On desktop, show loading while redirecting
   if (!isMobile) {
@@ -151,8 +153,8 @@ function MobileEventDetail({ eventId }: { eventId: string }) {
             <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
               {attendees.length} {attendees.length === 1 ? 'person' : 'people'} attending
             </Text>
-            {attendees.map((a: any, i: number) => (
-              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
+            {attendees.map((a) => (
+              <View key={a.name} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 }}>
                 <Avatar name={a.name} size={40} image={a.image} />
                 <Text style={{ color: colors.text, fontSize: 16, flex: 1 }}>
                   {a.name}
