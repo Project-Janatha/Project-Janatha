@@ -184,6 +184,12 @@ function RootLayoutNav() {
           name="cookies"
           options={{ headerShown: Platform.OS !== 'web', title: 'Cookie Policy', headerBackTitle: '' }}
         />
+        <Stack.Screen
+          name="admin"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
     </NavigationThemeProvider>
   )
