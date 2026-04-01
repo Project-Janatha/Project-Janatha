@@ -6,6 +6,9 @@ import { router } from 'expo-router'
 import ThemeSelector from './ThemeSelector'
 import { Avatar } from './ui'
 
+const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
+const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+
 function SettingsPanel({ visible, onClose, onLogout }) {
   const opacityAnim = useRef(new Animated.Value(0)).current
   const translateYAnim = useRef(new Animated.Value(-20)).current
@@ -182,7 +185,7 @@ function SettingsPanel({ visible, onClose, onLogout }) {
           <Settings size={16} color={isDark ? '#fff' : '#374151'} className="mr-3" />
           <Text className="text-content dark:text-content-dark font-inter">Settings</Text>
         </Pressable>
-        {user?.verificationLevel && user.verificationLevel >= 107 && (
+        {(user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107) || isLocal) && (
           <Pressable
             className="flex-row items-center mb-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
             onPress={() => {

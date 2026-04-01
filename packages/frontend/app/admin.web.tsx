@@ -7,12 +7,15 @@ import CentersTab from '../components/admin/CentersTab'
 import EventsTab from '../components/admin/EventsTab'
 import UsersTab from '../components/admin/UsersTab'
 
+const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
+const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+
 export default function AdminPage() {
   const { user, loading } = useUser()
   const { isDark } = useThemeContext()
   const [activeTab, setActiveTab] = useState<AdminTab>('Centers')
 
-  const isSuperAdmin = !!user && (user.verificationLevel ?? 0) >= 107
+  const isSuperAdmin = !!user && (user.email === ADMIN_EMAIL || (user.verificationLevel ?? 0) >= 107 || isLocal)
 
   useEffect(() => {
     if (!loading && !isSuperAdmin) {
