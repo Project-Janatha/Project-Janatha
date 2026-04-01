@@ -1,6 +1,6 @@
 import '@expo/metro-runtime'
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, LogBox, View, Text } from 'react-native'
+import { ActivityIndicator, LogBox, Platform, View, Text } from 'react-native'
 
 // Suppress non-fatal WorkletsTurboModule error in Expo Go (reanimated v4 compat)
 LogBox.ignoreLogs(['Exception in HostFunction: <unknown>'])
@@ -174,15 +174,15 @@ function RootLayoutNav() {
         />
         <Stack.Screen
           name="privacy"
-          options={{ headerShown: true, title: 'Privacy Policy', headerBackTitle: '' }}
+          options={{ headerShown: Platform.OS !== 'web', title: 'Privacy Policy', headerBackTitle: '' }}
         />
         <Stack.Screen
           name="terms"
-          options={{ headerShown: true, title: 'Terms of Service', headerBackTitle: '' }}
+          options={{ headerShown: Platform.OS !== 'web', title: 'Terms of Service', headerBackTitle: '' }}
         />
         <Stack.Screen
           name="cookies"
-          options={{ headerShown: true, title: 'Cookie Policy', headerBackTitle: '' }}
+          options={{ headerShown: Platform.OS !== 'web', title: 'Cookie Policy', headerBackTitle: '' }}
         />
       </Stack>
     </NavigationThemeProvider>
