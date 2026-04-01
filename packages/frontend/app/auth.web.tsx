@@ -469,7 +469,7 @@ export default function AuthScreen() {
               <span
                 role="button"
                 tabIndex={0}
-                onClick={() => {
+                onClick={async () => {
                   if (!username) {
                     setErrors({ username: 'Please enter your email first.' })
                     return
@@ -478,9 +478,19 @@ export default function AuthScreen() {
                     setErrors({ username: 'You must enter a valid email address.' })
                     return
                   }
-                  setAuthStep('signup')
+                  try {
+                    const exists = await checkUserExists(username)
+                    if (exists) {
+                      setErrors({ form: 'An account with this email already exists. Please log in.' })
+                      setAuthStep('login')
+                    } else {
+                      setAuthStep('signup')
+                    }
+                  } catch (e: any) {
+                    setErrors({ form: e.message || 'Failed to connect to server.' })
+                  }
                 }}
-                onKeyDown={(e) => {
+                onKeyDown={async (e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     if (!username) {
@@ -491,7 +501,17 @@ export default function AuthScreen() {
                       setErrors({ username: 'You must enter a valid email address.' })
                       return
                     }
-                    setAuthStep('signup')
+                    try {
+                      const exists = await checkUserExists(username)
+                      if (exists) {
+                        setErrors({ form: 'An account with this email already exists. Please log in.' })
+                        setAuthStep('login')
+                      } else {
+                        setAuthStep('signup')
+                      }
+                    } catch (e: any) {
+                      setErrors({ form: e.message || 'Failed to connect to server.' })
+                    }
                   }
                 }}
                 style={{
@@ -520,6 +540,17 @@ export default function AuthScreen() {
               <span
                 role="button"
                 tabIndex={0}
+                onClick={() =>
+                  window.alert(
+                    'Please contact info@chinmayajanata.org to reset your password.'
+                  )
+                }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ')
+                    window.alert(
+                      'Please contact info@chinmayajanata.org to reset your password.'
+                    )
+                }}
                 style={{
                   color: '#C2410C',
                   cursor: 'pointer',
@@ -575,7 +606,26 @@ export default function AuthScreen() {
               paddingBottom: isMobile ? 16 : 0,
             }}
           >
-            By continuing, you agree to our Terms of Service and Privacy Policy
+            By continuing, you agree to our{' '}
+            <span
+              role="link"
+              tabIndex={0}
+              onClick={() => router.push('/terms')}
+              onKeyDown={(e) => { if (e.key === 'Enter') router.push('/terms') }}
+              style={{ color: '#C2410C', cursor: 'pointer' }}
+            >
+              Terms of Service
+            </span>
+            {' '}and{' '}
+            <span
+              role="link"
+              tabIndex={0}
+              onClick={() => router.push('/privacy')}
+              onKeyDown={(e) => { if (e.key === 'Enter') router.push('/privacy') }}
+              style={{ color: '#C2410C', cursor: 'pointer' }}
+            >
+              Privacy Policy
+            </span>
           </p>
 
         </div>

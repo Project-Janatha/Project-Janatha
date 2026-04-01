@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Pressable,
   TouchableOpacity,
+  Alert,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Code, ArrowLeft } from 'lucide-react-native'
@@ -46,17 +47,17 @@ export default function AuthScreen() {
       return
     }
     try {
-      posthog.capture('auth_email_submitted')
+      posthog?.capture('auth_email_submitted')
       const exists = await checkUserExists(username)
       if (exists) {
-        posthog.capture('auth_user_exists')
+        posthog?.capture('auth_user_exists')
         setAuthStep('login')
       } else {
-        posthog.capture('auth_user_new')
+        posthog?.capture('auth_user_new')
         setAuthStep('signup')
       }
     } catch (e: any) {
-      posthog.capture('auth_check_failed')
+      posthog?.capture('auth_check_failed')
       setErrors({ form: e.message || 'Failed to connect to server.' })
     }
   }, [username, checkUserExists, posthog])
@@ -319,7 +320,15 @@ export default function AuthScreen() {
 
               {/* Forgot Password (only on login) */}
               {authStep === 'login' && (
-                <Pressable className="items-center mt-2">
+                <Pressable
+                  className="items-center mt-2"
+                  onPress={() =>
+                    Alert.alert(
+                      'Reset Password',
+                      'Please contact info@chinmayajanata.org to reset your password.'
+                    )
+                  }
+                >
                   <Text className="text-primary font-inter font-medium">Forgot password?</Text>
                 </Pressable>
               )}
@@ -347,7 +356,20 @@ export default function AuthScreen() {
 
             {/* Footer Text */}
             <Text className="text-content dark:text-content-dark opacity-50 text-sm font-inter mt-8 text-center px-4">
-              By continuing, you agree to our Terms of Service and Privacy Policy
+              By continuing, you agree to our{' '}
+              <Text
+                className="text-primary font-inter-semibold"
+                onPress={() => router.push('/terms')}
+              >
+                Terms of Service
+              </Text>
+              {' '}and{' '}
+              <Text
+                className="text-primary font-inter-semibold"
+                onPress={() => router.push('/privacy')}
+              >
+                Privacy Policy
+              </Text>
             </Text>
           </View>
         </View>

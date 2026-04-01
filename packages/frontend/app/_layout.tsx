@@ -1,6 +1,9 @@
 import '@expo/metro-runtime'
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, View, Text } from 'react-native'
+import { ActivityIndicator, LogBox, View, Text } from 'react-native'
+
+// Suppress non-fatal WorkletsTurboModule error in Expo Go (reanimated v4 compat)
+LogBox.ignoreLogs(['Exception in HostFunction: <unknown>'])
 import { useFonts } from 'expo-font'
 import {
   DarkTheme,
@@ -104,7 +107,7 @@ function RootLayoutNav() {
 
       // Check for completion flag OR fallback to checking fields
       const isComplete =
-        user.profileComplete || user.profileComplete || (!!user.firstName && !!user.lastName)
+        user.profileComplete || (!!user.firstName && !!user.lastName)
 
       if (!isComplete) {
         // User needs to onboard
@@ -171,15 +174,15 @@ function RootLayoutNav() {
         />
         <Stack.Screen
           name="privacy"
-          options={{ headerShown: false }}
+          options={{ headerShown: true, title: 'Privacy Policy', headerBackTitle: '' }}
         />
         <Stack.Screen
           name="terms"
-          options={{ headerShown: false }}
+          options={{ headerShown: true, title: 'Terms of Service', headerBackTitle: '' }}
         />
         <Stack.Screen
           name="cookies"
-          options={{ headerShown: false }}
+          options={{ headerShown: true, title: 'Cookie Policy', headerBackTitle: '' }}
         />
       </Stack>
     </NavigationThemeProvider>
