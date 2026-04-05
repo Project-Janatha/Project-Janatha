@@ -2,7 +2,7 @@ import { View, Text, Animated } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { OnboardingProvider, useOnboarding } from '../components/contexts'
 import { useEffect, useRef } from 'react'
-import { Step1, Step2, Step3, Step4, Step5, Complete } from '../components/onboarding'
+import { Step1, Step2, Step3, Step4, Complete } from '../components/onboarding'
 
 const OnboardingHeader = () => {
   const { currentStep, totalSteps } = useOnboarding()
@@ -56,8 +56,6 @@ const OnboardingContent = () => {
     case 4:
       return <Step4 />
     case 5:
-      return <Step5 />
-    case 6:
       return <Complete />
     default:
       return <Step1 />
