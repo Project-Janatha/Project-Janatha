@@ -4,6 +4,8 @@ import {
   getStoredToken,
   setStoredToken,
   removeStoredToken,
+  getStoredRefreshToken,
+  setStoredRefreshToken,
 } from '../../components/utils/tokenStorage'
 
 export type SessionState =
@@ -20,12 +22,25 @@ export const authService = {
       }
 
       const verifyResult = await authClient.verify(token)
-      if (!verifyResult.success) {
-        await removeStoredToken()
-        return { authStatus: 'unauthenticated', user: null }
+      if (verifyResult.success) {
+        return { authStatus: 'authenticated', user: verifyResult.data.user }
       }
 
-      return { authStatus: 'authenticated', user: verifyResult.data.user }
+      // Access token invalid/expired — try refreshing
+      const refreshToken = await getStoredRefreshToken()
+      if (refreshToken) {
+        const refreshResult = await authClient.refreshToken(refreshToken)
+        if (refreshResult.success && refreshResult.data.token) {
+          await setStoredToken(refreshResult.data.token)
+          if (refreshResult.data.refreshToken) {
+            await setStoredRefreshToken(refreshResult.data.refreshToken)
+          }
+          return { authStatus: 'authenticated', user: refreshResult.data.user }
+        }
+      }
+
+      await removeStoredToken()
+      return { authStatus: 'unauthenticated', user: null }
     } catch {
       await removeStoredToken()
       return { authStatus: 'unauthenticated', user: null }
@@ -47,6 +62,9 @@ export const authService = {
 
     if (result.data.token) {
       await setStoredToken(result.data.token)
+    }
+    if (result.data.refreshToken) {
+      await setStoredRefreshToken(result.data.refreshToken)
     }
 
     return { success: true, user: result.data.user }

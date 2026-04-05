@@ -274,6 +274,35 @@ export const authClient = {
     }
   },
 
+  async refreshToken(refreshToken: string): AsyncResult<AuthSuccessResponse> {
+    try {
+      const response = await withTimeout(
+        buildUrl('/auth/refresh'),
+        {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken }),
+        },
+        API_TIMEOUTS.auth
+      )
+
+      const data = await safeJson<AuthSuccessResponse & { refreshToken?: string; message?: string }>(response)
+
+      if (!response.ok || !data?.token) {
+        return {
+          success: false,
+          error: toError(data?.message || 'Failed to refresh token', response.status),
+        }
+      }
+
+      return { success: true, data }
+    } catch (error: any) {
+      if (error?.name === 'AbortError') {
+        return { success: false, error: toError('Request timeout. Please check your connection.') }
+      }
+      return { success: false, error: toError('Network error. Please try again.') }
+    }
+  },
+
   async deleteAccount(token: string): AsyncResult<GenericSuccessResponse> {
     try {
       const response = await withTimeout(
