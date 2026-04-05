@@ -18,6 +18,7 @@ import {
   ThemeProvider as CustomThemeProvider,
   useThemeContext,
 } from '../components/contexts'
+import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 import '../globals.css'
 
 export const unstable_settings = {
@@ -73,11 +74,13 @@ export default function RootLayout() {
         host: 'https://us.i.posthog.com',
       }}
     >
-      <CustomThemeProvider>
-        <UserProvider>
-          <RootLayoutNav />
-        </UserProvider>
-      </CustomThemeProvider>
+      <ErrorBoundary>
+        <CustomThemeProvider>
+          <UserProvider>
+            <RootLayoutNav />
+          </UserProvider>
+        </CustomThemeProvider>
+      </ErrorBoundary>
     </PostHogProvider>
   )
 }
