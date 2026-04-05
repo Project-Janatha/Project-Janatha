@@ -9,8 +9,6 @@
  * This file exports all components.
  *
  */
-export { MapPreview } from './MapPreview'
-export { default as SearchBar } from './SearchBar'
 export { default as SettingsPanel } from './SettingsPanel'
 export { default as TabSegment } from './ui/TabSegment'
 export { default as PasswordStrength } from './PasswordStrength'
