@@ -546,7 +546,7 @@ export function useCenterList() {
   return { centers, loading, isLive, error }
 }
 
-export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, userId?: string) {
+export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, userId?: string, showPastEvents = false) {
   const [allEvents, setAllEvents] = useState<EventDisplay[]>([])
   const [allCenters, setAllCenters] = useState<DiscoverCenter[]>([])
   const [loading, setLoading] = useState(true)
@@ -609,13 +609,19 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
 
   const items = useMemo<DiscoverItem[]>(() => {
     const query = searchQuery.toLowerCase().trim()
+    const todayStr = new Date().toISOString().split('T')[0]
+
+    // Filter out past events unless showPastEvents is enabled
+    const visibleEvents = showPastEvents
+      ? allEvents
+      : allEvents.filter((e) => !e.date || e.date >= todayStr)
 
     let result: DiscoverItem[] = []
 
     if (filter === 'Centers') {
       result = allCenters.map((c) => ({ type: 'center' as const, data: c }))
     } else if (filter === 'Going') {
-      const goingEvents = allEvents
+      const goingEvents = visibleEvents
         .filter((e) => e.isRegistered)
         .sort((a, b) => b.date.localeCompare(a.date))
       const memberCenters = allCenters.filter((c) => c.isMember)
@@ -628,8 +634,8 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
       // Within each group, sort by date descending (upcoming first)
       const sortByDate = (a: EventDisplay, b: EventDisplay) =>
         b.date.localeCompare(a.date)
-      const registered = allEvents.filter((e) => e.isRegistered).sort(sortByDate)
-      const unregistered = allEvents.filter((e) => !e.isRegistered).sort(sortByDate)
+      const registered = visibleEvents.filter((e) => e.isRegistered).sort(sortByDate)
+      const unregistered = visibleEvents.filter((e) => !e.isRegistered).sort(sortByDate)
 
       result = [
         ...registered.map((e) => ({ type: 'event' as const, data: e })),
@@ -655,7 +661,7 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
     }
 
     return result
-  }, [allEvents, allCenters, filter, searchQuery])
+  }, [allEvents, allCenters, filter, searchQuery, showPastEvents])
 
   // Map points from current data
   const filteredPoints = useMemo<MapPoint[]>(() => {
