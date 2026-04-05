@@ -389,11 +389,13 @@ function MobileDiscoverFallback() {
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [showPastEvents, setShowPastEvents] = useState(false)
   const { user } = useUser()
   const { items, filteredPoints, loading, allEvents, refresh } = useDiscoverData(
     activeFilter,
     searchQuery,
-    user?.id
+    user?.id,
+    showPastEvents
   )
 
   useFocusEffect(
@@ -636,6 +638,24 @@ function MobileDiscoverFallback() {
                 />
               </View>
             )}
+
+            {/* Past events toggle */}
+            {activeFilter !== 'Centers' && (
+              <Pressable
+                onPress={() => setShowPastEvents((prev: boolean) => !prev)}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 4 }}
+              >
+                <View style={{
+                  width: 16, height: 16, borderRadius: 3, borderWidth: 1,
+                  marginRight: 8, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: showPastEvents ? '#ea580c' : 'transparent',
+                  borderColor: showPastEvents ? '#ea580c' : '#9ca3af',
+                }}>
+                  {showPastEvents && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
+                </View>
+                <Text style={{ fontSize: 12, color: '#78716c' }}>Show past events</Text>
+              </Pressable>
+            )}
           </div>
 
           {/* Loading indicator */}
@@ -698,13 +718,14 @@ export default function DiscoverScreenWeb() {
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [showPastEvents, setShowPastEvents] = useState(false)
   const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'center'; id: string } | null>(
     null
   )
   // Event form panel: null = hidden, { id?: string } = open (id present = edit, absent = create)
   const [formPanel, setFormPanel] = useState<{ id?: string } | null>(null)
   const { items, filteredPoints, loading, allEvents, allCenters, refresh, updateEventStatus } =
-    useDiscoverData(activeFilter, searchQuery, user?.id)
+    useDiscoverData(activeFilter, searchQuery, user?.id, showPastEvents)
 
   // Get user's center for map initial location
   const { center: userCenter } = useCenterDetail(user?.centerID || '')
@@ -958,6 +979,24 @@ export default function DiscoverScreenWeb() {
                   onSelectDate={setSelectedDate}
                 />
               </View>
+            )}
+
+            {/* Past events toggle */}
+            {activeFilter !== 'Centers' && (
+              <Pressable
+                onPress={() => setShowPastEvents((prev: boolean) => !prev)}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 4 }}
+              >
+                <View style={{
+                  width: 16, height: 16, borderRadius: 3, borderWidth: 1,
+                  marginRight: 8, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: showPastEvents ? '#ea580c' : 'transparent',
+                  borderColor: showPastEvents ? '#ea580c' : '#9ca3af',
+                }}>
+                  {showPastEvents && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
+                </View>
+                <Text style={{ fontSize: 12, color: '#78716c' }}>Show past events</Text>
+              </Pressable>
             )}
 
             {/* Loading indicator */}
