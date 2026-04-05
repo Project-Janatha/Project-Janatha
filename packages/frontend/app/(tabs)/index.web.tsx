@@ -1,4 +1,5 @@
 // Discover tab — web desktop layout
+import { EmptyState } from '../../components/ui/EmptyState'
 import React, {
   useState,
   useCallback,
@@ -653,11 +654,7 @@ function MobileDiscoverFallback() {
             scrollEnabled={isExpanded}
           >
             {!loading && displayItems.length === 0 && (
-              <View className="py-12 items-center">
-                <Text className="text-stone-400 dark:text-stone-500 font-inter text-sm">
-                  {selectedDate ? 'No events on this day' : 'No results found'}
-                </Text>
-              </View>
+              <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
             )}
             {displayItems.map((item) =>
               item.type === 'event' ? (
@@ -974,11 +971,7 @@ export default function DiscoverScreenWeb() {
               showsVerticalScrollIndicator={false}
             >
               {!loading && displayItems.length === 0 && (
-                <View className="py-16 items-center">
-                  <Text className="text-stone-400 dark:text-stone-500 font-inter text-sm">
-                    {selectedDate ? 'No events on this day' : 'No results found'}
-                  </Text>
-                </View>
+                <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
               )}
               {displayItems.map((item) =>
                 item.type === 'event' ? (
