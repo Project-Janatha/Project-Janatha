@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Alert, Share } from 'react-native'
+import { DetailSkeleton } from '../../components/ui/Skeleton'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
@@ -502,9 +503,7 @@ export default function EventDetailPage() {
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#E8862A" />
-        </View>
+        <DetailSkeleton />
       </SafeAreaView>
     )
   }

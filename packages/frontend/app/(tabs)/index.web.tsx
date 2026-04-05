@@ -1,5 +1,6 @@
 // Discover tab — web desktop layout
 import { EmptyState } from '../../components/ui/EmptyState'
+import { DiscoverListSkeleton } from '../../components/ui/Skeleton'
 import React, {
   useState,
   useCallback,
@@ -639,10 +640,10 @@ function MobileDiscoverFallback() {
             )}
           </div>
 
-          {/* Loading indicator */}
+          {/* Loading skeleton */}
           {loading && (
-            <View className="py-3 items-center">
-              <ActivityIndicator size="small" color="#9A3412" />
+            <View style={{ paddingHorizontal: 12 }}>
+              <DiscoverListSkeleton count={4} />
             </View>
           )}
 
@@ -957,10 +958,10 @@ export default function DiscoverScreenWeb() {
               </View>
             )}
 
-            {/* Loading indicator */}
+            {/* Loading skeleton */}
             {loading && (
-              <View className="py-4 items-center">
-                <ActivityIndicator size="small" color="#9A3412" />
+              <View style={{ paddingHorizontal: 16 }}>
+                <DiscoverListSkeleton count={5} />
               </View>
             )}
 
