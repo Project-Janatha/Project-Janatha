@@ -219,7 +219,7 @@ export default function DiscoverScreen() {
     loading,
     allEvents,
     refresh,
-  } = useDiscoverData(activeFilter, searchQuery, user?.id)
+  } = useDiscoverData(activeFilter, searchQuery, user?.id, user?.interests ?? undefined)
 
   useFocusEffect(
     useCallback(() => {
