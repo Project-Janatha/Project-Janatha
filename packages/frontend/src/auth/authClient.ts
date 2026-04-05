@@ -11,24 +11,44 @@ import type {
   User,
 } from './types'
 
-const withTimeout = async (input: RequestInfo | URL, init: RequestInit, timeoutMs: number) => {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+const withTimeout = async (
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+  retries = 2
+): Promise<Response> => {
+  let lastError: Error | undefined
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
-  try {
-    const response = await fetch(input, {
-      ...init,
-      signal: controller.signal,
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(init.headers || {}),
-      },
-    })
-    return response
-  } finally {
-    clearTimeout(timeoutId)
+    try {
+      const response = await fetch(input, {
+        ...init,
+        signal: controller.signal,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(init.headers || {}),
+        },
+      })
+      clearTimeout(timeoutId)
+      // Don't retry on client/server errors — only on network failures
+      return response
+    } catch (error: any) {
+      clearTimeout(timeoutId)
+      lastError = error
+      // Don't retry if user intentionally aborted or it's not a network error
+      if (error?.name === 'AbortError' && attempt === 0) {
+        throw error // Timeout on first attempt — throw immediately
+      }
+      if (attempt < retries) {
+        // Exponential backoff: 1s, 2s
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
+      }
+    }
   }
+  throw lastError || new Error('Network request failed')
 }
 
 const toError = (message: string, status?: number, code?: string): AuthError => ({
