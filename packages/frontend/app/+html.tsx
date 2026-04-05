@@ -10,6 +10,31 @@ export default function Root({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+        <title>Chinmaya Janata — Connect with Your Chinmaya Community</title>
+
+        {/* SEO meta tags */}
+        <meta
+          name="description"
+          content="Chinmaya Janata brings the Chinmaya Mission community together. Discover nearby centers, find events, and connect with fellow members."
+        />
+        <meta name="theme-color" content="#ea580c" />
+
+        {/* Open Graph / Social sharing */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Chinmaya Janata" />
+        <meta
+          property="og:description"
+          content="Discover nearby Chinmaya Mission centers, find events, and connect with your community."
+        />
+        <meta property="og:site_name" content="Chinmaya Janata" />
+
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Chinmaya Janata" />
+        <meta
+          name="twitter:description"
+          content="Discover nearby Chinmaya Mission centers, find events, and connect with your community."
+        />
 
         {/* Mobile-optimized viewport */}
         <meta
@@ -21,8 +46,11 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Janata" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/logo.png" />
 
-        {/* Disable body scrolling on web. This makes ScrollView components work closer to how they do on native. 
+        {/* Disable body scrolling on web. This makes ScrollView components work closer to how they do on native.
           However, body scrolling is often nice to have for mobile web. If you want to enable it, remove this line.
         */}
         <ScrollViewStyleReset />
@@ -40,9 +68,6 @@ export default function Root({ children }: { children: React.ReactNode }) {
           href="https://fonts.googleapis.com/css2?family=Inclusive+Sans:wght@400&family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
-
-        {/* Add any additional <head> elements that you want globally available on web... */}
-        <meta title="Janatha" />
       </head>
       <body>
         {children}
