@@ -68,9 +68,9 @@ export default function RootLayout() {
 
   return (
     <PostHogProvider
-      apiKey="phc_5o67MgFjj113GN0QKduyyIs0BmEQkpWc8D2eDi6ju7Q"
+      apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY || ''}
       options={{
-        host: 'https://us.i.posthog.com',
+        host: process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
       }}
     >
       <CustomThemeProvider>
