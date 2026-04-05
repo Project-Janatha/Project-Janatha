@@ -1,5 +1,6 @@
 // Discover tab — mobile / native layout
 import React, { useState, Suspense, useRef, useCallback } from 'react'
+import { DiscoverListSkeleton } from '../../components/ui/Skeleton'
 import {
   View,
   Text,
@@ -429,10 +430,10 @@ export default function DiscoverScreen() {
             )}
           </View>
 
-          {/* Loading indicator */}
+          {/* Loading skeleton */}
           {loading && (
-            <View className="py-4 items-center">
-              <ActivityIndicator size="small" color="#9A3412" />
+            <View style={{ paddingHorizontal: 16 }}>
+              <DiscoverListSkeleton count={4} />
             </View>
           )}
 
