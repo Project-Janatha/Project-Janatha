@@ -97,6 +97,7 @@ export interface EventDisplay {
   centerName?: string
   centerId?: string
   createdBy?: string
+  category?: number | null
 }
 
 export interface DiscoverCenter {
