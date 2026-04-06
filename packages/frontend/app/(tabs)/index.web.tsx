@@ -59,6 +59,40 @@ function isToday(dateStr: string): boolean {
   return dateStr === today.toISOString().split('T')[0]
 }
 
+function isValidMapCoord(lat: number, lng: number): boolean {
+  return !isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
+}
+
+/** Resolve lat/lng for the side panel selection so the map can fly there (list, marker, or URL). */
+function findCoordsForSelection(
+  selectedItem: { type: 'event' | 'center'; id: string },
+  filteredPoints: MapPoint[],
+  allEvents: EventDisplay[],
+  allCenters: DiscoverCenter[]
+): { latitude: number; longitude: number } | null {
+  const targetType = selectedItem.type === 'center' ? 'center' : 'event'
+  const pt = filteredPoints.find((p) => p.id === selectedItem.id && p.type === targetType)
+  if (pt && isValidMapCoord(pt.latitude, pt.longitude)) {
+    return { latitude: pt.latitude, longitude: pt.longitude }
+  }
+  if (selectedItem.type === 'event') {
+    const e = allEvents.find((x) => x.id === selectedItem.id)
+    if (
+      e?.latitude != null &&
+      e?.longitude != null &&
+      isValidMapCoord(e.latitude, e.longitude)
+    ) {
+      return { latitude: e.latitude, longitude: e.longitude }
+    }
+  } else {
+    const c = allCenters.find((x) => x.id === selectedItem.id)
+    if (c && isValidMapCoord(c.latitude, c.longitude)) {
+      return { latitude: c.latitude, longitude: c.longitude }
+    }
+  }
+  return null
+}
+
 // ── Placeholder avatar dots for attendee count ──────────
 
 const AVATAR_COLORS = ['#E8862A', '#78716C', '#A8A29E', '#D6D3D1']
@@ -769,6 +803,10 @@ export default function DiscoverScreenWeb() {
   const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'center'; id: string } | null>(
     null
   )
+  const [mapFlyTo, setMapFlyTo] = useState<{ latitude: number; longitude: number; key: number } | null>(
+    null
+  )
+  const lastFlownSelectionRef = useRef<string | null>(null)
   // Event form panel: null = hidden, { id?: string } = open (id present = edit, absent = create)
   const [formPanel, setFormPanel] = useState<{ id?: string } | null>(null)
   const { items, filteredPoints, loading, allEvents, allCenters, refresh, updateEventStatus } =
@@ -798,6 +836,26 @@ export default function DiscoverScreenWeb() {
       setSelectedItem({ type: params.detail as 'event' | 'center', id: params.id })
     }
   }, [params.detail, params.id])
+
+  // Pan/zoom the map when the user opens a center or event (list, map marker, popover, or URL).
+  useEffect(() => {
+    if (!selectedItem) {
+      lastFlownSelectionRef.current = null
+      return
+    }
+    const coords = findCoordsForSelection(selectedItem, filteredPoints, allEvents, allCenters)
+    if (!coords) return
+
+    const sid = `${selectedItem.type}:${selectedItem.id}`
+    if (lastFlownSelectionRef.current === sid) return
+
+    lastFlownSelectionRef.current = sid
+    setMapFlyTo((prev) => ({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      key: (prev?.key ?? 0) + 1,
+    }))
+  }, [selectedItem, filteredPoints, allEvents, allCenters])
 
   // Listen for create event from header nav button
   useEffect(() => {
@@ -936,6 +994,7 @@ export default function DiscoverScreenWeb() {
               onPointClick={handlePointClick}
               onMapMove={handleMapMove}
               userCenterID={user?.centerID}
+              flyTo={mapFlyTo}
             />
           </Suspense>
 
