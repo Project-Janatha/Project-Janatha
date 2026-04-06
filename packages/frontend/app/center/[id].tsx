@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import { DetailSkeleton } from '../../components/ui/Skeleton'
 import {
   View,
   Text,
@@ -178,9 +179,7 @@ export default function CenterDetailPage() {
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }} edges={['top']}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#E8862A" />
-        </View>
+        <DetailSkeleton />
       </SafeAreaView>
     )
   }
