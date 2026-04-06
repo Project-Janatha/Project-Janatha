@@ -30,7 +30,7 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 export default function OnboardingProvider({ children }: { children: React.ReactNode }) {
   const { user, setUser, authenticatedFetch } = useUser()
   const [currentStep, setCurrentStep] = useState(1)
-  const totalSteps = 5 // Total form steps (not including Complete screen)
+  const totalSteps = 4 // Total form steps (not including Complete screen)
   const posthog = usePostHog()
 
   const [firstName, setFirstName] = useState('')

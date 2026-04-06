@@ -528,7 +528,7 @@ export default function Profile() {
                     setShowCenterPicker(true)
                   }
                 }}
-                placeholder="Search by zip code or city"
+                placeholder="Search by city or town"
                 placeholderTextColor="#9ca3af"
                 style={{
                   fontFamily: 'Inter-Regular',
@@ -1030,7 +1030,7 @@ export default function Profile() {
                       setShowCenterPicker(true)
                     }
                   }}
-                  placeholder="Search by zip code or city"
+                  placeholder="Search by city or town"
                   placeholderTextColor="#9ca3af"
                   style={{
                     fontFamily: 'Inter-Regular',
