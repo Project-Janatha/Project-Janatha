@@ -1,0 +1,22 @@
+{
+  "name": "Chinmaya Janata",
+  "short_name": "Janata",
+  "description": "Discover nearby Chinmaya Mission centers, find events, and connect with your community.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ea580c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
