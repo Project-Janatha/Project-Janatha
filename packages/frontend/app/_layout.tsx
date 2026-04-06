@@ -27,6 +27,11 @@ export const unstable_settings = {
 
 SplashScreen.preventAutoHideAsync()
 
+const posthogHost =
+  process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
+const posthogKey = (process.env.EXPO_PUBLIC_POSTHOG_KEY || '').trim()
+const posthogEnabled = posthogKey.length > 0
+
 export default function RootLayout() {
   const [fontsLoaded, fontsError] = useFonts({
     'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
@@ -69,9 +74,10 @@ export default function RootLayout() {
 
   return (
     <PostHogProvider
-      apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY || ''}
+      apiKey={posthogEnabled ? posthogKey : 'disabled'}
       options={{
-        host: process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
+        host: posthogHost,
+        disabled: !posthogEnabled,
       }}
     >
       <ErrorBoundary>

@@ -70,6 +70,10 @@ jobs:
 
       - name: Build frontend
         run: npm run build:frontend
+        env:
+          # Inlined at build time by Expo; same key as local packages/frontend/.env
+          EXPO_PUBLIC_POSTHOG_KEY: ${{ secrets.EXPO_PUBLIC_POSTHOG_KEY }}
+          EXPO_PUBLIC_POSTHOG_HOST: ${{ secrets.EXPO_PUBLIC_POSTHOG_HOST }}
 
       - name: Deploy production frontend
         run: npx wrangler pages deploy dist --project-name chinmaya-janata --branch __release
