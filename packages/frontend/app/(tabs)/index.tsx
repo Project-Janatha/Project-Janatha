@@ -17,6 +17,8 @@ import {
   MapPin,
   Search,
   Building2,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { usePostHog } from 'posthog-react-native'
@@ -32,8 +34,7 @@ import WeekCalendar from '../../components/WeekCalendar'
 const Map = React.lazy(() => import('../../components/Map'))
 
 const FILTERS: { label: DiscoverFilter }[] = [
-  { label: 'All' },
-  { label: 'Going' },
+  { label: 'Events' },
   { label: 'Centers' },
 ]
 
@@ -211,9 +212,10 @@ export default function DiscoverScreen() {
   const router = useRouter()
   const { isDark } = useThemeContext()
   const posthog = usePostHog()
-  const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
+  const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('Events')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [showGoingOnly, setShowGoingOnly] = useState(false)
   const [showPastEvents, setShowPastEvents] = useState(false)
     const { user } = useUser()
     const {
@@ -222,7 +224,7 @@ export default function DiscoverScreen() {
     loading,
     allEvents,
     refresh,
-  } = useDiscoverData(activeFilter, searchQuery, user?.id, showPastEvents, user?.interests ?? undefined)
+  } = useDiscoverData(activeFilter, searchQuery, user?.id, showPastEvents, showGoingOnly, user?.interests ?? undefined, user?.centerID)
 
   useFocusEffect(
     useCallback(() => {
@@ -322,6 +324,16 @@ export default function DiscoverScreen() {
     )
   }, [items, selectedDate])
 
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
+  const toggleSection = useCallback((label: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(label)) next.delete(label)
+      else next.add(label)
+      return next
+    })
+  }, [])
+
   const handleFilterPress = (f: DiscoverFilter) => {
     posthog?.capture('discover_filter_changed', { filter: f })
     setActiveFilter(f)
@@ -417,6 +429,30 @@ export default function DiscoverScreen() {
               />
             </View>
 
+            {/* Filter checkboxes */}
+            {activeFilter !== 'Centers' && (
+              <View className="flex-row items-center px-4 py-1 gap-4">
+                <Pressable
+                  onPress={() => setShowGoingOnly((prev) => !prev)}
+                  className="flex-row items-center"
+                >
+                  <View className={`w-4 h-4 rounded border mr-2 items-center justify-center ${showGoingOnly ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
+                    {showGoingOnly && <Text className="text-white text-xs font-bold">✓</Text>}
+                  </View>
+                  <Text className="text-xs text-stone-500 dark:text-stone-400 font-inter">Going</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setShowPastEvents((prev) => !prev)}
+                  className="flex-row items-center"
+                >
+                  <View className={`w-4 h-4 rounded border mr-2 items-center justify-center ${showPastEvents ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
+                    {showPastEvents && <Text className="text-white text-xs font-bold">✓</Text>}
+                  </View>
+                  <Text className="text-xs text-stone-500 dark:text-stone-400 font-inter">Show past events</Text>
+                </Pressable>
+              </View>
+            )}
+
             {/* Week Calendar */}
             {activeFilter !== 'Centers' && !searchQuery.trim() && (
               <WeekCalendar
@@ -429,21 +465,6 @@ export default function DiscoverScreen() {
                   }
                 }}
               />
-            )}
-
-            {/* Past events toggle */}
-            {activeFilter !== 'Centers' && (
-              <Pressable
-                onPress={() => setShowPastEvents((prev) => !prev)}
-                className="flex-row items-center px-4 py-1"
-              >
-                <View className={`w-4 h-4 rounded border mr-2 items-center justify-center ${showPastEvents ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
-                  {showPastEvents && <Text className="text-white text-xs font-bold">✓</Text>}
-                </View>
-                <Text className="text-xs text-stone-500 dark:text-stone-400 font-inter">
-                  Show past events
-                </Text>
-              </Pressable>
             )}
           </View>
 
@@ -464,17 +485,37 @@ export default function DiscoverScreen() {
             {!loading && displayItems.length === 0 && (
               <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
             )}
-            {displayItems.map((item) =>
-              item.type === 'event' ? (
-                <EventItem
-                  key={`event-${item.data.id}`}
-                  event={item.data as EventDisplay}
-                  onPress={() => {
-                    posthog?.capture('event_list_item_pressed', { eventId: item.data.id, source: 'discover' })
-                    router.push(`/events/${item.data.id}`)
-                  }}
-                />
-              ) : (
+            {displayItems.map((item, idx) => {
+              if (item.type === 'section') {
+                const label = item.data.label
+                const isCollapsed = collapsedSections.has(label)
+                return (
+                  <Pressable key={`section-${idx}`} onPress={() => toggleSection(label)} className={`${idx > 0 ? 'mt-3' : ''} mb-1`}>
+                    <View className="flex-row items-center gap-2 px-1">
+                      <Text className="text-xs font-inter-semibold text-stone-400 dark:text-stone-500 uppercase" style={{ letterSpacing: 0.5 }}>
+                        {label}
+                      </Text>
+                      <View className="flex-1 h-px bg-stone-200 dark:bg-neutral-700" />
+                      {isCollapsed ? <ChevronDown size={14} color="#a8a29e" /> : <ChevronUp size={14} color="#a8a29e" />}
+                    </View>
+                  </Pressable>
+                )
+              }
+              if (item.type === 'event') {
+                return (
+                  <EventItem
+                    key={`event-${item.data.id}`}
+                    event={item.data as EventDisplay}
+                    onPress={() => {
+                      posthog?.capture('event_list_item_pressed', { eventId: item.data.id, source: 'discover' })
+                      router.push(`/events/${item.data.id}`)
+                    }}
+                  />
+                )
+              }
+              const sectionLabel = displayItems.slice(0, idx).reverse().find((i) => i.type === 'section')?.data?.label
+              if (sectionLabel && collapsedSections.has(sectionLabel)) return null
+              return (
                 <CenterItem
                   key={`center-${item.data.id}`}
                   center={item.data as DiscoverCenter}
@@ -485,7 +526,7 @@ export default function DiscoverScreen() {
                   }}
                 />
               )
-            )}
+            })}
           </ScrollView>
         </View>
       </Animated.View>
