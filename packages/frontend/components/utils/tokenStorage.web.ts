@@ -6,6 +6,7 @@
  */
 
 const TOKEN_KEY = '@auth_token'
+const REFRESH_TOKEN_KEY = '@refresh_token'
 
 // Helper to set cookie
 const setCookie = (name: string, value: string, days: number) => {
@@ -81,8 +82,10 @@ export const removeStoredToken = async (): Promise<void> => {
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem(TOKEN_KEY)
+        localStorage.removeItem(REFRESH_TOKEN_KEY)
       } catch (e) {}
       eraseCookie(TOKEN_KEY)
+      eraseCookie(REFRESH_TOKEN_KEY)
     }
   } catch (error) {
     if (__DEV__) console.error('Error removing token:', error)
@@ -92,4 +95,33 @@ export const removeStoredToken = async (): Promise<void> => {
 export const hasStoredToken = async (): Promise<boolean> => {
   const token = await getStoredToken()
   return !!token
+}
+
+export const setStoredRefreshToken = async (token: string): Promise<void> => {
+  try {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(REFRESH_TOKEN_KEY, token)
+      } catch (e) {}
+      setCookie(REFRESH_TOKEN_KEY, token, 90)
+    }
+  } catch (error) {
+    if (__DEV__) console.error('Error storing refresh token:', error)
+  }
+}
+
+export const getStoredRefreshToken = async (): Promise<string | null> => {
+  try {
+    if (typeof window !== 'undefined') {
+      try {
+        const localToken = localStorage.getItem(REFRESH_TOKEN_KEY)
+        if (localToken) return localToken
+      } catch (e) {}
+      return getCookie(REFRESH_TOKEN_KEY)
+    }
+    return null
+  } catch (error) {
+    if (__DEV__) console.error('Error retrieving refresh token:', error)
+    return null
+  }
 }
