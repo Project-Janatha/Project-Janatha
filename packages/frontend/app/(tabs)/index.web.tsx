@@ -1,4 +1,6 @@
 // Discover tab — web desktop layout
+import { EmptyState } from '../../components/ui/EmptyState'
+import { DiscoverListSkeleton } from '../../components/ui/Skeleton'
 import React, {
   useState,
   useCallback,
@@ -389,11 +391,14 @@ function MobileDiscoverFallback() {
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [showPastEvents, setShowPastEvents] = useState(false)
   const { user } = useUser()
   const { items, filteredPoints, loading, allEvents, refresh } = useDiscoverData(
     activeFilter,
     searchQuery,
-    user?.id
+    user?.id,
+    showPastEvents,
+    user?.interests ?? undefined
   )
 
   useFocusEffect(
@@ -636,12 +641,30 @@ function MobileDiscoverFallback() {
                 />
               </View>
             )}
+
+            {/* Past events toggle */}
+            {activeFilter !== 'Centers' && (
+              <Pressable
+                onPress={() => setShowPastEvents((prev: boolean) => !prev)}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 4 }}
+              >
+                <View style={{
+                  width: 16, height: 16, borderRadius: 3, borderWidth: 1,
+                  marginRight: 8, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: showPastEvents ? '#ea580c' : 'transparent',
+                  borderColor: showPastEvents ? '#ea580c' : '#9ca3af',
+                }}>
+                  {showPastEvents && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
+                </View>
+                <Text style={{ fontSize: 12, color: '#78716c' }}>Show past events</Text>
+              </Pressable>
+            )}
           </div>
 
-          {/* Loading indicator */}
+          {/* Loading skeleton */}
           {loading && (
-            <View className="py-3 items-center">
-              <ActivityIndicator size="small" color="#9A3412" />
+            <View style={{ paddingHorizontal: 12 }}>
+              <DiscoverListSkeleton count={4} />
             </View>
           )}
 
@@ -653,11 +676,7 @@ function MobileDiscoverFallback() {
             scrollEnabled={isExpanded}
           >
             {!loading && displayItems.length === 0 && (
-              <View className="py-12 items-center">
-                <Text className="text-stone-400 dark:text-stone-500 font-inter text-sm">
-                  {selectedDate ? 'No events on this day' : 'No results found'}
-                </Text>
-              </View>
+              <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
             )}
             {displayItems.map((item) =>
               item.type === 'event' ? (
@@ -698,13 +717,14 @@ export default function DiscoverScreenWeb() {
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [showPastEvents, setShowPastEvents] = useState(false)
   const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'center'; id: string } | null>(
     null
   )
   // Event form panel: null = hidden, { id?: string } = open (id present = edit, absent = create)
   const [formPanel, setFormPanel] = useState<{ id?: string } | null>(null)
   const { items, filteredPoints, loading, allEvents, allCenters, refresh, updateEventStatus } =
-    useDiscoverData(activeFilter, searchQuery, user?.id)
+    useDiscoverData(activeFilter, searchQuery, user?.id, showPastEvents, user?.interests ?? undefined)
 
   // Get user's center for map initial location
   const { center: userCenter } = useCenterDetail(user?.centerID || '')
@@ -960,10 +980,28 @@ export default function DiscoverScreenWeb() {
               </View>
             )}
 
-            {/* Loading indicator */}
+            {/* Past events toggle */}
+            {activeFilter !== 'Centers' && (
+              <Pressable
+                onPress={() => setShowPastEvents((prev: boolean) => !prev)}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 4 }}
+              >
+                <View style={{
+                  width: 16, height: 16, borderRadius: 3, borderWidth: 1,
+                  marginRight: 8, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: showPastEvents ? '#ea580c' : 'transparent',
+                  borderColor: showPastEvents ? '#ea580c' : '#9ca3af',
+                }}>
+                  {showPastEvents && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
+                </View>
+                <Text style={{ fontSize: 12, color: '#78716c' }}>Show past events</Text>
+              </Pressable>
+            )}
+
+            {/* Loading skeleton */}
             {loading && (
-              <View className="py-4 items-center">
-                <ActivityIndicator size="small" color="#9A3412" />
+              <View style={{ paddingHorizontal: 16 }}>
+                <DiscoverListSkeleton count={5} />
               </View>
             )}
 
@@ -974,11 +1012,7 @@ export default function DiscoverScreenWeb() {
               showsVerticalScrollIndicator={false}
             >
               {!loading && displayItems.length === 0 && (
-                <View className="py-16 items-center">
-                  <Text className="text-stone-400 dark:text-stone-500 font-inter text-sm">
-                    {selectedDate ? 'No events on this day' : 'No results found'}
-                  </Text>
-                </View>
+                <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
               )}
               {displayItems.map((item) =>
                 item.type === 'event' ? (

@@ -1,5 +1,7 @@
 // Discover tab — mobile / native layout
 import React, { useState, Suspense, useRef, useCallback } from 'react'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { DiscoverListSkeleton } from '../../components/ui/Skeleton'
 import {
   View,
   Text,
@@ -212,6 +214,7 @@ export default function DiscoverScreen() {
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [showPastEvents, setShowPastEvents] = useState(false)
     const { user } = useUser()
     const {
     items,
@@ -219,7 +222,7 @@ export default function DiscoverScreen() {
     loading,
     allEvents,
     refresh,
-  } = useDiscoverData(activeFilter, searchQuery, user?.id)
+  } = useDiscoverData(activeFilter, searchQuery, user?.id, showPastEvents, user?.interests ?? undefined)
 
   useFocusEffect(
     useCallback(() => {
@@ -427,12 +430,27 @@ export default function DiscoverScreen() {
                 }}
               />
             )}
+
+            {/* Past events toggle */}
+            {activeFilter !== 'Centers' && (
+              <Pressable
+                onPress={() => setShowPastEvents((prev) => !prev)}
+                className="flex-row items-center px-4 py-1"
+              >
+                <View className={`w-4 h-4 rounded border mr-2 items-center justify-center ${showPastEvents ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
+                  {showPastEvents && <Text className="text-white text-xs font-bold">✓</Text>}
+                </View>
+                <Text className="text-xs text-stone-500 dark:text-stone-400 font-inter">
+                  Show past events
+                </Text>
+              </Pressable>
+            )}
           </View>
 
-          {/* Loading indicator */}
+          {/* Loading skeleton */}
           {loading && (
-            <View className="py-4 items-center">
-              <ActivityIndicator size="small" color="#9A3412" />
+            <View style={{ paddingHorizontal: 16 }}>
+              <DiscoverListSkeleton count={4} />
             </View>
           )}
 
@@ -444,11 +462,7 @@ export default function DiscoverScreen() {
             scrollEnabled={isSheetExpanded}
           >
             {!loading && displayItems.length === 0 && (
-              <View className="py-12 items-center">
-                <Text className="text-stone-400 dark:text-stone-500 font-inter text-sm">
-                  {selectedDate ? 'No events on this day' : 'No results found'}
-                </Text>
-              </View>
+              <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
             )}
             {displayItems.map((item) =>
               item.type === 'event' ? (
