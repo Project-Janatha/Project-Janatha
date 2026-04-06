@@ -115,8 +115,9 @@ export interface DiscoverCenter {
 export type DiscoverItem =
   | { type: 'event'; data: EventDisplay }
   | { type: 'center'; data: DiscoverCenter }
+  | { type: 'section'; data: { label: string } }
 
-export type DiscoverFilter = 'All' | 'Going' | 'Centers'
+export type DiscoverFilter = 'Events' | 'Centers'
 
 // ── Fetch helpers ──────────────────────────────────────────────────────
 
