@@ -18,6 +18,7 @@ import {
   generateToken,
   generateRefreshToken,
   verifyToken,
+  verifyRefreshToken,
 } from './auth'
 import * as db from './db'
 import { ADMIN_EMAIL, NORMAL_USER, SEVAK, BRAHMACHARI, TIER_DESCALE, ADMIN_CUTOFF, DEVELOPER_EMAILS } from './constants'
@@ -235,6 +236,40 @@ app.post('/auth/authenticate', rateLimit(5, 60_000), async (c) => {
 
 app.post('/auth/deauthenticate', (c) => {
   return c.json({ message: 'Deauthentication successful!' })
+})
+
+// ── Refresh token endpoint ────────────────────────────────────────────
+
+app.post('/auth/refresh', async (c) => {
+  try {
+    const { refreshToken } = await c.req.json<{ refreshToken: string }>()
+    if (!refreshToken) {
+      return c.json({ message: 'Refresh token is required' }, 400)
+    }
+
+    const refreshSecret = c.env.JWT_REFRESH_SECRET || c.env.JWT_SECRET
+    const decoded = await verifyRefreshToken(refreshToken, refreshSecret)
+    if (!decoded) {
+      return c.json({ message: 'Invalid or expired refresh token' }, 401)
+    }
+
+    const user = await db.getUserByUsername(c.env.DB, decoded.username)
+    if (!user) {
+      return c.json({ message: 'User not found' }, 401)
+    }
+
+    const newAccessToken = await generateToken(user, c.env.JWT_SECRET)
+    const newRefreshToken = await generateRefreshToken(user, refreshSecret)
+
+    return c.json({
+      message: 'Token refreshed',
+      token: newAccessToken,
+      refreshToken: newRefreshToken,
+      user: userRowToApi(user),
+    })
+  } catch {
+    return c.json({ message: 'Failed to refresh token' }, 500)
+  }
 })
 
 app.get('/auth/verify', authMiddleware, (c) => {
