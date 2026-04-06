@@ -553,7 +553,123 @@ const CATEGORY_TO_INTEREST: Record<number, string> = {
   92: 'Bhiksha',
 }
 
-export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, userId?: string, showPastEvents = false, userInterests?: string[]) {
+// ── Center grouping helpers ──────────────────────────────────
+
+const US_STATES: Record<string, string> = {
+  AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',
+  CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',
+  HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',
+  KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',
+  MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',
+  NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',
+  NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',
+  OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',
+  SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',
+  VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',
+  DC:'District of Columbia',
+}
+
+function extractCountryAndState(address?: string): { country: string; state: string } {
+  const fallback = { country: 'Other', state: 'Unknown' }
+  if (!address) return fallback
+
+  const parts = address.split(',').map((s) => s.trim()).filter(Boolean)
+  if (parts.length < 2) return fallback
+
+  const last = parts[parts.length - 1]
+
+  // Check if the last part is a state+ZIP (US format: "CA 95131" or "California")
+  const stateZipMatch = last.match(/^([A-Z]{2})\s+\d{5}/)
+  if (stateZipMatch) {
+    const abbr = stateZipMatch[1]
+    return { country: 'United States', state: US_STATES[abbr] || abbr }
+  }
+
+  // Check if last part is just a US state abbreviation
+  if (/^[A-Z]{2}$/.test(last) && US_STATES[last]) {
+    return { country: 'United States', state: US_STATES[last] }
+  }
+
+  // Check if last part is a US state full name
+  const stateEntry = Object.entries(US_STATES).find(
+    ([, name]) => name.toLowerCase() === last.toLowerCase()
+  )
+  if (stateEntry) {
+    return { country: 'United States', state: stateEntry[1] }
+  }
+
+  // International: last part is a country, second-to-last is state/province
+  const statePart = parts.length >= 3 ? parts[parts.length - 2] : 'Unknown'
+  // Strip ZIP from state part if present
+  const cleanState = statePart.replace(/\s*\d{5,6}(-\d{4})?$/, '').trim()
+  return { country: last, state: cleanState || 'Unknown' }
+}
+
+function groupCenterItems(centers: DiscoverCenter[], userCenterID?: string | null): DiscoverItem[] {
+  const groups = new Map<string, DiscoverCenter[]>()
+
+  for (const center of centers) {
+    const { country, state } = extractCountryAndState(center.address)
+    // Single key: "State" for US, "State, Country" for international, "Other" for unknown
+    let key: string
+    if (country === 'Other' || state === 'Unknown') {
+      key = 'Other'
+    } else if (country === 'United States') {
+      key = state
+    } else {
+      key = `${state}, ${country}`
+    }
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(center)
+  }
+
+  // Find which group the user's center belongs to
+  let userGroupKey: string | null = null
+  if (userCenterID) {
+    const userCenter = centers.find((c) => c.id === userCenterID)
+    if (userCenter) {
+      const { country, state } = extractCountryAndState(userCenter.address)
+      if (country === 'Other' || state === 'Unknown') {
+        userGroupKey = 'Other'
+      } else if (country === 'United States') {
+        userGroupKey = state
+      } else {
+        userGroupKey = `${state}, ${country}`
+      }
+    }
+  }
+
+  // Sort: user's group first, then alphabetical, "Other" last
+  const sortedKeys = [...groups.keys()].sort((a, b) => {
+    if (userGroupKey) {
+      if (a === userGroupKey) return -1
+      if (b === userGroupKey) return 1
+    }
+    if (a === 'Other') return 1
+    if (b === 'Other') return -1
+    return a.localeCompare(b)
+  })
+
+  const result: DiscoverItem[] = []
+  for (const key of sortedKeys) {
+    const sectionCenters = groups.get(key)!
+    sectionCenters.sort((a, b) => {
+      if (userCenterID) {
+        if (a.id === userCenterID) return -1
+        if (b.id === userCenterID) return 1
+      }
+      return a.name.localeCompare(b.name)
+    })
+    result.push({ type: 'section', data: { label: key } })
+    for (const c of sectionCenters) {
+      result.push({ type: 'center', data: c })
+    }
+  }
+
+  return result
+}
+
+export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, userId?: string, showPastEvents = false, showGoingOnly = false, userInterests?: string[], userCenterID?: string | null) {
   const [allEvents, setAllEvents] = useState<EventDisplay[]>([])
   const [allCenters, setAllCenters] = useState<DiscoverCenter[]>([])
   const [loading, setLoading] = useState(true)
@@ -635,49 +751,52 @@ export function useDiscoverData(filter: DiscoverFilter, searchQuery: string, use
     let result: DiscoverItem[] = []
 
     if (filter === 'Centers') {
-      result = allCenters.map((c) => ({ type: 'center' as const, data: c }))
-    } else if (filter === 'Going') {
-      const goingEvents = filteredEvents
-        .filter((e) => e.isRegistered)
-        .sort((a, b) => b.date.localeCompare(a.date))
-      const memberCenters = allCenters.filter((c) => c.isMember)
-      result = [
-        ...goingEvents.map((e) => ({ type: 'event' as const, data: e })),
-        ...memberCenters.map((c) => ({ type: 'center' as const, data: c })),
-      ]
+      result = groupCenterItems(allCenters, userCenterID)
     } else {
-      // All: registered events first, then others, then centers
-      // Within each group, sort by date descending (upcoming first)
+      const eventsToShow = showGoingOnly
+        ? filteredEvents.filter((e) => e.isRegistered)
+        : filteredEvents
       const sortByDate = (a: EventDisplay, b: EventDisplay) =>
         b.date.localeCompare(a.date)
-      const registered = filteredEvents.filter((e) => e.isRegistered).sort(sortByDate)
-      const unregistered = filteredEvents.filter((e) => !e.isRegistered).sort(sortByDate)
+      const registered = eventsToShow.filter((e) => e.isRegistered).sort(sortByDate)
+      const unregistered = eventsToShow.filter((e) => !e.isRegistered).sort(sortByDate)
 
       result = [
         ...registered.map((e) => ({ type: 'event' as const, data: e })),
         ...unregistered.map((e) => ({ type: 'event' as const, data: e })),
-        ...allCenters.map((c) => ({ type: 'center' as const, data: c })),
       ]
     }
 
     // Apply search query
     if (query) {
-      result = result.filter((item) => {
-        if (item.type === 'event') {
-          return (
-            item.data.title.toLowerCase().includes(query) ||
-            item.data.location.toLowerCase().includes(query)
-          )
-        }
-        return (
-          item.data.name.toLowerCase().includes(query) ||
-          (item.data.address?.toLowerCase().includes(query) ?? false)
+      if (filter === 'Centers') {
+        const matchingCenters = allCenters.filter(
+          (c) =>
+            c.name.toLowerCase().includes(query) ||
+            (c.address?.toLowerCase().includes(query) ?? false)
         )
-      })
+        result = groupCenterItems(matchingCenters, userCenterID)
+      } else {
+        result = result.filter((item) => {
+          if (item.type === 'event') {
+            return (
+              item.data.title.toLowerCase().includes(query) ||
+              item.data.location.toLowerCase().includes(query)
+            )
+          }
+          if (item.type === 'center') {
+            return (
+              item.data.name.toLowerCase().includes(query) ||
+              (item.data.address?.toLowerCase().includes(query) ?? false)
+            )
+          }
+          return false
+        })
+      }
     }
 
     return result
-  }, [allEvents, allCenters, filter, searchQuery, showPastEvents, userInterests])
+  }, [allEvents, allCenters, filter, searchQuery, showPastEvents, showGoingOnly, userInterests, userCenterID])
 
   // Map points from current data
   const filteredPoints = useMemo<MapPoint[]>(() => {
