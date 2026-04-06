@@ -1,4 +1,6 @@
 // Discover tab — web desktop layout
+import { EmptyState } from '../../components/ui/EmptyState'
+import { DiscoverListSkeleton } from '../../components/ui/Skeleton'
 import React, {
   useState,
   useCallback,
@@ -18,7 +20,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native'
-import { MapPin, Search, Building2, Users, ChevronUp } from 'lucide-react-native'
+import { MapPin, Search, Building2, Users, ChevronUp, ChevronDown } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { useThemeContext, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar, Avatar } from '../../components/ui'
@@ -41,8 +43,7 @@ const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
 const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
 
 const FILTERS: { label: DiscoverFilter }[] = [
-  { label: 'All' },
-  { label: 'Going' },
+  { label: 'Events' },
   { label: 'Centers' },
 ]
 
@@ -56,6 +57,40 @@ function formatDatePill(dateStr: string): { month: string; day: string } {
 function isToday(dateStr: string): boolean {
   const today = new Date()
   return dateStr === today.toISOString().split('T')[0]
+}
+
+function isValidMapCoord(lat: number, lng: number): boolean {
+  return !isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
+}
+
+/** Resolve lat/lng for the side panel selection so the map can fly there (list, marker, or URL). */
+function findCoordsForSelection(
+  selectedItem: { type: 'event' | 'center'; id: string },
+  filteredPoints: MapPoint[],
+  allEvents: EventDisplay[],
+  allCenters: DiscoverCenter[]
+): { latitude: number; longitude: number } | null {
+  const targetType = selectedItem.type === 'center' ? 'center' : 'event'
+  const pt = filteredPoints.find((p) => p.id === selectedItem.id && p.type === targetType)
+  if (pt && isValidMapCoord(pt.latitude, pt.longitude)) {
+    return { latitude: pt.latitude, longitude: pt.longitude }
+  }
+  if (selectedItem.type === 'event') {
+    const e = allEvents.find((x) => x.id === selectedItem.id)
+    if (
+      e?.latitude != null &&
+      e?.longitude != null &&
+      isValidMapCoord(e.latitude, e.longitude)
+    ) {
+      return { latitude: e.latitude, longitude: e.longitude }
+    }
+  } else {
+    const c = allCenters.find((x) => x.id === selectedItem.id)
+    if (c && isValidMapCoord(c.latitude, c.longitude)) {
+      return { latitude: c.latitude, longitude: c.longitude }
+    }
+  }
+  return null
 }
 
 // ── Placeholder avatar dots for attendee count ──────────
@@ -386,14 +421,20 @@ type SheetSnap = 'collapsed' | 'mid' | 'expanded'
 function MobileDiscoverFallback() {
   const router = useRouter()
   const { isDark } = useThemeContext()
-  const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
+  const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('Events')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [showGoingOnly, setShowGoingOnly] = useState(false)
+  const [showPastEvents, setShowPastEvents] = useState(false)
   const { user } = useUser()
   const { items, filteredPoints, loading, allEvents, refresh } = useDiscoverData(
     activeFilter,
     searchQuery,
-    user?.id
+    user?.id,
+    showPastEvents,
+    showGoingOnly,
+    user?.interests ?? undefined,
+    user?.centerID
   )
 
   useFocusEffect(
@@ -511,6 +552,15 @@ function MobileDiscoverFallback() {
   }, [items, selectedDate])
 
   const isExpanded = sheetSnap === 'expanded' && sheetTranslateY === null
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
+  const toggleSection = useCallback((label: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(label)) next.delete(label)
+      else next.add(label)
+      return next
+    })
+  }, [])
 
   return (
     <div
@@ -626,6 +676,40 @@ function MobileDiscoverFallback() {
               />
             </View>
 
+            {/* Filter checkboxes */}
+            {activeFilter !== 'Centers' && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 4, gap: 16 }}>
+                <Pressable
+                  onPress={() => setShowGoingOnly((prev: boolean) => !prev)}
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                >
+                  <View style={{
+                    width: 16, height: 16, borderRadius: 3, borderWidth: 1,
+                    marginRight: 8, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: showGoingOnly ? '#ea580c' : 'transparent',
+                    borderColor: showGoingOnly ? '#ea580c' : '#9ca3af',
+                  }}>
+                    {showGoingOnly && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
+                  </View>
+                  <Text style={{ fontSize: 12, color: '#78716c' }}>Going</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setShowPastEvents((prev: boolean) => !prev)}
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                >
+                  <View style={{
+                    width: 16, height: 16, borderRadius: 3, borderWidth: 1,
+                    marginRight: 8, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: showPastEvents ? '#ea580c' : 'transparent',
+                    borderColor: showPastEvents ? '#ea580c' : '#9ca3af',
+                  }}>
+                    {showPastEvents && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
+                  </View>
+                  <Text style={{ fontSize: 12, color: '#78716c' }}>Show past events</Text>
+                </Pressable>
+              </View>
+            )}
+
             {/* Week Calendar */}
             {activeFilter !== 'Centers' && !searchQuery.trim() && (
               <View style={{ paddingHorizontal: 12, paddingTop: 4 }}>
@@ -638,10 +722,10 @@ function MobileDiscoverFallback() {
             )}
           </div>
 
-          {/* Loading indicator */}
+          {/* Loading skeleton */}
           {loading && (
-            <View className="py-3 items-center">
-              <ActivityIndicator size="small" color="#9A3412" />
+            <View style={{ paddingHorizontal: 12 }}>
+              <DiscoverListSkeleton count={4} />
             </View>
           )}
 
@@ -653,20 +737,36 @@ function MobileDiscoverFallback() {
             scrollEnabled={isExpanded}
           >
             {!loading && displayItems.length === 0 && (
-              <View className="py-12 items-center">
-                <Text className="text-stone-400 dark:text-stone-500 font-inter text-sm">
-                  {selectedDate ? 'No events on this day' : 'No results found'}
-                </Text>
-              </View>
+              <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
             )}
-            {displayItems.map((item) =>
-              item.type === 'event' ? (
-                <EventItem
-                  key={`event-${item.data.id}`}
-                  event={item.data as EventDisplay}
-                  onPress={() => router.push(`/events/${item.data.id}`)}
-                />
-              ) : (
+            {displayItems.map((item, idx) => {
+              if (item.type === 'section') {
+                const label = item.data.label
+                const isCollapsed = collapsedSections.has(label)
+                return (
+                  <Pressable key={`section-${idx}`} onPress={() => toggleSection(label)} style={{ marginTop: idx > 0 ? 12 : 0, marginBottom: 4 }}>
+                    <View className="flex-row items-center gap-2 px-1">
+                      <Text className="text-xs font-inter-semibold text-stone-400 dark:text-stone-500 uppercase" style={{ letterSpacing: 0.5 }}>
+                        {label}
+                      </Text>
+                      <View className="flex-1 h-px bg-stone-200 dark:bg-neutral-700" />
+                      {isCollapsed ? <ChevronDown size={14} color="#a8a29e" /> : <ChevronUp size={14} color="#a8a29e" />}
+                    </View>
+                  </Pressable>
+                )
+              }
+              if (item.type === 'event') {
+                return (
+                  <EventItem
+                    key={`event-${item.data.id}`}
+                    event={item.data as EventDisplay}
+                    onPress={() => router.push(`/events/${item.data.id}`)}
+                  />
+                )
+              }
+              const sectionLabel = displayItems.slice(0, idx).reverse().find((i) => i.type === 'section')?.data?.label
+              if (sectionLabel && collapsedSections.has(sectionLabel)) return null
+              return (
                 <CenterItem
                   key={`center-${item.data.id}`}
                   center={item.data as DiscoverCenter}
@@ -674,7 +774,7 @@ function MobileDiscoverFallback() {
                   onPress={() => router.push(`/center/${item.data.id}`)}
                 />
               )
-            )}
+            })}
           </ScrollView>
         </div>
       </div>
@@ -695,16 +795,22 @@ export default function DiscoverScreenWeb() {
   const { user } = useUser()
   const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
   const canCreate = isAdmin || isLocal
-  const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
+  const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('Events')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [showGoingOnly, setShowGoingOnly] = useState(false)
+  const [showPastEvents, setShowPastEvents] = useState(false)
   const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'center'; id: string } | null>(
     null
   )
+  const [mapFlyTo, setMapFlyTo] = useState<{ latitude: number; longitude: number; key: number } | null>(
+    null
+  )
+  const lastFlownSelectionRef = useRef<string | null>(null)
   // Event form panel: null = hidden, { id?: string } = open (id present = edit, absent = create)
   const [formPanel, setFormPanel] = useState<{ id?: string } | null>(null)
   const { items, filteredPoints, loading, allEvents, allCenters, refresh, updateEventStatus } =
-    useDiscoverData(activeFilter, searchQuery, user?.id)
+    useDiscoverData(activeFilter, searchQuery, user?.id, showPastEvents, showGoingOnly, user?.interests ?? undefined, user?.centerID)
 
   // Get user's center for map initial location
   const { center: userCenter } = useCenterDetail(user?.centerID || '')
@@ -730,6 +836,26 @@ export default function DiscoverScreenWeb() {
       setSelectedItem({ type: params.detail as 'event' | 'center', id: params.id })
     }
   }, [params.detail, params.id])
+
+  // Pan/zoom the map when the user opens a center or event (list, map marker, popover, or URL).
+  useEffect(() => {
+    if (!selectedItem) {
+      lastFlownSelectionRef.current = null
+      return
+    }
+    const coords = findCoordsForSelection(selectedItem, filteredPoints, allEvents, allCenters)
+    if (!coords) return
+
+    const sid = `${selectedItem.type}:${selectedItem.id}`
+    if (lastFlownSelectionRef.current === sid) return
+
+    lastFlownSelectionRef.current = sid
+    setMapFlyTo((prev) => ({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      key: (prev?.key ?? 0) + 1,
+    }))
+  }, [selectedItem, filteredPoints, allEvents, allCenters])
 
   // Listen for create event from header nav button
   useEffect(() => {
@@ -760,6 +886,16 @@ export default function DiscoverScreenWeb() {
   const handleFilterPress = useCallback((f: DiscoverFilter) => {
     setActiveFilter(f)
     setSelectedDate(null)
+  }, [])
+
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
+  const toggleSection = useCallback((label: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(label)) next.delete(label)
+      else next.add(label)
+      return next
+    })
   }, [])
 
   // Map popover state
@@ -858,6 +994,7 @@ export default function DiscoverScreenWeb() {
               onPointClick={handlePointClick}
               onMapMove={handleMapMove}
               userCenterID={user?.centerID}
+              flyTo={mapFlyTo}
             />
           </Suspense>
 
@@ -949,6 +1086,40 @@ export default function DiscoverScreenWeb() {
               />
             </View>
 
+            {/* Filter checkboxes */}
+            {activeFilter !== 'Centers' && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 4, gap: 16 }}>
+                <Pressable
+                  onPress={() => setShowGoingOnly((prev: boolean) => !prev)}
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                >
+                  <View style={{
+                    width: 16, height: 16, borderRadius: 3, borderWidth: 1,
+                    marginRight: 8, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: showGoingOnly ? '#ea580c' : 'transparent',
+                    borderColor: showGoingOnly ? '#ea580c' : '#9ca3af',
+                  }}>
+                    {showGoingOnly && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
+                  </View>
+                  <Text style={{ fontSize: 12, color: '#78716c' }}>Going</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setShowPastEvents((prev: boolean) => !prev)}
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                >
+                  <View style={{
+                    width: 16, height: 16, borderRadius: 3, borderWidth: 1,
+                    marginRight: 8, alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: showPastEvents ? '#ea580c' : 'transparent',
+                    borderColor: showPastEvents ? '#ea580c' : '#9ca3af',
+                  }}>
+                    {showPastEvents && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
+                  </View>
+                  <Text style={{ fontSize: 12, color: '#78716c' }}>Show past events</Text>
+                </Pressable>
+              </View>
+            )}
+
             {/* Week Calendar — hidden when Centers filter or searching */}
             {activeFilter !== 'Centers' && !searchQuery.trim() && (
               <View style={{ paddingHorizontal: 20, paddingTop: 4 }}>
@@ -960,10 +1131,10 @@ export default function DiscoverScreenWeb() {
               </View>
             )}
 
-            {/* Loading indicator */}
+            {/* Loading skeleton */}
             {loading && (
-              <View className="py-4 items-center">
-                <ActivityIndicator size="small" color="#9A3412" />
+              <View style={{ paddingHorizontal: 16 }}>
+                <DiscoverListSkeleton count={5} />
               </View>
             )}
 
@@ -974,20 +1145,36 @@ export default function DiscoverScreenWeb() {
               showsVerticalScrollIndicator={false}
             >
               {!loading && displayItems.length === 0 && (
-                <View className="py-16 items-center">
-                  <Text className="text-stone-400 dark:text-stone-500 font-inter text-sm">
-                    {selectedDate ? 'No events on this day' : 'No results found'}
-                  </Text>
-                </View>
+                <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
               )}
-              {displayItems.map((item) =>
-                item.type === 'event' ? (
-                  <EventItem
-                    key={`event-${item.data.id}`}
-                    event={item.data as EventDisplay}
-                    onPress={() => setSelectedItem({ type: 'event', id: item.data.id })}
-                  />
-                ) : (
+              {displayItems.map((item, idx) => {
+                if (item.type === 'section') {
+                  const label = item.data.label
+                  const isCollapsed = collapsedSections.has(label)
+                  return (
+                    <Pressable key={`section-${idx}`} onPress={() => toggleSection(label)} style={{ marginTop: idx > 0 ? 16 : 0, marginBottom: 4 }}>
+                      <View className="flex-row items-center gap-2 px-1">
+                        <Text className="text-xs font-inter-semibold text-stone-400 dark:text-stone-500 uppercase" style={{ letterSpacing: 0.5 }}>
+                          {label}
+                        </Text>
+                        <View className="flex-1 h-px bg-stone-200 dark:bg-neutral-700" />
+                        {isCollapsed ? <ChevronDown size={14} color="#a8a29e" /> : <ChevronUp size={14} color="#a8a29e" />}
+                      </View>
+                    </Pressable>
+                  )
+                }
+                if (item.type === 'event') {
+                  return (
+                    <EventItem
+                      key={`event-${item.data.id}`}
+                      event={item.data as EventDisplay}
+                      onPress={() => setSelectedItem({ type: 'event', id: item.data.id })}
+                    />
+                  )
+                }
+                const sectionLabel = displayItems.slice(0, idx).reverse().find((i) => i.type === 'section')?.data?.label
+                if (sectionLabel && collapsedSections.has(sectionLabel)) return null
+                return (
                   <CenterItem
                     key={`center-${item.data.id}`}
                     center={item.data as DiscoverCenter}
@@ -995,7 +1182,7 @@ export default function DiscoverScreenWeb() {
                     onPress={() => setSelectedItem({ type: 'center', id: item.data.id })}
                   />
                 )
-              )}
+              })}
             </ScrollView>
           </View>
         )}
