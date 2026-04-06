@@ -214,6 +214,7 @@ export default function DiscoverScreen() {
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [showPastEvents, setShowPastEvents] = useState(false)
     const { user } = useUser()
     const {
     items,
@@ -221,7 +222,7 @@ export default function DiscoverScreen() {
     loading,
     allEvents,
     refresh,
-  } = useDiscoverData(activeFilter, searchQuery, user?.id)
+  } = useDiscoverData(activeFilter, searchQuery, user?.id, showPastEvents)
 
   useFocusEffect(
     useCallback(() => {
@@ -428,6 +429,21 @@ export default function DiscoverScreen() {
                   }
                 }}
               />
+            )}
+
+            {/* Past events toggle */}
+            {activeFilter !== 'Centers' && (
+              <Pressable
+                onPress={() => setShowPastEvents((prev) => !prev)}
+                className="flex-row items-center px-4 py-1"
+              >
+                <View className={`w-4 h-4 rounded border mr-2 items-center justify-center ${showPastEvents ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
+                  {showPastEvents && <Text className="text-white text-xs font-bold">✓</Text>}
+                </View>
+                <Text className="text-xs text-stone-500 dark:text-stone-400 font-inter">
+                  Show past events
+                </Text>
+              </Pressable>
             )}
           </View>
 
