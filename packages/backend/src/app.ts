@@ -1160,6 +1160,60 @@ app.delete('/admin/events/:id', adminMiddleware, async (c) => {
   return c.json({ message: 'Failed to delete event', error: result.error }, 500)
 })
 
+// ── Admin user actions ──────────────────────────────────────────────
+
+app.post('/admin/users/:id/verify', adminMiddleware, async (c) => {
+  const userId = c.req.param('id')
+  const targetUser = await db.getUserById(c.env.DB, userId)
+  if (!targetUser) {
+    return c.json({ message: 'User not found' }, 404)
+  }
+
+  const body = await c.req.json<{
+    verificationLevel?: number
+    isVerified?: boolean
+  }>()
+
+  const updates: Partial<UserRow> = {}
+
+  if (body.isVerified === false) {
+    updates.is_verified = 0
+    updates.verification_level = body.verificationLevel ?? NORMAL_USER
+  } else {
+    updates.is_verified = 1
+    updates.verification_level = body.verificationLevel ?? targetUser.verification_level
+  }
+
+  const result = await db.updateUser(c.env.DB, userId, updates)
+  if (result.success) {
+    return c.json({
+      message: updates.is_verified ? 'User verified' : 'User unverified',
+      isVerified: updates.is_verified === 1,
+    })
+  }
+  return c.json({ message: 'Update failed' }, 500)
+})
+
+app.delete('/admin/users/:id', adminMiddleware, async (c) => {
+  const userId = c.req.param('id')
+  const adminUser = c.get('user')
+
+  if (adminUser.id === userId) {
+    return c.json({ message: 'Cannot delete your own account from admin panel' }, 400)
+  }
+
+  const targetUser = await db.getUserById(c.env.DB, userId)
+  if (!targetUser) {
+    return c.json({ message: 'User not found' }, 404)
+  }
+
+  const result = await db.deleteUser(c.env.DB, userId)
+  if (result.success) {
+    return c.json({ message: 'User deleted' })
+  }
+  return c.json({ message: 'Delete failed' }, 500)
+})
+
 // ── Default export ────────────────────────────────────────────────────
 
 export default app

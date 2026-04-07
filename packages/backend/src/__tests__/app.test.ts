@@ -1373,3 +1373,64 @@ describe('Admin event actions', () => {
     expect(res.status).toBe(404)
   })
 })
+
+describe('Admin user actions', () => {
+  it('POST /api/admin/users/:id/verify toggles user verification', async () => {
+    const adminToken = await createAdmin()
+    const { user } = await registerAndLogin('testuser', 'password123')
+
+    // Verify the user
+    const { res, body } = await jsonPost(`/api/admin/users/${user.id}/verify`, {
+      verificationLevel: 54,
+    }, authHeader(adminToken))
+    expect(res.status).toBe(200)
+    expect(body.isVerified).toBe(true)
+
+    // Unverify the user
+    const { body: body2 } = await jsonPost(`/api/admin/users/${user.id}/verify`, {
+      verificationLevel: 45,
+      isVerified: false,
+    }, authHeader(adminToken))
+    expect(body2.isVerified).toBe(false)
+  })
+
+  it('DELETE /api/admin/users/:id deletes user', async () => {
+    const adminToken = await createAdmin()
+    const { user } = await registerAndLogin('deleteuser', 'password123')
+
+    const { res } = await fetchJSON(`/api/admin/users/${user.id}`, {
+      method: 'DELETE',
+      headers: authHeader(adminToken),
+    })
+    expect(res.status).toBe(200)
+
+    // Verify user is gone
+    const { body } = await jsonPost('/api/userExistence', { username: 'deleteuser' })
+    expect(body.existence).toBe(false)
+  })
+
+  it('returns 404 for non-existent user', async () => {
+    const adminToken = await createAdmin()
+    const { res } = await jsonPost('/api/admin/users/nonexistent/verify', {
+      verificationLevel: 54,
+    }, authHeader(adminToken))
+    expect(res.status).toBe(404)
+  })
+
+  it('prevents admin from deleting themselves', async () => {
+    const adminToken = await createAdmin()
+
+    // Get admin user ID
+    const { body: verifyBody } = await fetchJSON('/api/auth/verify', {
+      headers: authHeader(adminToken),
+    })
+    const adminId = verifyBody.user.id
+
+    const { res, body } = await fetchJSON(`/api/admin/users/${adminId}`, {
+      method: 'DELETE',
+      headers: authHeader(adminToken),
+    })
+    expect(res.status).toBe(400)
+    expect(body.message).toBe('Cannot delete your own account from admin panel')
+  })
+})
