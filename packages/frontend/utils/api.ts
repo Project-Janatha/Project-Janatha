@@ -423,3 +423,136 @@ export function centersToDiscoverCenters(centers: CenterData[]): DiscoverCenter[
 export const DISCOVER_SAMPLE_EVENTS: EventDisplay[] = []
 
 export const DISCOVER_SAMPLE_CENTERS: DiscoverCenter[] = []
+
+// ── Admin API ─────────────────────────────────────────────────────────
+
+export interface AdminPaginatedResponse<T> {
+  data: T[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface AdminStats {
+  users: number
+  centers: number
+  events: number
+}
+
+export async function fetchAdminStats(): Promise<AdminStats> {
+  const response = await authFetch('/admin/stats')
+  if (!response.ok) throw new Error('Failed to fetch admin stats')
+  return response.json()
+}
+
+export async function fetchAdminUsers(params?: {
+  q?: string
+  limit?: number
+  offset?: number
+}): Promise<AdminPaginatedResponse<UserData>> {
+  const searchParams = new URLSearchParams()
+  if (params?.q) searchParams.set('q', params.q)
+  if (params?.limit) searchParams.set('limit', String(params.limit))
+  if (params?.offset) searchParams.set('offset', String(params.offset))
+  const qs = searchParams.toString()
+  const response = await authFetch(`/admin/users${qs ? `?${qs}` : ''}`)
+  if (!response.ok) throw new Error('Failed to fetch admin users')
+  return response.json()
+}
+
+export async function fetchAdminCenters(params?: {
+  q?: string
+  limit?: number
+  offset?: number
+}): Promise<AdminPaginatedResponse<CenterData>> {
+  const searchParams = new URLSearchParams()
+  if (params?.q) searchParams.set('q', params.q)
+  if (params?.limit) searchParams.set('limit', String(params.limit))
+  if (params?.offset) searchParams.set('offset', String(params.offset))
+  const qs = searchParams.toString()
+  const response = await authFetch(`/admin/centers${qs ? `?${qs}` : ''}`)
+  if (!response.ok) throw new Error('Failed to fetch admin centers')
+  return response.json()
+}
+
+export async function fetchAdminEvents(params?: {
+  q?: string
+  limit?: number
+  offset?: number
+}): Promise<AdminPaginatedResponse<EventData>> {
+  const searchParams = new URLSearchParams()
+  if (params?.q) searchParams.set('q', params.q)
+  if (params?.limit) searchParams.set('limit', String(params.limit))
+  if (params?.offset) searchParams.set('offset', String(params.offset))
+  const qs = searchParams.toString()
+  const response = await authFetch(`/admin/events${qs ? `?${qs}` : ''}`)
+  if (!response.ok) throw new Error('Failed to fetch admin events')
+  return response.json()
+}
+
+export async function fetchAdminCenterMembers(centerId: string): Promise<UserData[]> {
+  const response = await authFetch(`/admin/centers/${centerId}/members`)
+  if (!response.ok) throw new Error('Failed to fetch center members')
+  const data = await response.json()
+  return data.data
+}
+
+export async function adminVerifyUser(
+  userId: string,
+  opts: { verificationLevel?: number; isVerified?: boolean }
+): Promise<{ isVerified: boolean }> {
+  const response = await authFetch(`/admin/users/${userId}/verify`, {
+    method: 'POST',
+    body: JSON.stringify(opts),
+  })
+  if (!response.ok) throw new Error('Failed to update user verification')
+  return response.json()
+}
+
+export async function adminDeleteUser(userId: string): Promise<void> {
+  const response = await authFetch(`/admin/users/${userId}`, { method: 'DELETE' })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ message: 'Failed to delete user' }))
+    throw new Error(err.message)
+  }
+}
+
+export async function adminUpdateCenter(
+  centerId: string,
+  updates: Record<string, any>
+): Promise<void> {
+  const response = await authFetch(`/admin/centers/${centerId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  })
+  if (!response.ok) throw new Error('Failed to update center')
+}
+
+export async function adminVerifyCenter(centerId: string): Promise<void> {
+  const response = await authFetch(`/admin/centers/${centerId}/verify`, {
+    method: 'POST',
+    body: '{}',
+  })
+  if (!response.ok) throw new Error('Failed to toggle center verification')
+}
+
+export async function adminDeleteCenter(centerId: string): Promise<void> {
+  const response = await authFetch(`/admin/centers/${centerId}`, { method: 'DELETE' })
+  if (!response.ok) throw new Error('Failed to delete center')
+}
+
+export async function adminUpdateEvent(
+  eventId: string,
+  updates: Record<string, any>
+): Promise<void> {
+  const response = await authFetch(`/admin/events/${eventId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  })
+  if (!response.ok) throw new Error('Failed to update event')
+}
+
+export async function adminDeleteEvent(eventId: string): Promise<void> {
+  const response = await authFetch(`/admin/events/${eventId}`, { method: 'DELETE' })
+  if (!response.ok) throw new Error('Failed to delete event')
+}

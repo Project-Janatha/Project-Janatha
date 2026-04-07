@@ -6,8 +6,8 @@ import { Avatar } from '../ui'
 type UserRowProps = {
   name: string
   image: string | null
-  actionLabel: string
-  onAction: () => void
+  actionLabel?: string
+  onAction?: () => void
   colors: ReturnType<typeof useDetailColors>
   isDark: boolean
 }
@@ -37,17 +37,19 @@ export default function AdminUserRow({ name, image, actionLabel, onAction, color
           {name}
         </Text>
       </View>
-      <Pressable onPress={onAction}>
-        <Text
-          style={{
-            fontFamily: 'Inter-SemiBold',
-            fontSize: 11,
-            color: isDark ? '#F87171' : '#DC2626',
-          }}
-        >
-          {actionLabel}
-        </Text>
-      </Pressable>
+      {actionLabel && onAction && (
+        <Pressable onPress={onAction}>
+          <Text
+            style={{
+              fontFamily: 'Inter-SemiBold',
+              fontSize: 11,
+              color: isDark ? '#F87171' : '#DC2626',
+            }}
+          >
+            {actionLabel}
+          </Text>
+        </Pressable>
+      )}
     </View>
   )
 }

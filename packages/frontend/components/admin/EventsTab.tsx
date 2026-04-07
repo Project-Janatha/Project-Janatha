@@ -1,14 +1,16 @@
-import React, { useState, useMemo } from 'react'
-import { View, Text, Pressable } from 'react-native'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import { View, Text, Pressable, ActivityIndicator } from 'react-native'
 import { MapPin, Clock, Users, FileText } from 'lucide-react-native'
 import AdminTable, { type Column } from './AdminTable'
 import AdminDetailPanel from './AdminDetailPanel'
 import AdminSearchInput from './AdminSearchInput'
 import AdminInfoRow from './AdminInfoRow'
-import AdminSectionHeader from './AdminSectionHeader'
-import AdminUserRow from './AdminUserRow'
 import ConfirmDialog from './ConfirmDialog'
-import { MOCK_EVENTS, MOCK_USERS, type AdminEvent } from './mockData'
+import {
+  fetchAdminEvents,
+  adminDeleteEvent,
+  type EventData,
+} from '../../utils/api'
 import { useDetailColors } from '../../hooks/useDetailColors'
 import { useThemeContext } from '../contexts'
 
@@ -17,73 +19,70 @@ const formatDate = (dateStr: string) => {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+const formatTime = (dateStr: string) => {
+  const d = new Date(dateStr)
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+}
+
 export default function EventsTab() {
   const colors = useDetailColors()
   const { isDark } = useThemeContext()
   const [search, setSearch] = useState('')
+  const [events, setEvents] = useState<EventData[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<AdminEvent | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<EventData | null>(null)
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase()
-    if (!q) return MOCK_EVENTS
-    return MOCK_EVENTS.filter(
-      (e) =>
-        e.title.toLowerCase().includes(q) ||
-        e.centerName.toLowerCase().includes(q) ||
-        e.location.toLowerCase().includes(q)
-    )
-  }, [search])
+  const loadEvents = useCallback(async (q?: string) => {
+    try {
+      setLoading(true)
+      const result = await fetchAdminEvents({ q: q || undefined, limit: 100 })
+      setEvents(result.data)
+      setTotal(result.total)
+    } catch (err) {
+      console.error('Failed to load events:', err)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadEvents()
+  }, [loadEvents])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadEvents(search)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search, loadEvents])
 
   const selected = useMemo(
-    () => MOCK_EVENTS.find((e) => e.id === selectedId) ?? null,
-    [selectedId]
+    () => events.find((e) => e.eventID === selectedId) ?? null,
+    [selectedId, events]
   )
 
-  const eventAdmins = useMemo(
-    () =>
-      selected
-        ? MOCK_USERS.filter((u) =>
-            u.roles.some(
-              (r) => r.resourceId === selected.id && r.role === 'event_admin'
-            )
-          )
-        : [],
-    [selected]
-  )
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    try {
+      await adminDeleteEvent(deleteTarget.eventID)
+      setDeleteTarget(null)
+      setSelectedId(null)
+      loadEvents(search)
+    } catch (err) {
+      console.error('Failed to delete event:', err)
+    }
+  }
 
-  const columns: Column<AdminEvent>[] = [
+  const columns: Column<EventData>[] = [
     {
       key: 'title',
       header: 'Title',
       flex: 2,
       render: (item) => (
-        <Text
-          style={{
-            fontFamily: 'Inter-Medium',
-            fontSize: 13,
-            color: colors.text,
-          }}
-          numberOfLines={1}
-        >
-          {item.title}
-        </Text>
-      ),
-    },
-    {
-      key: 'center',
-      header: 'Center',
-      flex: 2,
-      render: (item) => (
-        <Text
-          style={{
-            fontFamily: 'Inter-Regular',
-            fontSize: 13,
-            color: colors.textSecondary,
-          }}
-          numberOfLines={1}
-        >
-          {item.centerName}
+        <Text style={{ fontFamily: 'Inter-Medium', fontSize: 13, color: colors.text }} numberOfLines={1}>
+          {item.title || 'Untitled'}
         </Text>
       ),
     },
@@ -92,13 +91,7 @@ export default function EventsTab() {
       header: 'Date',
       flex: 1,
       render: (item) => (
-        <Text
-          style={{
-            fontFamily: 'Inter-Regular',
-            fontSize: 13,
-            color: colors.textSecondary,
-          }}
-        >
+        <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: colors.textSecondary }}>
           {formatDate(item.date)}
         </Text>
       ),
@@ -108,177 +101,82 @@ export default function EventsTab() {
       header: 'Attendees',
       flex: 1,
       render: (item) => (
-        <Text
-          style={{
-            fontFamily: 'Inter-Regular',
-            fontSize: 13,
-            color: colors.textSecondary,
-          }}
-        >
-          {item.attendeeCount}
+        <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: colors.textSecondary }}>
+          {item.peopleAttending}
         </Text>
       ),
     },
   ]
 
+  if (loading && events.length === 0) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color="#E8862A" />
+      </View>
+    )
+  }
+
   return (
     <View style={{ flex: 1, flexDirection: 'row' }}>
-      {/* Left side — table area */}
       <View style={{ flex: 1, padding: 20 }}>
-        {/* Header */}
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 16,
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: 'Inter-Bold',
-              fontSize: 18,
-              color: colors.text,
-            }}
-          >
-            Events ({filtered.length})
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <Text style={{ fontFamily: 'Inter-Bold', fontSize: 18, color: colors.text }}>
+            Events ({total})
           </Text>
-
           <View style={{ width: 240 }}>
-            <AdminSearchInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Search by title, center, or location..."
-            />
+            <AdminSearchInput value={search} onChangeText={setSearch} placeholder="Search events..." />
           </View>
         </View>
 
-        {/* Table */}
         <AdminTable
           columns={columns}
-          data={filtered}
-          keyExtractor={(item) => item.id}
+          data={events}
+          keyExtractor={(item) => item.eventID}
           selectedId={selectedId}
-          onRowPress={(item) =>
-            setSelectedId(item.id === selectedId ? null : item.id)
-          }
+          onRowPress={(item) => setSelectedId(item.eventID === selectedId ? null : item.eventID)}
         />
       </View>
 
-      {/* Right side — detail panel */}
       {selected && (
-        <AdminDetailPanel
-          title={selected.title}
-          onClose={() => setSelectedId(null)}
-        >
-          {/* Info rows */}
+        <AdminDetailPanel title={selected.title || 'Untitled'} onClose={() => setSelectedId(null)}>
           <View style={{ gap: 12 }}>
             <AdminInfoRow
               icon={<Clock size={14} color={colors.textMuted} />}
-              text={`${formatDate(selected.date)} · ${selected.time}`}
+              text={`${formatDate(selected.date)} · ${formatTime(selected.date)}`}
               colors={colors}
             />
-            <AdminInfoRow
-              icon={<MapPin size={14} color={colors.textMuted} />}
-              text={selected.address}
-              colors={colors}
-            />
+            {selected.address && (
+              <AdminInfoRow icon={<MapPin size={14} color={colors.textMuted} />} text={selected.address} colors={colors} />
+            )}
             <AdminInfoRow
               icon={<Users size={14} color={colors.textMuted} />}
-              text={`${selected.attendeeCount} attendees`}
+              text={`${selected.peopleAttending} attendees`}
               colors={colors}
             />
-            <AdminInfoRow
-              icon={<FileText size={14} color={colors.textMuted} />}
-              text={selected.description}
-              colors={colors}
-            />
+            {selected.description && (
+              <AdminInfoRow icon={<FileText size={14} color={colors.textMuted} />} text={selected.description} colors={colors} />
+            )}
           </View>
 
-          {/* Delete button */}
           <View style={{ marginTop: 16 }}>
             <Pressable
               onPress={() => setDeleteTarget(selected)}
-              style={{
-                backgroundColor: colors.iconBoxBg,
-                paddingHorizontal: 14,
-                paddingVertical: 8,
-                borderRadius: 8,
-                alignSelf: 'flex-start',
-              }}
+              style={{ backgroundColor: colors.iconBoxBg, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, alignSelf: 'flex-start' }}
             >
-              <Text
-                style={{
-                  fontFamily: 'Inter-SemiBold',
-                  fontSize: 12,
-                  color: isDark ? '#F87171' : '#DC2626',
-                }}
-              >
+              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: isDark ? '#F87171' : '#DC2626' }}>
                 Delete
               </Text>
             </Pressable>
           </View>
-
-          {/* Event Admins */}
-          <AdminSectionHeader
-            label="Event Admins"
-            actionLabel="+ Assign"
-            onAction={() =>
-              console.log('TODO: Assign admin to', selected.title)
-            }
-            colors={colors}
-          />
-          {eventAdmins.length === 0 ? (
-            <Text
-              style={{
-                fontFamily: 'Inter-Regular',
-                fontSize: 12,
-                color: colors.textMuted,
-              }}
-            >
-              No admins assigned
-            </Text>
-          ) : (
-            eventAdmins.map((u) => (
-              <AdminUserRow
-                key={u.id}
-                name={`${u.firstName} ${u.lastName}`}
-                image={u.profileImage}
-                actionLabel="Revoke"
-                onAction={() =>
-                  console.log('TODO: Revoke admin', u.firstName, u.lastName)
-                }
-                colors={colors}
-                isDark={isDark}
-              />
-            ))
-          )}
-
-          {/* Attendees */}
-          <AdminSectionHeader label="Attendees" colors={colors} />
-          <Text
-            style={{
-              fontFamily: 'Inter-Regular',
-              fontSize: 12,
-              color: colors.textMuted,
-            }}
-          >
-            Attendee list will be loaded from API
-          </Text>
         </AdminDetailPanel>
       )}
 
-      {/* Delete confirmation dialog */}
       <ConfirmDialog
         visible={deleteTarget !== null}
         title="Delete Event"
         message={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
         confirmLabel="Delete"
-        onConfirm={() => {
-          console.log('TODO: Delete event', deleteTarget?.title)
-          setDeleteTarget(null)
-          setSelectedId(null)
-        }}
+        onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
     </View>
