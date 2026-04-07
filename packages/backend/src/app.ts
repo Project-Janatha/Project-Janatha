@@ -10,7 +10,7 @@
  */
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import type { Env, UserRow, EventRow } from './types'
+import type { Env, UserRow, EventRow, CenterRow } from './types'
 import { userRowToApi, centerRowToApi, eventRowToApi } from './types'
 import {
   hashPassword,
@@ -39,6 +39,18 @@ export const app = new Hono<HonoEnv>().basePath('/api')
 
 function isAdmin(user: { email: string | null; verification_level: number }): boolean {
   return user.email === ADMIN_EMAIL || user.verification_level >= ADMIN_CUTOFF
+}
+
+// ── Admin middleware ─────────────────────────────────────────────────
+
+async function adminMiddleware(c: any, next: () => Promise<void>): Promise<Response | void> {
+  const authResult = await authMiddleware(c, async () => {})
+  if (authResult) return authResult
+  const user = c.get('user')
+  if (!user || !isAdmin(user)) {
+    return c.json({ message: 'Admin access required' }, 403)
+  }
+  await next()
 }
 
 // ── Global error handler ──────────────────────────────────────────────
@@ -994,6 +1006,224 @@ function calculateTier(endorsers: UserRow[], attendeeCount: number): number {
 
   return tier
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// ADMIN ROUTES
+// ═══════════════════════════════════════════════════════════════════════
+
+app.get('/admin/stats', adminMiddleware, async (c) => {
+  const [users, centers, events] = await Promise.all([
+    db.countUsers(c.env.DB),
+    db.countCenters(c.env.DB),
+    db.countEvents(c.env.DB),
+  ])
+  return c.json({ users, centers, events })
+})
+
+app.get('/admin/users', adminMiddleware, async (c) => {
+  const url = new URL(c.req.url)
+  const q = url.searchParams.get('q') || undefined
+  const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') ?? '50', 10) || 50, 1), 100)
+  const offset = Math.max(parseInt(url.searchParams.get('offset') ?? '0', 10) || 0, 0)
+  const { data, total } = await db.listUsers(c.env.DB, { q, limit, offset })
+  return c.json({ data: data.map(userRowToApi), total, limit, offset })
+})
+
+app.get('/admin/centers', adminMiddleware, async (c) => {
+  const url = new URL(c.req.url)
+  const q = url.searchParams.get('q') || undefined
+  const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') ?? '50', 10) || 50, 1), 100)
+  const offset = Math.max(parseInt(url.searchParams.get('offset') ?? '0', 10) || 0, 0)
+  const { data, total } = await db.listCenters(c.env.DB, { q, limit, offset })
+  return c.json({ data: data.map(centerRowToApi), total, limit, offset })
+})
+
+app.get('/admin/events', adminMiddleware, async (c) => {
+  const url = new URL(c.req.url)
+  const q = url.searchParams.get('q') || undefined
+  const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') ?? '50', 10) || 50, 1), 100)
+  const offset = Math.max(parseInt(url.searchParams.get('offset') ?? '0', 10) || 0, 0)
+  const { data, total } = await db.listEvents(c.env.DB, { q, limit, offset })
+  return c.json({ data: data.map(eventRowToApi), total, limit, offset })
+})
+
+// ── Admin center actions ──────────────────────────────────────────────
+
+app.put('/admin/centers/:id', adminMiddleware, async (c) => {
+  const centerId = c.req.param('id')
+  const center = await db.getCenterById(c.env.DB, centerId)
+  if (!center) {
+    return c.json({ message: 'Center not found' }, 404)
+  }
+
+  const body = await c.req.json<{
+    name?: string
+    address?: string
+    website?: string
+    phone?: string
+    image?: string
+    acharya?: string
+    pointOfContact?: string
+  }>()
+
+  const updates: Partial<CenterRow> = {}
+  if (body.name !== undefined) updates.name = body.name
+  if (body.address !== undefined) updates.address = body.address
+  if (body.website !== undefined) updates.website = body.website
+  if (body.phone !== undefined) updates.phone = body.phone
+  if (body.image !== undefined) updates.image = body.image
+  if (body.acharya !== undefined) updates.acharya = body.acharya
+  if (body.pointOfContact !== undefined) updates.point_of_contact = body.pointOfContact
+
+  const result = await db.updateCenter(c.env.DB, centerId, updates)
+  if (result.success) {
+    return c.json({ message: 'Center updated' })
+  }
+  return c.json({ message: 'Failed to update center', error: result.error }, 500)
+})
+
+app.post('/admin/centers/:id/verify', adminMiddleware, async (c) => {
+  const centerId = c.req.param('id')
+  const center = await db.getCenterById(c.env.DB, centerId)
+  if (!center) {
+    return c.json({ message: 'Center not found' }, 404)
+  }
+
+  const newValue = center.is_verified ? 0 : 1
+  const result = await db.updateCenter(c.env.DB, centerId, { is_verified: newValue })
+  if (result.success) {
+    return c.json({ message: newValue ? 'Center verified' : 'Center unverified' })
+  }
+  return c.json({ message: 'Failed to toggle verification', error: result.error }, 500)
+})
+
+app.delete('/admin/centers/:id', adminMiddleware, async (c) => {
+  const centerId = c.req.param('id')
+  const center = await db.getCenterById(c.env.DB, centerId)
+  if (!center) {
+    return c.json({ message: 'Center not found' }, 404)
+  }
+
+  const result = await db.deleteCenter(c.env.DB, centerId)
+  if (result.success) {
+    return c.json({ message: 'Center deleted' })
+  }
+  return c.json({ message: 'Failed to delete center', error: result.error }, 500)
+})
+
+app.get('/admin/centers/:id/members', adminMiddleware, async (c) => {
+  const centerId = c.req.param('id')
+  const center = await db.getCenterById(c.env.DB, centerId)
+  if (!center) {
+    return c.json({ message: 'Center not found' }, 404)
+  }
+
+  const members = await db.getCenterMembers(c.env.DB, centerId)
+  return c.json({ data: members.map(userRowToApi) })
+})
+
+// ── Admin event actions ───────────────────────────────────────────────
+
+app.put('/admin/events/:id', adminMiddleware, async (c) => {
+  const eventId = c.req.param('id')
+  const event = await db.getEventById(c.env.DB, eventId)
+  if (!event) {
+    return c.json({ message: 'Event not found' }, 404)
+  }
+
+  const body = await c.req.json<{
+    title?: string
+    description?: string
+    date?: string
+    address?: string
+    pointOfContact?: string
+    image?: string
+    category?: number
+  }>()
+
+  const updates: Partial<EventRow> = {}
+  if (body.title !== undefined) updates.title = body.title
+  if (body.description !== undefined) updates.description = body.description
+  if (body.date !== undefined) updates.date = body.date
+  if (body.address !== undefined) updates.address = body.address
+  if (body.pointOfContact !== undefined) updates.point_of_contact = body.pointOfContact
+  if (body.image !== undefined) updates.image = body.image
+  if (body.category !== undefined) updates.category = body.category
+
+  const result = await db.updateEvent(c.env.DB, eventId, updates)
+  if (result.success) {
+    return c.json({ message: 'Event updated' })
+  }
+  return c.json({ message: 'Failed to update event', error: result.error }, 500)
+})
+
+app.delete('/admin/events/:id', adminMiddleware, async (c) => {
+  const eventId = c.req.param('id')
+  const event = await db.getEventById(c.env.DB, eventId)
+  if (!event) {
+    return c.json({ message: 'Event not found' }, 404)
+  }
+
+  const result = await db.deleteEvent(c.env.DB, eventId)
+  if (result.success) {
+    return c.json({ message: 'Event deleted' })
+  }
+  return c.json({ message: 'Failed to delete event', error: result.error }, 500)
+})
+
+// ── Admin user actions ──────────────────────────────────────────────
+
+app.post('/admin/users/:id/verify', adminMiddleware, async (c) => {
+  const userId = c.req.param('id')
+  const targetUser = await db.getUserById(c.env.DB, userId)
+  if (!targetUser) {
+    return c.json({ message: 'User not found' }, 404)
+  }
+
+  const body = await c.req.json<{
+    verificationLevel?: number
+    isVerified?: boolean
+  }>()
+
+  const updates: Partial<UserRow> = {}
+
+  if (body.isVerified === false) {
+    updates.is_verified = 0
+    updates.verification_level = body.verificationLevel ?? NORMAL_USER
+  } else {
+    updates.is_verified = 1
+    updates.verification_level = body.verificationLevel ?? targetUser.verification_level
+  }
+
+  const result = await db.updateUser(c.env.DB, userId, updates)
+  if (result.success) {
+    return c.json({
+      message: updates.is_verified ? 'User verified' : 'User unverified',
+      isVerified: updates.is_verified === 1,
+    })
+  }
+  return c.json({ message: 'Update failed' }, 500)
+})
+
+app.delete('/admin/users/:id', adminMiddleware, async (c) => {
+  const userId = c.req.param('id')
+  const adminUser = c.get('user')
+
+  if (adminUser.id === userId) {
+    return c.json({ message: 'Cannot delete your own account from admin panel' }, 400)
+  }
+
+  const targetUser = await db.getUserById(c.env.DB, userId)
+  if (!targetUser) {
+    return c.json({ message: 'User not found' }, 404)
+  }
+
+  const result = await db.deleteUser(c.env.DB, userId)
+  if (result.success) {
+    return c.json({ message: 'User deleted' })
+  }
+  return c.json({ message: 'Delete failed' }, 500)
+})
 
 // ── Default export ────────────────────────────────────────────────────
 

@@ -38,9 +38,7 @@ import CenterDetailPanel from '../../components/web/CenterDetailPanel'
 import { useDetailColors } from '../../hooks/useDetailColors'
 import type { MapPoint, EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
 import { WeekCalendar } from '../../components'
-
-const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
-const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+import { ADMIN_EMAIL, isLocal } from '../../utils/admin'
 
 const FILTERS: { label: DiscoverFilter }[] = [
   { label: 'Events' },

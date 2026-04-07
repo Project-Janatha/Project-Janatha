@@ -1128,3 +1128,404 @@ describe('POST /api/brewCoffee', () => {
     expect(body.message).toContain('teapot')
   })
 })
+
+// ═══════════════════════════════════════════════════════════════════════
+// ADMIN ROUTES
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('Admin middleware', () => {
+  it('rejects unauthenticated requests to /api/admin/*', async () => {
+    const { res, body } = await fetchJSON('/api/admin/stats')
+    expect(res.status).toBe(401)
+    expect(body.message).toBe('Authorization header missing')
+  })
+
+  it('rejects non-admin users', async () => {
+    const { token } = await registerAndLogin('regularuser', 'password123')
+    const { res, body } = await fetchJSON('/api/admin/stats', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    expect(res.status).toBe(403)
+    expect(body.message).toBe('Admin access required')
+  })
+
+  it('allows admin users', async () => {
+    const adminToken = await createAdmin()
+    const { res } = await fetchJSON('/api/admin/stats', {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    })
+    expect(res.status).toBe(200)
+  })
+})
+
+describe('GET /api/admin/users', () => {
+  it('returns paginated user list', async () => {
+    const adminToken = await createAdmin()
+    await registerAndLogin('alice', 'password123')
+    await registerAndLogin('bob', 'password123')
+
+    const { res, body } = await fetchJSON('/api/admin/users?limit=10&offset=0', {
+      headers: authHeader(adminToken),
+    })
+
+    expect(res.status).toBe(200)
+    expect(body.total).toBe(3) // admin + alice + bob
+    expect(body.data).toHaveLength(3)
+    expect(body.limit).toBe(10)
+    expect(body.offset).toBe(0)
+    expect(body.data[0].password).toBeUndefined()
+  })
+
+  it('searches by username, email, first_name, last_name', async () => {
+    const adminToken = await createAdmin()
+    await registerAndLogin('alice_wonder', 'password123')
+    await registerAndLogin('bob_builder', 'password123')
+
+    const { body } = await fetchJSON('/api/admin/users?q=alice', {
+      headers: authHeader(adminToken),
+    })
+
+    expect(body.total).toBe(1)
+    expect(body.data[0].username).toBe('alice_wonder')
+  })
+
+  it('paginates with limit and offset', async () => {
+    const adminToken = await createAdmin()
+    await registerAndLogin('user1', 'password123')
+    await registerAndLogin('user2', 'password123')
+    await registerAndLogin('user3', 'password123')
+
+    const { body } = await fetchJSON('/api/admin/users?limit=2&offset=0', {
+      headers: authHeader(adminToken),
+    })
+    expect(body.data).toHaveLength(2)
+    expect(body.total).toBe(4)
+
+    const { body: page2 } = await fetchJSON('/api/admin/users?limit=2&offset=2', {
+      headers: authHeader(adminToken),
+    })
+    expect(page2.data).toHaveLength(2)
+  })
+
+  it('defaults to limit=50 offset=0', async () => {
+    const adminToken = await createAdmin()
+    const { body } = await fetchJSON('/api/admin/users', {
+      headers: authHeader(adminToken),
+    })
+    expect(body.limit).toBe(50)
+    expect(body.offset).toBe(0)
+  })
+})
+
+describe('GET /api/admin/centers', () => {
+  it('returns paginated center list with member counts', async () => {
+    const adminToken = await createAdmin()
+    await jsonPost('/api/addCenter', { centerName: 'CM San Jose', latitude: 37.3, longitude: -121.9, address: '1050 S White Rd' }, authHeader(adminToken))
+    await jsonPost('/api/addCenter', { centerName: 'CM Houston', latitude: 29.7, longitude: -95.4 }, authHeader(adminToken))
+
+    const { res, body } = await fetchJSON('/api/admin/centers?limit=10&offset=0', { headers: authHeader(adminToken) })
+    expect(res.status).toBe(200)
+    expect(body.total).toBe(2)
+    expect(body.data).toHaveLength(2)
+    expect(body.data[0].centerID).toBeDefined()
+    expect(body.data[0].name).toBeDefined()
+  })
+
+  it('searches by center name, address, or acharya', async () => {
+    const adminToken = await createAdmin()
+    await jsonPost('/api/addCenter', { centerName: 'CM San Jose', latitude: 37.3, longitude: -121.9 }, authHeader(adminToken))
+    await jsonPost('/api/addCenter', { centerName: 'CM Houston', latitude: 29.7, longitude: -95.4 }, authHeader(adminToken))
+
+    const { body } = await fetchJSON('/api/admin/centers?q=houston', { headers: authHeader(adminToken) })
+    expect(body.total).toBe(1)
+    expect(body.data[0].name).toBe('CM Houston')
+  })
+})
+
+describe('GET /api/admin/events', () => {
+  it('returns paginated event list', async () => {
+    const adminToken = await createAdmin()
+    const { body: centerBody } = await jsonPost('/api/addCenter', { centerName: 'CM San Jose', latitude: 37.3, longitude: -121.9 }, authHeader(adminToken))
+    const centerId = centerBody.id
+
+    await jsonPost('/api/addEvent', { title: 'Gita Chanting', date: '2026-04-05T10:00:00Z', latitude: 37.3, longitude: -121.9, centerID: centerId }, authHeader(adminToken))
+    await jsonPost('/api/addEvent', { title: 'Youth Retreat', date: '2026-04-12T09:00:00Z', latitude: 37.3, longitude: -121.9, centerID: centerId }, authHeader(adminToken))
+
+    const { res, body } = await fetchJSON('/api/admin/events?limit=10&offset=0', { headers: authHeader(adminToken) })
+    expect(res.status).toBe(200)
+    expect(body.total).toBe(2)
+    expect(body.data).toHaveLength(2)
+    expect(body.data[0].eventID).toBeDefined()
+    expect(body.data[0].title).toBeDefined()
+  })
+
+  it('searches by title, address, or description', async () => {
+    const adminToken = await createAdmin()
+    const { body: centerBody } = await jsonPost('/api/addCenter', { centerName: 'CM San Jose', latitude: 37.3, longitude: -121.9 }, authHeader(adminToken))
+
+    await jsonPost('/api/addEvent', { title: 'Gita Chanting', description: 'Weekly session', date: '2026-04-05T10:00:00Z', latitude: 37.3, longitude: -121.9, centerID: centerBody.id }, authHeader(adminToken))
+    await jsonPost('/api/addEvent', { title: 'Youth Retreat', description: 'Annual retreat', date: '2026-04-12T09:00:00Z', latitude: 37.3, longitude: -121.9, centerID: centerBody.id }, authHeader(adminToken))
+
+    const { body } = await fetchJSON('/api/admin/events?q=gita', { headers: authHeader(adminToken) })
+    expect(body.total).toBe(1)
+    expect(body.data[0].title).toBe('Gita Chanting')
+  })
+})
+
+describe('Admin center actions', () => {
+  async function createTestCenter(adminToken: string) {
+    const { body } = await jsonPost('/api/addCenter', {
+      centerName: 'CM Test', latitude: 37.3, longitude: -121.9, address: '123 Test St',
+    }, authHeader(adminToken))
+    return body.id
+  }
+
+  it('PUT /api/admin/centers/:id updates center details', async () => {
+    const adminToken = await createAdmin()
+    const centerId = await createTestCenter(adminToken)
+
+    const { res, body } = await jsonPut(`/api/admin/centers/${centerId}`, {
+      name: 'CM San Jose Updated', phone: '555-1234',
+    }, authHeader(adminToken))
+
+    expect(res.status).toBe(200)
+    expect(body.message).toBe('Center updated')
+
+    const { body: fetched } = await jsonPost('/api/fetchCenter', { centerID: centerId })
+    expect(fetched.center.name).toBe('CM San Jose Updated')
+    expect(fetched.center.phone).toBe('555-1234')
+  })
+
+  it('POST /api/admin/centers/:id/verify toggles verification', async () => {
+    const adminToken = await createAdmin()
+    const centerId = await createTestCenter(adminToken)
+
+    const { res } = await jsonPost(`/api/admin/centers/${centerId}/verify`, {}, authHeader(adminToken))
+    expect(res.status).toBe(200)
+
+    const { body: fetched } = await jsonPost('/api/fetchCenter', { centerID: centerId })
+    expect(fetched.center.isVerified).toBe(true)
+
+    await jsonPost(`/api/admin/centers/${centerId}/verify`, {}, authHeader(adminToken))
+    const { body: fetched2 } = await jsonPost('/api/fetchCenter', { centerID: centerId })
+    expect(fetched2.center.isVerified).toBe(false)
+  })
+
+  it('DELETE /api/admin/centers/:id deletes center', async () => {
+    const adminToken = await createAdmin()
+    const centerId = await createTestCenter(adminToken)
+
+    const { res } = await fetchJSON(`/api/admin/centers/${centerId}`, {
+      method: 'DELETE', headers: authHeader(adminToken),
+    })
+    expect(res.status).toBe(200)
+
+    const { res: fetchRes } = await jsonPost('/api/fetchCenter', { centerID: centerId })
+    expect(fetchRes.status).toBe(404)
+  })
+
+  it('returns 404 for non-existent center', async () => {
+    const adminToken = await createAdmin()
+    const { res } = await jsonPut('/api/admin/centers/nonexistent', { name: 'test' }, authHeader(adminToken))
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('Admin event actions', () => {
+  async function createTestEvent(adminToken: string) {
+    const { body: centerBody } = await jsonPost('/api/addCenter', {
+      centerName: 'CM Test', latitude: 37.3, longitude: -121.9,
+    }, authHeader(adminToken))
+    const { body: eventBody } = await jsonPost('/api/addEvent', {
+      title: 'Test Event', date: '2026-04-05T10:00:00Z', latitude: 37.3, longitude: -121.9,
+      centerID: centerBody.id, description: 'Original description',
+    }, authHeader(adminToken))
+    return { eventId: eventBody.id, centerId: centerBody.id }
+  }
+
+  it('PUT /api/admin/events/:id updates event details', async () => {
+    const adminToken = await createAdmin()
+    const { eventId } = await createTestEvent(adminToken)
+    const { res, body } = await jsonPut(`/api/admin/events/${eventId}`, {
+      title: 'Updated Event', description: 'New description',
+    }, authHeader(adminToken))
+    expect(res.status).toBe(200)
+    expect(body.message).toBe('Event updated')
+    const { body: fetched } = await jsonPost('/api/fetchEvent', { id: eventId })
+    expect(fetched.event.title).toBe('Updated Event')
+    expect(fetched.event.description).toBe('New description')
+  })
+
+  it('DELETE /api/admin/events/:id deletes event', async () => {
+    const adminToken = await createAdmin()
+    const { eventId } = await createTestEvent(adminToken)
+    const { res } = await fetchJSON(`/api/admin/events/${eventId}`, {
+      method: 'DELETE', headers: authHeader(adminToken),
+    })
+    expect(res.status).toBe(200)
+    const { res: fetchRes } = await jsonPost('/api/fetchEvent', { id: eventId })
+    expect(fetchRes.status).toBe(404)
+  })
+
+  it('returns 404 for non-existent event', async () => {
+    const adminToken = await createAdmin()
+    const { res } = await jsonPut('/api/admin/events/nonexistent', { title: 'test' }, authHeader(adminToken))
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('GET /api/admin/centers/:id/members', () => {
+  it('returns users belonging to a center', async () => {
+    const adminToken = await createAdmin()
+
+    // Create center
+    const { body: centerBody } = await jsonPost('/api/addCenter', {
+      centerName: 'CM Test',
+      latitude: 37.3,
+      longitude: -121.9,
+    }, authHeader(adminToken))
+    const centerId = centerBody.id
+
+    // Create a user and assign them to the center
+    const { token: userToken, user } = await registerAndLogin('member1', 'password123')
+    await jsonPut('/api/auth/update-profile', {
+      centerID: centerId,
+    }, authHeader(userToken))
+
+    const { res, body } = await fetchJSON(`/api/admin/centers/${centerId}/members`, {
+      headers: authHeader(adminToken),
+    })
+
+    expect(res.status).toBe(200)
+    expect(body.data.length).toBeGreaterThanOrEqual(1)
+    expect(body.data.some((u: any) => u.username === 'member1')).toBe(true)
+  })
+
+  it('returns 404 for non-existent center', async () => {
+    const adminToken = await createAdmin()
+    const { res } = await fetchJSON('/api/admin/centers/nonexistent/members', {
+      headers: authHeader(adminToken),
+    })
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('Admin user actions', () => {
+  it('POST /api/admin/users/:id/verify toggles user verification', async () => {
+    const adminToken = await createAdmin()
+    const { user } = await registerAndLogin('testuser', 'password123')
+
+    // Verify the user
+    const { res, body } = await jsonPost(`/api/admin/users/${user.id}/verify`, {
+      verificationLevel: 54,
+    }, authHeader(adminToken))
+    expect(res.status).toBe(200)
+    expect(body.isVerified).toBe(true)
+
+    // Unverify the user
+    const { body: body2 } = await jsonPost(`/api/admin/users/${user.id}/verify`, {
+      verificationLevel: 45,
+      isVerified: false,
+    }, authHeader(adminToken))
+    expect(body2.isVerified).toBe(false)
+  })
+
+  it('DELETE /api/admin/users/:id deletes user', async () => {
+    const adminToken = await createAdmin()
+    const { user } = await registerAndLogin('deleteuser', 'password123')
+
+    const { res } = await fetchJSON(`/api/admin/users/${user.id}`, {
+      method: 'DELETE',
+      headers: authHeader(adminToken),
+    })
+    expect(res.status).toBe(200)
+
+    // Verify user is gone
+    const { body } = await jsonPost('/api/userExistence', { username: 'deleteuser' })
+    expect(body.existence).toBe(false)
+  })
+
+  it('returns 404 for non-existent user', async () => {
+    const adminToken = await createAdmin()
+    const { res } = await jsonPost('/api/admin/users/nonexistent/verify', {
+      verificationLevel: 54,
+    }, authHeader(adminToken))
+    expect(res.status).toBe(404)
+  })
+
+  it('prevents admin from deleting themselves', async () => {
+    const adminToken = await createAdmin()
+
+    // Get admin user ID
+    const { body: verifyBody } = await fetchJSON('/api/auth/verify', {
+      headers: authHeader(adminToken),
+    })
+    const adminId = verifyBody.user.id
+
+    const { res, body } = await fetchJSON(`/api/admin/users/${adminId}`, {
+      method: 'DELETE',
+      headers: authHeader(adminToken),
+    })
+    expect(res.status).toBe(400)
+    expect(body.message).toBe('Cannot delete your own account from admin panel')
+  })
+})
+
+// ═══════════════════════════════════════════════════════════════════════
+// ADMIN END-TO-END WORKFLOW
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('Admin end-to-end workflow', () => {
+  it('full admin lifecycle: list, create, edit, verify, delete', async () => {
+    const adminToken = await createAdmin()
+
+    // 1. Check stats — start empty (just admin user)
+    const { body: stats } = await fetchJSON('/api/admin/stats', {
+      headers: authHeader(adminToken),
+    })
+    expect(stats.users).toBe(1)
+    expect(stats.centers).toBe(0)
+    expect(stats.events).toBe(0)
+
+    // 2. Create a center, verify it appears in admin list
+    await jsonPost('/api/addCenter', {
+      centerName: 'CM Test Center',
+      latitude: 37.3,
+      longitude: -121.9,
+    }, authHeader(adminToken))
+
+    const { body: centerList } = await fetchJSON('/api/admin/centers', {
+      headers: authHeader(adminToken),
+    })
+    expect(centerList.total).toBe(1)
+    const centerId = centerList.data[0].centerID
+
+    // 3. Verify the center
+    await jsonPost(`/api/admin/centers/${centerId}/verify`, {}, authHeader(adminToken))
+    const { body: centerAfterVerify } = await fetchJSON('/api/admin/centers', {
+      headers: authHeader(adminToken),
+    })
+    expect(centerAfterVerify.data[0].isVerified).toBe(true)
+
+    // 4. Create an event, verify in admin list
+    await jsonPost('/api/addEvent', {
+      title: 'Test Event',
+      date: '2026-04-05T10:00:00Z',
+      latitude: 37.3,
+      longitude: -121.9,
+      centerID: centerId,
+    }, authHeader(adminToken))
+
+    const { body: eventList } = await fetchJSON('/api/admin/events', {
+      headers: authHeader(adminToken),
+    })
+    expect(eventList.total).toBe(1)
+
+    // 5. Stats should reflect the new data
+    const { body: stats2 } = await fetchJSON('/api/admin/stats', {
+      headers: authHeader(adminToken),
+    })
+    expect(stats2.centers).toBe(1)
+    expect(stats2.events).toBe(1)
+  })
+})

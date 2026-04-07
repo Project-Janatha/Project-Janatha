@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Animated, Text, Pressable, View, Image, Easing } from 'react-native'
 import { useUser, useThemeContext } from './contexts'
-import { Settings, LogOut, Sun, Moon, User, Monitor } from 'lucide-react-native'
+import { Settings, LogOut, Sun, Moon, User, Monitor, Shield } from 'lucide-react-native'
 import { router } from 'expo-router'
 import ThemeSelector from './ThemeSelector'
 import { Avatar } from './ui'
+import { isSuperAdmin } from '../utils/admin'
 
 function SettingsPanel({ visible, onClose, onLogout }) {
   const opacityAnim = useRef(new Animated.Value(0)).current
@@ -182,6 +183,18 @@ function SettingsPanel({ visible, onClose, onLogout }) {
           <Settings size={16} color={isDark ? '#fff' : '#374151'} className="mr-3" />
           <Text className="text-content dark:text-content-dark font-inter">Settings</Text>
         </Pressable>
+        {isSuperAdmin(user) && (
+          <Pressable
+            className="flex-row items-center mb-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
+            onPress={() => {
+              onClose()
+              router.push('/admin' as any)
+            }}
+          >
+            <Shield size={16} color="#E8862A" className="mr-3" />
+            <Text style={{ fontFamily: 'Inter-Regular', color: '#E8862A' }}>Admin Dashboard</Text>
+          </Pressable>
+        )}
 
         {/* Separator Line */}
         <View className="h-[1px] bg-gray-200 dark:bg-neutral-800 mb-2" />

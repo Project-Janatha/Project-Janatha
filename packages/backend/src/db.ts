@@ -126,6 +126,31 @@ export async function deleteUser(
   }
 }
 
+export async function countUsers(db: D1Database): Promise<number> {
+  const result = await db.prepare('SELECT COUNT(*) as count FROM users').first<{ count: number }>()
+  return result?.count ?? 0
+}
+
+export async function listUsers(
+  db: D1Database,
+  opts: { q?: string; limit: number; offset: number },
+): Promise<{ data: UserRow[]; total: number }> {
+  const { q, limit, offset } = opts
+  if (q) {
+    const pattern = `%${q}%`
+    const countResult = await db
+      .prepare('SELECT COUNT(*) as count FROM users WHERE username LIKE ?1 OR email LIKE ?1 OR first_name LIKE ?1 OR last_name LIKE ?1')
+      .bind(pattern).first<{ count: number }>()
+    const result = await db
+      .prepare('SELECT * FROM users WHERE username LIKE ?1 OR email LIKE ?1 OR first_name LIKE ?1 OR last_name LIKE ?1 ORDER BY created_at DESC LIMIT ?2 OFFSET ?3')
+      .bind(pattern, limit, offset).all<UserRow>()
+    return { data: result.results ?? [], total: countResult?.count ?? 0 }
+  }
+  const countResult = await db.prepare('SELECT COUNT(*) as count FROM users').first<{ count: number }>()
+  const result = await db.prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT ?1 OFFSET ?2').bind(limit, offset).all<UserRow>()
+  return { data: result.results ?? [], total: countResult?.count ?? 0 }
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // CENTERS
 // ═══════════════════════════════════════════════════════════════════════
@@ -219,6 +244,42 @@ export async function deleteCenter(
   } catch (err: any) {
     return { success: false, error: err?.message ?? 'Unknown error' }
   }
+}
+
+export async function getCenterMembers(
+  db: D1Database,
+  centerId: string,
+): Promise<UserRow[]> {
+  const result = await db
+    .prepare('SELECT * FROM users WHERE center_id = ?1 ORDER BY created_at DESC')
+    .bind(centerId)
+    .all<UserRow>()
+  return result.results ?? []
+}
+
+export async function countCenters(db: D1Database): Promise<number> {
+  const result = await db.prepare('SELECT COUNT(*) as count FROM centers').first<{ count: number }>()
+  return result?.count ?? 0
+}
+
+export async function listCenters(
+  db: D1Database,
+  opts: { q?: string; limit: number; offset: number },
+): Promise<{ data: CenterRow[]; total: number }> {
+  const { q, limit, offset } = opts
+  if (q) {
+    const pattern = `%${q}%`
+    const countResult = await db
+      .prepare('SELECT COUNT(*) as count FROM centers WHERE name LIKE ?1 OR address LIKE ?1 OR acharya LIKE ?1 OR point_of_contact LIKE ?1')
+      .bind(pattern).first<{ count: number }>()
+    const result = await db
+      .prepare('SELECT * FROM centers WHERE name LIKE ?1 OR address LIKE ?1 OR acharya LIKE ?1 OR point_of_contact LIKE ?1 ORDER BY name ASC LIMIT ?2 OFFSET ?3')
+      .bind(pattern, limit, offset).all<CenterRow>()
+    return { data: result.results ?? [], total: countResult?.count ?? 0 }
+  }
+  const countResult = await db.prepare('SELECT COUNT(*) as count FROM centers').first<{ count: number }>()
+  const result = await db.prepare('SELECT * FROM centers ORDER BY name ASC LIMIT ?1 OFFSET ?2').bind(limit, offset).all<CenterRow>()
+  return { data: result.results ?? [], total: countResult?.count ?? 0 }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -329,6 +390,31 @@ export async function deleteEvent(
   } catch (err: any) {
     return { success: false, error: err?.message ?? 'Unknown error' }
   }
+}
+
+export async function countEvents(db: D1Database): Promise<number> {
+  const result = await db.prepare('SELECT COUNT(*) as count FROM events').first<{ count: number }>()
+  return result?.count ?? 0
+}
+
+export async function listEvents(
+  db: D1Database,
+  opts: { q?: string; limit: number; offset: number },
+): Promise<{ data: EventRow[]; total: number }> {
+  const { q, limit, offset } = opts
+  if (q) {
+    const pattern = `%${q}%`
+    const countResult = await db
+      .prepare('SELECT COUNT(*) as count FROM events WHERE title LIKE ?1 OR description LIKE ?1 OR address LIKE ?1')
+      .bind(pattern).first<{ count: number }>()
+    const result = await db
+      .prepare('SELECT * FROM events WHERE title LIKE ?1 OR description LIKE ?1 OR address LIKE ?1 ORDER BY date DESC LIMIT ?2 OFFSET ?3')
+      .bind(pattern, limit, offset).all<EventRow>()
+    return { data: result.results ?? [], total: countResult?.count ?? 0 }
+  }
+  const countResult = await db.prepare('SELECT COUNT(*) as count FROM events').first<{ count: number }>()
+  const result = await db.prepare('SELECT * FROM events ORDER BY date DESC LIMIT ?1 OFFSET ?2').bind(limit, offset).all<EventRow>()
+  return { data: result.results ?? [], total: countResult?.count ?? 0 }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
