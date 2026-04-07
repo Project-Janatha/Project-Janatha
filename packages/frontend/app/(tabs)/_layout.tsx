@@ -7,20 +7,19 @@ import SettingsPanel from '../../components/SettingsPanel'
 import Logo from '../../components/ui/Logo'
 import { Avatar, PrimaryButton, SecondaryButton } from '../../components/ui'
 import { usePostHog } from 'posthog-react-native'
+import { isSuperAdmin } from '../../utils/admin'
 
 /**
  * TabLayout Component - The main layout for the tab-based navigation.
  * @return {JSX.Element} A TabLayout component that sets up tab navigation with theming.
  */
-const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
-const isLocal = typeof window !== 'undefined' && window.location?.hostname === 'localhost'
 
 export default function TabLayout() {
   const router = useRouter()
   const { user, logout } = useUser()
   const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
-  const canCreate = !!(user?.verificationLevel && user.verificationLevel >= 107) || user?.email === ADMIN_EMAIL || isLocal
+  const canCreate = isSuperAdmin(user)
   const posthog = usePostHog()
 
   const handleLogout = async () => {

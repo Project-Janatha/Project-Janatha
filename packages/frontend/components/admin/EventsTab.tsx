@@ -1,154 +1,21 @@
 import React, { useState, useMemo } from 'react'
-import { View, Text, Pressable, Alert } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import { MapPin, Clock, Users, FileText } from 'lucide-react-native'
 import AdminTable, { type Column } from './AdminTable'
 import AdminDetailPanel from './AdminDetailPanel'
 import AdminSearchInput from './AdminSearchInput'
+import AdminInfoRow from './AdminInfoRow'
+import AdminSectionHeader from './AdminSectionHeader'
+import AdminUserRow from './AdminUserRow'
 import ConfirmDialog from './ConfirmDialog'
 import { MOCK_EVENTS, MOCK_USERS, type AdminEvent } from './mockData'
 import { useDetailColors } from '../../hooks/useDetailColors'
 import { useThemeContext } from '../contexts'
-import { Avatar } from '../ui'
-
-// --- Helpers ---
 
 const formatDate = (dateStr: string) => {
   const d = new Date(dateStr)
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
-
-// --- Sub-components ---
-
-function InfoRow({
-  icon,
-  text,
-  colors,
-}: {
-  icon: React.ReactNode
-  text: string
-  colors: ReturnType<typeof useDetailColors>
-}) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      {icon}
-      <Text
-        style={{
-          fontFamily: 'Inter-Regular',
-          fontSize: 12,
-          color: colors.text,
-        }}
-        numberOfLines={2}
-      >
-        {text}
-      </Text>
-    </View>
-  )
-}
-
-function SectionHeader({
-  label,
-  actionLabel,
-  onAction,
-  colors,
-}: {
-  label: string
-  actionLabel?: string
-  onAction?: () => void
-  colors: ReturnType<typeof useDetailColors>
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 20,
-        marginBottom: 8,
-      }}
-    >
-      <Text
-        style={{
-          fontFamily: 'Inter-SemiBold',
-          fontSize: 11,
-          textTransform: 'uppercase',
-          letterSpacing: 0.5,
-          color: colors.textMuted,
-        }}
-      >
-        {label}
-      </Text>
-      {actionLabel && onAction && (
-        <Pressable onPress={onAction}>
-          <Text
-            style={{
-              fontFamily: 'Inter-SemiBold',
-              fontSize: 11,
-              color: '#E8862A',
-            }}
-          >
-            {actionLabel}
-          </Text>
-        </Pressable>
-      )}
-    </View>
-  )
-}
-
-function UserRow({
-  name,
-  image,
-  actionLabel,
-  onAction,
-  colors,
-  isDark,
-}: {
-  name: string
-  image: string | null
-  actionLabel: string
-  onAction: () => void
-  colors: ReturnType<typeof useDetailColors>
-  isDark: boolean
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: colors.iconBoxBg,
-        borderRadius: 8,
-        padding: 8,
-        marginBottom: 6,
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Avatar name={name} image={image ?? undefined} size={24} />
-        <Text
-          style={{
-            fontFamily: 'Inter-Regular',
-            fontSize: 12,
-            color: colors.text,
-          }}
-        >
-          {name}
-        </Text>
-      </View>
-      <Pressable onPress={onAction}>
-        <Text
-          style={{
-            fontFamily: 'Inter-SemiBold',
-            fontSize: 11,
-            color: isDark ? '#F87171' : '#DC2626',
-          }}
-        >
-          {actionLabel}
-        </Text>
-      </Pressable>
-    </View>
-  )
-}
-
-// --- Main Component ---
 
 export default function EventsTab() {
   const colors = useDetailColors()
@@ -306,22 +173,22 @@ export default function EventsTab() {
         >
           {/* Info rows */}
           <View style={{ gap: 12 }}>
-            <InfoRow
+            <AdminInfoRow
               icon={<Clock size={14} color={colors.textMuted} />}
               text={`${formatDate(selected.date)} · ${selected.time}`}
               colors={colors}
             />
-            <InfoRow
+            <AdminInfoRow
               icon={<MapPin size={14} color={colors.textMuted} />}
               text={selected.address}
               colors={colors}
             />
-            <InfoRow
+            <AdminInfoRow
               icon={<Users size={14} color={colors.textMuted} />}
               text={`${selected.attendeeCount} attendees`}
               colors={colors}
             />
-            <InfoRow
+            <AdminInfoRow
               icon={<FileText size={14} color={colors.textMuted} />}
               text={selected.description}
               colors={colors}
@@ -353,11 +220,11 @@ export default function EventsTab() {
           </View>
 
           {/* Event Admins */}
-          <SectionHeader
+          <AdminSectionHeader
             label="Event Admins"
             actionLabel="+ Assign"
             onAction={() =>
-              Alert.alert('Assign Admin', `Assign admin to ${selected.title}`)
+              console.log('TODO: Assign admin to', selected.title)
             }
             colors={colors}
           />
@@ -373,13 +240,13 @@ export default function EventsTab() {
             </Text>
           ) : (
             eventAdmins.map((u) => (
-              <UserRow
+              <AdminUserRow
                 key={u.id}
                 name={`${u.firstName} ${u.lastName}`}
                 image={u.profileImage}
                 actionLabel="Revoke"
                 onAction={() =>
-                  Alert.alert('Revoke Admin', `Revoke ${u.firstName} ${u.lastName}`)
+                  console.log('TODO: Revoke admin', u.firstName, u.lastName)
                 }
                 colors={colors}
                 isDark={isDark}
@@ -388,7 +255,7 @@ export default function EventsTab() {
           )}
 
           {/* Attendees */}
-          <SectionHeader label="Attendees" colors={colors} />
+          <AdminSectionHeader label="Attendees" colors={colors} />
           <Text
             style={{
               fontFamily: 'Inter-Regular',
@@ -408,7 +275,7 @@ export default function EventsTab() {
         message={`Are you sure you want to delete "${deleteTarget?.title}"? This action cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={() => {
-          Alert.alert('Deleted', `${deleteTarget?.title} deleted`)
+          console.log('TODO: Delete event', deleteTarget?.title)
           setDeleteTarget(null)
           setSelectedId(null)
         }}

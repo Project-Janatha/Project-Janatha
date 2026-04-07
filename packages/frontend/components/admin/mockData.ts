@@ -47,7 +47,7 @@ export type AdminUser = {
   centerName: string | null;
   centerId: string | null;
   isVerified: boolean;
-  verificationLevel: string;
+  verificationLevel: number;
   createdAt: string;
   roles: AdminRole[];
 };
@@ -187,7 +187,7 @@ export const MOCK_USERS: AdminUser[] = [
     centerName: 'CM San Jose',
     centerId: 'center-sanjose-001',
     isVerified: true,
-    verificationLevel: 'super_admin',
+    verificationLevel: 107,
     createdAt: '2025-01-15T08:00:00.000Z',
     roles: [
       {
@@ -208,7 +208,7 @@ export const MOCK_USERS: AdminUser[] = [
     centerName: 'CM San Jose',
     centerId: 'center-sanjose-001',
     isVerified: true,
-    verificationLevel: 'verified',
+    verificationLevel: 1,
     createdAt: '2025-02-20T12:00:00.000Z',
     roles: [
       {
@@ -229,7 +229,7 @@ export const MOCK_USERS: AdminUser[] = [
     centerName: null,
     centerId: null,
     isVerified: true,
-    verificationLevel: 'verified',
+    verificationLevel: 1,
     createdAt: '2025-03-10T15:30:00.000Z',
     roles: [],
   },
@@ -243,7 +243,7 @@ export const MOCK_USERS: AdminUser[] = [
     centerName: 'CM Houston',
     centerId: 'center-houston-002',
     isVerified: false,
-    verificationLevel: 'unverified',
+    verificationLevel: 0,
     createdAt: '2025-04-01T09:00:00.000Z',
     roles: [
       {
@@ -264,7 +264,7 @@ export const MOCK_USERS: AdminUser[] = [
     centerName: 'CM Tri-State',
     centerId: 'center-tristate-003',
     isVerified: true,
-    verificationLevel: 'verified',
+    verificationLevel: 1,
     createdAt: '2025-02-05T11:00:00.000Z',
     roles: [
       {
@@ -277,8 +277,3 @@ export const MOCK_USERS: AdminUser[] = [
   },
 ];
 
-// --- Helpers ---
-
-export function getUserInitials(firstName: string, lastName: string): string {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-}

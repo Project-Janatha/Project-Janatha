@@ -1,147 +1,16 @@
 import React, { useState, useMemo } from 'react'
-import { View, Text, Pressable, Alert } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 import { MapPin, Globe, Phone, User } from 'lucide-react-native'
 import AdminTable, { type Column } from './AdminTable'
 import AdminDetailPanel from './AdminDetailPanel'
 import AdminSearchInput from './AdminSearchInput'
+import AdminInfoRow from './AdminInfoRow'
+import AdminSectionHeader from './AdminSectionHeader'
+import AdminUserRow from './AdminUserRow'
 import ConfirmDialog from './ConfirmDialog'
 import { MOCK_CENTERS, MOCK_USERS, type AdminCenter } from './mockData'
 import { useDetailColors } from '../../hooks/useDetailColors'
 import { useThemeContext } from '../contexts'
-import { Avatar } from '../ui'
-
-// --- Sub-components ---
-
-function InfoRow({
-  icon,
-  text,
-  colors,
-}: {
-  icon: React.ReactNode
-  text: string
-  colors: ReturnType<typeof useDetailColors>
-}) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      {icon}
-      <Text
-        style={{
-          fontFamily: 'Inter-Regular',
-          fontSize: 12,
-          color: colors.text,
-        }}
-        numberOfLines={2}
-      >
-        {text}
-      </Text>
-    </View>
-  )
-}
-
-function SectionHeader({
-  label,
-  actionLabel,
-  onAction,
-  colors,
-}: {
-  label: string
-  actionLabel?: string
-  onAction?: () => void
-  colors: ReturnType<typeof useDetailColors>
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 20,
-        marginBottom: 8,
-      }}
-    >
-      <Text
-        style={{
-          fontFamily: 'Inter-SemiBold',
-          fontSize: 11,
-          textTransform: 'uppercase',
-          letterSpacing: 0.5,
-          color: colors.textMuted,
-        }}
-      >
-        {label}
-      </Text>
-      {actionLabel && onAction && (
-        <Pressable onPress={onAction}>
-          <Text
-            style={{
-              fontFamily: 'Inter-SemiBold',
-              fontSize: 11,
-              color: '#E8862A',
-            }}
-          >
-            {actionLabel}
-          </Text>
-        </Pressable>
-      )}
-    </View>
-  )
-}
-
-function UserRow({
-  name,
-  image,
-  actionLabel,
-  onAction,
-  colors,
-  isDark,
-}: {
-  name: string
-  image: string | null
-  actionLabel: string
-  onAction: () => void
-  colors: ReturnType<typeof useDetailColors>
-  isDark: boolean
-}) {
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: colors.iconBoxBg,
-        borderRadius: 8,
-        padding: 8,
-        marginBottom: 6,
-      }}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Avatar name={name} image={image ?? undefined} size={24} />
-        <Text
-          style={{
-            fontFamily: 'Inter-Regular',
-            fontSize: 12,
-            color: colors.text,
-          }}
-        >
-          {name}
-        </Text>
-      </View>
-      <Pressable onPress={onAction}>
-        <Text
-          style={{
-            fontFamily: 'Inter-SemiBold',
-            fontSize: 11,
-            color: isDark ? '#F87171' : '#DC2626',
-          }}
-        >
-          {actionLabel}
-        </Text>
-      </Pressable>
-    </View>
-  )
-}
-
-// --- Main Component ---
 
 export default function CentersTab() {
   const colors = useDetailColors()
@@ -336,22 +205,22 @@ export default function CentersTab() {
         >
           {/* Info rows */}
           <View style={{ gap: 12 }}>
-            <InfoRow
+            <AdminInfoRow
               icon={<MapPin size={14} color={colors.textMuted} />}
               text={`${selected.address}, ${selected.city}, ${selected.state}`}
               colors={colors}
             />
-            <InfoRow
+            <AdminInfoRow
               icon={<Globe size={14} color={colors.textMuted} />}
               text={selected.website}
               colors={colors}
             />
-            <InfoRow
+            <AdminInfoRow
               icon={<Phone size={14} color={colors.textMuted} />}
               text={selected.phone}
               colors={colors}
             />
-            <InfoRow
+            <AdminInfoRow
               icon={<User size={14} color={colors.textMuted} />}
               text={selected.acharya}
               colors={colors}
@@ -364,7 +233,7 @@ export default function CentersTab() {
           {/* Action buttons */}
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
             <Pressable
-              onPress={() => Alert.alert('Edit', `Edit ${selected.name}`)}
+              onPress={() => console.log('TODO: Edit', selected.name)}
               style={{
                 backgroundColor: '#E8862A',
                 paddingHorizontal: 14,
@@ -385,10 +254,7 @@ export default function CentersTab() {
 
             <Pressable
               onPress={() =>
-                Alert.alert(
-                  selected.isVerified ? 'Unverify' : 'Verify',
-                  `${selected.isVerified ? 'Unverify' : 'Verify'} ${selected.name}`
-                )
+                console.log('TODO:', selected.isVerified ? 'Unverify' : 'Verify', selected.name)
               }
               style={{
                 backgroundColor: colors.iconBoxBg,
@@ -430,10 +296,10 @@ export default function CentersTab() {
           </View>
 
           {/* Center Admins */}
-          <SectionHeader
+          <AdminSectionHeader
             label="Center Admins"
             actionLabel="+ Assign"
-            onAction={() => Alert.alert('Assign Admin', `Assign admin to ${selected.name}`)}
+            onAction={() => console.log('TODO: Assign admin to', selected.name)}
             colors={colors}
           />
           {centerAdmins.length === 0 ? (
@@ -448,13 +314,13 @@ export default function CentersTab() {
             </Text>
           ) : (
             centerAdmins.map((u) => (
-              <UserRow
+              <AdminUserRow
                 key={u.id}
                 name={`${u.firstName} ${u.lastName}`}
                 image={u.profileImage}
                 actionLabel="Revoke"
                 onAction={() =>
-                  Alert.alert('Revoke Admin', `Revoke ${u.firstName} ${u.lastName}`)
+                  console.log('TODO: Revoke admin', u.firstName, u.lastName)
                 }
                 colors={colors}
                 isDark={isDark}
@@ -463,7 +329,7 @@ export default function CentersTab() {
           )}
 
           {/* Members */}
-          <SectionHeader label="Members" colors={colors} />
+          <AdminSectionHeader label="Members" colors={colors} />
           {centerMembers.length === 0 ? (
             <Text
               style={{
@@ -476,13 +342,13 @@ export default function CentersTab() {
             </Text>
           ) : (
             centerMembers.map((u) => (
-              <UserRow
+              <AdminUserRow
                 key={u.id}
                 name={`${u.firstName} ${u.lastName}`}
                 image={u.profileImage}
                 actionLabel="Remove"
                 onAction={() =>
-                  Alert.alert('Remove Member', `Remove ${u.firstName} ${u.lastName}`)
+                  console.log('TODO: Remove member', u.firstName, u.lastName)
                 }
                 colors={colors}
                 isDark={isDark}
@@ -499,7 +365,7 @@ export default function CentersTab() {
         message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={() => {
-          Alert.alert('Deleted', `${deleteTarget?.name} deleted`)
+          console.log('TODO: Delete center', deleteTarget?.name)
           setDeleteTarget(null)
           setSelectedId(null)
         }}

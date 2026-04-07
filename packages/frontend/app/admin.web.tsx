@@ -6,24 +6,23 @@ import AdminSidebar, { type AdminTab } from '../components/admin/AdminSidebar'
 import CentersTab from '../components/admin/CentersTab'
 import EventsTab from '../components/admin/EventsTab'
 import UsersTab from '../components/admin/UsersTab'
-
-const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
-const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+import { isSuperAdmin as checkSuperAdmin } from '../utils/admin'
 
 export default function AdminPage() {
   const { user, loading } = useUser()
   const { isDark } = useThemeContext()
   const [activeTab, setActiveTab] = useState<AdminTab>('Centers')
 
-  const isSuperAdmin = !!user && (user.email === ADMIN_EMAIL || (user.verificationLevel ?? 0) >= 107 || isLocal)
+  // TODO: backend must enforce admin auth on all admin-specific endpoints
+  const isAdmin = checkSuperAdmin(user)
 
   useEffect(() => {
-    if (!loading && !isSuperAdmin) {
+    if (!loading && !isAdmin) {
       router.replace('/(tabs)')
     }
-  }, [loading, isSuperAdmin])
+  }, [loading, isAdmin])
 
-  if (!loading && !isSuperAdmin) {
+  if (!loading && !isAdmin) {
     return null
   }
 

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { View, Text, Pressable, Alert, StyleSheet } from 'react-native'
+import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { Mail, Building2, Calendar, Shield } from 'lucide-react-native'
 import AdminTable, { type Column } from './AdminTable'
 import AdminDetailPanel from './AdminDetailPanel'
@@ -21,7 +21,7 @@ const ROLE_COLORS = {
 }
 
 function getRoleBadgeType(user: AdminUser): 'super' | 'center_admin' | 'event_admin' | null {
-  if (user.verificationLevel === 'super_admin' || Number(user.verificationLevel) >= 107)
+  if (user.verificationLevel >= 107)
     return 'super'
   if (user.roles.some((r) => r.role === 'center_admin')) return 'center_admin'
   if (user.roles.some((r) => r.role === 'event_admin')) return 'event_admin'
@@ -281,10 +281,7 @@ export default function UsersTab() {
   // --- Actions (stubbed) ---
   const handleVerifyToggle = () => {
     if (!selectedUser) return
-    Alert.alert(
-      selectedUser.isVerified ? 'Unverify User' : 'Verify User',
-      `${selectedUser.isVerified ? 'Unverify' : 'Verify'} ${selectedUser.firstName} ${selectedUser.lastName}?`,
-    )
+    console.log('TODO:', selectedUser.isVerified ? 'Unverify' : 'Verify', selectedUser.firstName, selectedUser.lastName)
   }
 
   const handleRemoveUser = () => {
@@ -294,12 +291,12 @@ export default function UsersTab() {
   const handleConfirmRemove = () => {
     setConfirmDeleteVisible(false)
     if (!selectedUser) return
-    Alert.alert('Remove User', `Removed ${selectedUser.firstName} ${selectedUser.lastName}`)
+    console.log('TODO: Remove user', selectedUser.firstName, selectedUser.lastName)
     setSelectedUser(null)
   }
 
   const handleRevokeRole = (roleName: string, resourceName: string) => {
-    Alert.alert('Revoke Role', `Revoke ${roleName} for ${resourceName}`)
+    console.log('TODO: Revoke', roleName, 'for', resourceName)
   }
 
   // --- Detail panel content ---
@@ -413,7 +410,9 @@ export default function UsersTab() {
           data={filtered}
           keyExtractor={(u) => u.id}
           selectedId={selectedUser?.id ?? null}
-          onRowPress={setSelectedUser}
+          onRowPress={(item) =>
+            setSelectedUser(item.id === selectedUser?.id ? null : item)
+          }
         />
       </View>
 
