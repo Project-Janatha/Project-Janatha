@@ -21,6 +21,7 @@ import {
   verifyRefreshToken,
 } from './auth'
 import * as db from './db'
+import * as notifications from './notifications'
 import { ADMIN_EMAIL, NORMAL_USER, SEVAK, BRAHMACHARI, TIER_DESCALE, ADMIN_CUTOFF, DEVELOPER_EMAILS } from './constants'
 import { rateLimit, cacheControl, securityHeaders, validate } from './middleware'
 
@@ -1223,6 +1224,155 @@ app.delete('/admin/users/:id', adminMiddleware, async (c) => {
     return c.json({ message: 'User deleted' })
   }
   return c.json({ message: 'Delete failed' }, 500)
+})
+
+// ═══════════════════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /notifications
+ * Get all notifications for the authenticated user
+ */
+app.get('/notifications', authMiddleware, async (c) => {
+  const user = c.get('user')
+  const limit = parseInt(c.req.query('limit') || '50')
+  const offset = parseInt(c.req.query('offset') || '0')
+  const unreadOnly = c.req.query('unreadOnly') === 'true'
+
+  const notifs = await notifications.getUserNotifications(c.env, user.id, {
+    limit: Math.min(limit, 100),
+    offset,
+    unreadOnly,
+  })
+
+  return c.json({
+    notifications: notifs.map(notifications.notificationRowToApi),
+    count: notifs.length,
+  })
+})
+
+/**
+ * GET /notifications/unread-count
+ * Get unread notification count for the authenticated user
+ */
+app.get('/notifications/unread-count', authMiddleware, async (c) => {
+  const user = c.get('user')
+  const count = await notifications.getUnreadNotificationCount(c.env, user.id)
+  return c.json({ unreadCount: count })
+})
+
+/**
+ * PUT /notifications/:id/read
+ * Mark a notification as read
+ */
+app.put('/notifications/:id/read', authMiddleware, async (c) => {
+  const user = c.get('user')
+  const notifId = c.req.param('id')
+
+  const success = await notifications.markNotificationAsRead(c.env, notifId, user.id)
+
+  if (success) {
+    return c.json({ message: 'Notification marked as read' })
+  }
+
+  return c.json({ message: 'Notification not found' }, 404)
+})
+
+/**
+ * PUT /notifications/mark-all-read
+ * Mark all notifications as read
+ */
+app.put('/notifications/mark-all-read', authMiddleware, async (c) => {
+  const user = c.get('user')
+
+  await notifications.markAllNotificationsAsRead(c.env, user.id)
+
+  return c.json({ message: 'All notifications marked as read' })
+})
+
+/**
+ * PUT /notifications/:id/archive
+ * Archive a notification
+ */
+app.put('/notifications/:id/archive', authMiddleware, async (c) => {
+  const user = c.get('user')
+  const notifId = c.req.param('id')
+
+  const success = await notifications.archiveNotification(c.env, notifId, user.id)
+
+  if (success) {
+    return c.json({ message: 'Notification archived' })
+  }
+
+  return c.json({ message: 'Notification not found' }, 404)
+})
+
+/**
+ * DELETE /notifications/:id
+ * Delete a notification
+ */
+app.delete('/notifications/:id', authMiddleware, async (c) => {
+  const user = c.get('user')
+  const notifId = c.req.param('id')
+
+  const success = await notifications.deleteNotification(c.env, notifId, user.id)
+
+  if (success) {
+    return c.json({ message: 'Notification deleted' })
+  }
+
+  return c.json({ message: 'Notification not found' }, 404)
+})
+
+/**
+ * GET /notifications/preferences
+ * Get notification preferences for the authenticated user
+ */
+app.get('/notifications/preferences', authMiddleware, async (c) => {
+  const user = c.get('user')
+
+  let prefs = await notifications.getNotificationPreferences(c.env, user.id)
+
+  // Create default preferences if they don't exist
+  if (!prefs) {
+    prefs = await notifications.createDefaultNotificationPreferences(c.env, user.id)
+  }
+
+  return c.json(notifications.preferencesRowToApi(prefs))
+})
+
+/**
+ * PUT /notifications/preferences
+ * Update notification preferences
+ */
+app.put('/notifications/preferences', authMiddleware, async (c) => {
+  const user = c.get('user')
+  const body = await c.req.json()
+
+  // Convert from camelCase API format to snake_case DB format
+  const updates: Partial<notifications.NotificationPreferenceRow> = {}
+
+  if (body.inAppEnabled !== undefined) updates.in_app_enabled = body.inAppEnabled ? 1 : 0
+  if (body.pushEnabled !== undefined) updates.push_enabled = body.pushEnabled ? 1 : 0
+  if (body.emailEnabled !== undefined) updates.email_enabled = body.emailEnabled ? 1 : 0
+  if (body.eventReminders !== undefined) updates.event_reminders = body.eventReminders ? 1 : 0
+  if (body.eventCreated !== undefined) updates.event_created = body.eventCreated ? 1 : 0
+  if (body.eventCancelled !== undefined) updates.event_cancelled = body.eventCancelled ? 1 : 0
+  if (body.eventUpdated !== undefined) updates.event_updated = body.eventUpdated ? 1 : 0
+  if (body.attendeeJoined !== undefined) updates.attendee_joined = body.attendeeJoined ? 1 : 0
+  if (body.centerAnnouncements !== undefined) updates.center_announcements = body.centerAnnouncements ? 1 : 0
+  if (body.quietHoursStart !== undefined) updates.quiet_hours_start = body.quietHoursStart
+  if (body.quietHoursEnd !== undefined) updates.quiet_hours_end = body.quietHoursEnd
+  if (body.quietHoursEnabled !== undefined) updates.quiet_hours_enabled = body.quietHoursEnabled ? 1 : 0
+
+  const prefs = await notifications.updateNotificationPreferences(c.env, user.id, updates)
+
+  if (!prefs) {
+    return c.json({ message: 'Preferences not found' }, 404)
+  }
+
+  return c.json(notifications.preferencesRowToApi(prefs))
 })
 
 // ── Default export ────────────────────────────────────────────────────
