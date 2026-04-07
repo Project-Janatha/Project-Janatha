@@ -33,7 +33,7 @@ if (typeof document !== 'undefined') {
   }
 }
 
-type AuthStep = 'initial' | 'login' | 'signup'
+type AuthStep = 'initial' | 'login' | 'invite-code' | 'signup'
 
 const AUTH_CAROUSEL_IMAGES = [
   swamiChinmayanandaJpg,
@@ -49,12 +49,14 @@ export default function AuthScreen() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [showDevPanel, setShowDevPanel] = useState(false)
   // Focus state for input styling
   const [emailFocused, setEmailFocused] = useState(false)
   const [passwordFocused, setPasswordFocused] = useState(false)
   const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false)
+  const [inviteCodeFocused, setInviteCodeFocused] = useState(false)
   const [viewportWidth, setViewportWidth] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth : 1280
   )
@@ -84,7 +86,7 @@ export default function AuthScreen() {
       if (exists) {
         setAuthStep('login')
       } else {
-        setAuthStep('signup')
+        setAuthStep('invite-code')
       }
     } catch (e: any) {
       setErrors({ form: e.message || 'Failed to connect to server.' })
@@ -132,7 +134,7 @@ export default function AuthScreen() {
       return
     }
     try {
-      const result = await signup(username, password)
+      const result = await signup(username, password, inviteCode)
       if (result.success) {
         router.replace('/onboarding')
       } else {
@@ -141,7 +143,31 @@ export default function AuthScreen() {
     } catch (e: any) {
       setErrors({ form: 'Failed to connect to server. Please try again.' })
     }
-  }, [username, password, confirmPassword, signup, router])
+  }, [username, password, confirmPassword, inviteCode, signup, router])
+
+  const handleInviteCodeContinue = useCallback(async () => {
+    setErrors({})
+    if (!inviteCode) {
+      setErrors({ inviteCode: 'Please enter your invite code.' })
+      return
+    }
+    try {
+      // Validate the invite code with the backend
+      const response = await fetch('/api/auth/validate-invite-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: inviteCode }),
+      })
+      const data = await response.json()
+      if (data.valid) {
+        setAuthStep('signup')
+      } else {
+        setErrors({ form: data.error || 'Invalid or inactive invite code.' })
+      }
+    } catch (e: any) {
+      setErrors({ form: 'Failed to validate invite code. Please try again.' })
+    }
+  }, [inviteCode])
 
   const handleSubmit = useCallback(
     (e?: any) => {
@@ -151,19 +177,22 @@ export default function AuthScreen() {
       }
       if (authStep === 'login') {
         handleLogin()
+      } else if (authStep === 'invite-code') {
+        handleInviteCodeContinue()
       } else if (authStep === 'signup') {
         handleSignup()
       } else {
         handleContinue()
       }
     },
-    [authStep, handleLogin, handleSignup, handleContinue]
+    [authStep, handleLogin, handleInviteCodeContinue, handleSignup, handleContinue]
   )
 
   const handleBack = useCallback(() => {
     setAuthStep('initial')
     setPassword('')
     setConfirmPassword('')
+    setInviteCode('')
     setErrors({})
   }, [])
 
@@ -182,10 +211,16 @@ export default function AuthScreen() {
     setErrors((prev) => ({ ...prev, confirmPassword: '' }))
   }, [])
 
+  const handleInviteCodeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInviteCode(e.target.value)
+    setErrors((prev) => ({ ...prev, inviteCode: '' }))
+  }, [])
+
   const isButtonDisabled =
     loading ||
     (authStep === 'initial' && !username) ||
-    (authStep !== 'initial' && !password) ||
+    (authStep === 'invite-code' && !inviteCode) ||
+    (authStep !== 'initial' && authStep !== 'invite-code' && !password) ||
     (authStep === 'signup' && !confirmPassword)
 
   const errorMessages = Object.values(errors).filter(Boolean)
@@ -226,24 +261,30 @@ export default function AuthScreen() {
   const heading =
     authStep === 'login'
       ? 'Welcome back.'
-      : authStep === 'signup'
-        ? 'Join the community.'
-        : 'Welcome.'
+      : authStep === 'invite-code'
+        ? 'Enter invite code.'
+        : authStep === 'signup'
+          ? 'Join the community.'
+          : 'Welcome.'
 
   const subtitle =
     authStep === 'login'
       ? 'Enter your password to continue'
-      : authStep === 'signup'
-        ? 'Create your account to get started'
-        : 'Enter your email to get started'
+      : authStep === 'invite-code'
+        ? 'Enter your beta invite code to proceed'
+        : authStep === 'signup'
+          ? 'Create your account to get started'
+          : 'Enter your email to get started'
 
   const buttonText = loading
     ? 'Please wait...'
     : authStep === 'login'
       ? 'Sign In'
-      : authStep === 'signup'
-        ? 'Create Account'
-        : 'Continue'
+      : authStep === 'invite-code'
+        ? 'Verify Code'
+        : authStep === 'signup'
+          ? 'Create Account'
+          : 'Continue'
   const isNarrowWeb = viewportWidth < 1024
   const isMobile = viewportWidth < 640
 
@@ -395,6 +436,21 @@ export default function AuthScreen() {
                 onFocus={() => setPasswordFocused(true)}
                 onBlur={() => setPasswordFocused(false)}
                 style={getInputStyle(passwordFocused)}
+              />
+            )}
+
+            {/* Invite code input (invite-code step) */}
+            {authStep === 'invite-code' && (
+              <input
+                className="auth-input"
+                type="text"
+                placeholder="Invite Code"
+                value={inviteCode}
+                onChange={handleInviteCodeChange}
+                autoComplete="off"
+                onFocus={() => setInviteCodeFocused(true)}
+                onBlur={() => setInviteCodeFocused(false)}
+                style={getInputStyle(inviteCodeFocused)}
               />
             )}
 

@@ -20,7 +20,7 @@ import DevPanel from '../components/DevPanel'
 // __DEV__ is a React Native/Expo global — always false in production builds
 const isDev = typeof __DEV__ !== 'undefined' && __DEV__
 
-type AuthStep = 'initial' | 'login' | 'signup'
+type AuthStep = 'initial' | 'login' | 'invite-code' | 'signup'
 
 export default function AuthScreen() {
   const router = useRouter()
@@ -32,6 +32,7 @@ export default function AuthScreen() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
   const [showDevPanel, setShowDevPanel] = useState(false)
@@ -54,7 +55,7 @@ export default function AuthScreen() {
         setAuthStep('login')
       } else {
         posthog?.capture('auth_user_new')
-        setAuthStep('signup')
+        setAuthStep('invite-code')
       }
     } catch (e: any) {
       posthog?.capture('auth_check_failed')
@@ -85,6 +86,34 @@ export default function AuthScreen() {
     }
   }, [username, password, login, router])
 
+  const handleInviteCodeContinue = useCallback(async () => {
+    setErrors({})
+    if (!inviteCode) {
+      setErrors({ inviteCode: 'Please enter your invite code.' })
+      return
+    }
+    try {
+      posthog?.capture('auth_invite_code_submitted')
+      // Validate the invite code with the backend
+      const response = await fetch('/api/auth/validate-invite-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: inviteCode }),
+      })
+      const data = await response.json()
+      if (data.valid) {
+        posthog?.capture('auth_invite_code_valid')
+        setAuthStep('signup')
+      } else {
+        posthog?.capture('auth_invite_code_invalid')
+        setErrors({ form: data.error || 'Invalid or inactive invite code.' })
+      }
+    } catch (e: any) {
+      posthog?.capture('auth_invite_code_check_failed')
+      setErrors({ form: 'Failed to validate invite code. Please try again.' })
+    }
+  }, [inviteCode, posthog])
+
   const handleSignup = useCallback(async () => {
     setErrors({})
     if (!username) {
@@ -104,7 +133,7 @@ export default function AuthScreen() {
       return
     }
     try {
-      const result = await signup(username, password)
+      const result = await signup(username, password, inviteCode)
       if (result.success) {
         router.replace('/onboarding')
       } else {
@@ -113,7 +142,7 @@ export default function AuthScreen() {
     } catch (e: any) {
       setErrors({ form: 'Failed to connect to server. Please try again.' })
     }
-  }, [username, password, confirmPassword, signup, router])
+  }, [username, password, confirmPassword, inviteCode, signup, router])
 
   const handleSubmit = useCallback(
     (e?: any) => {
@@ -124,26 +153,30 @@ export default function AuthScreen() {
 
       if (authStep === 'login') {
         handleLogin()
+      } else if (authStep === 'invite-code') {
+        handleInviteCodeContinue()
       } else if (authStep === 'signup') {
         handleSignup()
       } else {
         handleContinue()
       }
     },
-    [authStep, handleLogin, handleSignup, handleContinue]
+    [authStep, handleLogin, handleInviteCodeContinue, handleSignup, handleContinue]
   )
 
   const handleBack = useCallback(() => {
     setAuthStep('initial')
     setPassword('')
     setConfirmPassword('')
+    setInviteCode('')
     setErrors({})
   }, [])
 
   const isButtonDisabled =
     loading ||
     (authStep === 'initial' && !username) ||
-    (authStep !== 'initial' && !password) ||
+    (authStep === 'invite-code' && !inviteCode) ||
+    (authStep !== 'initial' && authStep !== 'invite-code' && !password) ||
     (authStep === 'signup' && !confirmPassword)
 
   // Collect error messages to display
@@ -163,6 +196,11 @@ export default function AuthScreen() {
   const handleConfirmPasswordChange = useCallback((text: string) => {
     setConfirmPassword(text)
     setErrors((prev) => ({ ...prev, confirmPassword: '' }))
+  }, [])
+
+  const handleInviteCodeChange = useCallback((text: string) => {
+    setInviteCode(text)
+    setErrors((prev) => ({ ...prev, inviteCode: '' }))
   }, [])
 
   return (
@@ -219,6 +257,8 @@ export default function AuthScreen() {
               >
                 {authStep === 'login'
                   ? 'Welcome back.'
+                  : authStep === 'invite-code'
+                  ? 'Enter invite code.'
                   : authStep === 'signup'
                   ? 'Join the community.'
                   : 'Welcome.'}
@@ -230,6 +270,8 @@ export default function AuthScreen() {
               >
                 {authStep === 'login'
                   ? 'Enter your password to continue'
+                  : authStep === 'invite-code'
+                  ? 'Enter your beta invite code to proceed'
                   : authStep === 'signup'
                   ? 'Create your account to get started'
                   : 'Enter your email to get started'}
@@ -270,6 +312,19 @@ export default function AuthScreen() {
                 </View>
               )}
 
+              {authStep === 'invite-code' && (
+                <View>
+                  <AuthInput
+                    placeholder="Invite Code"
+                    onChangeText={handleInviteCodeChange}
+                    value={inviteCode}
+                    secureTextEntry={false}
+                    autoComplete="off"
+                    style={{}}
+                  />
+                </View>
+              )}
+
               {authStep === 'signup' && (
                 <>
                   <View>
@@ -303,10 +358,12 @@ export default function AuthScreen() {
                 loading={loading}
                 style={{ marginTop: 8 }}
               >
-                {authStep === 'login'
-                  ? 'Log In'
-                  : authStep === 'signup'
-                  ? 'Sign Up'
+               {authStep === 'login'
+                   ? 'Log In'
+                   : authStep === 'invite-code'
+                   ? 'Verify Code'
+                   : authStep === 'signup'
+                   ? 'Sign Up'
                   : 'Continue'}
               </PrimaryButton>
 
