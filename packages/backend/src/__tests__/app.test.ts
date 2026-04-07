@@ -1470,3 +1470,62 @@ describe('Admin user actions', () => {
     expect(body.message).toBe('Cannot delete your own account from admin panel')
   })
 })
+
+// ═══════════════════════════════════════════════════════════════════════
+// ADMIN END-TO-END WORKFLOW
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('Admin end-to-end workflow', () => {
+  it('full admin lifecycle: list, create, edit, verify, delete', async () => {
+    const adminToken = await createAdmin()
+
+    // 1. Check stats — start empty (just admin user)
+    const { body: stats } = await fetchJSON('/api/admin/stats', {
+      headers: authHeader(adminToken),
+    })
+    expect(stats.users).toBe(1)
+    expect(stats.centers).toBe(0)
+    expect(stats.events).toBe(0)
+
+    // 2. Create a center, verify it appears in admin list
+    await jsonPost('/api/addCenter', {
+      centerName: 'CM Test Center',
+      latitude: 37.3,
+      longitude: -121.9,
+    }, authHeader(adminToken))
+
+    const { body: centerList } = await fetchJSON('/api/admin/centers', {
+      headers: authHeader(adminToken),
+    })
+    expect(centerList.total).toBe(1)
+    const centerId = centerList.data[0].centerID
+
+    // 3. Verify the center
+    await jsonPost(`/api/admin/centers/${centerId}/verify`, {}, authHeader(adminToken))
+    const { body: centerAfterVerify } = await fetchJSON('/api/admin/centers', {
+      headers: authHeader(adminToken),
+    })
+    expect(centerAfterVerify.data[0].isVerified).toBe(true)
+
+    // 4. Create an event, verify in admin list
+    await jsonPost('/api/addEvent', {
+      title: 'Test Event',
+      date: '2026-04-05T10:00:00Z',
+      latitude: 37.3,
+      longitude: -121.9,
+      centerID: centerId,
+    }, authHeader(adminToken))
+
+    const { body: eventList } = await fetchJSON('/api/admin/events', {
+      headers: authHeader(adminToken),
+    })
+    expect(eventList.total).toBe(1)
+
+    // 5. Stats should reflect the new data
+    const { body: stats2 } = await fetchJSON('/api/admin/stats', {
+      headers: authHeader(adminToken),
+    })
+    expect(stats2.centers).toBe(1)
+    expect(stats2.events).toBe(1)
+  })
+})
