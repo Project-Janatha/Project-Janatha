@@ -31,14 +31,18 @@ export default function CentersTab() {
   const [members, setMembers] = useState<UserData[]>([])
   const [membersLoading, setMembersLoading] = useState(false)
 
+  const [error, setError] = useState<string | null>(null)
+
   const loadCenters = useCallback(async (q?: string) => {
     try {
       setLoading(true)
+      setError(null)
       const result = await fetchAdminCenters({ q: q || undefined, limit: 100 })
       setCenters(result.data)
       setTotal(result.total)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load centers:', err)
+      setError(err?.message || 'Failed to load centers. Are you logged in?')
     } finally {
       setLoading(false)
     }
@@ -164,6 +168,19 @@ export default function CentersTab() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator color="#E8862A" />
+      </View>
+    )
+  }
+
+  if (error && centers.length === 0) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
+        <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: '#DC2626', textAlign: 'center' }}>
+          {error}
+        </Text>
+        <Pressable onPress={() => loadCenters()} style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#E8862A', borderRadius: 8 }}>
+          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: '#fff' }}>Retry</Text>
+        </Pressable>
       </View>
     )
   }

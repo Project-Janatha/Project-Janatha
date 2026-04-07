@@ -34,14 +34,18 @@ export default function EventsTab() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<EventData | null>(null)
 
+  const [error, setError] = useState<string | null>(null)
+
   const loadEvents = useCallback(async (q?: string) => {
     try {
       setLoading(true)
+      setError(null)
       const result = await fetchAdminEvents({ q: q || undefined, limit: 100 })
       setEvents(result.data)
       setTotal(result.total)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load events:', err)
+      setError(err?.message || 'Failed to load events. Are you logged in?')
     } finally {
       setLoading(false)
     }
@@ -112,6 +116,19 @@ export default function EventsTab() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator color="#E8862A" />
+      </View>
+    )
+  }
+
+  if (error && events.length === 0) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
+        <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: '#DC2626', textAlign: 'center' }}>
+          {error}
+        </Text>
+        <Pressable onPress={() => loadEvents()} style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#E8862A', borderRadius: 8 }}>
+          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: '#fff' }}>Retry</Text>
+        </Pressable>
       </View>
     )
   }

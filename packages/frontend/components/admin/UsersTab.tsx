@@ -55,14 +55,18 @@ export default function UsersTab() {
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null)
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false)
 
+  const [error, setError] = useState<string | null>(null)
+
   const loadUsers = useCallback(async (q?: string) => {
     try {
       setLoading(true)
+      setError(null)
       const result = await fetchAdminUsers({ q: q || undefined, limit: 100 })
       setUsers(result.data)
       setTotal(result.total)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load users:', err)
+      setError(err?.message || 'Failed to load users. Are you logged in?')
     } finally {
       setLoading(false)
     }
@@ -253,6 +257,19 @@ export default function UsersTab() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator color="#E8862A" />
+      </View>
+    )
+  }
+
+  if (error && users.length === 0) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
+        <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: '#DC2626', textAlign: 'center' }}>
+          {error}
+        </Text>
+        <Pressable onPress={() => loadUsers()} style={{ marginTop: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#E8862A', borderRadius: 8 }}>
+          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 13, color: '#fff' }}>Retry</Text>
+        </Pressable>
       </View>
     )
   }
