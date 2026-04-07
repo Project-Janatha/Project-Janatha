@@ -1271,3 +1271,62 @@ describe('GET /api/admin/events', () => {
     expect(body.data[0].title).toBe('Gita Chanting')
   })
 })
+
+describe('Admin center actions', () => {
+  async function createTestCenter(adminToken: string) {
+    const { body } = await jsonPost('/api/addCenter', {
+      centerName: 'CM Test', latitude: 37.3, longitude: -121.9, address: '123 Test St',
+    }, authHeader(adminToken))
+    return body.id
+  }
+
+  it('PUT /api/admin/centers/:id updates center details', async () => {
+    const adminToken = await createAdmin()
+    const centerId = await createTestCenter(adminToken)
+
+    const { res, body } = await jsonPut(`/api/admin/centers/${centerId}`, {
+      name: 'CM San Jose Updated', phone: '555-1234',
+    }, authHeader(adminToken))
+
+    expect(res.status).toBe(200)
+    expect(body.message).toBe('Center updated')
+
+    const { body: fetched } = await jsonPost('/api/fetchCenter', { centerID: centerId })
+    expect(fetched.center.name).toBe('CM San Jose Updated')
+    expect(fetched.center.phone).toBe('555-1234')
+  })
+
+  it('POST /api/admin/centers/:id/verify toggles verification', async () => {
+    const adminToken = await createAdmin()
+    const centerId = await createTestCenter(adminToken)
+
+    const { res } = await jsonPost(`/api/admin/centers/${centerId}/verify`, {}, authHeader(adminToken))
+    expect(res.status).toBe(200)
+
+    const { body: fetched } = await jsonPost('/api/fetchCenter', { centerID: centerId })
+    expect(fetched.center.isVerified).toBe(true)
+
+    await jsonPost(`/api/admin/centers/${centerId}/verify`, {}, authHeader(adminToken))
+    const { body: fetched2 } = await jsonPost('/api/fetchCenter', { centerID: centerId })
+    expect(fetched2.center.isVerified).toBe(false)
+  })
+
+  it('DELETE /api/admin/centers/:id deletes center', async () => {
+    const adminToken = await createAdmin()
+    const centerId = await createTestCenter(adminToken)
+
+    const { res } = await fetchJSON(`/api/admin/centers/${centerId}`, {
+      method: 'DELETE', headers: authHeader(adminToken),
+    })
+    expect(res.status).toBe(200)
+
+    const { res: fetchRes } = await jsonPost('/api/fetchCenter', { centerID: centerId })
+    expect(fetchRes.status).toBe(404)
+  })
+
+  it('returns 404 for non-existent center', async () => {
+    const adminToken = await createAdmin()
+    const { res } = await jsonPut('/api/admin/centers/nonexistent', { name: 'test' }, authHeader(adminToken))
+    expect(res.status).toBe(404)
+  })
+})

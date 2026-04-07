@@ -10,7 +10,7 @@
  */
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import type { Env, UserRow, EventRow } from './types'
+import type { Env, UserRow, EventRow, CenterRow } from './types'
 import { userRowToApi, centerRowToApi, eventRowToApi } from './types'
 import {
   hashPassword,
@@ -1045,6 +1045,70 @@ app.get('/admin/events', adminMiddleware, async (c) => {
   const offset = Math.max(parseInt(url.searchParams.get('offset') ?? '0', 10) || 0, 0)
   const { data, total } = await db.listEvents(c.env.DB, { q, limit, offset })
   return c.json({ data: data.map(eventRowToApi), total, limit, offset })
+})
+
+// ── Admin center actions ──────────────────────────────────────────────
+
+app.put('/admin/centers/:id', adminMiddleware, async (c) => {
+  const centerId = c.req.param('id')
+  const center = await db.getCenterById(c.env.DB, centerId)
+  if (!center) {
+    return c.json({ message: 'Center not found' }, 404)
+  }
+
+  const body = await c.req.json<{
+    name?: string
+    address?: string
+    website?: string
+    phone?: string
+    image?: string
+    acharya?: string
+    pointOfContact?: string
+  }>()
+
+  const updates: Partial<CenterRow> = {}
+  if (body.name !== undefined) updates.name = body.name
+  if (body.address !== undefined) updates.address = body.address
+  if (body.website !== undefined) updates.website = body.website
+  if (body.phone !== undefined) updates.phone = body.phone
+  if (body.image !== undefined) updates.image = body.image
+  if (body.acharya !== undefined) updates.acharya = body.acharya
+  if (body.pointOfContact !== undefined) updates.point_of_contact = body.pointOfContact
+
+  const result = await db.updateCenter(c.env.DB, centerId, updates)
+  if (result.success) {
+    return c.json({ message: 'Center updated' })
+  }
+  return c.json({ message: 'Failed to update center', error: result.error }, 500)
+})
+
+app.post('/admin/centers/:id/verify', adminMiddleware, async (c) => {
+  const centerId = c.req.param('id')
+  const center = await db.getCenterById(c.env.DB, centerId)
+  if (!center) {
+    return c.json({ message: 'Center not found' }, 404)
+  }
+
+  const newValue = center.is_verified ? 0 : 1
+  const result = await db.updateCenter(c.env.DB, centerId, { is_verified: newValue })
+  if (result.success) {
+    return c.json({ message: newValue ? 'Center verified' : 'Center unverified' })
+  }
+  return c.json({ message: 'Failed to toggle verification', error: result.error }, 500)
+})
+
+app.delete('/admin/centers/:id', adminMiddleware, async (c) => {
+  const centerId = c.req.param('id')
+  const center = await db.getCenterById(c.env.DB, centerId)
+  if (!center) {
+    return c.json({ message: 'Center not found' }, 404)
+  }
+
+  const result = await db.deleteCenter(c.env.DB, centerId)
+  if (result.success) {
+    return c.json({ message: 'Center deleted' })
+  }
+  return c.json({ message: 'Failed to delete center', error: result.error }, 500)
 })
 
 // ── Default export ────────────────────────────────────────────────────
