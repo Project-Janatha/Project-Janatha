@@ -22,6 +22,8 @@
     "d1:migrate:preview": "npx wrangler d1 execute chinmaya-janata-db-preview --file=migrations/0001_initial_schema.sql --config packages/backend/wrangler.toml",
     "d1:migrate:bio": "npx wrangler d1 execute chinmaya-janata-db --file=migrations/0004_add_bio.sql --config packages/backend/wrangler.toml",
     "d1:migrate:bio:local": "npx wrangler d1 execute chinmaya-janata-db --local --file=migrations/0004_add_bio.sql --config packages/backend/wrangler.toml",
+    "d1:migrate:invite-codes": "npx wrangler d1 execute chinmaya-janata-db --file=migrations/0006_invite_codes.sql --config packages/backend/wrangler.toml",
+    "d1:migrate:invite-codes:local": "npx wrangler d1 execute chinmaya-janata-db --local --file=migrations/0006_invite_codes.sql --config packages/backend/wrangler.toml",
     "d1:seed": "npx wrangler d1 execute chinmaya-janata-db --local --file=migrations/seed_centers.sql --config packages/backend/wrangler.toml",
     "d1:seed:preview": "npx wrangler d1 execute chinmaya-janata-db-preview --file=migrations/seed_centers.sql --config packages/backend/wrangler.toml",
     "android": "cd packages/frontend && npx expo run:android",
