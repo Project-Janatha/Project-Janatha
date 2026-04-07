@@ -1241,3 +1241,33 @@ describe('GET /api/admin/centers', () => {
     expect(body.data[0].name).toBe('CM Houston')
   })
 })
+
+describe('GET /api/admin/events', () => {
+  it('returns paginated event list', async () => {
+    const adminToken = await createAdmin()
+    const { body: centerBody } = await jsonPost('/api/addCenter', { centerName: 'CM San Jose', latitude: 37.3, longitude: -121.9 }, authHeader(adminToken))
+    const centerId = centerBody.id
+
+    await jsonPost('/api/addEvent', { title: 'Gita Chanting', date: '2026-04-05T10:00:00Z', latitude: 37.3, longitude: -121.9, centerID: centerId }, authHeader(adminToken))
+    await jsonPost('/api/addEvent', { title: 'Youth Retreat', date: '2026-04-12T09:00:00Z', latitude: 37.3, longitude: -121.9, centerID: centerId }, authHeader(adminToken))
+
+    const { res, body } = await fetchJSON('/api/admin/events?limit=10&offset=0', { headers: authHeader(adminToken) })
+    expect(res.status).toBe(200)
+    expect(body.total).toBe(2)
+    expect(body.data).toHaveLength(2)
+    expect(body.data[0].eventID).toBeDefined()
+    expect(body.data[0].title).toBeDefined()
+  })
+
+  it('searches by title, address, or description', async () => {
+    const adminToken = await createAdmin()
+    const { body: centerBody } = await jsonPost('/api/addCenter', { centerName: 'CM San Jose', latitude: 37.3, longitude: -121.9 }, authHeader(adminToken))
+
+    await jsonPost('/api/addEvent', { title: 'Gita Chanting', description: 'Weekly session', date: '2026-04-05T10:00:00Z', latitude: 37.3, longitude: -121.9, centerID: centerBody.id }, authHeader(adminToken))
+    await jsonPost('/api/addEvent', { title: 'Youth Retreat', description: 'Annual retreat', date: '2026-04-12T09:00:00Z', latitude: 37.3, longitude: -121.9, centerID: centerBody.id }, authHeader(adminToken))
+
+    const { body } = await fetchJSON('/api/admin/events?q=gita', { headers: authHeader(adminToken) })
+    expect(body.total).toBe(1)
+    expect(body.data[0].title).toBe('Gita Chanting')
+  })
+})

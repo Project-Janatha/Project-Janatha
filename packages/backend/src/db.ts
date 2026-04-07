@@ -386,6 +386,26 @@ export async function countEvents(db: D1Database): Promise<number> {
   return result?.count ?? 0
 }
 
+export async function listEvents(
+  db: D1Database,
+  opts: { q?: string; limit: number; offset: number },
+): Promise<{ data: EventRow[]; total: number }> {
+  const { q, limit, offset } = opts
+  if (q) {
+    const pattern = `%${q}%`
+    const countResult = await db
+      .prepare('SELECT COUNT(*) as count FROM events WHERE title LIKE ?1 OR description LIKE ?1 OR address LIKE ?1')
+      .bind(pattern).first<{ count: number }>()
+    const result = await db
+      .prepare('SELECT * FROM events WHERE title LIKE ?1 OR description LIKE ?1 OR address LIKE ?1 ORDER BY date DESC LIMIT ?2 OFFSET ?3')
+      .bind(pattern, limit, offset).all<EventRow>()
+    return { data: result.results ?? [], total: countResult?.count ?? 0 }
+  }
+  const countResult = await db.prepare('SELECT COUNT(*) as count FROM events').first<{ count: number }>()
+  const result = await db.prepare('SELECT * FROM events ORDER BY date DESC LIMIT ?1 OFFSET ?2').bind(limit, offset).all<EventRow>()
+  return { data: result.results ?? [], total: countResult?.count ?? 0 }
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // EVENT ATTENDEES
 // ═══════════════════════════════════════════════════════════════════════
