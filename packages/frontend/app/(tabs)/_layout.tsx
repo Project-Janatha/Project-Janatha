@@ -13,7 +13,7 @@ import { usePostHog } from 'posthog-react-native'
  * @return {JSX.Element} A TabLayout component that sets up tab navigation with theming.
  */
 const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
-const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+const isLocal = typeof window !== 'undefined' && window.location?.hostname === 'localhost'
 
 export default function TabLayout() {
   const router = useRouter()
