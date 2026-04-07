@@ -1111,6 +1111,17 @@ app.delete('/admin/centers/:id', adminMiddleware, async (c) => {
   return c.json({ message: 'Failed to delete center', error: result.error }, 500)
 })
 
+app.get('/admin/centers/:id/members', adminMiddleware, async (c) => {
+  const centerId = c.req.param('id')
+  const center = await db.getCenterById(c.env.DB, centerId)
+  if (!center) {
+    return c.json({ message: 'Center not found' }, 404)
+  }
+
+  const members = await db.getCenterMembers(c.env.DB, centerId)
+  return c.json({ data: members.map(userRowToApi) })
+})
+
 // ── Admin event actions ───────────────────────────────────────────────
 
 app.put('/admin/events/:id', adminMiddleware, async (c) => {

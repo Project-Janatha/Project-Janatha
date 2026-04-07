@@ -246,6 +246,17 @@ export async function deleteCenter(
   }
 }
 
+export async function getCenterMembers(
+  db: D1Database,
+  centerId: string,
+): Promise<UserRow[]> {
+  const result = await db
+    .prepare('SELECT * FROM users WHERE center_id = ?1 ORDER BY created_at DESC')
+    .bind(centerId)
+    .all<UserRow>()
+  return result.results ?? []
+}
+
 export async function countCenters(db: D1Database): Promise<number> {
   const result = await db.prepare('SELECT COUNT(*) as count FROM centers').first<{ count: number }>()
   return result?.count ?? 0

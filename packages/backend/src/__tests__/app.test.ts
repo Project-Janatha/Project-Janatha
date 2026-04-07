@@ -1374,6 +1374,42 @@ describe('Admin event actions', () => {
   })
 })
 
+describe('GET /api/admin/centers/:id/members', () => {
+  it('returns users belonging to a center', async () => {
+    const adminToken = await createAdmin()
+
+    // Create center
+    const { body: centerBody } = await jsonPost('/api/addCenter', {
+      centerName: 'CM Test',
+      latitude: 37.3,
+      longitude: -121.9,
+    }, authHeader(adminToken))
+    const centerId = centerBody.id
+
+    // Create a user and assign them to the center
+    const { token: userToken, user } = await registerAndLogin('member1', 'password123')
+    await jsonPut('/api/auth/update-profile', {
+      centerID: centerId,
+    }, authHeader(userToken))
+
+    const { res, body } = await fetchJSON(`/api/admin/centers/${centerId}/members`, {
+      headers: authHeader(adminToken),
+    })
+
+    expect(res.status).toBe(200)
+    expect(body.data.length).toBeGreaterThanOrEqual(1)
+    expect(body.data.some((u: any) => u.username === 'member1')).toBe(true)
+  })
+
+  it('returns 404 for non-existent center', async () => {
+    const adminToken = await createAdmin()
+    const { res } = await fetchJSON('/api/admin/centers/nonexistent/members', {
+      headers: authHeader(adminToken),
+    })
+    expect(res.status).toBe(404)
+  })
+})
+
 describe('Admin user actions', () => {
   it('POST /api/admin/users/:id/verify toggles user verification', async () => {
     const adminToken = await createAdmin()
