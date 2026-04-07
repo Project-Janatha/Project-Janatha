@@ -1020,6 +1020,15 @@ app.get('/admin/stats', adminMiddleware, async (c) => {
   return c.json({ users, centers, events })
 })
 
+app.get('/admin/users', adminMiddleware, async (c) => {
+  const url = new URL(c.req.url)
+  const q = url.searchParams.get('q') || undefined
+  const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') ?? '50', 10) || 50, 1), 100)
+  const offset = Math.max(parseInt(url.searchParams.get('offset') ?? '0', 10) || 0, 0)
+  const { data, total } = await db.listUsers(c.env.DB, { q, limit, offset })
+  return c.json({ data: data.map(userRowToApi), total, limit, offset })
+})
+
 // ── Default export ────────────────────────────────────────────────────
 
 export default app

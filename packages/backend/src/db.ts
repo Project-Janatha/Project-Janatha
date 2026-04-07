@@ -131,6 +131,26 @@ export async function countUsers(db: D1Database): Promise<number> {
   return result?.count ?? 0
 }
 
+export async function listUsers(
+  db: D1Database,
+  opts: { q?: string; limit: number; offset: number },
+): Promise<{ data: UserRow[]; total: number }> {
+  const { q, limit, offset } = opts
+  if (q) {
+    const pattern = `%${q}%`
+    const countResult = await db
+      .prepare('SELECT COUNT(*) as count FROM users WHERE username LIKE ?1 OR email LIKE ?1 OR first_name LIKE ?1 OR last_name LIKE ?1')
+      .bind(pattern).first<{ count: number }>()
+    const result = await db
+      .prepare('SELECT * FROM users WHERE username LIKE ?1 OR email LIKE ?1 OR first_name LIKE ?1 OR last_name LIKE ?1 ORDER BY created_at DESC LIMIT ?2 OFFSET ?3')
+      .bind(pattern, limit, offset).all<UserRow>()
+    return { data: result.results ?? [], total: countResult?.count ?? 0 }
+  }
+  const countResult = await db.prepare('SELECT COUNT(*) as count FROM users').first<{ count: number }>()
+  const result = await db.prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT ?1 OFFSET ?2').bind(limit, offset).all<UserRow>()
+  return { data: result.results ?? [], total: countResult?.count ?? 0 }
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // CENTERS
 // ═══════════════════════════════════════════════════════════════════════

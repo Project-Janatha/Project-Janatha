@@ -1157,3 +1157,62 @@ describe('Admin middleware', () => {
     expect(res.status).toBe(200)
   })
 })
+
+describe('GET /api/admin/users', () => {
+  it('returns paginated user list', async () => {
+    const adminToken = await createAdmin()
+    await registerAndLogin('alice', 'password123')
+    await registerAndLogin('bob', 'password123')
+
+    const { res, body } = await fetchJSON('/api/admin/users?limit=10&offset=0', {
+      headers: authHeader(adminToken),
+    })
+
+    expect(res.status).toBe(200)
+    expect(body.total).toBe(3) // admin + alice + bob
+    expect(body.data).toHaveLength(3)
+    expect(body.limit).toBe(10)
+    expect(body.offset).toBe(0)
+    expect(body.data[0].password).toBeUndefined()
+  })
+
+  it('searches by username, email, first_name, last_name', async () => {
+    const adminToken = await createAdmin()
+    await registerAndLogin('alice_wonder', 'password123')
+    await registerAndLogin('bob_builder', 'password123')
+
+    const { body } = await fetchJSON('/api/admin/users?q=alice', {
+      headers: authHeader(adminToken),
+    })
+
+    expect(body.total).toBe(1)
+    expect(body.data[0].username).toBe('alice_wonder')
+  })
+
+  it('paginates with limit and offset', async () => {
+    const adminToken = await createAdmin()
+    await registerAndLogin('user1', 'password123')
+    await registerAndLogin('user2', 'password123')
+    await registerAndLogin('user3', 'password123')
+
+    const { body } = await fetchJSON('/api/admin/users?limit=2&offset=0', {
+      headers: authHeader(adminToken),
+    })
+    expect(body.data).toHaveLength(2)
+    expect(body.total).toBe(4)
+
+    const { body: page2 } = await fetchJSON('/api/admin/users?limit=2&offset=2', {
+      headers: authHeader(adminToken),
+    })
+    expect(page2.data).toHaveLength(2)
+  })
+
+  it('defaults to limit=50 offset=0', async () => {
+    const adminToken = await createAdmin()
+    const { body } = await fetchJSON('/api/admin/users', {
+      headers: authHeader(adminToken),
+    })
+    expect(body.limit).toBe(50)
+    expect(body.offset).toBe(0)
+  })
+})
