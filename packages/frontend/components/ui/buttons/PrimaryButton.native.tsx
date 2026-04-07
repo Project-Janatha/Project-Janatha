@@ -1,10 +1,11 @@
 import React from 'react'
-import { Pressable, Text } from 'react-native'
+import { Pressable, Text, ActivityIndicator } from 'react-native'
 
 interface PrimaryButtonProps {
   children: React.ReactNode
   onPress?: () => void
   disabled?: boolean
+  loading?: boolean
   style?: any
   className?: string
 }
@@ -13,11 +14,14 @@ export default function PrimaryButton({
   children,
   onPress,
   disabled,
+  loading,
   style,
   ...props
 }: PrimaryButtonProps) {
+  const isDisabled = disabled || loading
+
   const handlePress = () => {
-    if (!disabled && onPress) {
+    if (!isDisabled && onPress) {
       onPress()
     }
   }
@@ -25,12 +29,16 @@ export default function PrimaryButton({
   return (
     <Pressable
       onPress={handlePress}
-      disabled={disabled}
+      disabled={isDisabled}
       className="bg-primary px-4 py-3 rounded-full active:bg-primary-press disabled:opacity-50"
       style={style}
       {...props}
     >
-      <Text className="text-backgroundStrong font-inter text-base text-center">{children}</Text>
+      {loading ? (
+        <ActivityIndicator size="small" color="#FFFFFF" />
+      ) : (
+        <Text className="text-white font-inter text-base leading-4 text-center">{children}</Text>
+      )}
     </Pressable>
   )
 }

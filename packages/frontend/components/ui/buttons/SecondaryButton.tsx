@@ -1,29 +1,33 @@
-/**
- * SecondaryButton.tsx
- *
- * Om Sri Cinmaya Sadgurave Namaha. Om Sri Gurubyo Namaha.
- * @author Abhiram Ramachandran
- * @date October 13, 2025
- * @description A Pressable component styled for secondary actions.
- * @requires module:react-native
- */
-import { Pressable, Text } from 'react-native'
+import { Pressable, Text, ActivityIndicator } from 'react-native'
+import React from 'react'
 
-/**
- * Renders a secondary button.
- * @param children - The content to be displayed inside the button.
- * @param props - Additional props to be passed to the Pressable component.
- * @returns TSX.Element
- */
-export default function SecondaryButton({ children, ...props }) {
+interface SecondaryButtonProps {
+  children: React.ReactNode
+  onPress?: () => void
+  disabled?: boolean
+  loading?: boolean
+  style?: any
+  [key: string]: any
+}
+
+export default function SecondaryButton({ children, onPress, disabled, loading, style, ...props }: SecondaryButtonProps) {
+  const isDisabled = disabled || loading
+
   return (
     <Pressable
-      className="border border-borderColor dark:border-borderColor-dark bg-transparent text-content dark:text-content-dark px-4 py-3 rounded-full active:bg-gray-4"
+      onPress={!isDisabled ? onPress : undefined}
+      disabled={isDisabled}
+      className="border border-borderColor dark:border-borderColor-dark bg-transparent text-content dark:text-content-dark px-4 py-3 rounded-full active:bg-gray-4 disabled:opacity-50"
+      style={style}
       {...props}
     >
-      <Text className="font-inter text-content dark:text-content-dark text-base text-center">
-        {children}
-      </Text>
+      {loading ? (
+        <ActivityIndicator size="small" color="#78716C" />
+      ) : (
+        <Text className="font-inter text-content dark:text-content-dark text-base leading-4 text-center">
+          {children}
+        </Text>
+      )}
     </Pressable>
   )
 }

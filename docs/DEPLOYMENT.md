@@ -122,8 +122,12 @@ Configured in `packages/backend/wrangler.toml` (D1) and via `npx wrangler secret
 | Variable                    | Type      | Description                             |
 |-----------------------------|-----------|-----------------------------------------|
 | `EXPO_PUBLIC_API_BASE_URL`  | Build env | Overrides the default backend API URL   |
+| `EXPO_PUBLIC_POSTHOG_KEY`   | Build env | PostHog project API key (`phc_…`)       |
+| `EXPO_PUBLIC_POSTHOG_HOST`  | Build env | Optional; default `https://us.i.posthog.com` |
 
-Set at build time if needed. The default points to the production Worker URL.
+Set at build time if needed. The default API URL points to the production Worker URL.
+
+**PostHog:** Add the same values you use in `packages/frontend/.env` to **GitHub → Repository → Settings → Secrets and variables → Actions** (e.g. `EXPO_PUBLIC_POSTHOG_KEY`). The production workflow passes them into `npm run build:frontend` so the static bundle includes analytics. If a secret is omitted, the app still runs (PostHog stays disabled); the crash-only case was fixed in code.
 
 ## CI/CD
 

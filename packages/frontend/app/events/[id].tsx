@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Alert, Share } from 'react-native'
+import { DetailSkeleton } from '../../components/ui/Skeleton'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
@@ -15,7 +16,7 @@ import {
 import { usePostHog } from 'posthog-react-native'
 import { useEventDetail } from '../../hooks/useApiData'
 import { useUser } from '../../components/contexts'
-import { Badge, UnderlineTabBar, Avatar } from '../../components/ui'
+import { Badge, UnderlineTabBar, Avatar, PrimaryButton, DestructiveButton } from '../../components/ui'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
 
 const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
@@ -396,26 +397,13 @@ function ActionBar({
           backgroundColor: colors.panelBg,
         }}
       >
-        <Pressable
+        <DestructiveButton
           onPress={onToggle}
           disabled={isToggling}
-          style={{
-            height: 48,
-            borderRadius: 10,
-            backgroundColor: 'rgba(239,68,68,0.1)',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: isToggling ? 0.6 : 1,
-          }}
+          loading={isToggling}
         >
-          {isToggling ? (
-            <ActivityIndicator size="small" color="#EF4444" />
-          ) : (
-            <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: '#EF4444' }}>
-              Cancel Registration
-            </Text>
-          )}
-        </Pressable>
+          Cancel Registration
+        </DestructiveButton>
       </View>
     )
   }
@@ -431,26 +419,13 @@ function ActionBar({
         backgroundColor: colors.panelBg,
       }}
     >
-      <Pressable
+      <PrimaryButton
         onPress={onToggle}
         disabled={isToggling}
-        style={{
-          height: 48,
-          borderRadius: 10,
-          backgroundColor: '#E8862A',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: isToggling ? 0.6 : 1,
-        }}
+        loading={isToggling}
       >
-        {isToggling ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#FFFFFF' }}>
-            Attend Event
-          </Text>
-        )}
-      </Pressable>
+        Attend Event
+      </PrimaryButton>
       <Text
         style={{
           fontFamily: 'Inter-Regular',
@@ -528,9 +503,7 @@ export default function EventDetailPage() {
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#E8862A" />
-        </View>
+        <DetailSkeleton />
       </SafeAreaView>
     )
   }

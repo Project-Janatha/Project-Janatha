@@ -493,11 +493,10 @@ export function Hero() {
         >
           <Pressable
             onPress={() => router.push('/auth')}
+            className="bg-primary active:bg-primary-press rounded-full"
             style={{
-              backgroundColor: '#EA580C',
               paddingHorizontal: 28,
               paddingVertical: 14,
-              borderRadius: 100,
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',

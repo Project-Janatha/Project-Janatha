@@ -5,7 +5,7 @@ import { useUser, useThemeContext } from '../../components/contexts'
 import { User, Settings, LogOut, Plus } from 'lucide-react-native'
 import SettingsPanel from '../../components/SettingsPanel'
 import Logo from '../../components/ui/Logo'
-import { Avatar } from '../../components/ui'
+import { Avatar, PrimaryButton, SecondaryButton } from '../../components/ui'
 import { usePostHog } from 'posthog-react-native'
 
 /**
@@ -13,7 +13,7 @@ import { usePostHog } from 'posthog-react-native'
  * @return {JSX.Element} A TabLayout component that sets up tab navigation with theming.
  */
 const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
-const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+const isLocal = typeof window !== 'undefined' && window.location?.hostname === 'localhost'
 
 export default function TabLayout() {
   const router = useRouter()
@@ -45,14 +45,11 @@ export default function TabLayout() {
   const HeaderRight = () => {
     if (!user) {
       return (
-        <Link href="/auth" asChild>
-          <Pressable
-            className="mr-4 px-3 py-2 bg-primary rounded-full"
-            onPress={() => router.push('/auth')}
-          >
-            <Text className="text-white text-base font-inter">Log In</Text>
-          </Pressable>
-        </Link>
+        <View style={{ marginRight: 16 }}>
+          <PrimaryButton onPress={() => router.push('/auth')} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+            Log In
+          </PrimaryButton>
+        </View>
       )
     }
 if (Platform.OS === 'web') {
@@ -68,7 +65,7 @@ if (Platform.OS === 'web') {
         <View className="flex-row items-center" style={{ gap: 8 }}>
           {canCreate && (
             <Pressable
-              className="px-3 py-2 rounded-lg flex-row items-center"
+              className="px-3 py-2 rounded-full flex-row items-center"
               style={{ borderWidth: 1.5, borderColor: '#E8862A', backgroundColor: 'transparent', gap: 6 }}
               onPress={() => {
                 posthog?.capture('nav_create_event')

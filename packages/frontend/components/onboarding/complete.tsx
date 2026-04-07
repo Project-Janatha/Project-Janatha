@@ -1,8 +1,9 @@
-import { View, Text, Pressable, Image, ActivityIndicator } from 'react-native'
+import { View, Text, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useEffect, useState } from 'react'
 import { useOnboarding } from '../contexts'
 import { useThemeContext } from '../contexts'
+import { PrimaryButton } from '../ui'
 
 export default function Complete() {
   const { completeOnboarding, isSubmitting, submitError } = useOnboarding()
@@ -82,19 +83,14 @@ export default function Complete() {
 
         {/* Button */}
         <View className="pb-6">
-          <Pressable
+          <PrimaryButton
             onPress={handleGetStarted}
             disabled={isSubmitting}
-            className={`w-full max-w-md self-center items-center justify-center rounded-xl py-4 px-8 bg-primary active:bg-primary-press shadow-lg ${
-              isSubmitting ? 'opacity-70' : ''
-            }`}
+            loading={isSubmitting}
+            style={{ width: '100%', maxWidth: 448, alignSelf: 'center' }}
           >
-            {isSubmitting ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text className="text-white font-inter font-semibold text-base">Get Started</Text>
-            )}
-          </Pressable>
+            Get Started
+          </PrimaryButton>
         </View>
       </View>
     </SafeAreaView>

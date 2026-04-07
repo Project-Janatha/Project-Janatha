@@ -38,6 +38,11 @@ export interface MapProps {
   userCenterID?: string | null
   /** Extra bottom padding so controls stay above a bottom sheet (native only, ignored on web) */
   bottomPadding?: number
+  /**
+   * Programmatic fly-to (e.g. list selection). `key` must change each time you want a new animation,
+   * including re-selecting the same place.
+   */
+  flyTo?: { latitude: number; longitude: number; key: number } | null
 }
 
 // Default center - San Francisco Bay Area
@@ -183,6 +188,7 @@ const MapComponent = memo<MapProps>(
     initialZoom = DEFAULT_ZOOM,
     showUserLocation = false,
     userCenterID,
+    flyTo,
   }) => {
     const { isDark } = useThemeContext()
     const mapRef = useRef<MapRef>(null)
@@ -243,6 +249,17 @@ const MapComponent = memo<MapProps>(
         fallbackToCenter()
       })
     }, [initialZoom, userCenterID])
+
+    useEffect(() => {
+      if (!flyTo) return
+      const { latitude, longitude } = flyTo
+      if (!isValidCoordinate(latitude, longitude)) return
+      mapRef.current?.flyTo({
+        center: [longitude, latitude],
+        zoom: 15,
+        duration: 1200,
+      })
+    }, [flyTo?.key, flyTo?.latitude, flyTo?.longitude])
 
     const handleMove = useCallback((evt: any) => {
       setViewState(evt.viewState)

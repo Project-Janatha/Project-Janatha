@@ -26,6 +26,7 @@ import {
 } from 'lucide-react-native'
 import { useUser } from '../../components/contexts'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
+import { PrimaryButton, SecondaryButton } from '../../components/ui'
 import {
   fetchEvent,
   fetchCenters,
@@ -629,42 +630,20 @@ export default function EventFormPage() {
           alignSelf: 'center',
         }}
       >
-        <Pressable
+        <SecondaryButton
           onPress={() => router.back()}
-          style={{
-            paddingHorizontal: 24,
-            paddingVertical: 12,
-            borderRadius: 10,
-            minHeight: 44,
-            backgroundColor: colors.iconBoxBg,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          style={{ paddingHorizontal: 24, paddingVertical: 12 }}
         >
-          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: colors.text }}>Cancel</Text>
-        </Pressable>
-        <Pressable
+          Cancel
+        </SecondaryButton>
+        <PrimaryButton
           onPress={handleSave}
           disabled={saving}
-          style={{
-            paddingHorizontal: 32,
-            paddingVertical: 12,
-            borderRadius: 10,
-            minHeight: 44,
-            backgroundColor: '#E8862A',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: saving ? 0.6 : 1,
-          }}
+          loading={saving}
+          style={{ paddingHorizontal: 32, paddingVertical: 12 }}
         >
-          {saving ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: '#FFFFFF' }}>
-              {isEdit ? 'Save Changes' : 'Create Event'}
-            </Text>
-          )}
-        </Pressable>
+          {isEdit ? 'Save Changes' : 'Create Event'}
+        </PrimaryButton>
       </View>
     </View>
   )

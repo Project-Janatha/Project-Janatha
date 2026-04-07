@@ -71,11 +71,10 @@ export function FinalCTA() {
 
         <Pressable
           onPress={() => router.push('/auth')}
+          className="bg-primary active:bg-primary-press rounded-full"
           style={{
-            backgroundColor: '#EA580C',
             paddingHorizontal: 32,
             paddingVertical: 16,
-            borderRadius: 100,
             marginBottom: 16,
           }}
         >

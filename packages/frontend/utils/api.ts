@@ -97,6 +97,7 @@ export interface EventDisplay {
   centerName?: string
   centerId?: string
   createdBy?: string
+  category?: number | null
 }
 
 export interface DiscoverCenter {
@@ -114,33 +115,45 @@ export interface DiscoverCenter {
 export type DiscoverItem =
   | { type: 'event'; data: EventDisplay }
   | { type: 'center'; data: DiscoverCenter }
+  | { type: 'section'; data: { label: string } }
 
-export type DiscoverFilter = 'All' | 'Going' | 'Centers'
+export type DiscoverFilter = 'Events' | 'Centers'
 
 // ── Fetch helpers ──────────────────────────────────────────────────────
 
-async function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 15000)
+async function apiFetch(
+  endpoint: string,
+  options: RequestInit = {},
+  retries = 2
+): Promise<Response> {
+  let lastError: Error | undefined
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 15000)
 
-  try {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      signal: controller.signal,
-    })
-    clearTimeout(timeoutId)
-    return response
-  } catch (error: any) {
-    clearTimeout(timeoutId)
-    if (error.name === 'AbortError') {
-      throw new Error('Request timeout')
+    try {
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+      return response
+    } catch (error: any) {
+      clearTimeout(timeoutId)
+      lastError = error
+      if (error.name === 'AbortError' && attempt === 0) {
+        throw new Error('Request timeout')
+      }
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
+      }
     }
-    throw error
   }
+  throw lastError || new Error('Network request failed')
 }
 
 async function authFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {

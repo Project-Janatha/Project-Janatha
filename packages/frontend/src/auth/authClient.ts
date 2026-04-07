@@ -11,24 +11,44 @@ import type {
   User,
 } from './types'
 
-const withTimeout = async (input: RequestInfo | URL, init: RequestInit, timeoutMs: number) => {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+const withTimeout = async (
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+  retries = 2
+): Promise<Response> => {
+  let lastError: Error | undefined
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
-  try {
-    const response = await fetch(input, {
-      ...init,
-      signal: controller.signal,
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(init.headers || {}),
-      },
-    })
-    return response
-  } finally {
-    clearTimeout(timeoutId)
+    try {
+      const response = await fetch(input, {
+        ...init,
+        signal: controller.signal,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(init.headers || {}),
+        },
+      })
+      clearTimeout(timeoutId)
+      // Don't retry on client/server errors — only on network failures
+      return response
+    } catch (error: any) {
+      clearTimeout(timeoutId)
+      lastError = error
+      // Don't retry if user intentionally aborted or it's not a network error
+      if (error?.name === 'AbortError' && attempt === 0) {
+        throw error // Timeout on first attempt — throw immediately
+      }
+      if (attempt < retries) {
+        // Exponential backoff: 1s, 2s
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
+      }
+    }
   }
+  throw lastError || new Error('Network request failed')
 }
 
 const toError = (message: string, status?: number, code?: string): AuthError => ({
@@ -271,6 +291,35 @@ export const authClient = {
       return { success: false, error: toError('Network error. Please try again.') }
     } finally {
       clearTimeout(timeoutId)
+    }
+  },
+
+  async refreshToken(refreshToken: string): AsyncResult<AuthSuccessResponse> {
+    try {
+      const response = await withTimeout(
+        buildUrl('/auth/refresh'),
+        {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken }),
+        },
+        API_TIMEOUTS.auth
+      )
+
+      const data = await safeJson<AuthSuccessResponse & { refreshToken?: string; message?: string }>(response)
+
+      if (!response.ok || !data?.token) {
+        return {
+          success: false,
+          error: toError(data?.message || 'Failed to refresh token', response.status),
+        }
+      }
+
+      return { success: true, data }
+    } catch (error: any) {
+      if (error?.name === 'AbortError') {
+        return { success: false, error: toError('Request timeout. Please check your connection.') }
+      }
+      return { success: false, error: toError('Network error. Please try again.') }
     }
   },
 

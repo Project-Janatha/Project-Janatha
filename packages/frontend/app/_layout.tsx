@@ -1,10 +1,9 @@
 import '@expo/metro-runtime'
-import { useEffect, useState } from 'react'
-import { ActivityIndicator, LogBox, Platform, View, Text } from 'react-native'
+import { useEffect } from 'react'
+import { ActivityIndicator, LogBox, Platform, View } from 'react-native'
 
 // Suppress non-fatal WorkletsTurboModule error in Expo Go (reanimated v4 compat)
 LogBox.ignoreLogs(['Exception in HostFunction: <unknown>'])
-import { useFonts } from 'expo-font'
 import {
   DarkTheme,
   DefaultTheme,
@@ -18,6 +17,7 @@ import {
   ThemeProvider as CustomThemeProvider,
   useThemeContext,
 } from '../components/contexts'
+import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 import '../globals.css'
 
 export const unstable_settings = {
@@ -26,58 +26,33 @@ export const unstable_settings = {
 
 SplashScreen.preventAutoHideAsync()
 
+const posthogHost =
+  process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
+const posthogKey = (process.env.EXPO_PUBLIC_POSTHOG_KEY || '').trim()
+const posthogEnabled = posthogKey.length > 0
+
 export default function RootLayout() {
-  const [fontsLoaded, fontsError] = useFonts({
-    'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
-    'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
-    'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.ttf'),
-    'Inter-Medium': require('../assets/fonts/Inter-Medium.ttf'),
-    'Inter-Light': require('../assets/fonts/Inter-Light.ttf'),
-  })
-
-  const [fontTimeout, setFontTimeout] = useState(false)
-  const [splashHidden, setSplashHidden] = useState(false)
-
-  // Add a timeout in case fonts don't load
+  // Fonts are embedded at build time via expo-font config plugin in app.json.
+  // No runtime loading needed — avoids CoreText crash on iOS 26 beta.
   useEffect(() => {
-    if (fontsLoaded || fontsError) return // Don't set timeout if already loaded/errored
-
-    const timer = setTimeout(() => {
-      if (!fontsLoaded && !fontsError) {
-        setFontTimeout(true)
-      }
-    }, 3000) // 3 second timeout
-
-    return () => clearTimeout(timer)
-  }, [fontsLoaded, fontsError])
-
-  useEffect(() => {
-    if ((fontsLoaded || fontsError || fontTimeout) && !splashHidden) {
-      setSplashHidden(true)
-      SplashScreen.hideAsync().catch(() => {})
-    }
-  }, [fontsLoaded, fontsError, fontTimeout, splashHidden])
-
-  if (!fontsLoaded && !fontsError && !fontTimeout) {
-    return null
-  }
-
-  if (fontsError) {
-    return null
-  }
+    SplashScreen.hideAsync().catch(() => {})
+  }, [])
 
   return (
     <PostHogProvider
-      apiKey="phc_5o67MgFjj113GN0QKduyyIs0BmEQkpWc8D2eDi6ju7Q"
+      apiKey={posthogEnabled ? posthogKey : 'disabled'}
       options={{
-        host: 'https://us.i.posthog.com',
+        host: posthogHost,
+        disabled: !posthogEnabled,
       }}
     >
-      <CustomThemeProvider>
-        <UserProvider>
-          <RootLayoutNav />
-        </UserProvider>
-      </CustomThemeProvider>
+      <ErrorBoundary>
+        <CustomThemeProvider>
+          <UserProvider>
+            <RootLayoutNav />
+          </UserProvider>
+        </CustomThemeProvider>
+      </ErrorBoundary>
     </PostHogProvider>
   )
 }
