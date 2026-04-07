@@ -24,6 +24,7 @@ import {
   DISCOVER_SAMPLE_CENTERS,
   AttendeeInfo,
 } from '../utils/api'
+import { extractCountryAndState } from '../utils/addressParsing'
 
 export type { DiscoverFilter }
 export type { EventDisplay } from '../utils/api'
@@ -554,56 +555,7 @@ const CATEGORY_TO_INTEREST: Record<number, string> = {
 }
 
 // ── Center grouping helpers ──────────────────────────────────
-
-const US_STATES: Record<string, string> = {
-  AL:'Alabama',AK:'Alaska',AZ:'Arizona',AR:'Arkansas',CA:'California',
-  CO:'Colorado',CT:'Connecticut',DE:'Delaware',FL:'Florida',GA:'Georgia',
-  HI:'Hawaii',ID:'Idaho',IL:'Illinois',IN:'Indiana',IA:'Iowa',KS:'Kansas',
-  KY:'Kentucky',LA:'Louisiana',ME:'Maine',MD:'Maryland',MA:'Massachusetts',
-  MI:'Michigan',MN:'Minnesota',MS:'Mississippi',MO:'Missouri',MT:'Montana',
-  NE:'Nebraska',NV:'Nevada',NH:'New Hampshire',NJ:'New Jersey',NM:'New Mexico',
-  NY:'New York',NC:'North Carolina',ND:'North Dakota',OH:'Ohio',OK:'Oklahoma',
-  OR:'Oregon',PA:'Pennsylvania',RI:'Rhode Island',SC:'South Carolina',
-  SD:'South Dakota',TN:'Tennessee',TX:'Texas',UT:'Utah',VT:'Vermont',
-  VA:'Virginia',WA:'Washington',WV:'West Virginia',WI:'Wisconsin',WY:'Wyoming',
-  DC:'District of Columbia',
-}
-
-function extractCountryAndState(address?: string): { country: string; state: string } {
-  const fallback = { country: 'Other', state: 'Unknown' }
-  if (!address) return fallback
-
-  const parts = address.split(',').map((s) => s.trim()).filter(Boolean)
-  if (parts.length < 2) return fallback
-
-  const last = parts[parts.length - 1]
-
-  // Check if the last part is a state+ZIP (US format: "CA 95131" or "California")
-  const stateZipMatch = last.match(/^([A-Z]{2})\s+\d{5}/)
-  if (stateZipMatch) {
-    const abbr = stateZipMatch[1]
-    return { country: 'United States', state: US_STATES[abbr] || abbr }
-  }
-
-  // Check if last part is just a US state abbreviation
-  if (/^[A-Z]{2}$/.test(last) && US_STATES[last]) {
-    return { country: 'United States', state: US_STATES[last] }
-  }
-
-  // Check if last part is a US state full name
-  const stateEntry = Object.entries(US_STATES).find(
-    ([, name]) => name.toLowerCase() === last.toLowerCase()
-  )
-  if (stateEntry) {
-    return { country: 'United States', state: stateEntry[1] }
-  }
-
-  // International: last part is a country, second-to-last is state/province
-  const statePart = parts.length >= 3 ? parts[parts.length - 2] : 'Unknown'
-  // Strip ZIP from state part if present
-  const cleanState = statePart.replace(/\s*\d{5,6}(-\d{4})?$/, '').trim()
-  return { country: last, state: cleanState || 'Unknown' }
-}
+// extractCountryAndState: ../utils/addressParsing (US ST-ZIP, Canada vs CA ambiguity)
 
 function groupCenterItems(centers: DiscoverCenter[], userCenterID?: string | null): DiscoverItem[] {
   const groups = new Map<string, DiscoverCenter[]>()
