@@ -1111,6 +1111,55 @@ app.delete('/admin/centers/:id', adminMiddleware, async (c) => {
   return c.json({ message: 'Failed to delete center', error: result.error }, 500)
 })
 
+// ── Admin event actions ───────────────────────────────────────────────
+
+app.put('/admin/events/:id', adminMiddleware, async (c) => {
+  const eventId = c.req.param('id')
+  const event = await db.getEventById(c.env.DB, eventId)
+  if (!event) {
+    return c.json({ message: 'Event not found' }, 404)
+  }
+
+  const body = await c.req.json<{
+    title?: string
+    description?: string
+    date?: string
+    address?: string
+    pointOfContact?: string
+    image?: string
+    category?: number
+  }>()
+
+  const updates: Partial<EventRow> = {}
+  if (body.title !== undefined) updates.title = body.title
+  if (body.description !== undefined) updates.description = body.description
+  if (body.date !== undefined) updates.date = body.date
+  if (body.address !== undefined) updates.address = body.address
+  if (body.pointOfContact !== undefined) updates.point_of_contact = body.pointOfContact
+  if (body.image !== undefined) updates.image = body.image
+  if (body.category !== undefined) updates.category = body.category
+
+  const result = await db.updateEvent(c.env.DB, eventId, updates)
+  if (result.success) {
+    return c.json({ message: 'Event updated' })
+  }
+  return c.json({ message: 'Failed to update event', error: result.error }, 500)
+})
+
+app.delete('/admin/events/:id', adminMiddleware, async (c) => {
+  const eventId = c.req.param('id')
+  const event = await db.getEventById(c.env.DB, eventId)
+  if (!event) {
+    return c.json({ message: 'Event not found' }, 404)
+  }
+
+  const result = await db.deleteEvent(c.env.DB, eventId)
+  if (result.success) {
+    return c.json({ message: 'Event deleted' })
+  }
+  return c.json({ message: 'Failed to delete event', error: result.error }, 500)
+})
+
 // ── Default export ────────────────────────────────────────────────────
 
 export default app

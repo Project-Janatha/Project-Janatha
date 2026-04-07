@@ -1330,3 +1330,46 @@ describe('Admin center actions', () => {
     expect(res.status).toBe(404)
   })
 })
+
+describe('Admin event actions', () => {
+  async function createTestEvent(adminToken: string) {
+    const { body: centerBody } = await jsonPost('/api/addCenter', {
+      centerName: 'CM Test', latitude: 37.3, longitude: -121.9,
+    }, authHeader(adminToken))
+    const { body: eventBody } = await jsonPost('/api/addEvent', {
+      title: 'Test Event', date: '2026-04-05T10:00:00Z', latitude: 37.3, longitude: -121.9,
+      centerID: centerBody.id, description: 'Original description',
+    }, authHeader(adminToken))
+    return { eventId: eventBody.id, centerId: centerBody.id }
+  }
+
+  it('PUT /api/admin/events/:id updates event details', async () => {
+    const adminToken = await createAdmin()
+    const { eventId } = await createTestEvent(adminToken)
+    const { res, body } = await jsonPut(`/api/admin/events/${eventId}`, {
+      title: 'Updated Event', description: 'New description',
+    }, authHeader(adminToken))
+    expect(res.status).toBe(200)
+    expect(body.message).toBe('Event updated')
+    const { body: fetched } = await jsonPost('/api/fetchEvent', { id: eventId })
+    expect(fetched.event.title).toBe('Updated Event')
+    expect(fetched.event.description).toBe('New description')
+  })
+
+  it('DELETE /api/admin/events/:id deletes event', async () => {
+    const adminToken = await createAdmin()
+    const { eventId } = await createTestEvent(adminToken)
+    const { res } = await fetchJSON(`/api/admin/events/${eventId}`, {
+      method: 'DELETE', headers: authHeader(adminToken),
+    })
+    expect(res.status).toBe(200)
+    const { res: fetchRes } = await jsonPost('/api/fetchEvent', { id: eventId })
+    expect(fetchRes.status).toBe(404)
+  })
+
+  it('returns 404 for non-existent event', async () => {
+    const adminToken = await createAdmin()
+    const { res } = await jsonPut('/api/admin/events/nonexistent', { title: 'test' }, authHeader(adminToken))
+    expect(res.status).toBe(404)
+  })
+})
