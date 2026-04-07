@@ -1128,3 +1128,32 @@ describe('POST /api/brewCoffee', () => {
     expect(body.message).toContain('teapot')
   })
 })
+
+// ═══════════════════════════════════════════════════════════════════════
+// ADMIN ROUTES
+// ═══════════════════════════════════════════════════════════════════════
+
+describe('Admin middleware', () => {
+  it('rejects unauthenticated requests to /api/admin/*', async () => {
+    const { res, body } = await fetchJSON('/api/admin/stats')
+    expect(res.status).toBe(401)
+    expect(body.message).toBe('Authorization header missing')
+  })
+
+  it('rejects non-admin users', async () => {
+    const { token } = await registerAndLogin('regularuser', 'password123')
+    const { res, body } = await fetchJSON('/api/admin/stats', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    expect(res.status).toBe(403)
+    expect(body.message).toBe('Admin access required')
+  })
+
+  it('allows admin users', async () => {
+    const adminToken = await createAdmin()
+    const { res } = await fetchJSON('/api/admin/stats', {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    })
+    expect(res.status).toBe(200)
+  })
+})

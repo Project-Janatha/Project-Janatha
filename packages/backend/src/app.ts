@@ -41,6 +41,18 @@ function isAdmin(user: { email: string | null; verification_level: number }): bo
   return user.email === ADMIN_EMAIL || user.verification_level >= ADMIN_CUTOFF
 }
 
+// ── Admin middleware ─────────────────────────────────────────────────
+
+async function adminMiddleware(c: any, next: () => Promise<void>): Promise<Response | void> {
+  const authResult = await authMiddleware(c, async () => {})
+  if (authResult) return authResult
+  const user = c.get('user')
+  if (!user || !isAdmin(user)) {
+    return c.json({ message: 'Admin access required' }, 403)
+  }
+  await next()
+}
+
 // ── Global error handler ──────────────────────────────────────────────
 
 app.onError((err, c) => {
@@ -994,6 +1006,19 @@ function calculateTier(endorsers: UserRow[], attendeeCount: number): number {
 
   return tier
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// ADMIN ROUTES
+// ═══════════════════════════════════════════════════════════════════════
+
+app.get('/admin/stats', adminMiddleware, async (c) => {
+  const [users, centers, events] = await Promise.all([
+    db.countUsers(c.env.DB),
+    db.countCenters(c.env.DB),
+    db.countEvents(c.env.DB),
+  ])
+  return c.json({ users, centers, events })
+})
 
 // ── Default export ────────────────────────────────────────────────────
 

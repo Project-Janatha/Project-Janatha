@@ -126,6 +126,11 @@ export async function deleteUser(
   }
 }
 
+export async function countUsers(db: D1Database): Promise<number> {
+  const result = await db.prepare('SELECT COUNT(*) as count FROM users').first<{ count: number }>()
+  return result?.count ?? 0
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // CENTERS
 // ═══════════════════════════════════════════════════════════════════════
@@ -219,6 +224,11 @@ export async function deleteCenter(
   } catch (err: any) {
     return { success: false, error: err?.message ?? 'Unknown error' }
   }
+}
+
+export async function countCenters(db: D1Database): Promise<number> {
+  const result = await db.prepare('SELECT COUNT(*) as count FROM centers').first<{ count: number }>()
+  return result?.count ?? 0
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -329,6 +339,11 @@ export async function deleteEvent(
   } catch (err: any) {
     return { success: false, error: err?.message ?? 'Unknown error' }
   }
+}
+
+export async function countEvents(db: D1Database): Promise<number> {
+  const result = await db.prepare('SELECT COUNT(*) as count FROM events').first<{ count: number }>()
+  return result?.count ?? 0
 }
 
 // ═══════════════════════════════════════════════════════════════════════
