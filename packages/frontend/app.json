@@ -17,7 +17,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "1",
+      "buildNumber": "9",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Chinmaya Janata uses your location to show nearby centers and events on the map.",
         "NSPhotoLibraryUsageDescription": "Chinmaya Janata needs access to your photo library to set your profile picture.",
@@ -45,7 +45,18 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Inter-Regular.ttf",
+            "./assets/fonts/Inter-Bold.ttf",
+            "./assets/fonts/Inter-SemiBold.ttf",
+            "./assets/fonts/Inter-Medium.ttf",
+            "./assets/fonts/Inter-Light.ttf"
+          ]
+        }
+      ],
       [
         "expo-build-properties",
         {
