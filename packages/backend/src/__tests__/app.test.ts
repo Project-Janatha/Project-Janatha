@@ -1216,3 +1216,28 @@ describe('GET /api/admin/users', () => {
     expect(body.offset).toBe(0)
   })
 })
+
+describe('GET /api/admin/centers', () => {
+  it('returns paginated center list with member counts', async () => {
+    const adminToken = await createAdmin()
+    await jsonPost('/api/addCenter', { centerName: 'CM San Jose', latitude: 37.3, longitude: -121.9, address: '1050 S White Rd' }, authHeader(adminToken))
+    await jsonPost('/api/addCenter', { centerName: 'CM Houston', latitude: 29.7, longitude: -95.4 }, authHeader(adminToken))
+
+    const { res, body } = await fetchJSON('/api/admin/centers?limit=10&offset=0', { headers: authHeader(adminToken) })
+    expect(res.status).toBe(200)
+    expect(body.total).toBe(2)
+    expect(body.data).toHaveLength(2)
+    expect(body.data[0].centerID).toBeDefined()
+    expect(body.data[0].name).toBeDefined()
+  })
+
+  it('searches by center name, address, or acharya', async () => {
+    const adminToken = await createAdmin()
+    await jsonPost('/api/addCenter', { centerName: 'CM San Jose', latitude: 37.3, longitude: -121.9 }, authHeader(adminToken))
+    await jsonPost('/api/addCenter', { centerName: 'CM Houston', latitude: 29.7, longitude: -95.4 }, authHeader(adminToken))
+
+    const { body } = await fetchJSON('/api/admin/centers?q=houston', { headers: authHeader(adminToken) })
+    expect(body.total).toBe(1)
+    expect(body.data[0].name).toBe('CM Houston')
+  })
+})

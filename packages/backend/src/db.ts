@@ -251,6 +251,26 @@ export async function countCenters(db: D1Database): Promise<number> {
   return result?.count ?? 0
 }
 
+export async function listCenters(
+  db: D1Database,
+  opts: { q?: string; limit: number; offset: number },
+): Promise<{ data: CenterRow[]; total: number }> {
+  const { q, limit, offset } = opts
+  if (q) {
+    const pattern = `%${q}%`
+    const countResult = await db
+      .prepare('SELECT COUNT(*) as count FROM centers WHERE name LIKE ?1 OR address LIKE ?1 OR acharya LIKE ?1 OR point_of_contact LIKE ?1')
+      .bind(pattern).first<{ count: number }>()
+    const result = await db
+      .prepare('SELECT * FROM centers WHERE name LIKE ?1 OR address LIKE ?1 OR acharya LIKE ?1 OR point_of_contact LIKE ?1 ORDER BY name ASC LIMIT ?2 OFFSET ?3')
+      .bind(pattern, limit, offset).all<CenterRow>()
+    return { data: result.results ?? [], total: countResult?.count ?? 0 }
+  }
+  const countResult = await db.prepare('SELECT COUNT(*) as count FROM centers').first<{ count: number }>()
+  const result = await db.prepare('SELECT * FROM centers ORDER BY name ASC LIMIT ?1 OFFSET ?2').bind(limit, offset).all<CenterRow>()
+  return { data: result.results ?? [], total: countResult?.count ?? 0 }
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // EVENTS
 // ═══════════════════════════════════════════════════════════════════════
