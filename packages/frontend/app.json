@@ -17,8 +17,9 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "12",
+      "buildNumber": "14",
       "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "Chinmaya Janata uses your location to show nearby centers and events on the map.",
         "NSPhotoLibraryUsageDescription": "Chinmaya Janata needs access to your photo library to set your profile picture.",
         "NSCameraUsageDescription": "Chinmaya Janata needs access to your camera to take a profile picture."
