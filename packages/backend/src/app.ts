@@ -1375,6 +1375,144 @@ app.put('/notifications/preferences', authMiddleware, async (c) => {
   return c.json(notifications.preferencesRowToApi(prefs))
 })
 
+// ═══════════════════════════════════════════════════════════════════════
+// ADMIN NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /admin/notifications
+ * List all notifications across all users (paginated, searchable)
+ */
+app.get('/admin/notifications', adminMiddleware, async (c) => {
+  const url = new URL(c.req.url)
+  const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') ?? '50', 10) || 50, 1), 100)
+  const offset = Math.max(parseInt(url.searchParams.get('offset') ?? '0', 10) || 0, 0)
+  const userId = url.searchParams.get('userId') || undefined
+  const typeId = url.searchParams.get('typeId') ? parseInt(url.searchParams.get('typeId')!, 10) : undefined
+
+  let query = `SELECT n.*, u.first_name, u.last_name, u.username FROM notifications n LEFT JOIN users u ON n.user_id = u.id`
+  const conditions: string[] = []
+  const values: any[] = []
+
+  if (userId) {
+    conditions.push('n.user_id = ?')
+    values.push(userId)
+  }
+  if (typeId) {
+    conditions.push('n.type_id = ?')
+    values.push(typeId)
+  }
+
+  if (conditions.length > 0) {
+    query += ` WHERE ${conditions.join(' AND ')}`
+  }
+
+  query += ` ORDER BY n.created_at DESC LIMIT ? OFFSET ?`
+  values.push(limit, offset)
+
+  const stmt = c.env.DB.prepare(query)
+  const result = await stmt.bind(...values).all()
+
+  // Get total count
+  let countQuery = `SELECT COUNT(*) as count FROM notifications n`
+  const countValues = values.slice(0, -2) // exclude limit/offset
+  if (conditions.length > 0) {
+    countQuery += ` WHERE ${conditions.join(' AND ')}`
+  }
+  const countResult = await c.env.DB.prepare(countQuery).bind(...countValues).first<{ count: number }>()
+
+  return c.json({
+    data: (result.results || []).map((row: any) => ({
+      ...notifications.notificationRowToApi(row),
+      recipientName: row.first_name && row.last_name ? `${row.first_name} ${row.last_name}` : row.username || 'Unknown',
+      recipientUsername: row.username,
+    })),
+    total: countResult?.count || 0,
+    limit,
+    offset,
+  })
+})
+
+/**
+ * GET /admin/notifications/stats
+ * Notification system stats for admin dashboard
+ */
+app.get('/admin/notifications/stats', adminMiddleware, async (c) => {
+  const [totalResult, unreadResult, typeBreakdown, recentResult] = await Promise.all([
+    c.env.DB.prepare('SELECT COUNT(*) as count FROM notifications').first<{ count: number }>(),
+    c.env.DB.prepare('SELECT COUNT(*) as count FROM notifications WHERE is_read = 0').first<{ count: number }>(),
+    c.env.DB.prepare('SELECT type_id, COUNT(*) as count FROM notifications GROUP BY type_id').all(),
+    c.env.DB.prepare('SELECT COUNT(*) as count FROM notifications WHERE created_at > datetime("now", "-24 hours")').first<{ count: number }>(),
+  ])
+
+  return c.json({
+    total: totalResult?.count || 0,
+    unread: unreadResult?.count || 0,
+    last24h: recentResult?.count || 0,
+    byType: (typeBreakdown.results || []).map((row: any) => ({
+      typeId: row.type_id,
+      count: row.count,
+    })),
+  })
+})
+
+/**
+ * POST /admin/notifications/send
+ * Send a notification to a user or all users
+ */
+app.post('/admin/notifications/send', adminMiddleware, async (c) => {
+  const body = await c.req.json<{
+    userId?: string
+    typeId: number
+    title: string
+    message: string
+    actionUrl?: string
+    broadcast?: boolean
+  }>()
+
+  if (!body.title || !body.message || !body.typeId) {
+    return c.json({ message: 'title, message, and typeId are required' }, 400)
+  }
+
+  if (body.broadcast) {
+    // Send to all users
+    const users = await c.env.DB.prepare('SELECT id FROM users').all<{ id: string }>()
+    let sent = 0
+    for (const user of users.results || []) {
+      await notifications.createNotification(c.env, user.id, body.typeId, body.title, body.message, {
+        actionUrl: body.actionUrl,
+      })
+      sent++
+    }
+    return c.json({ message: `Notification sent to ${sent} users`, sent })
+  }
+
+  if (!body.userId) {
+    return c.json({ message: 'userId is required when not broadcasting' }, 400)
+  }
+
+  const notif = await notifications.createNotification(c.env, body.userId, body.typeId, body.title, body.message, {
+    actionUrl: body.actionUrl,
+  })
+
+  return c.json({ message: 'Notification sent', notification: notifications.notificationRowToApi(notif) })
+})
+
+/**
+ * DELETE /admin/notifications/:id
+ * Admin delete any notification
+ */
+app.delete('/admin/notifications/:id', adminMiddleware, async (c) => {
+  const notifId = c.req.param('id')
+
+  const result = await c.env.DB.prepare('DELETE FROM notifications WHERE id = ?').bind(notifId).run()
+
+  if (result.success) {
+    return c.json({ message: 'Notification deleted' })
+  }
+  return c.json({ message: 'Failed to delete notification' }, 500)
+})
+
 // ── Default export ────────────────────────────────────────────────────
 
 export default app
