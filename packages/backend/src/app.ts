@@ -1277,6 +1277,78 @@ app.delete('/admin/users/:id', adminMiddleware, async (c) => {
   return c.json({ message: 'Delete failed' }, 500)
 })
 
+// ── Admin invite code actions ──────────────────────────────────────────
+
+app.get('/admin/invite-codes', adminMiddleware, async (c) => {
+  const codes = await inviteCodes.getAllInviteCodes(c.env)
+  const codesWithUsage = await Promise.all(
+    codes.map(async (code) => ({
+      ...inviteCodes.inviteCodeRowToApi(code),
+      usageCount: await inviteCodes.countUsersWithCode(c.env, code.code),
+    }))
+  )
+  return c.json({ data: codesWithUsage })
+})
+
+app.post('/admin/invite-codes', adminMiddleware, async (c) => {
+  const body = await c.req.json<{
+    code: string
+    label: string
+    verificationLevel?: number
+  }>()
+
+  if (!body.code || !body.label) {
+    return c.json({ message: 'Code and label are required' }, 400)
+  }
+
+  const verificationLevel = body.verificationLevel ?? NORMAL_USER
+  if (verificationLevel >= ADMIN_CUTOFF) {
+    return c.json({ message: 'Verification level cannot grant admin access' }, 400)
+  }
+
+  const result = await inviteCodes.createInviteCode(
+    c.env,
+    body.code,
+    body.label,
+    verificationLevel,
+    true
+  )
+
+  if (result.success) {
+    return c.json({ message: 'Invite code created' })
+  }
+  return c.json({ message: result.error || 'Failed to create invite code' }, 400)
+})
+
+app.post('/admin/invite-codes/:code/toggle', adminMiddleware, async (c) => {
+  const code = c.req.param('code')
+  const existing = await inviteCodes.getInviteCode(c.env, code)
+  if (!existing) {
+    return c.json({ message: 'Invite code not found' }, 404)
+  }
+
+  const result = existing.is_active
+    ? await inviteCodes.deactivateInviteCode(c.env, code)
+    : await inviteCodes.reactivateInviteCode(c.env, code)
+
+  if (result.success) {
+    return c.json({ message: existing.is_active ? 'Code deactivated' : 'Code activated' })
+  }
+  return c.json({ message: result.error || 'Failed to toggle invite code' }, 500)
+})
+
+app.get('/admin/invite-codes/:code/users', adminMiddleware, async (c) => {
+  const code = c.req.param('code')
+  const userIds = await inviteCodes.getUsersWithCode(c.env, code)
+  const users = await Promise.all(
+    userIds.map(async (id) => {
+      const user = await db.getUserById(c.env.DB, id)
+      return user ? userRowToApi(user) : null
+    })
+  )
+  return c.json({ data: users.filter(Boolean) })
+})
+
 // ── Default export ────────────────────────────────────────────────────
 
 export default app

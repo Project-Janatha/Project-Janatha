@@ -17,6 +17,7 @@ import { useUser, useThemeContext } from '../components/contexts'
 import { validateEmail, validatePassword } from '../utils'
 import { PasswordStrength } from '../components'
 import DevPanel from '../components/DevPanel'
+import { API_BASE_URL } from '../src/config/api'
 // __DEV__ is a React Native/Expo global — always false in production builds
 const isDev = typeof __DEV__ !== 'undefined' && __DEV__
 
@@ -95,7 +96,7 @@ export default function AuthScreen() {
     try {
       posthog?.capture('auth_invite_code_submitted')
       // Validate the invite code with the backend
-      const response = await fetch('/api/auth/validate-invite-code', {
+      const response = await fetch(`${API_BASE_URL}/auth/validate-invite-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: inviteCode }),

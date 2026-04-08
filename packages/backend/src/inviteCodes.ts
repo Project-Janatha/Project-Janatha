@@ -7,6 +7,7 @@
  */
 
 import type { Env, InviteCodeRow } from './types'
+import { ADMIN_CUTOFF } from './constants'
 
 /**
  * Validate an invite code
@@ -71,6 +72,9 @@ export async function createInviteCode(
   }
   if (typeof verificationLevel !== 'number' || verificationLevel < 0) {
     return { success: false, error: 'Valid verification_level is required' }
+  }
+  if (verificationLevel >= ADMIN_CUTOFF) {
+    return { success: false, error: 'Verification level cannot grant admin access' }
   }
 
   try {
