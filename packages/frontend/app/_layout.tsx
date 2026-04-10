@@ -4,7 +4,6 @@ import { ActivityIndicator, LogBox, Platform, View } from 'react-native'
 
 // Suppress non-fatal WorkletsTurboModule error in Expo Go (reanimated v4 compat)
 LogBox.ignoreLogs(['Exception in HostFunction: <unknown>'])
-import { useFonts } from 'expo-font'
 import {
   DarkTheme,
   DefaultTheme,
@@ -33,23 +32,11 @@ const posthogKey = (process.env.EXPO_PUBLIC_POSTHOG_KEY || '').trim()
 const posthogEnabled = posthogKey.length > 0
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
-    'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
-    'Inter-SemiBold': require('../assets/fonts/Inter-SemiBold.ttf'),
-    'Inter-Medium': require('../assets/fonts/Inter-Medium.ttf'),
-    'Inter-Light': require('../assets/fonts/Inter-Light.ttf'),
-  })
-
   useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync().catch(() => {})
-    }
-  }, [fontsLoaded])
-
-  if (!fontsLoaded) {
-    return null
-  }
+    // Fonts are statically embedded via expo-font config plugin (app.json)
+    // iOS: loaded from UIAppFonts at launch; Web: @font-face in globals.css
+    SplashScreen.hideAsync().catch(() => {})
+  }, [])
 
   return (
     <PostHogProvider

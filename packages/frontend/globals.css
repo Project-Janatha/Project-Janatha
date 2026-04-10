@@ -63,6 +63,28 @@ div, p, span, a, button, input, textarea, select {
   font-style: normal;
 }
 
+/* Variant-name aliases for React Native Web (fontFamily: 'Inter-Bold' etc.) */
+@font-face {
+  font-family: 'Inter-Regular';
+  src: url('/fonts/Inter-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter-Bold';
+  src: url('/fonts/Inter-Bold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter-SemiBold';
+  src: url('/fonts/Inter-SemiBold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter-Medium';
+  src: url('/fonts/Inter-Medium.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter-Light';
+  src: url('/fonts/Inter-Light.ttf') format('truetype');
+}
+
 /* Custom map controls - Industry standard styling */
 .map-control-container {
   position: absolute;
