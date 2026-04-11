@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest'
 import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test'
-import { applyMigration, dropAllTables } from './setup'
+import { applyMigration, dropAllTables, TEST_INVITE_CODE } from './setup'
 import { app } from '../app'
 import { hashPassword } from '../auth'
 import { clearRateLimits } from '../middleware'
@@ -64,7 +64,7 @@ async function registerAndLogin(
   username: string,
   password: string
 ): Promise<{ token: string; user: any }> {
-  await jsonPost('/api/auth/register', { username, password })
+  await jsonPost('/api/auth/register', { username, password, inviteCode: TEST_INVITE_CODE })
   const { body } = await jsonPost('/api/auth/authenticate', {
     username,
     password,
@@ -146,6 +146,7 @@ describe('POST /api/auth/register', () => {
     const { res, body } = await jsonPost('/api/auth/register', {
       username: 'newuser',
       password: 'password123',
+      inviteCode: TEST_INVITE_CODE,
     })
     expect(res.status).toBe(201)
     expect(body.message).toBe('User registered successfully')
@@ -156,18 +157,39 @@ describe('POST /api/auth/register', () => {
     const { body } = await jsonPost('/api/auth/register', {
       username: 'CamelCase',
       password: 'password123',
+      inviteCode: TEST_INVITE_CODE,
     })
     expect(body.username).toBe('camelcase')
   })
 
   it('rejects duplicate username (409)', async () => {
-    await jsonPost('/api/auth/register', { username: 'dup', password: 'password123' })
+    await jsonPost('/api/auth/register', { username: 'dup', password: 'password123', inviteCode: TEST_INVITE_CODE })
     const { res, body } = await jsonPost('/api/auth/register', {
       username: 'dup',
       password: 'password123',
+      inviteCode: TEST_INVITE_CODE,
     })
     expect(res.status).toBe(409)
     expect(body.message).toBe('Username already exists')
+  })
+
+  it('rejects missing invite code for non-developer (400)', async () => {
+    const { res, body } = await jsonPost('/api/auth/register', {
+      username: 'noinvite',
+      password: 'password123',
+    })
+    expect(res.status).toBe(400)
+    expect(body.message).toContain('Invite code is required')
+  })
+
+  it('rejects invalid invite code (401)', async () => {
+    const { res, body } = await jsonPost('/api/auth/register', {
+      username: 'badinvite',
+      password: 'password123',
+      inviteCode: 'INVALID-CODE',
+    })
+    expect(res.status).toBe(401)
+    expect(body.message).toContain('Invalid or inactive')
   })
 
   it('rejects missing username (400)', async () => {
@@ -1095,13 +1117,14 @@ describe('legacy routes', () => {
     const { res, body } = await jsonPost('/api/register', {
       username: 'legacyuser',
       password: 'password123',
+      inviteCode: TEST_INVITE_CODE,
     })
     expect(res.status).toBe(201)
     expect(body.username).toBe('legacyuser')
   })
 
   it('POST /api/authenticate forwards to auth/authenticate', async () => {
-    await jsonPost('/api/register', { username: 'legacyauth', password: 'password123' })
+    await jsonPost('/api/register', { username: 'legacyauth', password: 'password123', inviteCode: TEST_INVITE_CODE })
     const { res, body } = await jsonPost('/api/authenticate', {
       username: 'legacyauth',
       password: 'password123',
