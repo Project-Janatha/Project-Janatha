@@ -18,6 +18,7 @@ interface RateLimitEntry {
   resetAt: number
 }
 
+const MAX_MAP_SIZE = 10_000
 const rateLimitMap = new Map<string, RateLimitEntry>()
 
 /**
@@ -31,7 +32,7 @@ export function clearRateLimits(): void {
 let lastCleanup = 0
 function cleanupExpired() {
   const now = Date.now()
-  if (now - lastCleanup < 60_000) return
+  if (now - lastCleanup < 60_000 && rateLimitMap.size < MAX_MAP_SIZE) return
   lastCleanup = now
   for (const [key, entry] of rateLimitMap) {
     if (now > entry.resetAt) {
