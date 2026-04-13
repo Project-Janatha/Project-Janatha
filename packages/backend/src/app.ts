@@ -134,8 +134,8 @@ app.get('/health', (c) => {
 
 // ── User existence check ──────────────────────────────────────────────
 
-app.post('/userExistence', async (c) => {
-  const { username } = await c.req.json<{ username: string }>()
+app.get('/userExistence', cacheControl(30), async (c) => {
+  const username = c.req.query('username')
   if (!username) {
     return c.json({ existence: false })
   }
@@ -506,7 +506,7 @@ app.post('/removeCenter', authMiddleware, async (c) => {
   return c.json({ message: 'Removal failed' }, 500)
 })
 
-app.post('/fetchAllCenters', async (c) => {
+app.get('/fetchAllCenters', cacheControl(30), async (c) => {
   const centers = await db.getAllCenters(c.env.DB)
   return c.json({
     message: 'Successful',
@@ -514,8 +514,8 @@ app.post('/fetchAllCenters', async (c) => {
   })
 })
 
-app.post('/fetchCenter', async (c) => {
-  const { centerID } = await c.req.json<{ centerID: string }>()
+app.get('/fetchCenter', cacheControl(30), async (c) => {
+  const centerID = c.req.query('centerID')
   if (!centerID) {
     return c.json({ message: 'Malformed centerID' }, 400)
   }
@@ -524,7 +524,7 @@ app.post('/fetchCenter', async (c) => {
   if (!center) {
     return c.json({ message: 'Center not found' }, 404)
   }
-
+  
   return c.json({ message: 'Success', center: centerRowToApi(center) })
 })
 
@@ -647,8 +647,11 @@ app.post('/removeUser', authMiddleware, async (c) => {
   return c.json({ message: 'Removal failed' }, 400)
 })
 
-app.post('/getUserEvents', authMiddleware, async (c) => {
-  const { username } = await c.req.json<{ username: string }>()
+app.get('/getUserEvents', authMiddleware, async (c) => {
+  const username = c.req.query('username')
+  if (!username) {
+    return c.json({ message: 'Malformed username' }, 400)
+  }
   const targetUser = await db.getUserByUsername(c.env.DB, username)
   if (!targetUser) {
     return c.json({ message: 'User not found' }, 404)
@@ -777,12 +780,17 @@ app.post('/removeEvent', authMiddleware, async (c) => {
   return c.json({ message: 'Failed to remove event' }, 500)
 })
 
-app.post('/fetchEvent', async (c) => {
-  const { id } = await c.req.json<{ id: string }>()
-  const event = await db.getEventById(c.env.DB, id)
+app.get('/fetchEvent', cacheControl(30), async (c) => {
+  const eventID = c.req.query('eventID')
+  if (!eventID) {
+    return c.json({ message: 'Malformed eventID' }, 400)
+  }
+  
+  const event = await db.getEventById(c.env.DB, eventID)
   if (!event) {
     return c.json({ message: 'Event not found' }, 404)
   }
+  
   return c.json({ message: 'Success', event: eventRowToApi(event) })
 })
 
@@ -828,18 +836,18 @@ app.post('/updateEvent', authMiddleware, async (c) => {
   return c.json({ message: 'Update failed' }, 400)
 })
 
-app.post('/getEventUsers', async (c) => {
-  const { id } = await c.req.json<{ id: string }>()
-  if (!id) {
-    return c.json({ message: 'Bad request - missing id' }, 400)
+app.get('/getEventUsers', cacheControl(30), async (c) => {
+  const eventID = c.req.query('eventID')
+  if (!eventID) {
+    return c.json({ message: 'Malformed eventID' }, 400)
   }
 
-  const event = await db.getEventById(c.env.DB, id)
+  const event = await db.getEventById(c.env.DB, eventID)
   if (!event) {
     return c.json({ message: 'Event not found' }, 404)
   }
 
-  const attendees = await db.getEventAttendees(c.env.DB, id)
+  const attendees = await db.getEventAttendees(c.env.DB, eventID)
   return c.json({
     message: 'Success',
     users: attendees.map((u) => userRowToApi(u)),
@@ -903,8 +911,11 @@ app.post('/unattendEvent', authMiddleware, async (c) => {
   })
 })
 
-app.post('/fetchEventsByCenter', async (c) => {
-  const { centerID } = await c.req.json<{ centerID: string }>()
+app.get('/fetchEventsByCenter', cacheControl(30), async (c) => {
+  const centerID = c.req.query('centerID')
+  if (!centerID) {
+    return c.json({message: 'Malformed centerID'}, 400)
+  }
   const events = await db.getEventsByCenterId(c.env.DB, centerID)
   return c.json({
     message: 'Success',
