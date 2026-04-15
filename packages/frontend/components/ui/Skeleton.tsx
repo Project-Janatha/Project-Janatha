@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { View, Animated, StyleSheet, type ViewStyle } from 'react-native'
+import { useThemeContext } from '../contexts'
 
 interface SkeletonProps {
   width?: number | string
@@ -9,6 +10,7 @@ interface SkeletonProps {
 }
 
 function SkeletonBox({ width = '100%', height = 16, borderRadius = 8, style }: SkeletonProps) {
+  const { isDark } = useThemeContext()
   const opacity = useRef(new Animated.Value(0.3)).current
 
   useEffect(() => {
@@ -29,7 +31,7 @@ function SkeletonBox({ width = '100%', height = 16, borderRadius = 8, style }: S
           width: width as any,
           height,
           borderRadius,
-          backgroundColor: '#d6d3d1',
+          backgroundColor: isDark ? '#2e2e2e' : '#d6d3d1',
           opacity,
         },
         style,
@@ -39,8 +41,9 @@ function SkeletonBox({ width = '100%', height = 16, borderRadius = 8, style }: S
 }
 
 export function EventCardSkeleton() {
+  const { isDark } = useThemeContext()
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, isDark && styles.cardDark]}>
       <View style={styles.cardBody}>
         <SkeletonBox width="60%" height={14} />
         <SkeletonBox width="40%" height={12} style={{ marginTop: 8 }} />
@@ -56,8 +59,9 @@ export function EventCardSkeleton() {
 }
 
 export function CenterCardSkeleton() {
+  const { isDark } = useThemeContext()
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, isDark && styles.cardDark]}>
       <View style={styles.cardBody}>
         <SkeletonBox width="50%" height={14} />
         <SkeletonBox width="70%" height={12} style={{ marginTop: 8 }} />
@@ -94,6 +98,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafaf9',
     borderRadius: 12,
     padding: 16,
+  },
+  cardDark: {
+    backgroundColor: '#1c1c1e',
   },
   cardBody: {
     gap: 0,
