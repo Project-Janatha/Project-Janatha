@@ -57,7 +57,6 @@ export default function AuthScreen() {
   const [authStep, setAuthStep] = useState<AuthStep>(
     initialMode === 'login' ? 'login'
       : initialMode === 'signup' && urlInviteCode ? 'signup'
-      : initialMode === 'signup' ? 'invite-code'
       : 'initial'
   )
   const [username, setUsername] = useState('')
