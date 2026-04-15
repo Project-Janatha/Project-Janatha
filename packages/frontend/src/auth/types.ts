@@ -37,6 +37,7 @@ export interface LoginRequest {
 export interface SignupRequest {
   username: string
   password: string
+  inviteCode?: string
 }
 
 export interface CheckUserExistsRequest {

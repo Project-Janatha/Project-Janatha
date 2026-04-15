@@ -10,6 +10,14 @@ import {
 } from 'cloudflare:test'
 
 const MIGRATION = `
+CREATE TABLE IF NOT EXISTS invite_codes (
+  code              TEXT PRIMARY KEY,
+  label             TEXT NOT NULL,
+  verification_level INTEGER NOT NULL DEFAULT 45,
+  is_active         INTEGER NOT NULL DEFAULT 1,
+  created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS users (
   id              TEXT PRIMARY KEY,
   username        TEXT NOT NULL UNIQUE COLLATE NOCASE,
@@ -28,6 +36,7 @@ CREATE TABLE IF NOT EXISTS users (
   is_active       INTEGER NOT NULL DEFAULT 0,
   profile_complete INTEGER NOT NULL DEFAULT 0,
   interests       TEXT,
+  invite_code     TEXT REFERENCES invite_codes(code),
   created_at      TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -92,6 +101,9 @@ CREATE INDEX IF NOT EXISTS idx_ee_user  ON event_endorsers(user_id);
 CREATE INDEX IF NOT EXISTS idx_ee_event ON event_endorsers(event_id);
 `
 
+/** Test invite code seeded after migration */
+export const TEST_INVITE_CODE = 'TEST-BETA'
+
 /**
  * Run the D1 migration. Call this in beforeAll() or beforeEach().
  */
@@ -104,6 +116,11 @@ export async function applyMigration(): Promise<void> {
   for (const stmt of statements) {
     await db.prepare(stmt).run()
   }
+
+  // Seed a test invite code for registration tests
+  await db.prepare(
+    `INSERT OR IGNORE INTO invite_codes (code, label, verification_level, is_active) VALUES (?, ?, ?, ?)`
+  ).bind(TEST_INVITE_CODE, 'Test Beta', 45, 1).run()
 }
 
 /**
@@ -117,6 +134,7 @@ export async function dropAllTables(): Promise<void> {
     'events',
     'users',
     'centers',
+    'invite_codes',
   ]
   for (const table of tables) {
     await db.prepare(`DROP TABLE IF EXISTS ${table}`).run()

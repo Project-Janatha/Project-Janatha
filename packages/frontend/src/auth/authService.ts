@@ -72,13 +72,14 @@ export const authService = {
 
   async signup(
     username: string,
-    password: string
+    password: string,
+    inviteCode?: string
   ): Promise<{
     success: boolean
     message?: string
     user?: User
   }> {
-    const signupResult = await authClient.signup({ username, password })
+    const signupResult = await authClient.signup({ username, password, inviteCode })
     if (!signupResult.success) {
       return { success: false, message: signupResult.error.message }
     }

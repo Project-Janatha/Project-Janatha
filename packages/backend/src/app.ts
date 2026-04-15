@@ -21,6 +21,8 @@ import {
   verifyRefreshToken,
 } from './auth'
 import * as db from './db'
+import * as inviteCodes from './inviteCodes'
+import * as notifications from './notifications'
 import { ADMIN_EMAIL, NORMAL_USER, SEVAK, BRAHMACHARI, TIER_DESCALE, ADMIN_CUTOFF, DEVELOPER_EMAILS } from './constants'
 import { rateLimit, cacheControl, securityHeaders, validate } from './middleware'
 
@@ -147,10 +149,37 @@ app.post('/userExistence', async (c) => {
 // AUTH ROUTES
 // ═══════════════════════════════════════════════════════════════════════
 
+/**
+ * POST /api/auth/validate-invite-code
+ * Validate an invite code for beta access
+ * Public endpoint (no authentication required)
+ */
+app.post('/auth/validate-invite-code', rateLimit(10, 60_000), async (c) => {
+  let body: { code?: string } = {}
+  try {
+    body = await c.req.json<{ code: string }>()
+  } catch {
+    // Empty body
+  }
+
+  if (!body.code || typeof body.code !== 'string' || body.code.trim().length === 0) {
+    return c.json({ valid: false, error: 'Invite code is required' }, 400)
+  }
+
+  const code = await inviteCodes.validateInviteCode(c.env, body.code)
+
+  if (code) {
+    return c.json({ valid: true })
+  }
+
+  return c.json({ valid: false, error: 'Invalid or inactive invite code' })
+})
+
 app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
   const body = await c.req.json<{
     username: string
     password: string
+    inviteCode?: string
   }>()
 
   const normalizedUsername = validate.username(body.username)
@@ -169,12 +198,35 @@ app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
     return c.json({ message: 'Username already exists' }, 409)
   }
 
-  const hashedPassword = await hashPassword(validPassword)
-
-  // Check if this is a developer email (username is the email)
+  // For new users during beta, require and validate invite code
+  // (unless they are a developer, which bypasses the requirement)
   const isDeveloper = DEVELOPER_EMAILS.includes(normalizedUsername.toLowerCase())
-  const verificationLevel = isDeveloper ? BRAHMACHARI : NORMAL_USER
-  const isVerified = isDeveloper ? 1 : 0
+  
+  let verificationLevel = NORMAL_USER
+  let isVerified = 0
+  let inviteCodeUsed: string | null = null
+
+  if (isDeveloper) {
+    verificationLevel = BRAHMACHARI
+    isVerified = 1
+  } else {
+    // Non-developer new users must provide a valid invite code during beta
+    if (!body.inviteCode || typeof body.inviteCode !== 'string' || body.inviteCode.trim().length === 0) {
+      return c.json({ message: 'Invite code is required for beta access' }, 400)
+    }
+
+    // Validate the invite code (must be active)
+    const inviteCodeData = await inviteCodes.validateInviteCode(c.env, body.inviteCode)
+    if (!inviteCodeData) {
+      return c.json({ message: 'Invalid or inactive invite code' }, 401)
+    }
+
+    // Set verification level from the invite code
+    verificationLevel = inviteCodeData.verification_level
+    inviteCodeUsed = inviteCodeData.code
+  }
+
+  const hashedPassword = await hashPassword(validPassword)
 
   try {
     const created = await db.createUser(c.env.DB, {
@@ -184,6 +236,7 @@ app.post('/auth/register', rateLimit(5, 60_000), async (c) => {
       email: normalizedUsername.toLowerCase(),
       verification_level: verificationLevel,
       is_verified: isVerified,
+      invite_code: inviteCodeUsed,
     })
 
     if (!created.success) {
@@ -1223,6 +1276,365 @@ app.delete('/admin/users/:id', adminMiddleware, async (c) => {
     return c.json({ message: 'User deleted' })
   }
   return c.json({ message: 'Delete failed' }, 500)
+})
+
+// ── Admin invite code actions ──────────────────────────────────────────
+
+app.get('/admin/invite-codes', adminMiddleware, async (c) => {
+  const codes = await inviteCodes.getAllInviteCodes(c.env)
+  const codesWithUsage = await Promise.all(
+    codes.map(async (code) => ({
+      ...inviteCodes.inviteCodeRowToApi(code),
+      usageCount: await inviteCodes.countUsersWithCode(c.env, code.code),
+    }))
+  )
+  return c.json({ data: codesWithUsage })
+})
+
+app.post('/admin/invite-codes', adminMiddleware, async (c) => {
+  const body = await c.req.json<{
+    code: string
+    label: string
+    verificationLevel?: number
+  }>()
+
+  if (!body.code || !body.label) {
+    return c.json({ message: 'Code and label are required' }, 400)
+  }
+
+  const verificationLevel = body.verificationLevel ?? NORMAL_USER
+  if (verificationLevel >= ADMIN_CUTOFF) {
+    return c.json({ message: 'Verification level cannot grant admin access' }, 400)
+  }
+
+  const result = await inviteCodes.createInviteCode(
+    c.env,
+    body.code,
+    body.label,
+    verificationLevel,
+    true
+  )
+
+  if (result.success) {
+    return c.json({ message: 'Invite code created' })
+  }
+  return c.json({ message: result.error || 'Failed to create invite code' }, 400)
+})
+
+app.post('/admin/invite-codes/:code/toggle', adminMiddleware, async (c) => {
+  const code = c.req.param('code')
+  const existing = await inviteCodes.getInviteCode(c.env, code)
+  if (!existing) {
+    return c.json({ message: 'Invite code not found' }, 404)
+  }
+
+  const result = existing.is_active
+    ? await inviteCodes.deactivateInviteCode(c.env, code)
+    : await inviteCodes.reactivateInviteCode(c.env, code)
+
+  if (result.success) {
+    return c.json({ message: existing.is_active ? 'Code deactivated' : 'Code activated' })
+  }
+  return c.json({ message: result.error || 'Failed to toggle invite code' }, 500)
+})
+
+app.get('/admin/invite-codes/:code/users', adminMiddleware, async (c) => {
+  const code = c.req.param('code')
+  const userIds = await inviteCodes.getUsersWithCode(c.env, code)
+  const users = await Promise.all(
+    userIds.map(async (id) => {
+      const user = await db.getUserById(c.env.DB, id)
+      return user ? userRowToApi(user) : null
+    })
+  )
+  return c.json({ data: users.filter(Boolean) })
+})
+
+// ═══════════════════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /notifications
+ * Get all notifications for the authenticated user
+ */
+app.get('/notifications', authMiddleware, async (c) => {
+  const user = c.get('user')
+  const limit = parseInt(c.req.query('limit') || '50')
+  const offset = parseInt(c.req.query('offset') || '0')
+  const unreadOnly = c.req.query('unreadOnly') === 'true'
+
+  const notifs = await notifications.getUserNotifications(c.env, user.id, {
+    limit: Math.min(limit, 100),
+    offset,
+    unreadOnly,
+  })
+
+  return c.json({
+    notifications: notifs.map(notifications.notificationRowToApi),
+    count: notifs.length,
+  })
+})
+
+/**
+ * GET /notifications/unread-count
+ * Get unread notification count for the authenticated user
+ */
+app.get('/notifications/unread-count', authMiddleware, async (c) => {
+  const user = c.get('user')
+  const count = await notifications.getUnreadNotificationCount(c.env, user.id)
+  return c.json({ unreadCount: count })
+})
+
+/**
+ * PUT /notifications/:id/read
+ * Mark a notification as read
+ */
+app.put('/notifications/:id/read', authMiddleware, async (c) => {
+  const user = c.get('user')
+  const notifId = c.req.param('id')
+
+  const success = await notifications.markNotificationAsRead(c.env, notifId, user.id)
+
+  if (success) {
+    return c.json({ message: 'Notification marked as read' })
+  }
+
+  return c.json({ message: 'Notification not found' }, 404)
+})
+
+/**
+ * PUT /notifications/mark-all-read
+ * Mark all notifications as read
+ */
+app.put('/notifications/mark-all-read', authMiddleware, async (c) => {
+  const user = c.get('user')
+
+  await notifications.markAllNotificationsAsRead(c.env, user.id)
+
+  return c.json({ message: 'All notifications marked as read' })
+})
+
+/**
+ * PUT /notifications/:id/archive
+ * Archive a notification
+ */
+app.put('/notifications/:id/archive', authMiddleware, async (c) => {
+  const user = c.get('user')
+  const notifId = c.req.param('id')
+
+  const success = await notifications.archiveNotification(c.env, notifId, user.id)
+
+  if (success) {
+    return c.json({ message: 'Notification archived' })
+  }
+
+  return c.json({ message: 'Notification not found' }, 404)
+})
+
+/**
+ * DELETE /notifications/:id
+ * Delete a notification
+ */
+app.delete('/notifications/:id', authMiddleware, async (c) => {
+  const user = c.get('user')
+  const notifId = c.req.param('id')
+
+  const success = await notifications.deleteNotification(c.env, notifId, user.id)
+
+  if (success) {
+    return c.json({ message: 'Notification deleted' })
+  }
+
+  return c.json({ message: 'Notification not found' }, 404)
+})
+
+/**
+ * GET /notifications/preferences
+ * Get notification preferences for the authenticated user
+ */
+app.get('/notifications/preferences', authMiddleware, async (c) => {
+  const user = c.get('user')
+
+  let prefs = await notifications.getNotificationPreferences(c.env, user.id)
+
+  // Create default preferences if they don't exist
+  if (!prefs) {
+    prefs = await notifications.createDefaultNotificationPreferences(c.env, user.id)
+  }
+
+  return c.json(notifications.preferencesRowToApi(prefs))
+})
+
+/**
+ * PUT /notifications/preferences
+ * Update notification preferences
+ */
+app.put('/notifications/preferences', authMiddleware, async (c) => {
+  const user = c.get('user')
+  const body = await c.req.json()
+
+  // Convert from camelCase API format to snake_case DB format
+  const updates: Partial<notifications.NotificationPreferenceRow> = {}
+
+  if (body.inAppEnabled !== undefined) updates.in_app_enabled = body.inAppEnabled ? 1 : 0
+  if (body.pushEnabled !== undefined) updates.push_enabled = body.pushEnabled ? 1 : 0
+  if (body.emailEnabled !== undefined) updates.email_enabled = body.emailEnabled ? 1 : 0
+  if (body.eventReminders !== undefined) updates.event_reminders = body.eventReminders ? 1 : 0
+  if (body.eventCreated !== undefined) updates.event_created = body.eventCreated ? 1 : 0
+  if (body.eventCancelled !== undefined) updates.event_cancelled = body.eventCancelled ? 1 : 0
+  if (body.eventUpdated !== undefined) updates.event_updated = body.eventUpdated ? 1 : 0
+  if (body.attendeeJoined !== undefined) updates.attendee_joined = body.attendeeJoined ? 1 : 0
+  if (body.centerAnnouncements !== undefined) updates.center_announcements = body.centerAnnouncements ? 1 : 0
+  if (body.quietHoursStart !== undefined) updates.quiet_hours_start = body.quietHoursStart
+  if (body.quietHoursEnd !== undefined) updates.quiet_hours_end = body.quietHoursEnd
+  if (body.quietHoursEnabled !== undefined) updates.quiet_hours_enabled = body.quietHoursEnabled ? 1 : 0
+
+  const prefs = await notifications.updateNotificationPreferences(c.env, user.id, updates)
+
+  if (!prefs) {
+    return c.json({ message: 'Preferences not found' }, 404)
+  }
+
+  return c.json(notifications.preferencesRowToApi(prefs))
+})
+
+// ═══════════════════════════════════════════════════════════════════════
+// ADMIN NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /admin/notifications
+ * List all notifications across all users (paginated, searchable)
+ */
+app.get('/admin/notifications', adminMiddleware, async (c) => {
+  const url = new URL(c.req.url)
+  const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') ?? '50', 10) || 50, 1), 100)
+  const offset = Math.max(parseInt(url.searchParams.get('offset') ?? '0', 10) || 0, 0)
+  const userId = url.searchParams.get('userId') || undefined
+  const typeId = url.searchParams.get('typeId') ? parseInt(url.searchParams.get('typeId')!, 10) : undefined
+
+  let query = `SELECT n.*, u.first_name, u.last_name, u.username FROM notifications n LEFT JOIN users u ON n.user_id = u.id`
+  const conditions: string[] = []
+  const values: any[] = []
+
+  if (userId) {
+    conditions.push('n.user_id = ?')
+    values.push(userId)
+  }
+  if (typeId) {
+    conditions.push('n.type_id = ?')
+    values.push(typeId)
+  }
+
+  if (conditions.length > 0) {
+    query += ` WHERE ${conditions.join(' AND ')}`
+  }
+
+  query += ` ORDER BY n.created_at DESC LIMIT ? OFFSET ?`
+  values.push(limit, offset)
+
+  const stmt = c.env.DB.prepare(query)
+  const result = await stmt.bind(...values).all()
+
+  // Get total count
+  let countQuery = `SELECT COUNT(*) as count FROM notifications n`
+  const countValues = values.slice(0, -2) // exclude limit/offset
+  if (conditions.length > 0) {
+    countQuery += ` WHERE ${conditions.join(' AND ')}`
+  }
+  const countResult = await c.env.DB.prepare(countQuery).bind(...countValues).first<{ count: number }>()
+
+  return c.json({
+    data: (result.results || []).map((row: any) => ({
+      ...notifications.notificationRowToApi(row),
+      recipientName: row.first_name && row.last_name ? `${row.first_name} ${row.last_name}` : row.username || 'Unknown',
+      recipientUsername: row.username,
+    })),
+    total: countResult?.count || 0,
+    limit,
+    offset,
+  })
+})
+
+/**
+ * GET /admin/notifications/stats
+ * Notification system stats for admin dashboard
+ */
+app.get('/admin/notifications/stats', adminMiddleware, async (c) => {
+  const [totalResult, unreadResult, typeBreakdown, recentResult] = await Promise.all([
+    c.env.DB.prepare('SELECT COUNT(*) as count FROM notifications').first<{ count: number }>(),
+    c.env.DB.prepare('SELECT COUNT(*) as count FROM notifications WHERE is_read = 0').first<{ count: number }>(),
+    c.env.DB.prepare('SELECT type_id, COUNT(*) as count FROM notifications GROUP BY type_id').all(),
+    c.env.DB.prepare('SELECT COUNT(*) as count FROM notifications WHERE created_at > datetime("now", "-24 hours")').first<{ count: number }>(),
+  ])
+
+  return c.json({
+    total: totalResult?.count || 0,
+    unread: unreadResult?.count || 0,
+    last24h: recentResult?.count || 0,
+    byType: (typeBreakdown.results || []).map((row: any) => ({
+      typeId: row.type_id,
+      count: row.count,
+    })),
+  })
+})
+
+/**
+ * POST /admin/notifications/send
+ * Send a notification to a user or all users
+ */
+app.post('/admin/notifications/send', adminMiddleware, async (c) => {
+  const body = await c.req.json<{
+    userId?: string
+    typeId: number
+    title: string
+    message: string
+    actionUrl?: string
+    broadcast?: boolean
+  }>()
+
+  if (!body.title || !body.message || !body.typeId) {
+    return c.json({ message: 'title, message, and typeId are required' }, 400)
+  }
+
+  if (body.broadcast) {
+    // Send to all users
+    const users = await c.env.DB.prepare('SELECT id FROM users').all<{ id: string }>()
+    let sent = 0
+    for (const user of users.results || []) {
+      await notifications.createNotification(c.env, user.id, body.typeId, body.title, body.message, {
+        actionUrl: body.actionUrl,
+      })
+      sent++
+    }
+    return c.json({ message: `Notification sent to ${sent} users`, sent })
+  }
+
+  if (!body.userId) {
+    return c.json({ message: 'userId is required when not broadcasting' }, 400)
+  }
+
+  const notif = await notifications.createNotification(c.env, body.userId, body.typeId, body.title, body.message, {
+    actionUrl: body.actionUrl,
+  })
+
+  return c.json({ message: 'Notification sent', notification: notifications.notificationRowToApi(notif) })
+})
+
+/**
+ * DELETE /admin/notifications/:id
+ * Admin delete any notification
+ */
+app.delete('/admin/notifications/:id', adminMiddleware, async (c) => {
+  const notifId = c.req.param('id')
+
+  const result = await c.env.DB.prepare('DELETE FROM notifications WHERE id = ?').bind(notifId).run()
+
+  if (result.success) {
+    return c.json({ message: 'Notification deleted' })
+  }
+  return c.json({ message: 'Failed to delete notification' }, 500)
 })
 
 // ── Default export ────────────────────────────────────────────────────

@@ -35,6 +35,7 @@ export interface UserRow {
   is_active: number // 0 | 1
   profile_complete: number // 0 | 1
   interests: string | null // JSON array
+  invite_code: string | null // Invite code used for signup
   created_at: string
   updated_at: string
 }
@@ -84,6 +85,14 @@ export interface EventAttendeeRow {
 export interface EventEndorserRow {
   event_id: string
   user_id: string
+  created_at: string
+}
+
+export interface InviteCodeRow {
+  code: string
+  label: string
+  verification_level: number
+  is_active: number // 0 | 1
   created_at: string
 }
 
