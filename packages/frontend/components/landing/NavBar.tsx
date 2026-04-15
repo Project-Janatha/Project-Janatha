@@ -56,7 +56,7 @@ export function NavBar() {
         </Pressable>
 
         {/* Right: Links (hidden on mobile) + CTA */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 32 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {!isMobile &&
             NAV_LINKS.map((link) => (
               <Pressable key={link}>
@@ -77,10 +77,9 @@ export function NavBar() {
           <Pressable
             onPress={() => router.push('/auth?mode=login')}
             style={{
-              paddingHorizontal: isMobile ? 14 : 20,
-              paddingVertical: 10,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
               borderRadius: 100,
-              minHeight: 44,
               justifyContent: 'center',
               borderWidth: 1,
               borderColor: '#D6D3D1',
@@ -88,10 +87,12 @@ export function NavBar() {
           >
             <Text
               style={{
-                fontFamily: '"Inclusive Sans", sans-serif',
+                fontFamily: 'Inter, sans-serif',
                 fontWeight: '400',
-                fontSize: 15,
+                fontSize: 16,
+                lineHeight: 16,
                 color: '#1C1917',
+                textAlign: 'center',
               }}
             >
               Log In
@@ -101,21 +102,22 @@ export function NavBar() {
           {/* Sign Up */}
           <Pressable
             onPress={() => router.push('/auth?mode=signup')}
+            className="bg-primary active:bg-primary-press"
             style={{
-              backgroundColor: '#1C1917',
-              paddingHorizontal: isMobile ? 14 : 20,
-              paddingVertical: 10,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
               borderRadius: 100,
-              minHeight: 44,
               justifyContent: 'center',
             }}
           >
             <Text
               style={{
-                fontFamily: '"Inclusive Sans", sans-serif',
+                fontFamily: 'Inter, sans-serif',
                 fontWeight: '400',
-                fontSize: 15,
+                fontSize: 16,
+                lineHeight: 16,
                 color: '#FFFFFF',
+                textAlign: 'center',
               }}
             >
               Sign Up
