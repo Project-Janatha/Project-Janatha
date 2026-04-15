@@ -38,7 +38,7 @@ interface UserContextType {
   authStatus: AuthStatus
   onboardingComplete: boolean
   login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>
-  signup: (username: string, password: string) => Promise<{ success: boolean; message?: string }>
+  signup: (username: string, password: string, inviteCode?: string) => Promise<{ success: boolean; message?: string }>
   logout: () => Promise<void>
   checkUserExists: (username: string) => Promise<boolean>
   setUser: (user: User | null) => void
@@ -121,8 +121,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     return { success: true }
   }, [posthog])
 
-  const signup = useCallback(async (username: string, password: string) => {
-    const result = await authService.signup(username, password)
+  const signup = useCallback(async (username: string, password: string, inviteCode?: string) => {
+    const result = await authService.signup(username, password, inviteCode)
     if (!result.success || !result.user) {
       posthog?.capture('signup_failed', { reason: result.message })
       return { success: false, message: result.message || 'Signup failed. Please try again.' }

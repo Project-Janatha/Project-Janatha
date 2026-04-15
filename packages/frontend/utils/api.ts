@@ -557,6 +557,53 @@ export async function adminDeleteEvent(eventId: string): Promise<void> {
   if (!response.ok) throw new Error('Failed to delete event')
 }
 
+// ── Admin invite codes ────────────────────────────────────────────────
+
+export interface InviteCodeData {
+  code: string
+  label: string
+  verificationLevel: number
+  isActive: boolean
+  createdAt: string
+  usageCount: number
+}
+
+export async function fetchAdminInviteCodes(): Promise<{ data: InviteCodeData[] }> {
+  const response = await authFetch('/admin/invite-codes')
+  if (!response.ok) throw new Error('Failed to fetch invite codes')
+  return response.json()
+}
+
+export async function adminCreateInviteCode(params: {
+  code: string
+  label: string
+  verificationLevel?: number
+}): Promise<void> {
+  const response = await authFetch('/admin/invite-codes', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ message: 'Failed to create invite code' }))
+    throw new Error(err.message)
+  }
+}
+
+export async function adminToggleInviteCode(code: string): Promise<void> {
+  const response = await authFetch(`/admin/invite-codes/${encodeURIComponent(code)}/toggle`, {
+    method: 'POST',
+    body: '{}',
+  })
+  if (!response.ok) throw new Error('Failed to toggle invite code')
+}
+
+export async function fetchAdminInviteCodeUsers(code: string): Promise<UserData[]> {
+  const response = await authFetch(`/admin/invite-codes/${encodeURIComponent(code)}/users`)
+  if (!response.ok) throw new Error('Failed to fetch invite code users')
+  const data = await response.json()
+  return data.data
+}
+
 // ── Admin Notifications API ──────────────────────────────────────────
 
 export interface AdminNotification {
