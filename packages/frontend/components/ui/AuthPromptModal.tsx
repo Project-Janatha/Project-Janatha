@@ -20,7 +20,7 @@ export default function AuthPromptModal({ visible, onClose, returnTo, eventTitle
 
   const handleSignUp = () => {
     onClose()
-    router.push(`/auth?mode=signup&returnTo=${encoded}`)
+    router.push(`/auth?mode=signup&returnTo=${encoded}&inviteCode=PUBLIC-EXPLORE`)
   }
 
   const handleLogIn = () => {

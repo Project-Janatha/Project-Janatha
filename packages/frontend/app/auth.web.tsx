@@ -46,18 +46,24 @@ export default function AuthScreen() {
   const router = useRouter()
   const { checkUserExists, login, signup, loading } = useUser()
 
-  // Read mode and returnTo from URL params
+  // Read mode, returnTo, and inviteCode from URL params
   const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
   const initialMode = urlParams?.get('mode')
   const returnTo = urlParams?.get('returnTo')
+  const urlInviteCode = urlParams?.get('inviteCode')
 
+  // When inviteCode is provided via URL (e.g. from public explore flow),
+  // skip the invite-code step and go straight to signup
   const [authStep, setAuthStep] = useState<AuthStep>(
-    initialMode === 'login' ? 'login' : initialMode === 'signup' ? 'signup' : 'initial'
+    initialMode === 'login' ? 'login'
+      : initialMode === 'signup' && urlInviteCode ? 'signup'
+      : initialMode === 'signup' ? 'invite-code'
+      : 'initial'
   )
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [inviteCode, setInviteCode] = useState('')
+  const [inviteCode, setInviteCode] = useState(urlInviteCode || '')
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const [showDevPanel, setShowDevPanel] = useState(false)
   // Focus state for input styling
