@@ -73,12 +73,37 @@ export function NavBar() {
               </Pressable>
             ))}
 
-          {/* Get Started button -- always visible */}
+          {/* Log In */}
           <Pressable
-            onPress={() => router.push('/auth')}
+            onPress={() => router.push('/auth?mode=login')}
+            style={{
+              paddingHorizontal: isMobile ? 14 : 20,
+              paddingVertical: 10,
+              borderRadius: 100,
+              minHeight: 44,
+              justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: '#D6D3D1',
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: '"Inclusive Sans", sans-serif',
+                fontWeight: '400',
+                fontSize: 15,
+                color: '#1C1917',
+              }}
+            >
+              Log In
+            </Text>
+          </Pressable>
+
+          {/* Sign Up */}
+          <Pressable
+            onPress={() => router.push('/auth?mode=signup')}
             style={{
               backgroundColor: '#1C1917',
-              paddingHorizontal: isMobile ? 18 : 24,
+              paddingHorizontal: isMobile ? 14 : 20,
               paddingVertical: 10,
               borderRadius: 100,
               minHeight: 44,
@@ -93,7 +118,7 @@ export function NavBar() {
                 color: '#FFFFFF',
               }}
             >
-              Get Started
+              Sign Up
             </Text>
           </Pressable>
 
