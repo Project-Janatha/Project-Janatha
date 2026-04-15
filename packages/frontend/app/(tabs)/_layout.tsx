@@ -45,16 +45,10 @@ export default function TabLayout() {
     if (!user) {
       return (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 16 }}>
-          <SecondaryButton
-            onPress={() => router.push('/auth?mode=login')}
-            style={{ paddingHorizontal: 12, paddingVertical: 8 }}
-          >
+          <SecondaryButton onPress={() => router.push('/auth?mode=login')}>
             Log In
           </SecondaryButton>
-          <PrimaryButton
-            onPress={() => router.push('/auth?mode=signup')}
-            style={{ paddingHorizontal: 12, paddingVertical: 8 }}
-          >
+          <PrimaryButton onPress={() => router.push('/auth?mode=signup')}>
             Sign Up
           </PrimaryButton>
         </View>
