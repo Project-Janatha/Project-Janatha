@@ -45,7 +45,14 @@ export default function AuthScreen() {
   const router = useRouter()
   const { checkUserExists, login, signup, loading } = useUser()
 
-  const [authStep, setAuthStep] = useState<AuthStep>('initial')
+  // Read mode and returnTo from URL params
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const initialMode = urlParams?.get('mode')
+  const returnTo = urlParams?.get('returnTo')
+
+  const [authStep, setAuthStep] = useState<AuthStep>(
+    initialMode === 'login' ? 'login' : initialMode === 'signup' ? 'signup' : 'initial'
+  )
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -104,7 +111,7 @@ export default function AuthScreen() {
     try {
       const result = await login(username, password)
       if (result.success) {
-        router.replace('/(tabs)')
+        router.replace(returnTo || '/(tabs)')
       } else {
         setErrors({ form: result.message || 'Username or password is incorrect.' })
       }
@@ -134,7 +141,7 @@ export default function AuthScreen() {
     try {
       const result = await signup(username, password)
       if (result.success) {
-        router.replace('/onboarding')
+        router.replace(returnTo ? `/onboarding?returnTo=${encodeURIComponent(returnTo)}` : '/onboarding')
       } else {
         setErrors({ form: result.message || 'Failed to sign up. Please try again.' })
       }

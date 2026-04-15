@@ -85,9 +85,19 @@ function RootLayoutNav() {
     const inLandingPage = pathname === '/landing'
 
     if (!isAuthenticated) {
-      // User is NOT authenticated — show landing page by default
-      // But allow access to legal pages and auth without redirect
-      if (!inAuthGroup && !inLandingPage && !pathname.startsWith('/privacy') && !pathname.startsWith('/terms') && !pathname.startsWith('/cookies')) {
+      // Allow public pages through without redirect
+      const isPublicPage =
+        inAuthGroup ||
+        inLandingPage ||
+        pathname === '/' ||
+        pathname.startsWith('/(tabs)') ||
+        pathname.startsWith('/events/') ||
+        pathname.startsWith('/center/') ||
+        pathname.startsWith('/privacy') ||
+        pathname.startsWith('/terms') ||
+        pathname.startsWith('/cookies')
+
+      if (!isPublicPage) {
         router.replace('/landing')
       }
     } else {

@@ -20,6 +20,7 @@ import Badge from './Badge'
 import Logo from './Logo'
 import UnderlineTabBar from './UnderlineTabBar'
 import Avatar from './Avatar'
+import AuthPromptModal from './AuthPromptModal'
 
 export {
   PrimaryButton,
@@ -35,4 +36,5 @@ export {
   Logo,
   UnderlineTabBar,
   Avatar,
+  AuthPromptModal,
 }

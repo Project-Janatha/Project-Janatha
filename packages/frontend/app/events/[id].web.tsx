@@ -9,6 +9,7 @@ import Badge from '../../components/ui/Badge'
 import UnderlineTabBar from '../../components/ui/UnderlineTabBar'
 import PrimaryButton from '../../components/ui/buttons/PrimaryButton'
 import DestructiveButton from '../../components/ui/buttons/DestructiveButton'
+import AuthPromptModal from '../../components/ui/AuthPromptModal'
 import { useDetailColors } from '../../hooks/useDetailColors'
 
 export default function EventDetailWeb() {
@@ -47,6 +48,7 @@ function MobileEventDetail({ eventId }: { eventId: string }) {
   const { event, loading, toggleRegistration, isToggling, attendees } = useEventDetail(eventId, user?.username, user?.id)
   const colors = useDetailColors()
   const [activeTab, setActiveTab] = useState('Details')
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false)
 
   const isPast = event?.date ? new Date(event.date + 'T23:59:59') < new Date() : false
 
@@ -180,7 +182,13 @@ function MobileEventDetail({ eventId }: { eventId: string }) {
             </DestructiveButton>
           ) : (
             <PrimaryButton
-              onPress={() => user?.username && toggleRegistration(user.username)}
+              onPress={() => {
+                if (!user) {
+                  setShowAuthPrompt(true)
+                } else if (user.username) {
+                  toggleRegistration(user.username)
+                }
+              }}
               disabled={isToggling}
               loading={isToggling}
             >
@@ -189,6 +197,13 @@ function MobileEventDetail({ eventId }: { eventId: string }) {
           )}
         </View>
       )}
+
+      <AuthPromptModal
+        visible={showAuthPrompt}
+        onClose={() => setShowAuthPrompt(false)}
+        returnTo={`/events/${eventId}`}
+        eventTitle={event?.title}
+      />
     </View>
   )
 }
