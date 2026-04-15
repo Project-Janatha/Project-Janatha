@@ -556,3 +556,75 @@ export async function adminDeleteEvent(eventId: string): Promise<void> {
   const response = await authFetch(`/admin/events/${eventId}`, { method: 'DELETE' })
   if (!response.ok) throw new Error('Failed to delete event')
 }
+
+// ── Admin Notifications API ──────────────────────────────────────────
+
+export interface AdminNotification {
+  id: string
+  userId: string
+  typeId: number
+  title: string
+  message: string
+  data: any
+  isRead: boolean
+  isArchived: boolean
+  readAt: string | null
+  actionUrl: string | null
+  relatedEventId: string | null
+  relatedUserId: string | null
+  createdAt: string
+  updatedAt: string
+  recipientName: string
+  recipientUsername: string
+}
+
+export interface AdminNotificationStats {
+  total: number
+  unread: number
+  last24h: number
+  byType: { typeId: number; count: number }[]
+}
+
+export async function fetchAdminNotifications(params?: {
+  limit?: number
+  offset?: number
+  userId?: string
+  typeId?: number
+}): Promise<AdminPaginatedResponse<AdminNotification>> {
+  const searchParams = new URLSearchParams()
+  if (params?.limit) searchParams.set('limit', String(params.limit))
+  if (params?.offset) searchParams.set('offset', String(params.offset))
+  if (params?.userId) searchParams.set('userId', params.userId)
+  if (params?.typeId) searchParams.set('typeId', String(params.typeId))
+  const qs = searchParams.toString()
+  const response = await authFetch(`/admin/notifications${qs ? `?${qs}` : ''}`)
+  if (!response.ok) throw new Error('Failed to fetch admin notifications')
+  return response.json()
+}
+
+export async function fetchAdminNotificationStats(): Promise<AdminNotificationStats> {
+  const response = await authFetch('/admin/notifications/stats')
+  if (!response.ok) throw new Error('Failed to fetch notification stats')
+  return response.json()
+}
+
+export async function adminSendNotification(params: {
+  userId?: string
+  typeId: number
+  title: string
+  message: string
+  actionUrl?: string
+  broadcast?: boolean
+}): Promise<{ message: string; sent?: number }> {
+  const response = await authFetch('/admin/notifications/send', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  })
+  if (!response.ok) throw new Error('Failed to send notification')
+  return response.json()
+}
+
+export async function adminDeleteNotification(notificationId: string): Promise<void> {
+  const response = await authFetch(`/admin/notifications/${notificationId}`, { method: 'DELETE' })
+  if (!response.ok) throw new Error('Failed to delete notification')
+}

@@ -1,9 +1,9 @@
 import React from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { Building2, CalendarDays, Users } from 'lucide-react-native'
+import { Bell, Building2, CalendarDays, Users } from 'lucide-react-native'
 import { useThemeContext } from '../contexts'
 
-export type AdminTab = 'Centers' | 'Events' | 'Users'
+export type AdminTab = 'Centers' | 'Events' | 'Users' | 'Notifications'
 
 type AdminSidebarProps = {
   activeTab: AdminTab
@@ -14,6 +14,7 @@ const tabs: { key: AdminTab; label: string; Icon: typeof Building2 }[] = [
   { key: 'Centers', label: 'Centers', Icon: Building2 },
   { key: 'Events', label: 'Events', Icon: CalendarDays },
   { key: 'Users', label: 'Users', Icon: Users },
+  { key: 'Notifications', label: 'Notifications', Icon: Bell },
 ]
 
 export default function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
