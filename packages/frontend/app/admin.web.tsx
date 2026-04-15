@@ -7,6 +7,7 @@ import CentersTab from '../components/admin/CentersTab'
 import EventsTab from '../components/admin/EventsTab'
 import UsersTab from '../components/admin/UsersTab'
 import InviteCodesTab from '../components/admin/InviteCodesTab'
+import NotificationsTab from '../components/admin/NotificationsTab'
 import { isSuperAdmin as checkSuperAdmin } from '../utils/admin'
 
 export default function AdminPage() {
@@ -44,6 +45,7 @@ export default function AdminPage() {
       {activeTab === 'Events' && <EventsTab />}
       {activeTab === 'Users' && <UsersTab />}
       {activeTab === 'Invite Codes' && <InviteCodesTab />}
+      {activeTab === 'Notifications' && <NotificationsTab />}
     </View>
   )
 }

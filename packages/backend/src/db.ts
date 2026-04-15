@@ -28,10 +28,10 @@ export async function createUser(
     await db
       .prepare(
         `INSERT INTO users (id, username, password, email, first_name, last_name,
-          date_of_birth, phone_number, profile_image, center_id, points,
+          date_of_birth, phone_number, profile_image, bio, center_id, points,
           is_verified, verification_level, is_active, profile_complete,
           interests, invite_code, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)`,
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)`,
       )
       .bind(
         user.id,
@@ -43,6 +43,7 @@ export async function createUser(
         user.date_of_birth ?? null,
         user.phone_number ?? null,
         user.profile_image ?? null,
+        user.bio ?? null,
         user.center_id ?? null,
         user.points ?? 0,
         user.is_verified ?? 0,

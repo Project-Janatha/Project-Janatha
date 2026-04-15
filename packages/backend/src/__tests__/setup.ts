@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
   date_of_birth   TEXT,
   phone_number    TEXT,
   profile_image   TEXT,
+  bio             TEXT,
   center_id       TEXT REFERENCES centers(id) ON DELETE SET NULL,
   points          INTEGER NOT NULL DEFAULT 0,
   is_verified     INTEGER NOT NULL DEFAULT 0,
