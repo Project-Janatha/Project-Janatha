@@ -77,8 +77,8 @@ export function NavBar() {
           <Pressable
             onPress={() => router.push('/auth?mode=login')}
             style={{
-              paddingHorizontal: 12,
-              paddingVertical: 8,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
               borderRadius: 100,
               justifyContent: 'center',
               borderWidth: 1,
@@ -104,8 +104,8 @@ export function NavBar() {
             onPress={() => router.push('/auth?mode=signup')}
             className="bg-primary active:bg-primary-press"
             style={{
-              paddingHorizontal: 12,
-              paddingVertical: 8,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
               borderRadius: 100,
               justifyContent: 'center',
             }}
