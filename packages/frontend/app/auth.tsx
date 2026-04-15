@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Code, ArrowLeft } from 'lucide-react-native'
 import { usePostHog } from 'posthog-react-native'
 import { AuthInput, Logo, PrimaryButton } from '../components/ui'
@@ -29,11 +29,20 @@ export default function AuthScreen() {
   const { checkUserExists, login, signup, loading } = useUser()
   const posthog = usePostHog()
 
-  const [authStep, setAuthStep] = useState<AuthStep>('initial')
+  // Read params for deep-link support (e.g. from AuthPromptModal)
+  const params = useLocalSearchParams<{ mode?: string; returnTo?: string; inviteCode?: string }>()
+  const urlInviteCode = params.inviteCode
+
+  const [authStep, setAuthStep] = useState<AuthStep>(
+    params.mode === 'login' ? 'login'
+      : params.mode === 'signup' && urlInviteCode ? 'signup'
+      : params.mode === 'signup' ? 'invite-code'
+      : 'initial'
+  )
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [inviteCode, setInviteCode] = useState('')
+  const [inviteCode, setInviteCode] = useState(urlInviteCode || '')
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
 
   const [showDevPanel, setShowDevPanel] = useState(false)
@@ -136,7 +145,7 @@ export default function AuthScreen() {
     try {
       const result = await signup(username, password, inviteCode)
       if (result.success) {
-        router.replace('/onboarding')
+        router.replace(params.returnTo ? `/onboarding?returnTo=${encodeURIComponent(params.returnTo)}` : '/onboarding')
       } else {
         setErrors({ form: result.message || 'Failed to sign up. Please try again.' })
       }

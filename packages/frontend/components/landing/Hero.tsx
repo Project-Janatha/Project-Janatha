@@ -492,7 +492,7 @@ export function Hero() {
           }}
         >
           <Pressable
-            onPress={() => router.push('/auth')}
+            onPress={() => router.push('/(tabs)')}
             className="bg-primary active:bg-primary-press rounded-full"
             style={{
               paddingHorizontal: 28,
@@ -512,7 +512,7 @@ export function Hero() {
                 color: '#FFFFFF',
               }}
             >
-              Join the Community →
+              Start Exploring →
             </Text>
           </Pressable>
 

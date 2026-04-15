@@ -44,9 +44,12 @@ export default function TabLayout() {
   const HeaderRight = () => {
     if (!user) {
       return (
-        <View style={{ marginRight: 16 }}>
-          <PrimaryButton onPress={() => router.push('/auth')} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 16 }}>
+          <SecondaryButton onPress={() => router.push('/auth?mode=login')}>
             Log In
+          </SecondaryButton>
+          <PrimaryButton onPress={() => router.push('/auth?mode=signup')}>
+            Sign Up
           </PrimaryButton>
         </View>
       )

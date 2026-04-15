@@ -36,6 +36,7 @@ import EventDetailPanel from '../../components/web/EventDetailPanel'
 import EventFormPanel from '../../components/web/EventFormPanel'
 import CenterDetailPanel from '../../components/web/CenterDetailPanel'
 import { useDetailColors } from '../../hooks/useDetailColors'
+import AuthPromptModal from '../../components/ui/AuthPromptModal'
 import type { MapPoint, EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
 import { WeekCalendar } from '../../components'
 import { ADMIN_EMAIL, isLocal } from '../../utils/admin'
@@ -329,8 +330,14 @@ function EventPanelInner({
       prevRegisteredRef.current = event.isRegistered
     }
   }, [event?.isRegistered, event?.attendees, attendees, onStatusChange])
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false)
+
   const handleToggleRegistration = async () => {
-    if (!user?.username) return
+    if (!user) {
+      setShowAuthPrompt(true)
+      return
+    }
+    if (!user.username) return
     try {
       await toggleRegistration(user.username)
     } catch (err: any) {
@@ -359,16 +366,24 @@ function EventPanelInner({
   const isPast = event.date ? new Date(event.date + 'T23:59:59') < new Date() : false
 
   return (
-    <EventDetailPanel
-      event={event}
-      attendees={attendees}
-      isPast={isPast}
-      isAdmin={isAdmin}
-      onClose={onClose}
-      onToggleRegistration={handleToggleRegistration}
-      isToggling={isToggling}
-      onEdit={canEdit && !isPast ? onEdit : undefined}
-    />
+    <>
+      <EventDetailPanel
+        event={event}
+        attendees={attendees}
+        isPast={isPast}
+        isAdmin={isAdmin}
+        onClose={onClose}
+        onToggleRegistration={handleToggleRegistration}
+        isToggling={isToggling}
+        onEdit={canEdit && !isPast ? onEdit : undefined}
+      />
+      <AuthPromptModal
+        visible={showAuthPrompt}
+        onClose={() => setShowAuthPrompt(false)}
+        returnTo={`/?detail=event&id=${eventId}`}
+        eventTitle={event.title}
+      />
+    </>
   )
 }
 

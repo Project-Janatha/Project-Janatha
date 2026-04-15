@@ -1,12 +1,12 @@
 import React from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { View, Text, Platform } from 'react-native'
+import { View, Text, Pressable, Platform } from 'react-native'
 import { useOnboarding } from '../contexts'
 import BirthdatePicker from '../BirthdatePicker'
 import { PrimaryButton } from '../ui'
 
 export default function Step2() {
-  const { goToNextStep, birthdate, setBirthdate } = useOnboarding()
+  const { goToNextStep, birthdate, setBirthdate, skipOnboarding, returnTo, isSubmitting } = useOnboarding()
 
   // Only true if birthdate is not null
   const isDateSelected = !!birthdate
@@ -40,6 +40,13 @@ export default function Step2() {
           >
             Continue
           </PrimaryButton>
+          {returnTo && (
+            <Pressable onPress={skipOnboarding} disabled={isSubmitting} style={{ alignSelf: 'center', marginTop: 12 }}>
+              <Text className="text-sm font-inter text-stone-400 dark:text-stone-500">
+                Skip for now
+              </Text>
+            </Pressable>
+          )}
         </View>
       </View>
     </SafeAreaView>

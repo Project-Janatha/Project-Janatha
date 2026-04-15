@@ -5,7 +5,7 @@ import { useOnboarding } from '../contexts'
 import { PrimaryButton } from '../ui'
 
 export default function Step4() {
-  const { goToNextStep, interests, setInterests } = useOnboarding()
+  const { goToNextStep, interests, setInterests, skipOnboarding, returnTo, isSubmitting } = useOnboarding()
   const [error, setError] = useState<string | null>(null)
   const interestOptions = [
     'Satsangs',
@@ -93,6 +93,13 @@ export default function Step4() {
           >
             Continue
           </PrimaryButton>
+          {returnTo && (
+            <Pressable onPress={skipOnboarding} disabled={isSubmitting} style={{ alignSelf: 'center', marginTop: 12 }}>
+              <Text className="text-sm font-inter text-stone-400 dark:text-stone-500">
+                Skip for now
+              </Text>
+            </Pressable>
+          )}
         </View>
       </View>
     </SafeAreaView>

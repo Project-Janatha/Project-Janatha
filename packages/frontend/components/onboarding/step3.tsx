@@ -16,7 +16,7 @@ interface CenterWithDistance {
 }
 
 export default function Step3() {
-  const { goToNextStep, centerID, setCenterID } = useOnboarding()
+  const { goToNextStep, centerID, setCenterID, skipOnboarding, returnTo, isSubmitting } = useOnboarding()
   const [searchInput, setSearchInput] = useState('')
   const [focusedField, setFocusedField] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -267,6 +267,13 @@ export default function Step3() {
           >
             Continue
           </PrimaryButton>
+          {returnTo && (
+            <Pressable onPress={skipOnboarding} disabled={isSubmitting} style={{ alignSelf: 'center', marginTop: 12 }}>
+              <Text className="text-sm font-inter text-stone-400 dark:text-stone-500">
+                Skip for now
+              </Text>
+            </Pressable>
+          )}
         </View>
       </View>
     </SafeAreaView>

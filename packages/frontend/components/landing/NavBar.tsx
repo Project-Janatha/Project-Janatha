@@ -56,7 +56,7 @@ export function NavBar() {
         </Pressable>
 
         {/* Right: Links (hidden on mobile) + CTA */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 32 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {!isMobile &&
             NAV_LINKS.map((link) => (
               <Pressable key={link}>
@@ -73,27 +73,54 @@ export function NavBar() {
               </Pressable>
             ))}
 
-          {/* Get Started button -- always visible */}
+          {/* Log In */}
           <Pressable
-            onPress={() => router.push('/auth')}
+            onPress={() => router.push('/auth?mode=login')}
             style={{
-              backgroundColor: '#1C1917',
-              paddingHorizontal: isMobile ? 18 : 24,
-              paddingVertical: 10,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
               borderRadius: 100,
-              minHeight: 44,
+              justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: '#D6D3D1',
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '400',
+                fontSize: 16,
+                lineHeight: 16,
+                color: '#1C1917',
+                textAlign: 'center',
+              }}
+            >
+              Log In
+            </Text>
+          </Pressable>
+
+          {/* Sign Up */}
+          <Pressable
+            onPress={() => router.push('/auth?mode=signup')}
+            className="bg-primary active:bg-primary-press"
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderRadius: 100,
               justifyContent: 'center',
             }}
           >
             <Text
               style={{
-                fontFamily: '"Inclusive Sans", sans-serif',
+                fontFamily: 'Inter, sans-serif',
                 fontWeight: '400',
-                fontSize: 15,
+                fontSize: 16,
+                lineHeight: 16,
                 color: '#FFFFFF',
+                textAlign: 'center',
               }}
             >
-              Get Started
+              Sign Up
             </Text>
           </Pressable>
 
