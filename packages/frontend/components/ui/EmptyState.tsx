@@ -36,14 +36,15 @@ export function EmptyState({ variant = 'search', message, subtitle }: EmptyState
   const { icon: Icon, title, subtitle: defaultSubtitle } = config[variant]
 
   return (
-    <View style={{ paddingVertical: 48, alignItems: 'center', paddingHorizontal: 24 }}>
-      <Icon size={40} color="#a8a29e" />
+    <View style={{ paddingVertical: 36, alignItems: 'center', paddingHorizontal: 24 }}>
+      <Icon size={36} color="#a8a29e" />
       <Text
         style={{
-          marginTop: 16,
-          fontSize: 16,
+          marginTop: 14,
+          fontSize: 15,
           fontWeight: '600',
           color: '#78716c',
+          fontFamily: 'Inter-SemiBold',
           textAlign: 'center',
         }}
       >
@@ -54,6 +55,7 @@ export function EmptyState({ variant = 'search', message, subtitle }: EmptyState
           marginTop: 6,
           fontSize: 13,
           color: '#a8a29e',
+          fontFamily: 'Inter-Regular',
           textAlign: 'center',
         }}
       >
