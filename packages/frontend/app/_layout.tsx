@@ -51,12 +51,11 @@ export default function RootLayout() {
     return null
   }
 
-  return (
+  return posthogEnabled ? (
     <PostHogProvider
-      apiKey={posthogEnabled ? posthogKey!.trim() : ''}
+      apiKey={posthogKey!.trim()}
       options={{
         host: posthogHost,
-        disabled: !posthogEnabled,
       }}
     >
       <ErrorBoundary>
@@ -67,6 +66,14 @@ export default function RootLayout() {
         </CustomThemeProvider>
       </ErrorBoundary>
     </PostHogProvider>
+  ) : (
+    <ErrorBoundary>
+      <CustomThemeProvider>
+        <UserProvider>
+          <RootLayoutNav />
+        </UserProvider>
+      </CustomThemeProvider>
+    </ErrorBoundary>
   )
 }
 
