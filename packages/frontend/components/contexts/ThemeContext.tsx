@@ -138,8 +138,8 @@ export const useThemeContext = () => {
   const setThemePreference = useCallback(
     async (mode: 'light' | 'dark' | 'system') => {
       try {
-        await safeStorage.setItem(THEME_PREFERENCE_KEY, mode)
         setThemePreferenceState(mode)
+        await safeStorage.setItem(THEME_PREFERENCE_KEY, mode)
 
         let themeToApply: 'light' | 'dark'
         if (mode === 'system') {
