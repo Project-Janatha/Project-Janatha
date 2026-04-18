@@ -1,24 +1,49 @@
 const fs = require('fs');
-const paths = [
-  process.cwd() + '/node_modules/react-native-css-interop/src/css-to-rn/parseDeclaration.ts',
-  process.cwd() + '/node_modules/nativewind/node_modules/react-native-css-interop/src/css-to-rn/parseDeclaration.ts'
-];
+const path = require('path');
 
-for (const p of paths) {
+function patchFile(filePath, pattern, replacement) {
   try {
-    let c = fs.readFileSync(p, 'utf8');
-    // Fix 1: Handle undefined aspectRatio
-    if (c.includes('if (aspectRatio.auto)') && !c.includes('!aspectRatio.ratio')) {
-      c = c.replace('if (aspectRatio.auto)', 'if (!aspectRatio || !aspectRatio.ratio || !Array.isArray(aspectRatio.ratio) || aspectRatio.auto)');
+    if (!fs.existsSync(filePath)) {
+      console.log('Not found:', filePath);
+      return false;
     }
-    // Fix 2: Handle when ratio is undefined array access
-    if (c.includes('aspectRatio.ratio[0] === aspectRatio.ratio[1]')) {
-      c = c.replace('if (aspectRatio.ratio[0] === aspectRatio.ratio[1] ', 'if (!aspectRatio.ratio || !Array.isArray(aspectRatio.ratio) || aspectRatio.ratio[0] === aspectRatio.ratio[1] ');
+    let c = fs.readFileSync(filePath, 'utf8');
+    if (c.includes(pattern)) {
+      c = c.replace(pattern, replacement);
+      fs.writeFileSync(filePath, c);
+      console.log('Patched:', filePath);
+      return true;
     }
-    fs.writeFileSync(p, c);
-    console.log('Patched:', p);
+    return false;
   } catch (e) {
-    // ignore
+    console.log('Error:', e.message);
+    return false;
   }
 }
-console.log('Done patching');
+
+const rootDir = process.cwd();
+
+// Find all copies of react-native-css-interop
+const dirs = [
+  rootDir + '/node_modules/react-native-css-interop',
+  rootDir + '/node_modules/nativewind/node_modules/react-native-css-interop',
+  rootDir + '/packages/frontend/node_modules/react-native-css-interop'
+];
+
+for (const dir of dirs) {
+  // Fix source TS file
+  const srcFile = dir + '/src/css-to-rn/parseDeclaration.ts';
+  patchFile(srcFile, 
+    'case "box-shadow": {\n      parseBoxShadow(declaration.value, parseOptions);\n    }',
+    'case "box-shadow": {\n      return;\n    }'
+  );
+  
+  // Fix compiled JS file  
+  const jsFile = dir + '/dist/css-to-rn/parseDeclaration.js';
+  patchFile(jsFile,
+    'case "box-shadow": {\n            parseBoxShadow(declaration.value, parseOptions);\n          }',
+    'case "box-shadow": {\n            return;\n          }'
+  );
+}
+
+console.log('Done patching box-shadow');
