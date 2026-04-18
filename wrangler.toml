@@ -12,3 +12,6 @@
 name = "chinmaya-janata"
 compatibility_date = "2026-02-26"
 pages_build_output_dir = "dist"
+
+[build]
+command = "npm install --ignore-scripts && npm run build:frontend"
