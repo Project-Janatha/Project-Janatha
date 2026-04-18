@@ -29,8 +29,8 @@ SplashScreen.preventAutoHideAsync()
 
 const posthogHost =
   process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
-const posthogKey = (process.env.EXPO_PUBLIC_POSTHOG_KEY || '').trim()
-const posthogEnabled = posthogKey.length > 0
+const posthogKey = process.env.EXPO_PUBLIC_POSTHOG_KEY
+const posthogEnabled = posthogKey && posthogKey.trim().length > 0
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -53,7 +53,7 @@ export default function RootLayout() {
 
   return (
     <PostHogProvider
-      apiKey={posthogEnabled ? posthogKey : 'disabled'}
+      apiKey={posthogEnabled ? posthogKey!.trim() : ''}
       options={{
         host: posthogHost,
         disabled: !posthogEnabled,
