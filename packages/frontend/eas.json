@@ -18,7 +18,10 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_NO_TELEMETRY": "1"
+      }
     }
   },
   "submit": {
