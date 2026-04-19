@@ -1,6 +1,6 @@
 import { Link, Tabs, useRouter } from 'expo-router'
 import { Platform, View, Text, Pressable, Image, StatusBar } from 'react-native'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUser, useThemeContext } from '../../components/contexts'
 import { User, Settings, LogOut, Plus } from 'lucide-react-native'
 import SettingsPanel from '../../components/SettingsPanel'
@@ -16,11 +16,17 @@ import { isSuperAdmin } from '../../utils/admin'
 
 export default function TabLayout() {
   const router = useRouter()
-  const { user, logout } = useUser()
+  const { user, loading, logout } = useUser()
   const { isDark } = useThemeContext()
   const [settingsVisible, setSettingsVisible] = useState(false)
   const canCreate = isSuperAdmin(user)
   const posthog = usePostHog()
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' && !loading && !user) {
+      router.replace('/auth')
+    }
+  }, [user, loading])
 
   const handleLogout = async () => {
     posthog?.capture('nav_logout')
@@ -43,6 +49,13 @@ export default function TabLayout() {
 
   const HeaderRight = () => {
     if (!user) {
+      if (Platform.OS !== 'web') {
+        return (
+          <Pressable className="mr-4 p-1" onPress={() => router.push('/auth')}>
+            <Avatar name="Sign In" size={36} />
+          </Pressable>
+        )
+      }
       return (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 16 }}>
           <SecondaryButton onPress={() => router.push('/auth?mode=login')}>Log In</SecondaryButton>
