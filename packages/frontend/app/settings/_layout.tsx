@@ -8,7 +8,7 @@ import Logo from '../../components/ui/Logo'
 
 const SETTINGS_TABS = [
   { id: 'profile', label: 'Profile', icon: User, path: '/settings' },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon, path: '/settings/settings' },
+  { id: 'preferences', label: 'Preferences', icon: SettingsIcon, path: '/settings/preferences' },
 ]
 
 export default function SettingsLayout() {
