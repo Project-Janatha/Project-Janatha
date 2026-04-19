@@ -149,7 +149,7 @@ function RootLayoutNav() {
         <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen
           name="settings"
-          options={{ headerShown: true }} // Explicitly show for settings
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="events/index"

@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { View, Text, Pressable, ScrollView, StatusBar, Modal, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { ArrowLeft, User, Shield, Info, ExternalLink, AlertTriangle, ChevronRight } from 'lucide-react-native'
+import { ArrowLeft, User, Shield, Info, FileText, ChevronRight, LogOut, AlertTriangle } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
 import { Avatar } from '../../components/ui'
 import ThemeSelector from '../../components/ThemeSelector'
@@ -21,7 +21,6 @@ export default function PreferencesNative() {
   const mutedTextColor = isDark ? '#A8A29E' : '#78716C'
   const borderColor = isDark ? '#262626' : '#E5E7EB'
   const cardBg = isDark ? '#171717' : '#FFFFFF'
-  const iconColor = isDark ? '#a1a1aa' : '#71717a'
 
   const handleLogout = async () => {
     posthog?.capture('nav_logout')
@@ -65,7 +64,7 @@ export default function PreferencesNative() {
     >
       {children}
       {showArrow && (
-        <ChevronRight size={20} color={mutedTextColor} style={{ opacity: 0.5 }} />
+        <ChevronRight size={20} color={textColor} />
       )}
     </Pressable>
   )
@@ -152,71 +151,72 @@ export default function PreferencesNative() {
           </View>
         </Section>
 
-        {/* Privacy */}
-        <Section title="Privacy">
+        {/* Regulatory */}
+        <Section title="Regulatory">
           <MenuRow onPress={() => {
             posthog?.capture('privacy_policy_viewed')
             router.push('/privacy')
           }}>
-            <Text style={{ fontSize: 16, color: textColor }}>Privacy Policy</Text>
-            <ExternalLink size={18} color={iconColor} />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Shield size={20} color={textColor} style={{ marginRight: 12 }} />
+              <Text style={{ fontSize: 16, color: textColor }}>Privacy Policy</Text>
+            </View>
           </MenuRow>
           <MenuRow onPress={() => {
             posthog?.capture('terms_viewed')
             router.push('/terms')
           }}>
-            <Text style={{ fontSize: 16, color: textColor }}>Terms of Service</Text>
-            <ExternalLink size={18} color={iconColor} />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <FileText size={20} color={textColor} style={{ marginRight: 12 }} />
+              <Text style={{ fontSize: 16, color: textColor }}>Terms of Service</Text>
+            </View>
           </MenuRow>
           <MenuRow onPress={() => {
             posthog?.capture('cookie_policy_viewed')
             router.push('/cookies')
           }}>
-            <Text style={{ fontSize: 16, color: textColor }}>Cookie Policy</Text>
-            <ExternalLink size={18} color={iconColor} />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Info size={20} color={textColor} style={{ marginRight: 12 }} />
+              <Text style={{ fontSize: 16, color: textColor }}>Cookie Policy</Text>
+            </View>
           </MenuRow>
         </Section>
 
         {/* About */}
         <Section title="About">
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16, backgroundColor: cardBg }}>
-            <Text style={{ fontSize: 16, color: textColor }}>Version</Text>
+          <MenuRow onPress={() => {}} showArrow={false}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Info size={20} color={textColor} style={{ marginRight: 12 }} />
+              <Text style={{ fontSize: 16, color: textColor }}>Version</Text>
+            </View>
             <Text style={{ fontSize: 16, color: mutedTextColor }}>1.0.0</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16, backgroundColor: cardBg }}>
-            <Text style={{ fontSize: 16, color: textColor }}>Chinmaya Janata</Text>
+          </MenuRow>
+          <MenuRow onPress={() => {}} showArrow={false}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Info size={20} color={textColor} style={{ marginRight: 12 }} />
+              <Text style={{ fontSize: 16, color: textColor }}>Chinmaya Janata</Text>
+            </View>
             <Text style={{ fontSize: 16, color: mutedTextColor }}>Chinmaya Mission</Text>
-          </View>
+          </MenuRow>
         </Section>
 
         {/* Account Actions */}
         <Section>
-          <MenuRow onPress={handleLogout}>
-            <Text style={{ fontSize: 16, color: '#ef4444', fontWeight: '600' }}>Log Out</Text>
+          <MenuRow onPress={handleLogout} showArrow={false}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <LogOut size={20} color="#ef4444" style={{ marginRight: 12 }} />
+              <Text style={{ fontSize: 16, color: '#ef4444', fontWeight: '600' }}>Log Out</Text>
+            </View>
           </MenuRow>
-        </Section>
-
-        {/* Danger Zone */}
-        <Section>
-          <Pressable
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingVertical: 14,
-              paddingHorizontal: 16,
-              backgroundColor: cardBg,
-            }}
-            onPress={() => {
-              posthog?.capture('delete_account_started')
-              setShowDeleteModal(true)
-            }}
-          >
+          <MenuRow onPress={() => {
+            posthog?.capture('delete_account_started')
+            setShowDeleteModal(true)
+          }} showArrow={false}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <AlertTriangle size={20} color="#dc2626" style={{ marginRight: 12 }} />
               <Text style={{ fontSize: 16, color: '#dc2626', fontWeight: '600' }}>Delete Account</Text>
             </View>
-          </Pressable>
+          </MenuRow>
         </Section>
 
         <View style={{ height: 40 }} />
