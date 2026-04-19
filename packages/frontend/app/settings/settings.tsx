@@ -7,10 +7,10 @@ import {
   Linking,
   Modal,
   Platform,
-  ActivityIndicator,
   Alert,
   useWindowDimensions,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { Eye, Shield, Info, ExternalLink, AlertTriangle } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
 import { useRouter } from 'expo-router'
@@ -32,7 +32,6 @@ export default function Settings() {
   const cardBg = isDark ? '#171717' : '#FFFFFF'
   const { width: viewportWidth } = useWindowDimensions()
   const isNarrowWeb = Platform.OS === 'web' && viewportWidth < 768
-  const webPaddingH = Platform.OS === 'web' ? (isNarrowWeb ? 16 : viewportWidth < 1024 ? 32 : 60) : 20
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true)
@@ -53,7 +52,7 @@ export default function Settings() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
-      <View style={{ maxWidth: 900, width: '100%', alignSelf: 'center', padding: Platform.OS === 'web' ? (isNarrowWeb ? 20 : 40) : 20, paddingHorizontal: webPaddingH }}>
+      <View style={{ maxWidth: 900, width: '100%', alignSelf: 'center', padding: isNarrowWeb ? 20 : 40 }}>
         {/* Header */}
         <View className="mb-8">
           <Text className="text-3xl font-inter font-bold text-content dark:text-content-dark mb-1">

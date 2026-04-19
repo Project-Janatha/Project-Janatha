@@ -1,45 +1,71 @@
-import React from 'react'
-import { View, Text, Pressable, ScrollView, SafeAreaView } from 'react-native'
+import React, { useState } from 'react'
+import { View, Text, Pressable, ScrollView, SafeAreaView, Modal, StatusBar, Alert } from 'react-native'
 import { useRouter, Link } from 'expo-router'
-import { User, Settings, LogOut, Shield, ChevronRight } from 'lucide-react-native'
+import { User, Settings, LogOut, Shield, ChevronRight, X, Info, AlertTriangle } from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
 import { Avatar } from '../../components/ui'
-import ThemeSelector from '../../components/ThemeSelector.native'
 import { isSuperAdmin } from '../../utils/admin'
+import ThemeSelector from '../../components/ThemeSelector'
 
 export default function SettingsIndex() {
   const router = useRouter()
-  const { user, logout } = useUser()
-  const { isDark } = useThemeContext()
-
-  const displayName =
-    user?.firstName && user?.lastName
-      ? `${user.firstName} ${user.lastName}`
-      : user?.username || 'User'
-
-  const profileImage = user?.profileImage
+  const { user, logout, deleteAccount } = useUser()
+  const { isDark, themePreference, setThemePreference } = useThemeContext()
+  
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  
   const textColor = isDark ? '#fff' : '#000'
+  const bgColor = isDark ? '#000' : '#fff'
   const borderColor = isDark ? '#262626' : '#E5E7EB'
+  const mutedColor = isDark ? '#a1a1aa' : '#71717a'
+  const cardBg = isDark ? '#1c1c1c' : '#f3f4f6'
+  const dangerBg = isDark ? 'rgba(220,38,38,0.15)' : '#FEE2E2'
 
   const handleLogout = async () => {
     await logout()
     router.replace('/auth')
   }
 
-  const MenuItem = ({ href, children, showArrow = true, onPress, color = textColor }: { href?: string, children: React.ReactNode, showArrow?: boolean, onPress?: () => void, color?: string }) => {
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true)
+    try {
+      const result = await deleteAccount()
+      if (result.success) {
+        setShowDeleteModal(false)
+        router.replace('/auth')
+      } else {
+        Alert.alert('Error', result.message || 'Failed to delete account')
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete account. Please try again.')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const MenuRow = ({ href, onPress, children, showArrow = true, danger = false }: { 
+    href?: string
+    onPress?: () => void
+    children: React.ReactNode
+    showArrow?: boolean
+    danger?: boolean
+  }) => {
     const content = (
       <Pressable
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          paddingVertical: 12,
-          borderBottomWidth: 1,
-          borderBottomColor: borderColor,
+          paddingVertical: 14,
+          paddingHorizontal: 16,
+          backgroundColor: bgColor,
         }}
         onPress={onPress}
       >
         {children}
-        {showArrow && <ChevronRight size={20} color={color} style={{ opacity: 0.5 }} />}
+        {showArrow && (
+          <ChevronRight size={20} color={mutedColor} style={{ marginLeft: 'auto', opacity: 0.5 }} />
+        )}
       </Pressable>
     )
 
@@ -49,73 +75,166 @@ export default function SettingsIndex() {
     return content
   }
 
+  const Section = ({ title, children }: { title?: string; children: React.ReactNode }) => (
+    <View style={{ marginBottom: 24 }}>
+      {title && (
+        <Text style={{
+          fontSize: 13,
+          fontWeight: '600',
+          color: mutedColor,
+          textTransform: 'uppercase',
+          paddingHorizontal: 16,
+          paddingBottom: 8,
+        }}>
+          {title}
+        </Text>
+      )}
+      <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor }}>
+        {children}
+      </View>
+    </View>
+  )
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#fff' }}>
-      <ScrollView>
-        <View style={{ padding: 16 }}>
-          {/* Profile Section */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: bgColor }} edges={['top']}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      
+      {/* Header */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 8,
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderColor,
+      }}>
+        <Pressable onPress={() => router.back()} style={{ padding: 8 }}>
+          <X size={24} color={textColor} />
+        </Pressable>
+        <Text style={{ fontSize: 17, fontWeight: '600', color: textColor }}>Settings</Text>
+        <View style={{ width: 32 }} />
+      </View>
+
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: 8 }}>
+        {/* Profile Header */}
+        <View style={{ paddingHorizontal: 16, paddingVertical: 16, marginBottom: 16 }}>
+          <Pressable 
+            style={{ flexDirection: 'row', alignItems: 'center' }}
+            onPress={() => router.push('/settings')}
+          >
             <Avatar
-              image={profileImage || undefined}
-              name={displayName}
+              image={user?.profileImage || undefined}
+              name={user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || 'User'}
               size={60}
-              style={{ marginRight: 12 }}
             />
-            <View style={{ flex: 1 }}>
+            <View style={{ marginLeft: 12, flex: 1 }}>
               <Text style={{ fontSize: 18, fontWeight: '600', color: textColor }}>
-                {displayName}
+                {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || 'User'}
               </Text>
               {user?.username && (
-                <Text style={{ fontSize: 14, color: isDark ? '#a1a1aa' : '#71717a' }}>
-                  @{user.username}
-                </Text>
+                <Text style={{ fontSize: 14, color: mutedColor }}>@{user.username}</Text>
               )}
             </View>
-          </View>
+            <ChevronRight size={20} color={mutedColor} style={{ opacity: 0.5 }} />
+          </Pressable>
+        </View>
 
-          {/* Profile */}
-          <MenuItem href="/settings">
+        {/* Account Section */}
+        <Section title="Account">
+          <MenuRow href="/settings">
             <User size={20} color={textColor} style={{ marginRight: 12 }} />
-            <Text style={{ flex: 1, fontSize: 16, color: textColor }}>Profile</Text>
-          </MenuItem>
-
-          {/* Settings */}
-          <MenuItem href="/settings/settings">
-            <Settings size={20} color={textColor} style={{ marginRight: 12 }} />
-            <Text style={{ flex: 1, fontSize: 16, color: textColor }}>Settings</Text>
-          </MenuItem>
-
-          {/* Admin - only show for super admins */}
+            <Text style={{ fontSize: 16, color: textColor }}>Edit Profile</Text>
+          </MenuRow>
           {isSuperAdmin(user) && (
-            <MenuItem href="/admin" color="#E8862A">
+            <MenuRow href="/admin">
               <Shield size={20} color="#E8862A" style={{ marginRight: 12 }} />
-              <Text style={{ flex: 1, fontSize: 16, color: '#E8862A' }}>Admin Dashboard</Text>
-            </MenuItem>
+              <Text style={{ fontSize: 16, color: '#E8862A' }}>Admin Dashboard</Text>
+            </MenuRow>
           )}
+        </Section>
 
-          {/* Appearance */}
-          <View style={{ marginTop: 24, marginBottom: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? '#a1a1aa' : '#71717a', textTransform: 'uppercase' }}>
-              Appearance
-            </Text>
-          </View>
-          <View
-            style={{
-              backgroundColor: isDark ? '#262626' : '#f3f4f6',
-              borderRadius: 12,
-              padding: 12,
-            }}
-          >
+        {/* Appearance Section */}
+        <Section title="Appearance">
+          <View style={{ paddingVertical: 14, paddingHorizontal: 16, backgroundColor: bgColor }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={{ fontSize: 16, color: textColor, flex: 1 }}>Theme</Text>
+              <Text style={{ fontSize: 14, color: mutedColor, textTransform: 'capitalize' }}>
+                {themePreference === 'system' ? 'Auto' : themePreference}
+              </Text>
+            </View>
             <ThemeSelector />
           </View>
+        </Section>
 
-          {/* Log Out */}
-          <MenuItem showArrow={false} onPress={handleLogout}>
+        {/* About Section */}
+        <Section title="About">
+          <MenuRow onPress={() => router.push('/privacy')}>
+            <Info size={20} color={textColor} style={{ marginRight: 12 }} />
+            <Text style={{ fontSize: 16, color: textColor }}>Privacy Policy</Text>
+          </MenuRow>
+          <MenuRow onPress={() => router.push('/terms')}>
+            <Info size={20} color={textColor} style={{ marginRight: 12 }} />
+            <Text style={{ fontSize: 16, color: textColor }}>Terms of Service</Text>
+          </MenuRow>
+          <MenuRow>
+            <Text style={{ fontSize: 16, color: textColor }}>Version</Text>
+            <Text style={{ fontSize: 16, color: mutedColor, marginLeft: 'auto' }}>1.0.0</Text>
+          </MenuRow>
+        </Section>
+
+        {/* Danger Zone */}
+        <Section title="Danger Zone">
+          <MenuRow onPress={handleLogout} danger>
             <LogOut size={20} color="#ef4444" style={{ marginRight: 12 }} />
             <Text style={{ fontSize: 16, color: '#ef4444' }}>Log Out</Text>
-          </MenuItem>
-        </View>
+          </MenuRow>
+          <MenuRow onPress={() => setShowDeleteModal(true)} danger>
+            <AlertTriangle size={20} color="#dc2626" style={{ marginRight: 12 }} />
+            <Text style={{ fontSize: 16, color: '#dc2626' }}>Delete Account</Text>
+          </MenuRow>
+        </Section>
+
+        {/* Spacer */}
+        <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Delete Account Modal */}
+      <Modal transparent visible={showDeleteModal} animationType="fade" onRequestClose={() => setShowDeleteModal(false)}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 24 }}>
+          <View style={{ backgroundColor: bgColor, borderRadius: 20, padding: 24, width: '100%', maxWidth: 340, borderWidth: 1, borderColor: '#FECACA' }}>
+            <View style={{ alignItems: 'center', marginBottom: 16 }}>
+              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: dangerBg, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                <AlertTriangle size={32} color="#DC2626" />
+              </View>
+              <Text style={{ fontSize: 20, fontWeight: '700', color: textColor, marginBottom: 8, textAlign: 'center' }}>Delete Account?</Text>
+              <Text style={{ fontSize: 15, color: mutedColor, textAlign: 'center', lineHeight: 22 }}>
+                This action cannot be undone. All your data will be permanently deleted.
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+              <Pressable
+                onPress={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: cardBg, alignItems: 'center' }}
+              >
+                <Text style={{ fontSize: 16, fontWeight: '600', color: textColor }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleDeleteAccount}
+                disabled={isDeleting}
+                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#DC2626', alignItems: 'center' }}
+              >
+                {isDeleting ? (
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Deleting...</Text>
+                ) : (
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Delete</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }

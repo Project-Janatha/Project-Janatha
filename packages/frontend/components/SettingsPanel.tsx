@@ -91,7 +91,7 @@ function SettingsPanel({ visible, onClose, onLogout }) {
   if (!visible) return null
 
   const displayName =
-    user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Pranav Vaish'
+    user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || 'User'
 
   const profileImage = user?.profileImage
   const getInitials = () => {
@@ -177,7 +177,7 @@ function SettingsPanel({ visible, onClose, onLogout }) {
           className="flex-row items-center mb-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
           onPress={() => {
             onClose()
-            router.push('/settings/settings')
+            router.push('/settings')
           }}
         >
           <Settings size={16} color={isDark ? '#fff' : '#374151'} className="mr-3" />
