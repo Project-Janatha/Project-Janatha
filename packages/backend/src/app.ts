@@ -652,6 +652,14 @@ app.get('/getUserEvents', authMiddleware, async (c) => {
   if (!username) {
     return c.json({ message: 'Malformed username' }, 400)
   }
+
+  // Restrict all users from viewing other users' events including admins
+  // Admins should use the appropriate /admin endpoint to view all events or events by user as necessary
+  const senderRow = c.get('user')
+  if (senderRow.username !== username) {
+    return c.json({ message: 'Access to another user\'s events is forbidden' }, 403)
+  }
+
   const targetUser = await db.getUserByUsername(c.env.DB, username)
   if (!targetUser) {
     return c.json({ message: 'User not found' }, 404)
