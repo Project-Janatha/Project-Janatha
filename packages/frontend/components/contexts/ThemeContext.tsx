@@ -1,5 +1,5 @@
 import { useColorScheme as useNativeWindColorScheme } from 'nativewind'
-import { useColorScheme as useSystemColorScheme, Platform } from 'react-native'
+import { useColorScheme as useSystemColorScheme, Appearance, Platform } from 'react-native'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
@@ -58,7 +58,6 @@ function applyWebTheme(theme: 'light' | 'dark') {
 
 // Provider that initializes theme from storage/system
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const systemScheme = useSystemColorScheme()
   const { setColorScheme } = useNativeWindColorScheme()
 
   // Load saved preference on mount and apply once
@@ -69,16 +68,14 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         const saved = await safeStorage.getItem(THEME_PREFERENCE_KEY)
         if (!isMounted) return
 
-        let themeToApply: 'light' | 'dark'
         if (saved === 'light' || saved === 'dark') {
-          themeToApply = saved
-        } else {
-          themeToApply = (systemScheme as 'light' | 'dark') || 'light'
+          Appearance.setColorScheme(saved)
+          setColorScheme(saved)
+          requestAnimationFrame(() => applyWebTheme(saved))
+        } else if (saved === 'system') {
+          Appearance.setColorScheme(null as any)
         }
-
-        setColorScheme(themeToApply)
-        // Apply after NativeWind processes the change
-        requestAnimationFrame(() => applyWebTheme(themeToApply))
+        // If no saved preference, leave it to system (Appearance.setColorScheme(null) is default)
       } catch (error) {
         // ignore
       }
@@ -95,7 +92,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 // Re-export NativeWind's hook with additional theme preference methods
 export const useThemeContext = () => {
   const { colorScheme, setColorScheme, toggleColorScheme } = useNativeWindColorScheme()
-  const systemScheme = useSystemColorScheme() // MUST be called at top level
+  useSystemColorScheme() // MUST be called at top level to subscribe to system changes
   const initialPref = getInitialPreference()
   const [themePreference, setThemePreferenceState] = useState<'light' | 'dark' | 'system'>(
     initialPref ?? 'system'
@@ -124,38 +121,24 @@ export const useThemeContext = () => {
     }
   }, [loaded])
 
-  // React to system appearance changes when in 'system' mode
-  // Only fires after preference is loaded to avoid overriding saved dark/light
-  useEffect(() => {
-    if (!loaded) return
-    if (themePreference === 'system' && systemScheme) {
-      const theme = (systemScheme as 'light' | 'dark') || 'light'
-      setColorScheme(theme)
-      requestAnimationFrame(() => applyWebTheme(theme))
-    }
-  }, [loaded, themePreference, systemScheme, setColorScheme])
-
   const setThemePreference = useCallback(
     async (mode: 'light' | 'dark' | 'system') => {
       try {
         setThemePreferenceState(mode)
         await safeStorage.setItem(THEME_PREFERENCE_KEY, mode)
 
-        let themeToApply: 'light' | 'dark'
         if (mode === 'system') {
-          themeToApply = (systemScheme as 'light' | 'dark') || 'light'
+          Appearance.setColorScheme(null as any)
         } else {
-          themeToApply = mode
+          Appearance.setColorScheme(mode)
+          setColorScheme(mode)
+          requestAnimationFrame(() => applyWebTheme(mode))
         }
-
-        setColorScheme(themeToApply)
-        // Ensure class is applied after NativeWind side-effects
-        requestAnimationFrame(() => applyWebTheme(themeToApply))
       } catch (error) {
         // Failed to save theme preference
       }
     },
-    [setColorScheme, systemScheme]
+    [setColorScheme]
   )
 
   return useMemo(
