@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Animated, Text, Pressable, View, Image, Easing } from 'react-native'
 import { useUser, useThemeContext } from './contexts'
 import { Settings, LogOut, Sun, Moon, User, Monitor, Shield } from 'lucide-react-native'
-import { router } from 'expo-router'
+import { router, usePathname } from 'expo-router'
 import ThemeSelector from './ThemeSelector'
 import { Avatar } from './ui'
 import { isSuperAdmin } from '../utils/admin'
@@ -12,6 +12,7 @@ function SettingsPanel({ visible, onClose, onLogout }) {
   const translateYAnim = useRef(new Animated.Value(-20)).current
   const { user } = useUser()
   const { themePreference, setThemePreference, isDark } = useThemeContext()
+  const pathname = usePathname()
   const themeOptions = ['light', 'dark', 'system']
   const optionWidth = 70
   const indicatorPadding = 8
@@ -164,24 +165,32 @@ function SettingsPanel({ visible, onClose, onLogout }) {
 
         {/* Profile Button */}
         <Pressable
-          className="flex-row items-center mb-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
+          className={`flex-row items-center mb-2 p-2 rounded-lg ${
+            pathname === '/settings' ? 'bg-primary' : 'hover:bg-gray-100 dark:hover:bg-neutral-800'
+          }`}
           onPress={() => {
             onClose()
             router.push('/settings')
           }}
         >
-          <User size={16} color={isDark ? '#fff' : '#374151'} className="mr-3" />
-          <Text className="text-content dark:text-content-dark font-inter">Profile</Text>
+          <User size={16} color={pathname === '/settings' ? '#fff' : isDark ? '#fff' : '#374151'} className="mr-3" />
+          <Text className={`font-inter ${
+            pathname === '/settings' ? 'text-white font-inter-semibold' : 'text-content dark:text-content-dark'
+          }`}>Profile</Text>
         </Pressable>
         <Pressable
-          className="flex-row items-center mb-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800"
+          className={`flex-row items-center mb-2 p-2 rounded-lg ${
+            pathname === '/settings/preferences' ? 'bg-primary' : 'hover:bg-gray-100 dark:hover:bg-neutral-800'
+          }`}
           onPress={() => {
             onClose()
             router.push('/settings/preferences')
           }}
         >
-          <Settings size={16} color={isDark ? '#fff' : '#374151'} className="mr-3" />
-          <Text className="text-content dark:text-content-dark font-inter">Settings</Text>
+          <Settings size={16} color={pathname === '/settings/preferences' ? '#fff' : isDark ? '#fff' : '#374151'} className="mr-3" />
+          <Text className={`font-inter ${
+            pathname === '/settings/preferences' ? 'text-white font-inter-semibold' : 'text-content dark:text-content-dark'
+          }`}>Preferences</Text>
         </Pressable>
         {isSuperAdmin(user) && (
           <Pressable

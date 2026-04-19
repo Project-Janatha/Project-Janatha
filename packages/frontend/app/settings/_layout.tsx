@@ -33,7 +33,7 @@ export default function SettingsLayout() {
               <View className="p-6 border-b border-stone-200 dark:border-stone-700">
                 <View className="flex-row items-center justify-between mb-2">
                   <Text className="text-2xl font-inter font-bold text-content dark:text-content-dark">
-                    Settings
+                    Preferences
                   </Text>
                 </View>
               </View>

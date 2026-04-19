@@ -18,7 +18,7 @@ import { DestructiveButton, SecondaryButton } from '../../components/ui'
 import ThemeSelector from '../../components/ThemeSelector'
 import { usePostHog } from 'posthog-react-native'
 
-export default function Settings() {
+export default function Preferences() {
   const { isDark } = useThemeContext()
   const { deleteAccount } = useUser()
   const router = useRouter()
@@ -56,7 +56,7 @@ export default function Settings() {
         {/* Header */}
         <View className="mb-8">
           <Text className="text-3xl font-inter font-bold text-content dark:text-content-dark mb-1">
-            Settings
+            Preferences
           </Text>
           <Text className="text-base font-inter text-stone-500 dark:text-stone-400">
             Manage your app preferences
