@@ -17,7 +17,13 @@ import { useRouter, usePathname } from 'expo-router'
 import { useUser, useThemeContext } from '../../components/contexts'
 import BirthdatePicker from '../../components/BirthdatePicker'
 import { fetchCenters, CenterData } from '../../utils/api'
-import * as ImagePicker from 'expo-image-picker'
+
+let ImagePicker: typeof import('expo-image-picker') | null = null
+try {
+  ImagePicker = require('expo-image-picker')
+} catch (e) {
+  // Native module not linked
+}
 
 type ProfileData = {
   name: string
@@ -103,6 +109,10 @@ export default function ProfileNative() {
   const [profileImageChanged, setProfileImageChanged] = useState(false)
 
   const handleAvatarPress = async () => {
+    if (!ImagePicker) {
+      Alert.alert('Error', 'Image picker is not available on this device')
+      return
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images',
       allowsEditing: true,

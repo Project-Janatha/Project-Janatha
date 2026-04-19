@@ -27,12 +27,12 @@ export default function SettingsLayout() {
     router.push('/')
   }
 
-  // Native: use Stack for slide-from-right animation
+  // Native: Stack with slide animation
   if (Platform.OS !== 'web') {
     return (
       <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
-        <Stack.Screen name="preferences" options={{ headerShown: false }} />
-        <Stack.Screen name="profile" options={{ headerShown: false }} />
+        <Stack.Screen name="preferences" />
+        <Stack.Screen name="profile" />
       </Stack>
     )
   }

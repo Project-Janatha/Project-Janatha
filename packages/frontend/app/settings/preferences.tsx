@@ -7,6 +7,9 @@ import { useUser, useThemeContext } from '../../components/contexts'
 import { Avatar } from '../../components/ui'
 import ThemeSelector from '../../components/ThemeSelector'
 import { usePostHog } from 'posthog-react-native'
+import Constants from 'expo-constants'
+
+const APP_VERSION = Constants.expoConfig?.version || '1.0.0'
 
 export default function PreferencesNative() {
   const router = useRouter()
@@ -16,6 +19,7 @@ export default function PreferencesNative() {
   const posthog = usePostHog()
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const currentYear = new Date().getFullYear()
 
   const textColor = isDark ? '#F5F5F5' : '#1C1917'
   const mutedTextColor = isDark ? '#A8A29E' : '#78716C'
@@ -189,14 +193,14 @@ export default function PreferencesNative() {
               <Info size={20} color={textColor} style={{ marginRight: 12 }} />
               <Text style={{ fontSize: 16, color: textColor }}>Version</Text>
             </View>
-            <Text style={{ fontSize: 16, color: mutedTextColor }}>1.0.0</Text>
+            <Text style={{ fontSize: 16, color: mutedTextColor, textAlign: 'right' }}>{APP_VERSION}</Text>
           </MenuRow>
           <MenuRow onPress={() => {}} showArrow={false}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Info size={20} color={textColor} style={{ marginRight: 12 }} />
-              <Text style={{ fontSize: 16, color: textColor }}>Chinmaya Janata</Text>
+              <Text style={{ fontSize: 16, color: textColor, flex: 1 }}>Chinmaya Janata</Text>
             </View>
-            <Text style={{ fontSize: 16, color: mutedTextColor }}>Chinmaya Mission</Text>
+            <Text style={{ fontSize: 14, color: mutedTextColor, textAlign: 'right' }}>{currentYear} Chinmaya Mission</Text>
           </MenuRow>
         </Section>
 

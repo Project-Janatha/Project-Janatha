@@ -17,6 +17,9 @@ import { useRouter } from 'expo-router'
 import { DestructiveButton, SecondaryButton } from '../../components/ui'
 import ThemeSelector from '../../components/ThemeSelector'
 import { usePostHog } from 'posthog-react-native'
+import Constants from 'expo-constants'
+
+const APP_VERSION = Constants.expoConfig?.version || '1.0.0'
 
 export default function Preferences() {
   const { isDark } = useThemeContext()
@@ -25,6 +28,7 @@ export default function Preferences() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const posthog = usePostHog()
+  const currentYear = new Date().getFullYear()
 
   const textColor = isDark ? '#F5F5F5' : '#1C1917'
   const mutedTextColor = isDark ? '#A8A29E' : '#78716C'
@@ -210,8 +214,8 @@ export default function Preferences() {
               <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>
                 Version
               </Text>
-              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
-                1.0.0
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor, textAlign: 'right' }}>
+                {APP_VERSION}
               </Text>
             </View>
             <View
@@ -225,8 +229,8 @@ export default function Preferences() {
               <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>
                 Chinmaya Janata
               </Text>
-              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
-                Chinmaya Mission
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor, textAlign: 'right' }}>
+                {currentYear} Chinmaya Mission
               </Text>
             </View>
           </View>
