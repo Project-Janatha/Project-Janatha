@@ -2,12 +2,12 @@ import React from 'react'
 import { View, Text, Pressable, ScrollView, Platform, useWindowDimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, usePathname, Slot, Stack } from 'expo-router'
-import { User, Settings as SettingsIcon } from 'lucide-react-native'
+import { ArrowLeft, User, Settings as SettingsIcon } from 'lucide-react-native'
 import { useThemeContext } from '../../components/contexts'
 import Logo from '../../components/ui/Logo'
 
 const SETTINGS_TABS = [
-  { id: 'profile', label: 'Profile', icon: User, path: '/settings' },
+  { id: 'profile', label: 'Profile', icon: User, path: '/settings/profile' },
   { id: 'preferences', label: 'Preferences', icon: SettingsIcon, path: '/settings/preferences' },
 ]
 
@@ -23,6 +23,10 @@ export default function SettingsLayout() {
     router.push(path as any)
   }
 
+  const handleClose = () => {
+    router.push('/')
+  }
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -32,14 +36,22 @@ export default function SettingsLayout() {
             <View className="w-64 border-r border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900">
               <View className="p-6 border-b border-stone-200 dark:border-stone-700">
                 <View className="flex-row items-center justify-between mb-2">
+                  <Pressable
+                    onPress={handleClose}
+                    className="p-1"
+                    style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+                  >
+                    <ArrowLeft size={20} color={isDark ? '#a1a1aa' : '#71717a'} />
+                  </Pressable>
                   <Text className="text-2xl font-inter font-bold text-content dark:text-content-dark">
-                    Preferences
+                    Settings
                   </Text>
+                  <View style={{ width: 44 }} />
                 </View>
               </View>
               <ScrollView className="flex-1 p-3">
                 {SETTINGS_TABS.map((tab) => {
-                  const isActive = pathname === tab.path
+                  const isActive = pathname === tab.path || pathname.startsWith(tab.path + '/')
                   const Icon = tab.icon
                   return (
                     <Pressable

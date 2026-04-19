@@ -26,12 +26,14 @@ export default function Preferences() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const posthog = usePostHog()
 
-  const iconColor = isDark ? '#a1a1aa' : '#71717a'
   const textColor = isDark ? '#F5F5F5' : '#1C1917'
   const mutedTextColor = isDark ? '#A8A29E' : '#78716C'
   const cardBg = isDark ? '#171717' : '#FFFFFF'
+  const borderColor = isDark ? '#262626' : '#E5E7EB'
+  const iconColor = isDark ? '#a1a1aa' : '#71717a'
   const { width: viewportWidth } = useWindowDimensions()
   const isNarrowWeb = Platform.OS === 'web' && viewportWidth < 768
+  const webPaddingH = isNarrowWeb ? 16 : viewportWidth < 1024 ? 32 : 60
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true)
@@ -52,27 +54,51 @@ export default function Preferences() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
-      <View style={{ maxWidth: 900, width: '100%', alignSelf: 'center', padding: isNarrowWeb ? 20 : 40 }}>
+      <View
+        style={{
+          maxWidth: 900,
+          width: '100%',
+          alignSelf: 'center',
+          padding: isNarrowWeb ? 20 : 40,
+          paddingHorizontal: webPaddingH,
+          gap: isNarrowWeb ? 24 : 36,
+        }}
+      >
         {/* Header */}
-        <View className="mb-8">
-          <Text className="text-3xl font-inter font-bold text-content dark:text-content-dark mb-1">
+        <View>
+          <Text
+            style={{
+              fontFamily: 'Inter-Bold',
+              fontSize: isNarrowWeb ? 24 : 28,
+              color: textColor,
+              letterSpacing: -0.5,
+            }}
+          >
             Preferences
           </Text>
-          <Text className="text-base font-inter text-stone-500 dark:text-stone-400">
+          <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor }}>
             Manage your app preferences
           </Text>
         </View>
 
         {/* Appearance Section */}
-        <View className="mb-8">
-          <View className="flex-row items-center gap-2 mb-4">
+        <View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Eye size={20} color={iconColor} />
-            <Text className="text-lg font-inter font-semibold text-content dark:text-content-dark">
+            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 17, color: textColor }}>
               Appearance
             </Text>
           </View>
-          <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl p-5">
-            <Text className="text-sm font-inter text-stone-500 dark:text-stone-400 mb-3">
+          <View
+            style={{
+              backgroundColor: cardBg,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor,
+              padding: isNarrowWeb ? 20 : 28,
+            }}
+          >
+            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor, marginBottom: 12 }}>
               Choose your preferred theme
             </Text>
             <ThemeSelector />
@@ -80,46 +106,73 @@ export default function Preferences() {
         </View>
 
         {/* Privacy Section */}
-        <View className="mb-8">
-          <View className="flex-row items-center gap-2 mb-4">
+        <View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Shield size={20} color={iconColor} />
-            <Text className="text-lg font-inter font-semibold text-content dark:text-content-dark">
+            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 17, color: textColor }}>
               Privacy
             </Text>
           </View>
-          <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl overflow-hidden">
+          <View
+            style={{
+              backgroundColor: cardBg,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor,
+              overflow: 'hidden',
+            }}
+          >
             <Pressable
-              className="flex-row items-center justify-between p-5 border-b border-stone-200 dark:border-stone-700 active:opacity-70"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: isNarrowWeb ? 20 : 28,
+                borderBottomWidth: 1,
+                borderBottomColor: borderColor,
+              }}
               onPress={() => {
                 posthog?.capture('privacy_policy_viewed')
                 router.push('/privacy')
               }}
             >
-              <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
+              <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>
                 Privacy Policy
               </Text>
               <ExternalLink size={18} color={iconColor} />
             </Pressable>
             <Pressable
-              className="flex-row items-center justify-between p-5 active:opacity-70"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: isNarrowWeb ? 20 : 28,
+                borderBottomWidth: 1,
+                borderBottomColor: borderColor,
+              }}
               onPress={() => {
                 posthog?.capture('terms_viewed')
                 router.push('/terms')
               }}
             >
-              <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
+              <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>
                 Terms of Service
               </Text>
               <ExternalLink size={18} color={iconColor} />
             </Pressable>
             <Pressable
-              className="flex-row items-center justify-between p-5 active:opacity-70"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: isNarrowWeb ? 20 : 28,
+              }}
               onPress={() => {
                 posthog?.capture('cookie_policy_viewed')
                 router.push('/cookies')
               }}
             >
-              <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
+              <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>
                 Cookie Policy
               </Text>
               <ExternalLink size={18} color={iconColor} />
@@ -128,27 +181,51 @@ export default function Preferences() {
         </View>
 
         {/* About Section */}
-        <View className="mb-8">
-          <View className="flex-row items-center gap-2 mb-4">
+        <View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Info size={20} color={iconColor} />
-            <Text className="text-lg font-inter font-semibold text-content dark:text-content-dark">
+            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 17, color: textColor }}>
               About
             </Text>
           </View>
-          <View className="bg-stone-100 dark:bg-stone-800 rounded-2xl overflow-hidden">
-            <View className="flex-row items-center justify-between p-5 border-b border-stone-200 dark:border-stone-700">
-              <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
+          <View
+            style={{
+              backgroundColor: cardBg,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor,
+              overflow: 'hidden',
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: isNarrowWeb ? 20 : 28,
+                borderBottomWidth: 1,
+                borderBottomColor: borderColor,
+              }}
+            >
+              <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>
                 Version
               </Text>
-              <Text className="text-sm font-inter text-stone-500 dark:text-stone-400">
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
                 1.0.0
               </Text>
             </View>
-            <View className="flex-row items-center justify-between p-5">
-              <Text className="text-base font-inter font-medium text-content dark:text-content-dark">
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: isNarrowWeb ? 20 : 28,
+              }}
+            >
+              <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>
                 Chinmaya Janata
               </Text>
-              <Text className="text-sm font-inter text-stone-500 dark:text-stone-400">
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
                 Chinmaya Mission
               </Text>
             </View>
@@ -156,21 +233,33 @@ export default function Preferences() {
         </View>
 
         {/* Danger Zone */}
-        <View className="mb-8">
+        <View>
           <View
             style={{
-              flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-              padding: 20, paddingHorizontal: 24, borderRadius: 14, borderWidth: 1, borderColor: '#FECACA',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: isNarrowWeb ? 20 : 28,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: '#FECACA',
+              backgroundColor: isDark ? 'rgba(220,38,38,0.1)' : '#FEF2F2',
             }}
           >
-            <View style={{ gap: 3, flex: 1, marginRight: 16 }}>
-              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#DC2626' }}>Danger Zone</Text>
-              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: mutedTextColor }}>Permanently delete your account and all data</Text>
+            <View style={{ gap: 4, flex: 1, marginRight: 16 }}>
+              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#DC2626' }}>
+                Danger Zone
+              </Text>
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: mutedTextColor }}>
+                Permanently delete your account and all data
+              </Text>
             </View>
-            <DestructiveButton onPress={() => {
-              posthog?.capture('delete_account_started')
-              setShowDeleteModal(true)
-            }}>
+            <DestructiveButton
+              onPress={() => {
+                posthog?.capture('delete_account_started')
+                setShowDeleteModal(true)
+              }}
+            >
               Delete Account
             </DestructiveButton>
           </View>
@@ -178,33 +267,76 @@ export default function Preferences() {
       </View>
 
       {/* Delete confirmation modal */}
-      <Modal transparent visible={showDeleteModal} animationType="fade" onRequestClose={() => setShowDeleteModal(false)}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 24 }}>
-          <View style={{ backgroundColor: cardBg, borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, borderWidth: 1, borderColor: '#FECACA' }}>
+      <Modal
+        transparent
+        visible={showDeleteModal}
+        animationType="fade"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            paddingHorizontal: 24,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: cardBg,
+              borderRadius: 20,
+              padding: 24,
+              width: '100%',
+              maxWidth: 400,
+              borderWidth: 1,
+              borderColor: '#FECACA',
+            }}
+          >
             <View style={{ alignItems: 'center', marginBottom: 16 }}>
-              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: isDark ? 'rgba(220,38,38,0.15)' : '#FEE2E2', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+              <View
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 32,
+                  backgroundColor: isDark ? 'rgba(220,38,38,0.15)' : '#FEE2E2',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 12,
+                }}
+              >
                 <AlertTriangle size={32} color="#DC2626" />
               </View>
-              <Text style={{ fontFamily: 'Inter-Bold', fontSize: 22, color: textColor, marginBottom: 8 }}>Delete Account?</Text>
-              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor, textAlign: 'center', lineHeight: 22 }}>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Bold',
+                  fontSize: 22,
+                  color: textColor,
+                  marginBottom: 8,
+                }}
+              >
+                Delete Account?
+              </Text>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 15,
+                  color: mutedTextColor,
+                  textAlign: 'center',
+                  lineHeight: 22,
+                }}
+              >
                 This action cannot be undone. All your data will be permanently deleted.
               </Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
               <View style={{ flex: 1 }}>
-                <SecondaryButton
-                  onPress={() => setShowDeleteModal(false)}
-                  disabled={isDeleting}
-                >
+                <SecondaryButton onPress={() => setShowDeleteModal(false)} disabled={isDeleting}>
                   Cancel
                 </SecondaryButton>
               </View>
               <View style={{ flex: 1 }}>
-                <DestructiveButton
-                  onPress={handleDeleteAccount}
-                  disabled={isDeleting}
-                  loading={isDeleting}
-                >
+                <DestructiveButton onPress={handleDeleteAccount} disabled={isDeleting} loading={isDeleting}>
                   Delete Forever
                 </DestructiveButton>
               </View>

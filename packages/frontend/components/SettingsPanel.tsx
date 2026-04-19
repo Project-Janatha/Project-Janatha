@@ -166,16 +166,16 @@ function SettingsPanel({ visible, onClose, onLogout }) {
         {/* Profile Button */}
         <Pressable
           className={`flex-row items-center mb-2 p-2 rounded-lg ${
-            pathname === '/settings' ? 'bg-primary' : 'hover:bg-gray-100 dark:hover:bg-neutral-800'
+            pathname === '/settings/profile' ? 'bg-primary' : 'hover:bg-gray-100 dark:hover:bg-neutral-800'
           }`}
           onPress={() => {
             onClose()
-            router.push('/settings')
+            router.push('/settings/profile')
           }}
         >
-          <User size={16} color={pathname === '/settings' ? '#fff' : isDark ? '#fff' : '#374151'} className="mr-3" />
+          <User size={16} color={pathname === '/settings/profile' ? '#fff' : isDark ? '#fff' : '#374151'} className="mr-3" />
           <Text className={`font-inter ${
-            pathname === '/settings' ? 'text-white font-inter-semibold' : 'text-content dark:text-content-dark'
+            pathname === '/settings/profile' ? 'text-white font-inter-semibold' : 'text-content dark:text-content-dark'
           }`}>Profile</Text>
         </Pressable>
         <Pressable

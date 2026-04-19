@@ -150,7 +150,7 @@ export default function TabLayout() {
         className="mr-4 p-2"
         onPress={() => {
           posthog?.capture('nav_menu_opened')
-          router.push('/settings')
+          router.push('/settings/profile')
         }}
       >
         <Avatar image={profileImage || undefined} name={displayName} size={36} />
