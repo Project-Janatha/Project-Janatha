@@ -211,8 +211,8 @@ export function invalidateCentersCache(): void {
 export async function fetchCenter(centerID: string): Promise<CenterData | null> {
   try {
     const response = await apiFetch('/fetchCenter', {
-      method: 'POST',
-      body: JSON.stringify({ centerID }),
+      method: 'GET',
+      body: new URLSearchParams({ centerID }),
     })
     if (!response.ok) return null
     const data = await response.json()
@@ -226,8 +226,8 @@ export async function fetchCenter(centerID: string): Promise<CenterData | null> 
 export async function fetchEvent(eventID: string): Promise<EventData | null> {
   try {
     const response = await apiFetch('/fetchEvent', {
-      method: 'POST',
-      body: JSON.stringify({ id: eventID }),
+      method: 'GET',
+      body: new URLSearchParams({ eventID }),
     })
     if (!response.ok) return null
     const data = await response.json()
@@ -245,8 +245,8 @@ export async function fetchEvent(eventID: string): Promise<EventData | null> {
 export async function fetchEventsByCenter(centerID: string): Promise<EventData[]> {
   try {
     const response = await apiFetch('/fetchEventsByCenter', {
-      method: 'POST',
-      body: JSON.stringify({ centerID }),
+      method: 'GET',
+      body: new URLSearchParams({ centerID }),
     })
     if (!response.ok) return []
     const data = await response.json()
@@ -280,8 +280,8 @@ export async function fetchAllEvents(): Promise<EventData[]> {
 export async function fetchEventUsers(eventID: string): Promise<UserData[]> {
   try {
     const response = await apiFetch('/getEventUsers', {
-      method: 'POST',
-      body: JSON.stringify({ id: eventID }),
+      method: 'GET',
+      body: new URLSearchParams({ eventID }),
     })
     if (!response.ok) return []
     const data = await response.json()
@@ -365,8 +365,8 @@ export async function updateEvent(eventJSON: Record<string, any>): Promise<any> 
 export async function getUserEvents(username: string): Promise<EventData[]> {
   try {
     const response = await authFetch('/getUserEvents', {
-      method: 'POST',
-      body: JSON.stringify({ username }),
+      method: 'GET',
+      body: new URLSearchParams({ username }),
     })
     if (!response.ok) {
       return []

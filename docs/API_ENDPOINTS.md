@@ -18,12 +18,12 @@ All endpoints are served under the `/api` base path.
 
 ## Users
 
-- `POST /api/userExistence` — Check if a username exists
+- `GET /api/userExistence` — Check if a username exists
 - `POST /api/verifyUser` — Admin: set user verification level (auth required, admin only)
 - `POST /api/userUpdate` — Update a user's profile by username (auth required)
 - `POST /api/updateRegistration` — Update a user's registration info
 - `POST /api/removeUser` — Remove a user account (auth required)
-- `POST /api/getUserEvents` — Get all events a user is attending (auth required)
+- `GET /api/getUserEvents` — Get all events a user is attending (auth required)
 
 ## Centers
 
@@ -31,19 +31,19 @@ All endpoints are served under the `/api` base path.
 - `POST /api/addCenter` — Create a new center
 - `POST /api/verifyCenter` — Admin: verify a center (auth required, admin only)
 - `POST /api/removeCenter` — Admin: remove a center (auth required, admin only)
-- `POST /api/fetchAllCenters` — List all centers (legacy POST variant)
-- `POST /api/fetchCenter` — Get a single center by ID
+- `GET /api/fetchAllCenters` — List all centers
+- `GET /api/fetchCenter` — Get a single center by ID
 
 ## Events
 
 - `POST /api/addevent` — Create a new event (auth required)
 - `POST /api/removeEvent` — Remove an event (auth required)
-- `POST /api/fetchEvent` — Get a single event by ID
+- `GET /api/fetchEvent` — Get a single event by ID
 - `POST /api/updateEvent` — Update event fields (auth required)
-- `POST /api/getEventUsers` — Get all users attending an event
+- `GET /api/getEventUsers` — Get all users attending an event
 - `POST /api/attendEvent` — Register attendance for an event (auth required)
 - `POST /api/unattendEvent` — Unregister attendance for an event (auth required)
-- `POST /api/fetchEventsByCenter` — Get all events for a center
+- `GET /api/fetchEventsByCenter` — Get all events for a center
 
 ## Legacy (Backward Compatibility)
 
