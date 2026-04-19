@@ -51,12 +51,12 @@ export default function PreferencesNative() {
       ? `${user.firstName} ${user.lastName}`
       : user?.username || ''
 
-  const MenuRow = ({ onPress, children }: { onPress: () => void; children: React.ReactNode }) => (
+  const MenuRow = ({ onPress, children, showArrow = true }: { onPress: () => void; children: React.ReactNode; showArrow?: boolean }) => (
     <Pressable
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: showArrow ? 'space-between' : 'flex-start',
         paddingVertical: 14,
         paddingHorizontal: 16,
         backgroundColor: cardBg,
@@ -64,6 +64,9 @@ export default function PreferencesNative() {
       onPress={onPress}
     >
       {children}
+      {showArrow && (
+        <ChevronRight size={20} color={mutedTextColor} style={{ opacity: 0.5 }} />
+      )}
     </Pressable>
   )
 
@@ -111,31 +114,33 @@ export default function PreferencesNative() {
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: 8 }}>
         {/* Profile Card */}
-        <Pressable
-          onPress={() => router.push('/settings/profile')}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: 16,
-            paddingVertical: 16,
-            marginBottom: 16,
-          }}
-        >
-          <Avatar
-            image={user?.profileImage || undefined}
-            name={displayName}
-            size={56}
-          />
-          <View style={{ marginLeft: 12, flex: 1 }}>
-            <Text style={{ fontSize: 17, fontWeight: '600', color: textColor }}>
-              {displayName}
-            </Text>
-            {user?.username && (
-              <Text style={{ fontSize: 14, color: mutedTextColor }}>@{user.username}</Text>
-            )}
+        <View style={{ paddingHorizontal: 16, paddingVertical: 16, marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Avatar
+              image={user?.profileImage || undefined}
+              name={displayName}
+              size={56}
+            />
+            <View style={{ marginLeft: 12, flex: 1 }}>
+              <Text style={{ fontSize: 17, fontWeight: '600', color: textColor }}>
+                {displayName}
+              </Text>
+              {user?.username && (
+                <Text style={{ fontSize: 14, color: mutedTextColor }}>@{user.username}</Text>
+              )}
+            </View>
           </View>
-          <ChevronRight size={20} color={mutedTextColor} style={{ opacity: 0.5 }} />
-        </Pressable>
+        </View>
+
+        {/* Account Section */}
+        <Section title="Account">
+          <MenuRow onPress={() => router.push('/settings/profile')} showArrow>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <User size={20} color={textColor} style={{ marginRight: 12 }} />
+              <Text style={{ fontSize: 16, color: textColor }}>Edit Profile</Text>
+            </View>
+          </MenuRow>
+        </Section>
 
         {/* Appearance */}
         <Section title="Appearance">

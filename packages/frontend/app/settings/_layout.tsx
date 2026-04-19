@@ -27,13 +27,13 @@ export default function SettingsLayout() {
     router.push('/')
   }
 
-  // Native: just render the page directly (each page has its own SafeAreaView + header)
+  // Native: use Stack for slide-from-right animation
   if (Platform.OS !== 'web') {
     return (
-      <>
-        <Stack.Screen options={{ headerShown: false }} />
-        <Slot />
-      </>
+      <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+        <Stack.Screen name="preferences" />
+        <Stack.Screen name="profile" />
+      </Stack>
     )
   }
 
