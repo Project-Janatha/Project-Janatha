@@ -9,12 +9,15 @@ import {
   ActivityIndicator,
   Platform,
   useWindowDimensions,
+  Alert,
 } from 'react-native'
-import { Camera, Pencil, MapPin } from 'lucide-react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { Camera, Pencil, MapPin, ArrowLeft } from 'lucide-react-native'
+import { useRouter, usePathname } from 'expo-router'
 import { useUser, useThemeContext } from '../../components/contexts'
 import BirthdatePicker from '../../components/BirthdatePicker'
-import WebAvatarCropper from '../../components/AvatarCropper.web'
 import { fetchCenters, CenterData } from '../../utils/api'
+import * as ImagePicker from 'expo-image-picker'
 
 type ProfileData = {
   name: string
@@ -30,13 +33,11 @@ function formatBirthday(date: Date | null): string {
   return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
-/** ISO date string (YYYY-MM-DD) from a Date, or empty string */
 function toISODate(date: Date | null): string {
   if (!date) return ''
   return date.toISOString().split('T')[0]
 }
 
-/** Parse YYYY-MM-DD to Date, or null */
 function parseISODate(str: string): Date | null {
   if (!str) return null
   const d = new Date(str + 'T00:00:00')
@@ -52,13 +53,14 @@ const PREFERENCE_OPTIONS = [
   'Formal',
 ]
 
-export default function Profile() {
+export default function ProfileNative() {
+  const router = useRouter()
+  const pathname = usePathname()
   const { user, updateProfile, setUser } = useUser()
   const { isDark } = useThemeContext()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
-  const isWeb = Platform.OS === 'web'
 
   const getDisplayName = () => {
     if (user?.firstName && user?.lastName) return `${user.firstName} ${user.lastName}`
@@ -75,11 +77,6 @@ export default function Profile() {
     return '?'
   }
 
-  const hasExistingProfileImage = !!user?.profileImage
-
-  // Store the original uploaded image (before cropping) for re-editing
-  const [originalImage, setOriginalImage] = useState<string | null>(user?.originalImage || null)
-
   const [profileData, setProfileData] = useState<ProfileData>({
     name: getDisplayName(),
     bio: user?.bio || '',
@@ -93,7 +90,6 @@ export default function Profile() {
   const [centerSearch, setCenterSearch] = useState('')
   const [centerResults, setCenterResults] = useState<CenterData[]>([])
   const [showCenterPicker, setShowCenterPicker] = useState(false)
-  const [showBirthdayPicker, setShowBirthdayPicker] = useState(false)
   const [centerSearchLoading, setCenterSearchLoading] = useState(false)
   const centerSearchTimer = useRef<NodeJS.Timeout | null>(null)
 
@@ -104,45 +100,19 @@ export default function Profile() {
   const savedProfileImage = useRef<string | null>(profileData.profileImage)
   const savedCenterID = useRef<string | null>(profileData.centerID)
 
-  const [cropperImage, setCropperImage] = useState<string | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const handleAvatarPress = () => {
-    // If user has an existing profile image, use the original (uncropped) if available in session
-    if (originalImage || user?.originalImage) {
-      setCropperImage(originalImage || user?.originalImage || null)
-    } else if (profileData.profileImage) {
-      setCropperImage(profileData.profileImage)
-    } else {
-      // New user - open file picker directly
-      fileInputRef.current?.click()
-    }
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const url = URL.createObjectURL(file)
-      setOriginalImage(url)
-      setCropperImage(url)
-    }
-  }
-
   const [profileImageChanged, setProfileImageChanged] = useState(false)
 
-  const handleCropComplete = (blob: Blob) => {
-    const url = URL.createObjectURL(blob)
-    setProfileData((prev) => ({ ...prev, profileImage: url }))
-    setProfileImageChanged(true)
-    setCropperImage(null)
-  }
-
-  const handleCropCancel = () => {
-    setCropperImage(null)
-  }
-
-  const handleReplacePhoto = () => {
-    fileInputRef.current?.click()
+  const handleAvatarPress = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    })
+    if (!result.canceled && result.assets.length > 0) {
+      setProfileData((prev) => ({ ...prev, profileImage: result.assets[0].uri }))
+      setProfileImageChanged(true)
+    }
   }
 
   useEffect(() => {
@@ -255,9 +225,6 @@ export default function Profile() {
     return Object.keys(newErrors).length === 0
   }
 
-  const nameRef = useRef<any>(null)
-  const bioRef = useRef<any>(null)
-
   const handleEdit = () => {
     draftName.current = profileData.name
     draftBio.current = profileData.bio
@@ -269,11 +236,6 @@ export default function Profile() {
   }
 
   const handleCancel = () => {
-    // Reset input values back to original via refs
-    if (isWeb) {
-      if (nameRef.current) nameRef.current.value = profileData.name
-      if (bioRef.current) bioRef.current.value = profileData.bio
-    }
     draftBirthday.current = profileData.birthday
     setProfileData((prev) => ({
       ...prev,
@@ -299,7 +261,6 @@ export default function Profile() {
     try {
       const nameParts = drafts.name.trim().split(' ')
 
-      // Prepare profile image if changed
       let profileImageBase64: string | undefined
       if (profileImageChanged && profileData.profileImage) {
         try {
@@ -341,9 +302,8 @@ export default function Profile() {
         return
       }
       setProfileImageChanged(false)
-      // Cache the cropped image as the original for re-editing in this session
-      if (originalImage && user) {
-        setUser({ ...user, originalImage: originalImage })
+      if (user) {
+        setUser({ ...user, originalImage: profileData.profileImage })
       }
       setIsEditing(false)
       setErrors({})
@@ -373,6 +333,15 @@ export default function Profile() {
   const cardBg = isDark ? '#171717' : '#FFFFFF'
   const chipBg = isDark ? '#262626' : '#F3F0ED'
 
+  const labelStyle = {
+    fontFamily: 'Inter-SemiBold' as const,
+    fontSize: 12,
+    color: labelColor,
+    letterSpacing: 1,
+    textTransform: 'uppercase' as const,
+    marginBottom: 6,
+  }
+
   const inputStyle = {
     fontFamily: 'Inter-Regular' as const,
     fontSize: 15,
@@ -390,26 +359,42 @@ export default function Profile() {
     minHeight: 100,
   }
 
-  const labelStyle = {
-    fontFamily: 'Inter-SemiBold' as const,
-    fontSize: 12,
-    color: labelColor,
-    letterSpacing: 1,
-    textTransform: 'uppercase' as const,
-    marginBottom: 6,
-  }
-
-  const hiddenStyle = { display: 'none' as const }
-
-  // ═══════════════════════════════════════════
-  //  MOBILE LAYOUT
-  // ═══════════════════════════════════════════
-  if (!isWeb) {
-    return (
-      <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
-        <View
-          style={{ alignItems: 'center', paddingTop: 28, paddingBottom: 24, paddingHorizontal: 20 }}
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }} edges={['top', 'bottom']}>
+      {/* Header */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 8,
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderColor,
+        backgroundColor: isDark ? '#171717' : '#FAFAF7',
+      }}>
+        <Pressable onPress={() => router.back()} style={{ padding: 8 }}>
+          <ArrowLeft size={24} color={textColor} />
+        </Pressable>
+        <Text style={{ fontSize: 17, fontWeight: '600', color: textColor }}>Profile</Text>
+        <Pressable
+          onPress={isEditing ? handleSave : handleEdit}
+          disabled={isSaving}
+          style={{ padding: 8, minWidth: 40, alignItems: 'center' }}
         >
+          {isSaving ? (
+            <ActivityIndicator size="small" color="#C2410C" />
+          ) : isEditing ? (
+            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#C2410C' }}>
+              Save
+            </Text>
+          ) : (
+            <Pencil size={20} color="#C2410C" />
+          )}
+        </Pressable>
+      </View>
+
+      <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
+        <View style={{ alignItems: 'center', paddingTop: 28, paddingBottom: 24, paddingHorizontal: 20 }}>
           <View style={{ position: 'relative', marginBottom: 14 }}>
             {profileData.profileImage ? (
               <Image
@@ -465,9 +450,7 @@ export default function Profile() {
           {isEditing ? (
             <TextInput
               defaultValue={profileData.name}
-              onChangeText={(v) => {
-                draftName.current = v
-              }}
+              onChangeText={(v) => { draftName.current = v }}
               placeholderTextColor="#9ca3af"
               style={{
                 fontFamily: 'Inter-SemiBold',
@@ -502,12 +485,7 @@ export default function Profile() {
             </Text>
           )}
           {isEditing ? (
-            <View
-              style={{
-                marginTop: 4,
-                marginBottom: showCenterPicker && centerResults.length > 0 ? 220 : 0,
-              }}
-            >
+            <View style={{ marginTop: 4 }}>
               <TextInput
                 value={
                   centerSearch ||
@@ -516,17 +494,11 @@ export default function Profile() {
                 }
                 onChangeText={(text) => {
                   setCenterSearch(text)
-                  if (text.length < 3) {
-                    setShowCenterPicker(false)
-                  }
-                  if (text === '') {
-                    setProfileData((prev) => ({ ...prev, centerID: null }))
-                  }
+                  if (text.length < 3) setShowCenterPicker(false)
+                  if (text === '') setProfileData((prev) => ({ ...prev, centerID: null }))
                 }}
                 onFocus={() => {
-                  if (centerResults.length > 0) {
-                    setShowCenterPicker(true)
-                  }
+                  if (centerResults.length > 0) setShowCenterPicker(true)
                 }}
                 placeholder="Search by city or town"
                 placeholderTextColor="#9ca3af"
@@ -616,87 +588,45 @@ export default function Profile() {
             {isEditing ? (
               <TextInput
                 defaultValue={profileData.bio}
-                onChangeText={(v) => {
-                  draftBio.current = v
-                }}
+                onChangeText={(v) => { draftBio.current = v }}
                 multiline
                 textAlignVertical="top"
                 placeholderTextColor="#9ca3af"
                 style={multilineInputStyle}
               />
             ) : (
-              <Text
-                style={{
-                  fontFamily: 'Inter-Regular',
-                  fontSize: 15,
-                  color: mutedTextColor,
-                  lineHeight: 22,
-                }}
-              >
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor, lineHeight: 22 }}>
                 {profileData.bio || '—'}
               </Text>
             )}
             {errors.bio && (
-              <Text
-                style={{
-                  fontFamily: 'Inter-Regular',
-                  fontSize: 13,
-                  color: '#DC2626',
-                  marginTop: 6,
-                }}
-              >
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>
                 {errors.bio}
               </Text>
             )}
           </View>
+
           <View>
             <Text style={labelStyle}>Birthday</Text>
             {isEditing ? (
               <BirthdatePicker
                 value={draftBirthday.current ?? undefined}
-                onChange={(d: Date) => {
-                  draftBirthday.current = d
-                }}
+                onChange={(d: Date) => { draftBirthday.current = d }}
               />
             ) : (
-              <Text
-                style={{
-                  fontFamily: 'Inter-Medium',
-                  fontSize: 16,
-                  color: textColor,
-                  lineHeight: 24,
-                }}
-              >
+              <Text style={{ fontFamily: 'Inter-Medium', fontSize: 16, color: textColor, lineHeight: 24 }}>
                 {formatBirthday(profileData.birthday) || '—'}
               </Text>
             )}
             {errors.birthday && (
-              <Text
-                style={{
-                  fontFamily: 'Inter-Regular',
-                  fontSize: 13,
-                  color: '#DC2626',
-                  marginTop: 6,
-                }}
-              >
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>
                 {errors.birthday}
               </Text>
             )}
           </View>
 
           <View>
-            <Text
-              style={{
-                fontFamily: 'Inter-SemiBold',
-                fontSize: 12,
-                color: labelColor,
-                letterSpacing: 1,
-                textTransform: 'uppercase',
-                marginBottom: 12,
-              }}
-            >
-              Interests
-            </Text>
+            <Text style={labelStyle}>Interests</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {PREFERENCE_OPTIONS.map((pref) => {
                 const selected = profileData.interests.includes(pref)
@@ -715,13 +645,7 @@ export default function Profile() {
                       opacity: !isEditing && !selected ? 0.5 : 1,
                     }}
                   >
-                    <Text
-                      style={{
-                        fontFamily: 'Inter-SemiBold',
-                        fontSize: 14,
-                        color: selected ? '#FFFFFF' : mutedTextColor,
-                      }}
-                    >
+                    <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: selected ? '#FFFFFF' : mutedTextColor }}>
                       {pref}
                     </Text>
                   </Pressable>
@@ -729,53 +653,16 @@ export default function Profile() {
               })}
             </View>
             {errors.interests && (
-              <Text
-                style={{
-                  fontFamily: 'Inter-Regular',
-                  fontSize: 13,
-                  color: '#DC2626',
-                  marginTop: 8,
-                }}
-              >
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}>
                 {errors.interests}
               </Text>
             )}
           </View>
 
-          {/* Form-level errors */}
           {(errors.form || errors.profileImage) && (
-            <Text
-              style={{
-                fontFamily: 'Inter-Regular',
-                fontSize: 13,
-                color: '#DC2626',
-                marginTop: 8,
-              }}
-            >
+            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}>
               {errors.form || errors.profileImage}
             </Text>
-          )}
-
-          {!isEditing && (
-            <Pressable
-              onPress={handleEdit}
-              style={{
-                marginTop: 16,
-                paddingVertical: 14,
-                borderRadius: 12,
-                minHeight: 48,
-                backgroundColor: isDark ? '#F5F5F5' : '#1C1917',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'row',
-                gap: 8,
-              }}
-            >
-              <Pencil size={16} color={isDark ? '#1C1917' : '#FFFFFF'} />
-              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: isDark ? '#1C1917' : '#FFFFFF' }}>
-                Edit Profile
-              </Text>
-            </Pressable>
           )}
 
           {isEditing && (
@@ -796,520 +683,12 @@ export default function Profile() {
                   Cancel
                 </Text>
               </Pressable>
-              <Pressable
-                onPress={handleSave}
-                disabled={isSaving}
-                style={{
-                  flex: 1,
-                  paddingVertical: 14,
-                  borderRadius: 12,
-                  minHeight: 48,
-                  backgroundColor: '#C2410C',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {isSaving ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#FFFFFF' }}>
-                    Save Changes
-                  </Text>
-                )}
-              </Pressable>
             </View>
           )}
         </View>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
-    )
-  }
-
-  // WEB LAYOUT
-  const { width: viewportWidth } = useWindowDimensions()
-  const isNarrowWeb = viewportWidth < 768
-  const webPaddingH = isNarrowWeb ? 16 : viewportWidth < 1024 ? 32 : 60
-
-  return (
-    <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}>
-      <View
-        style={{
-          maxWidth: 900,
-          width: '100%',
-          alignSelf: 'center',
-          padding: isNarrowWeb ? 20 : 40,
-          paddingHorizontal: webPaddingH,
-          gap: isNarrowWeb ? 24 : 36,
-        }}
-      >
-        {/* Header row */}
-        <View
-          style={{
-            flexDirection: isNarrowWeb ? 'column' : 'row',
-            justifyContent: 'space-between',
-            alignItems: isNarrowWeb ? 'stretch' : 'flex-start',
-            gap: isNarrowWeb ? 16 : 0,
-          }}
-        >
-          <View style={{ gap: 4 }}>
-            <Text
-              style={{
-                fontFamily: 'Inter-Bold',
-                fontSize: isNarrowWeb ? 24 : 28,
-                color: textColor,
-                letterSpacing: -0.5,
-              }}
-            >
-              Profile
-            </Text>
-            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor }}>
-              Manage your public profile information
-            </Text>
-          </View>
-          <Pressable
-            onPress={isEditing ? handleSave : handleEdit}
-            disabled={isSaving}
-            style={{
-              paddingHorizontal: 24,
-              paddingVertical: 12,
-              borderRadius: 10,
-              minHeight: 44,
-              backgroundColor: isEditing ? '#C2410C' : isDark ? '#F5F5F5' : '#1C1917',
-              alignItems: 'center',
-              justifyContent: 'center',
-              alignSelf: isNarrowWeb ? 'stretch' : 'auto',
-              flexDirection: 'row',
-              gap: 8,
-            }}
-          >
-            {isSaving ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <Pencil size={16} color={isEditing ? '#FFFFFF' : isDark ? '#1C1917' : '#FFFFFF'} />
-                <Text
-                  style={{
-                    fontFamily: 'Inter-SemiBold',
-                    fontSize: 14,
-                    color: isEditing ? '#FFFFFF' : isDark ? '#1C1917' : '#FFFFFF',
-                  }}
-                >
-                  {isEditing ? 'Save Changes' : 'Edit Profile'}
-                </Text>
-              </>
-            )}
-          </Pressable>
-        </View>
-
-        {/* Profile card */}
-        <View
-          style={{
-            flexDirection: isNarrowWeb ? 'column' : 'row',
-            alignItems: 'center',
-            gap: isNarrowWeb ? 16 : 28,
-            padding: isNarrowWeb ? 20 : 28,
-            backgroundColor: cardBg,
-            borderRadius: 20,
-            borderWidth: 1,
-            borderColor,
-          }}
-        >
-          <View style={{ position: 'relative' }}>
-            {profileData.profileImage ? (
-              <Image
-                source={{ uri: profileData.profileImage }}
-                style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#D6D3D1' }}
-              />
-            ) : (
-              <View
-                style={{
-                  width: 96,
-                  height: 96,
-                  borderRadius: 48,
-                  backgroundColor: '#C2410C',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ color: '#fff', fontSize: 32, fontWeight: '600' }}>
-                  {getInitials()}
-                </Text>
-              </View>
-            )}
-            {isEditing && (
-              <Pressable
-                style={{
-                  position: 'absolute',
-                  bottom: -4,
-                  right: -4,
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
-                  backgroundColor: '#C2410C',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderWidth: 2,
-                  borderColor: cardBg,
-                }}
-                onPress={handleAvatarPress}
-              >
-                <Camera size={16} color="#fff" />
-              </Pressable>
-            )}
-          </View>
-          <View style={{ gap: 4, alignItems: isNarrowWeb ? 'center' : 'flex-start', flex: 1 }}>
-            {isEditing ? (
-              <View
-                style={{
-                  borderBottomWidth: 2,
-                  borderBottomColor: '#C2410C',
-                  paddingBottom: 2,
-                  width: '100%',
-                }}
-              >
-                <TextInput
-                  defaultValue={profileData.name}
-                  onChangeText={(v) => {
-                    draftName.current = v
-                  }}
-                  placeholderTextColor="#9ca3af"
-                  style={{
-                    fontFamily: 'Inter-SemiBold',
-                    fontSize: 24,
-                    color: textColor,
-                    letterSpacing: -0.3,
-                    width: '100%',
-                    padding: 0,
-                    margin: 0,
-                  }}
-                />
-              </View>
-            ) : (
-              <Text
-                style={{
-                  fontFamily: 'Inter-SemiBold',
-                  fontSize: 24,
-                  color: textColor,
-                  letterSpacing: -0.3,
-                }}
-              >
-                {profileData.name || '—'}
-              </Text>
-            )}
-            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
-              {user?.username || 'user'}
-            </Text>
-            {isEditing && user?.email && user.email !== user.username && (
-              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
-                {user.email}
-              </Text>
-            )}
-            {isEditing ? (
-              <View
-                style={{
-                  marginTop: 4,
-                  marginBottom: showCenterPicker && centerResults.length > 0 ? 220 : 0,
-                }}
-              >
-                <TextInput
-                  value={
-                    centerSearch ||
-                    allCenters.find((c) => c.centerID === profileData.centerID)?.name ||
-                    ''
-                  }
-                  onChangeText={(text) => {
-                    setCenterSearch(text)
-                    if (text.length < 3) {
-                      setShowCenterPicker(false)
-                    }
-                    if (text === '') {
-                      setProfileData((prev) => ({ ...prev, centerID: null }))
-                    }
-                  }}
-                  onFocus={() => {
-                    if (centerResults.length > 0) {
-                      setShowCenterPicker(true)
-                    }
-                  }}
-                  placeholder="Search by city or town"
-                  placeholderTextColor="#9ca3af"
-                  style={{
-                    fontFamily: 'Inter-Regular',
-                    fontSize: 14,
-                    color: textColor,
-                    borderWidth: 2,
-                    borderColor: '#C2410C',
-                    borderRadius: 8,
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                  }}
-                />
-                {centerSearchLoading && (
-                  <View style={{ position: 'absolute', right: 8, top: 8 }}>
-                    <ActivityIndicator size="small" color="#C2410C" />
-                  </View>
-                )}
-                {showCenterPicker && centerResults.length > 0 && (
-                  <View
-                    style={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: 0,
-                      right: 0,
-                      backgroundColor: cardBg,
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor,
-                      maxHeight: 200,
-                      zIndex: 200,
-                      marginTop: 8,
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.1,
-                      shadowRadius: 8,
-                      elevation: 5,
-                    }}
-                  >
-                    <ScrollView style={{ maxHeight: 200 }}>
-                      {centerResults.map((center) => (
-                        <Pressable
-                          key={center.centerID}
-                          onPressIn={() => {
-                            setProfileData((prev) => ({ ...prev, centerID: center.centerID }))
-                            setCenterSearch('')
-                            setShowCenterPicker(false)
-                          }}
-                          style={{
-                            paddingHorizontal: 16,
-                            paddingVertical: 12,
-                            borderBottomWidth: 1,
-                            borderBottomColor: borderColor,
-                            backgroundColor:
-                              profileData.centerID === center.centerID
-                                ? '#C2410C' + '20'
-                                : 'transparent',
-                          }}
-                        >
-                          <Text
-                            style={{
-                              fontFamily: 'Inter-Regular',
-                              fontSize: 14,
-                              color:
-                                profileData.centerID === center.centerID ? '#C2410C' : textColor,
-                            }}
-                          >
-                            {center.name}
-                          </Text>
-                        </Pressable>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-            ) : profileData.centerID ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <MapPin size={14} color={mutedTextColor} />
-                <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
-                  {allCenters.find((c) => c.centerID === profileData.centerID)?.name || ''}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        </View>
-
-        {/* Birthday only */}
-        <View style={{ flexDirection: isNarrowWeb ? 'column' : 'row', gap: isNarrowWeb ? 20 : 28 }}>
-          <View style={{ flex: 1, gap: 8 }}>
-            <Text style={labelStyle}>Birthday</Text>
-            {isEditing ? (
-              <View>
-                <BirthdatePicker
-                  value={draftBirthday.current ?? undefined}
-                  onChange={(d: Date) => {
-                    draftBirthday.current = d
-                  }}
-                />
-              </View>
-            ) : (
-              <View
-                style={{
-                  paddingHorizontal: 16,
-                  paddingVertical: 14,
-                  backgroundColor: cardBg,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor,
-                }}
-              >
-                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 15, color: textColor }}>
-                  {formatBirthday(profileData.birthday) || '—'}
-                </Text>
-              </View>
-            )}
-            {errors.birthday && (
-              <Text
-                style={{
-                  fontFamily: 'Inter-Regular',
-                  fontSize: 13,
-                  color: '#DC2626',
-                  marginTop: 6,
-                }}
-              >
-                {errors.birthday}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Bio */}
-        <View style={{ gap: 8 }}>
-          <Text style={labelStyle}>Bio</Text>
-          <TextInput
-            ref={bioRef}
-            defaultValue={profileData.bio}
-            onChangeText={(v) => {
-              draftBio.current = v
-            }}
-            multiline
-            textAlignVertical="top"
-            placeholderTextColor="#9ca3af"
-            style={[multilineInputStyle, !isEditing && hiddenStyle]}
-          />
-          {!isEditing && (
-            <View
-              style={{
-                paddingHorizontal: 16,
-                paddingVertical: 14,
-                backgroundColor: cardBg,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor,
-                minHeight: 80,
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: 'Inter-Regular',
-                  fontSize: 15,
-                  color: mutedTextColor,
-                  lineHeight: 24,
-                }}
-              >
-                {profileData.bio || '—'}
-              </Text>
-            </View>
-          )}
-          {errors.bio && (
-            <Text
-              style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}
-            >
-              {errors.bio}
-            </Text>
-          )}
-        </View>
-
-        {/* Interests */}
-        <View>
-          <Text
-            style={{
-              fontFamily: 'Inter-SemiBold',
-              fontSize: 12,
-              color: labelColor,
-              letterSpacing: 1,
-              textTransform: 'uppercase',
-              marginBottom: 12,
-            }}
-          >
-            Interests
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {PREFERENCE_OPTIONS.map((pref) => {
-              const selected = profileData.interests.includes(pref)
-              return (
-                <Pressable
-                  key={pref}
-                  onPress={() => handlePreferenceToggle(pref)}
-                  disabled={!isEditing}
-                  style={{
-                    paddingHorizontal: 18,
-                    paddingVertical: 12,
-                    borderRadius: 100,
-                    minHeight: 44,
-                    justifyContent: 'center',
-                    backgroundColor: selected ? '#C2410C' : chipBg,
-                    opacity: !isEditing && !selected ? 0.5 : 1,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: 'Inter-SemiBold',
-                      fontSize: 14,
-                      color: selected ? '#FFFFFF' : mutedTextColor,
-                    }}
-                  >
-                    {pref}
-                  </Text>
-                </Pressable>
-              )
-            })}
-          </View>
-          {errors.interests && (
-            <Text
-              style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}
-            >
-              {errors.interests}
-            </Text>
-          )}
-        </View>
-
-        {/* Form-level errors */}
-        {(errors.form || errors.profileImage) && (
-          <Text
-            style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}
-          >
-            {errors.form || errors.profileImage}
-          </Text>
-        )}
-
-        {/* Cancel button when editing */}
-        {isEditing && (
-          <Pressable
-            onPress={handleCancel}
-            style={{
-              alignSelf: isNarrowWeb ? 'stretch' : 'flex-start',
-              paddingHorizontal: 24,
-              paddingVertical: 12,
-              borderRadius: 10,
-              minHeight: 44,
-              backgroundColor: isDark ? '#262626' : '#F3F0ED',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: textColor }}>
-              Cancel
-            </Text>
-          </Pressable>
-        )}
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-        />
-
-        {cropperImage && (
-          <WebAvatarCropper
-            visible={!!cropperImage}
-            imageUri={cropperImage}
-            originalImageUri={originalImage || undefined}
-            onCropComplete={handleCropComplete}
-            onCancel={handleCropCancel}
-            onReplacePhoto={handleReplacePhoto}
-          />
-        )}
-      </View>
-    </ScrollView>
+    </SafeAreaView>
   )
 }

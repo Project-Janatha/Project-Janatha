@@ -27,6 +27,17 @@ export default function SettingsLayout() {
     router.push('/')
   }
 
+  // Native: just render the page directly (each page has its own SafeAreaView + header)
+  if (Platform.OS !== 'web') {
+    return (
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <Slot />
+      </>
+    )
+  }
+
+  // Web: sidebar layout
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />

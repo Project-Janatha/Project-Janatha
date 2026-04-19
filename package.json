@@ -44,6 +44,7 @@
     "wrangler": "^4.0.0"
   },
   "dependencies": {
+    "expo-image-picker": "^55.0.18",
     "hono": "^4.7.0",
     "jose": "^6.0.0",
     "nativewind": "4.2.2",
