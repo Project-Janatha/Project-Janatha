@@ -145,133 +145,17 @@ export default function TabLayout() {
         : user?.username || ''
     const profileImage = user?.profileImage
 
-    return (
+return (
       <View style={{ position: 'relative' }}>
         <Pressable
           className="mr-4 p-2"
           onPress={() => {
-            if (!settingsVisible) {
-              posthog?.capture('nav_menu_opened')
-            }
-            setSettingsVisible(!settingsVisible)
+            posthog?.capture('nav_menu_opened')
+            router.push('/settings')
           }}
         >
           <Avatar image={profileImage || undefined} name={displayName} size={36} />
-        </Pressable>
-
-        {settingsVisible && (
-          <>
-            {/* Backdrop to close popover */}
-            <Pressable
-              style={{
-                position: 'absolute',
-                top: -1000,
-                left: -1000,
-                width: 5000,
-                height: 5000,
-                zIndex: 98,
-              }}
-              onPress={() => setSettingsVisible(false)}
-            />
-
-            {/* Popover */}
-            <View
-              style={{
-                position: 'absolute',
-                top: 44,
-                right: 0,
-                width: 220,
-                zIndex: 99,
-                backgroundColor: isDark ? '#171717' : '#fff',
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: isDark ? '#262626' : '#E5E7EB',
-                shadowColor: '#000',
-                shadowOpacity: 0.12,
-                shadowRadius: 16,
-                shadowOffset: { width: 0, height: 8 },
-                elevation: 12,
-                padding: 6,
-              }}
-            >
-              {/* Profile info */}
-              <View
-                className="flex-row items-center px-2.5 py-3"
-                style={{
-                  borderBottomWidth: 1,
-                  borderBottomColor: isDark ? '#262626' : '#F0EDE8',
-                  marginBottom: 4,
-                }}
-              >
-                <Avatar
-                  image={profileImage || undefined}
-                  name={displayName}
-                  size={40}
-                  style={{ marginRight: 12 }}
-                />
-                <View className="flex-1">
-                  <Text className="text-[15px] font-inter-semibold text-content dark:text-content-dark">
-                    {displayName}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Profile */}
-              <Pressable
-                className="flex-row items-center py-2.5 px-3 rounded-[10px]"
-                onPress={() => {
-                  posthog?.capture('nav_profile_opened')
-                  setSettingsVisible(false)
-                  router.push('/settings')
-                }}
-              >
-                <User size={18} color={isDark ? '#fff' : '#57534E'} />
-                <Text className="ml-3 text-[15px] font-inter-medium text-content dark:text-content-dark">
-                  Profile
-                </Text>
-              </Pressable>
-
-              {/* Settings */}
-              <Pressable
-                className="flex-row items-center py-2.5 px-3 rounded-[10px]"
-                onPress={() => {
-                  posthog?.capture('nav_settings_opened')
-                  setSettingsVisible(false)
-                  router.push('/settings/settings')
-                }}
-              >
-                <Settings size={18} color={isDark ? '#fff' : '#57534E'} />
-                <Text className="ml-3 text-[15px] font-inter-medium text-content dark:text-content-dark">
-                  Settings
-                </Text>
-              </Pressable>
-
-              {/* Divider */}
-              <View
-                style={{
-                  height: 1,
-                  backgroundColor: isDark ? '#262626' : '#F0EDE8',
-                  marginHorizontal: 10,
-                  marginVertical: 4,
-                }}
-              />
-
-              {/* Log Out */}
-              <Pressable
-                className="flex-row items-center py-2.5 px-3 rounded-[10px]"
-                onPress={() => {
-                  setSettingsVisible(false)
-                  handleLogout()
-                }}
-              >
-                <LogOut size={18} color="#dc2626" />
-                <Text className="ml-3 text-[15px] font-inter-medium text-red-600 dark:text-red-400">
-                  Log Out
-                </Text>
-              </Pressable>
-            </View>
-          </>
-        )}
+</Pressable>
       </View>
     )
   }

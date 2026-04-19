@@ -50,24 +50,7 @@ export default function SettingsLayout() {
     <>
       <Stack.Screen
         options={{
-          headerStyle: {
-            backgroundColor: isDark ? '#171717' : '#fff',
-          },
-          headerTintColor: isDark ? '#fff' : '#000',
-          headerTitle: Platform.OS === 'web' ? () => <HeaderTitle /> : 'Settings',
-          headerLeft:
-            Platform.OS !== 'web'
-              ? () => (
-                  <Pressable
-                    onPress={handleClose}
-                    className="ml-2 flex-row items-center"
-                    style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}
-                  >
-                    <ChevronLeft size={24} color={isDark ? '#fff' : '#000'} />
-                    <Text className="text-base font-inter text-content dark:text-content-dark">Back</Text>
-                  </Pressable>
-                )
-              : undefined,
+          headerShown: false,
         }}
       />
       <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900" edges={['bottom']}>

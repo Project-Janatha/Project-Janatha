@@ -56,6 +56,28 @@ function applyWebTheme(theme: 'light' | 'dark') {
   }
 }
 
+/** Get system color scheme on web */
+function getWebSystemColorScheme(): 'light' | 'dark' | null {
+  if (typeof window === 'undefined') return null
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'dark'
+  }
+  return 'light'
+}
+
+/** Subscribe to web system color scheme changes */
+function subscribeToWebSystemColorScheme(callback: (theme: 'light' | 'dark') => void): () => void {
+  if (typeof window === 'undefined' || !window.matchMedia) return () => {}
+
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  const handler = (e: MediaQueryListEvent) => {
+    callback(e.matches ? 'dark' : 'light')
+  }
+
+  mediaQuery.addEventListener('change', handler)
+  return () => mediaQuery.removeEventListener('change', handler)
+}
+
 // Provider that initializes theme from storage/system
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const { setColorScheme } = useNativeWindColorScheme()
@@ -92,7 +114,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 // Re-export NativeWind's hook with additional theme preference methods
 export const useThemeContext = () => {
   const { colorScheme, setColorScheme, toggleColorScheme } = useNativeWindColorScheme()
-  useSystemColorScheme() // MUST be called at top level to subscribe to system changes
+  const systemScheme = useSystemColorScheme() // MUST be called at top level to subscribe to system changes
   const initialPref = getInitialPreference()
   const [themePreference, setThemePreferenceState] = useState<'light' | 'dark' | 'system'>(
     initialPref ?? 'system'
@@ -107,7 +129,27 @@ export const useThemeContext = () => {
       try {
         const saved = await safeStorage.getItem(THEME_PREFERENCE_KEY)
         if (isMounted && (saved === 'light' || saved === 'dark' || saved === 'system')) {
-          setThemePreferenceState(saved as 'light' | 'dark' | 'system')
+          const mode = saved as 'light' | 'dark' | 'system'
+          setThemePreferenceState(mode)
+
+          // Apply theme after loading
+          if (mode === 'system') {
+            if (Platform.OS === 'web') {
+              const systemTheme = getWebSystemColorScheme()
+              if (systemTheme) {
+                setColorScheme(systemTheme)
+                requestAnimationFrame(() => applyWebTheme(systemTheme))
+              }
+            } else {
+              // On native, Appearance.setColorScheme(null) is set in ThemeProvider
+            }
+          } else {
+            if (Platform.OS === 'web') {
+              Appearance.setColorScheme(mode)
+            }
+            setColorScheme(mode)
+            requestAnimationFrame(() => applyWebTheme(mode))
+          }
         }
       } catch (error) {
         // Failed to load theme preference
@@ -119,7 +161,27 @@ export const useThemeContext = () => {
     return () => {
       isMounted = false
     }
-  }, [loaded])
+  }, [loaded, setColorScheme])
+
+  // Subscribe to system changes when in 'system' mode
+  useEffect(() => {
+    if (!loaded || themePreference !== 'system') return
+
+    let unsubscribe: (() => void) | undefined
+
+    if (Platform.OS === 'web') {
+      // On web, manually subscribe to color scheme changes
+      unsubscribe = subscribeToWebSystemColorScheme((theme) => {
+        setColorScheme(theme)
+        requestAnimationFrame(() => applyWebTheme(theme))
+      })
+    }
+    // On native, nativewind automatically follows system via Appearance.setColorScheme(null)
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [loaded, themePreference, setColorScheme])
 
   const setThemePreference = useCallback(
     async (mode: 'light' | 'dark' | 'system') => {
@@ -128,9 +190,17 @@ export const useThemeContext = () => {
         await safeStorage.setItem(THEME_PREFERENCE_KEY, mode)
 
         if (mode === 'system') {
-          Appearance.setColorScheme(null as any)
+          if (Platform.OS === 'web') {
+            const systemTheme = getWebSystemColorScheme() || 'light'
+            setColorScheme(systemTheme)
+            requestAnimationFrame(() => applyWebTheme(systemTheme))
+          } else {
+            Appearance.setColorScheme(null as any)
+          }
         } else {
-          Appearance.setColorScheme(mode)
+          if (Platform.OS === 'web') {
+            Appearance.setColorScheme(mode)
+          }
           setColorScheme(mode)
           requestAnimationFrame(() => applyWebTheme(mode))
         }
