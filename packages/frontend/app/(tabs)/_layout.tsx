@@ -1,5 +1,5 @@
 import { Link, Tabs, useRouter } from 'expo-router'
-import { Platform, View, Text, Pressable, Image } from 'react-native'
+import { Platform, View, Text, Pressable, Image, StatusBar } from 'react-native'
 import { useState } from 'react'
 import { useUser, useThemeContext } from '../../components/contexts'
 import { User, Settings, LogOut, Plus } from 'lucide-react-native'
@@ -45,30 +45,32 @@ export default function TabLayout() {
     if (!user) {
       return (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 16 }}>
-          <SecondaryButton onPress={() => router.push('/auth?mode=login')}>
-            Log In
-          </SecondaryButton>
-          <PrimaryButton onPress={() => router.push('/auth?mode=signup')}>
-            Sign Up
-          </PrimaryButton>
+          <SecondaryButton onPress={() => router.push('/auth?mode=login')}>Log In</SecondaryButton>
+          <PrimaryButton onPress={() => router.push('/auth?mode=signup')}>Sign Up</PrimaryButton>
         </View>
       )
     }
-if (Platform.OS === 'web') {
-    const webProfileImage = user?.profileImage
-    const getInitials = () => {
-      if (user?.firstName && user?.lastName) return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-      if (user?.firstName) return user.firstName[0].toUpperCase()
-      if (user?.username) return user.username[0].toUpperCase()
-      return '?'
-    }
+    if (Platform.OS === 'web') {
+      const webProfileImage = user?.profileImage
+      const getInitials = () => {
+        if (user?.firstName && user?.lastName)
+          return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+        if (user?.firstName) return user.firstName[0].toUpperCase()
+        if (user?.username) return user.username[0].toUpperCase()
+        return '?'
+      }
 
-    return (
+      return (
         <View className="flex-row items-center" style={{ gap: 8 }}>
           {canCreate && (
             <Pressable
               className="px-3 py-2 rounded-full flex-row items-center"
-              style={{ borderWidth: 1.5, borderColor: '#E8862A', backgroundColor: 'transparent', gap: 6 }}
+              style={{
+                borderWidth: 1.5,
+                borderColor: '#E8862A',
+                backgroundColor: 'transparent',
+                gap: 6,
+              }}
               onPress={() => {
                 posthog?.capture('nav_create_event')
                 if (typeof window !== 'undefined') {
@@ -87,7 +89,7 @@ if (Platform.OS === 'web') {
               </Text>
             </Pressable>
           )}
-<Pressable
+          <Pressable
             className="mr-4 rounded-full overflow-hidden"
             style={{ width: 36, height: 36 }}
             onPress={() => {
@@ -96,19 +98,18 @@ if (Platform.OS === 'web') {
             }}
           >
             {webProfileImage ? (
-              <Image
-                source={{ uri: webProfileImage }}
-                style={{ width: 36, height: 36 }}
-              />
+              <Image source={{ uri: webProfileImage }} style={{ width: 36, height: 36 }} />
             ) : (
-              <View style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                backgroundColor: '#C2410C',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: '#C2410C',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>
                   {getInitials()}
                 </Text>
@@ -124,9 +125,11 @@ if (Platform.OS === 'web') {
       )
     }
 
-// Mobile: show profile button with popover menu
+    // Mobile: show profile button with popover menu
     const displayName =
-      user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || ''
+      user?.firstName && user?.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : user?.username || ''
     const profileImage = user?.profileImage
 
     return (
@@ -140,18 +143,21 @@ if (Platform.OS === 'web') {
             setSettingsVisible(!settingsVisible)
           }}
         >
-          <Avatar
-            image={profileImage || undefined}
-            name={displayName}
-            size={26}
-          />
+          <Avatar image={profileImage || undefined} name={displayName} size={36} />
         </Pressable>
 
         {settingsVisible && (
           <>
             {/* Backdrop to close popover */}
             <Pressable
-              style={{ position: 'absolute', top: -1000, left: -1000, width: 5000, height: 5000, zIndex: 98 }}
+              style={{
+                position: 'absolute',
+                top: -1000,
+                left: -1000,
+                width: 5000,
+                height: 5000,
+                zIndex: 98,
+              }}
               onPress={() => setSettingsVisible(false)}
             />
 
@@ -175,8 +181,15 @@ if (Platform.OS === 'web') {
                 padding: 6,
               }}
             >
-{/* Profile info */}
-              <View className="flex-row items-center px-2.5 py-3" style={{ borderBottomWidth: 1, borderBottomColor: isDark ? '#262626' : '#F0EDE8', marginBottom: 4 }}>
+              {/* Profile info */}
+              <View
+                className="flex-row items-center px-2.5 py-3"
+                style={{
+                  borderBottomWidth: 1,
+                  borderBottomColor: isDark ? '#262626' : '#F0EDE8',
+                  marginBottom: 4,
+                }}
+              >
                 <Avatar
                   image={profileImage || undefined}
                   name={displayName}
@@ -221,7 +234,14 @@ if (Platform.OS === 'web') {
               </Pressable>
 
               {/* Divider */}
-              <View style={{ height: 1, backgroundColor: isDark ? '#262626' : '#F0EDE8', marginHorizontal: 10, marginVertical: 4 }} />
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: isDark ? '#262626' : '#F0EDE8',
+                  marginHorizontal: 10,
+                  marginVertical: 4,
+                }}
+              />
 
               {/* Log Out */}
               <Pressable
@@ -244,18 +264,29 @@ if (Platform.OS === 'web') {
   }
 
   return (
+    <>
+      {Platform.OS !== 'web' && (
+        <StatusBar
+          barStyle={isDark ? 'light-content' : 'dark-content'}
+          backgroundColor="transparent"
+          translucent
+        />
+      )}
     <Tabs
       screenOptions={{
         tabBarStyle: { display: 'none' },
         headerStyle: {
-          backgroundColor: isDark ? '#171717' : '#fff',
-          borderBottomColor: isDark ? '#262626' : '#E5E7EB',
+          backgroundColor: Platform.OS === 'web' ? (isDark ? '#171717' : '#fff') : 'transparent',
+          borderBottomWidth: Platform.OS === 'web' ? 1 : 0,
+          borderBottomColor: Platform.OS === 'web' ? (isDark ? '#262626' : '#E5E7EB') : 'transparent',
         },
         headerTitleStyle: {
           fontFamily: 'Inter-Bold',
         },
         headerTintColor: isDark ? '#fff' : '#000',
         headerTitle: Platform.OS === 'web' ? () => <HeaderTitle /> : undefined,
+        headerTransparent: Platform.OS !== 'web',
+        headerShadowVisible: Platform.OS === 'web',
       }}
     >
       <Tabs.Screen
@@ -273,5 +304,6 @@ if (Platform.OS === 'web') {
         }}
       />
     </Tabs>
+    </>
   )
 }

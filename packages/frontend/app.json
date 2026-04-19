@@ -4,33 +4,13 @@
     "slug": "chinmaya-janata",
     "version": "1.0.0",
     "orientation": "portrait",
-"icon": "./assets/images/logo.png",
+    "icon": "./assets/images/logo.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/images/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo.png",
-        "backgroundColor": "#ffffff"
-      }
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "buildNumber": "13",
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Chinmaya Janata uses your location to show nearby centers and events on the map.",
-        "NSPhotoLibraryUsageDescription": "Chinmaya Janata needs access to your photo library to set your profile picture.",
-        "NSCameraUsageDescription": "Chinmaya Janata needs access to your camera to take a profile picture.",
-        "ITSAppUsesNonExemptEncryption": false
-      },
-      "bundleIdentifier": "org.chinmayamission.janata"
     },
     "android": {
       "adaptiveIcon": {
@@ -44,6 +24,20 @@
         "ACCESS_COARSE_LOCATION"
       ],
       "package": "org.chinmayamission.janata"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "buildNumber": "16",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Chinmaya Janata uses your location to show nearby centers and events on the map.",
+        "NSPhotoLibraryUsageDescription": "Chinmaya Janata needs access to your photo library to set your profile picture.",
+        "NSCameraUsageDescription": "Chinmaya Janata needs access to your camera to take a profile picture.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "org.chinmayamission.janata"
     },
     "web": {
       "bundler": "metro",
