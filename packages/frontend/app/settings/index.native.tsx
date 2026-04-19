@@ -6,11 +6,13 @@ import { useUser, useThemeContext } from '../../components/contexts'
 import { Avatar } from '../../components/ui'
 import { isSuperAdmin } from '../../utils/admin'
 import ThemeSelector from '../../components/ThemeSelector'
+import { usePostHog } from 'posthog-react-native'
 
 export default function SettingsIndex() {
   const router = useRouter()
   const { user, logout, deleteAccount } = useUser()
-  const { isDark, themePreference, setThemePreference } = useThemeContext()
+  const { isDark, themePreference } = useThemeContext()
+  const posthog = usePostHog()
   
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -169,17 +171,34 @@ export default function SettingsIndex() {
 
         {/* About Section */}
         <Section title="About">
-          <MenuRow onPress={() => router.push('/privacy')}>
+          <MenuRow onPress={() => {
+            posthog?.capture('privacy_policy_viewed')
+            router.push('/privacy')
+          }}>
             <Info size={20} color={textColor} style={{ marginRight: 12 }} />
             <Text style={{ fontSize: 16, color: textColor }}>Privacy Policy</Text>
           </MenuRow>
-          <MenuRow onPress={() => router.push('/terms')}>
+          <MenuRow onPress={() => {
+            posthog?.capture('terms_viewed')
+            router.push('/terms')
+          }}>
             <Info size={20} color={textColor} style={{ marginRight: 12 }} />
             <Text style={{ fontSize: 16, color: textColor }}>Terms of Service</Text>
+          </MenuRow>
+          <MenuRow onPress={() => {
+            posthog?.capture('cookie_policy_viewed')
+            router.push('/cookies')
+          }}>
+            <Info size={20} color={textColor} style={{ marginRight: 12 }} />
+            <Text style={{ fontSize: 16, color: textColor }}>Cookie Policy</Text>
           </MenuRow>
           <MenuRow>
             <Text style={{ fontSize: 16, color: textColor }}>Version</Text>
             <Text style={{ fontSize: 16, color: mutedColor, marginLeft: 'auto' }}>1.0.0</Text>
+          </MenuRow>
+          <MenuRow showArrow={false}>
+            <Text style={{ fontSize: 16, color: textColor }}>Chinmaya Janata</Text>
+            <Text style={{ fontSize: 16, color: mutedColor, marginLeft: 'auto' }}>Chinmaya Mission</Text>
           </MenuRow>
         </Section>
 
@@ -189,7 +208,10 @@ export default function SettingsIndex() {
             <LogOut size={20} color="#ef4444" style={{ marginRight: 12 }} />
             <Text style={{ fontSize: 16, color: '#ef4444' }}>Log Out</Text>
           </MenuRow>
-          <MenuRow onPress={() => setShowDeleteModal(true)} danger>
+          <MenuRow onPress={() => {
+            posthog?.capture('delete_account_started')
+            setShowDeleteModal(true)
+          }} danger>
             <AlertTriangle size={20} color="#dc2626" style={{ marginRight: 12 }} />
             <Text style={{ fontSize: 16, color: '#dc2626' }}>Delete Account</Text>
           </MenuRow>

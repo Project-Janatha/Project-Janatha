@@ -2,7 +2,7 @@ import { Link, Tabs, useRouter } from 'expo-router'
 import { Platform, View, Text, Pressable, Image, StatusBar } from 'react-native'
 import { useState, useEffect } from 'react'
 import { useUser, useThemeContext } from '../../components/contexts'
-import { User, Settings, LogOut, Plus } from 'lucide-react-native'
+import { Plus } from 'lucide-react-native'
 import SettingsPanel from '../../components/SettingsPanel'
 import Logo from '../../components/ui/Logo'
 import { Avatar, PrimaryButton, SecondaryButton } from '../../components/ui'
@@ -138,25 +138,23 @@ export default function TabLayout() {
       )
     }
 
-    // Mobile: show profile button with popover menu
+    // Native: tap profile → go directly to settings page (index.native.tsx)
     const displayName =
       user?.firstName && user?.lastName
         ? `${user.firstName} ${user.lastName}`
         : user?.username || ''
     const profileImage = user?.profileImage
 
-return (
-      <View style={{ position: 'relative' }}>
-        <Pressable
-          className="mr-4 p-2"
-          onPress={() => {
-            posthog?.capture('nav_menu_opened')
-            router.push('/settings')
-          }}
-        >
-          <Avatar image={profileImage || undefined} name={displayName} size={36} />
-</Pressable>
-      </View>
+    return (
+      <Pressable
+        className="mr-4 p-2"
+        onPress={() => {
+          posthog?.capture('nav_menu_opened')
+          router.push('/settings')
+        }}
+      >
+        <Avatar image={profileImage || undefined} name={displayName} size={36} />
+      </Pressable>
     )
   }
 
@@ -169,38 +167,39 @@ return (
           translucent
         />
       )}
-    <Tabs
-      screenOptions={{
-        tabBarStyle: { display: 'none' },
-        headerStyle: {
-          backgroundColor: Platform.OS === 'web' ? (isDark ? '#171717' : '#fff') : 'transparent',
-          borderBottomWidth: Platform.OS === 'web' ? 1 : 0,
-          borderBottomColor: Platform.OS === 'web' ? (isDark ? '#262626' : '#E5E7EB') : 'transparent',
-        },
-        headerTitleStyle: {
-          fontFamily: 'Inter-Bold',
-        },
-        headerTintColor: isDark ? '#fff' : '#000',
-        headerTitle: Platform.OS === 'web' ? () => <HeaderTitle /> : undefined,
-        headerTransparent: Platform.OS !== 'web',
-        headerShadowVisible: Platform.OS === 'web',
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: '',
-          headerRight: () => <HeaderRight />,
+      <Tabs
+        screenOptions={{
+          tabBarStyle: { display: 'none' },
+          headerStyle: {
+            backgroundColor: Platform.OS === 'web' ? (isDark ? '#171717' : '#fff') : 'transparent',
+            borderBottomWidth: Platform.OS === 'web' ? 1 : 0,
+            borderBottomColor:
+              Platform.OS === 'web' ? (isDark ? '#262626' : '#E5E7EB') : 'transparent',
+          },
+          headerTitleStyle: {
+            fontFamily: 'Inter-Bold',
+          },
+          headerTintColor: isDark ? '#fff' : '#000',
+          headerTitle: Platform.OS === 'web' ? () => <HeaderTitle /> : undefined,
+          headerTransparent: Platform.OS !== 'web',
+          headerShadowVisible: Platform.OS === 'web',
         }}
-      />
-      {/* Explore tab disabled: merged into unified Discover tab (B3 design) */}
-      <Tabs.Screen
-        name="explore"
-        options={{
-          href: null, // Hide from tab bar and navigation
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: '',
+            headerRight: () => <HeaderRight />,
+          }}
+        />
+        {/* Explore tab disabled: merged into unified Discover tab (B3 design) */}
+        <Tabs.Screen
+          name="explore"
+          options={{
+            href: null, // Hide from tab bar and navigation
+          }}
+        />
+      </Tabs>
     </>
   )
 }

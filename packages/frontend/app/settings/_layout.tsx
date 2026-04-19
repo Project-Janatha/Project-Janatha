@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, Pressable, ScrollView, Platform, useWindowDimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, usePathname, Slot, Stack } from 'expo-router'
-import { User, Settings as SettingsIcon, ChevronLeft } from 'lucide-react-native'
+import { User, Settings as SettingsIcon } from 'lucide-react-native'
 import { useThemeContext } from '../../components/contexts'
 import Logo from '../../components/ui/Logo'
 
@@ -17,45 +17,17 @@ export default function SettingsLayout() {
   const { isDark } = useThemeContext()
   const { width } = useWindowDimensions()
 
-  // Hide sidebar on narrow web viewports (< 768px)
   const showSidebar = Platform.OS === 'web' && width >= 768
 
   const handleTabPress = (path: string) => {
     router.push(path as any)
   }
 
-  const handleClose = () => {
-    router.back()
-  }
-
-  // Custom header for web
-  const HeaderTitle = () => {
-    if (Platform.OS !== 'web') {
-      return null
-    }
-
-    return (
-      <View className="flex-row items-center">
-        <Pressable
-          onPress={() => router.push('/')}
-          style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}
-        >
-          <Logo size={28} />
-        </Pressable>
-      </View>
-    )
-  }
-
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900" edges={['bottom']}>
         <View className="flex-1 flex-row">
-          {/* Sidebar - web only, hidden on narrow viewports */}
           {showSidebar && (
             <View className="w-64 border-r border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900">
               <View className="p-6 border-b border-stone-200 dark:border-stone-700">
@@ -65,7 +37,6 @@ export default function SettingsLayout() {
                   </Text>
                 </View>
               </View>
-              {/* Navigation Tabs */}
               <ScrollView className="flex-1 p-3">
                 {SETTINGS_TABS.map((tab) => {
                   const isActive = pathname === tab.path
@@ -100,7 +71,6 @@ export default function SettingsLayout() {
               </ScrollView>
             </View>
           )}
-          {/* Content Area */}
           <View className="flex-1">
             <Slot />
           </View>
