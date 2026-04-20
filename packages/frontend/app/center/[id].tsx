@@ -45,16 +45,16 @@ function MetaIcon({
   return (
     <View
       style={{
-        width: 32,
-        height: 32,
-        borderRadius: 8,
+        width: 36,
+        height: 36,
+        borderRadius: 10,
         backgroundColor: colors.iconBoxBg,
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
       }}
     >
-      <Icon size={16} color={color} />
+      <Icon size={18} color={color} />
     </View>
   )
 }

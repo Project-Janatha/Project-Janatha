@@ -86,6 +86,58 @@ export default function PreferencesNative() {
     </Pressable>
   )
 
+  /** Static label/value row (e.g. About) — avoids MenuRow flex-start packing label + value together */
+  const AboutInfoRow = ({
+    icon: Icon,
+    label,
+    value,
+    isLast,
+  }: {
+    icon: typeof Info
+    label: string
+    value: string
+    isLast?: boolean
+  }) => (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        backgroundColor: cardBg,
+        borderBottomWidth: isLast ? 0 : 1,
+        borderBottomColor: borderColor,
+        gap: 12,
+      }}
+    >
+      <Icon size={20} color={textColor} />
+      <Text
+        style={{
+          fontSize: 16,
+          color: textColor,
+          flex: 1,
+          minWidth: 0,
+        }}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+      >
+        {label}
+      </Text>
+      <Text
+        style={{
+          fontSize: 15,
+          color: mutedTextColor,
+          textAlign: 'right',
+          flexShrink: 0,
+          maxWidth: '52%',
+        }}
+        numberOfLines={2}
+      >
+        {value}
+      </Text>
+    </View>
+  )
+
   const Section = ({ title, children }: { title?: string; children: React.ReactNode }) => (
     <View style={{ marginBottom: 24 }}>
       {title && (
@@ -208,22 +260,13 @@ export default function PreferencesNative() {
 
         {/* About */}
         <Section title="About">
-          <MenuRow onPress={() => {}} showArrow={false}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-              <Info size={20} color={textColor} style={{ marginRight: 12 }} />
-              <Text style={{ fontSize: 16, color: textColor }}>Version</Text>
-            </View>
-            <Text style={{ fontSize: 16, color: mutedTextColor }}>{APP_VERSION}</Text>
-          </MenuRow>
-          <MenuRow onPress={() => {}} showArrow={false}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-              <Info size={20} color={textColor} style={{ marginRight: 12 }} />
-              <Text style={{ fontSize: 16, color: textColor }}>Chinmaya Janata</Text>
-            </View>
-            <Text style={{ fontSize: 14, color: mutedTextColor }}>
-              © {currentYear} Chinmaya Mission
-            </Text>
-          </MenuRow>
+          <AboutInfoRow icon={Info} label="Version" value={APP_VERSION} />
+          <AboutInfoRow
+            icon={Info}
+            label="Chinmaya Janata"
+            value={`© ${currentYear}\nChinmaya Mission`}
+            isLast
+          />
         </Section>
 
         {/* Account Actions */}

@@ -29,7 +29,7 @@ export default function WeekCalendar({ eventDates, selectedDate, onSelectDate }:
   const weekDays = useMemo(() => getWeekDays(), [])
 
   return (
-    <View className="flex-row justify-around px-2 py-2">
+    <View className="flex-row justify-around px-3 py-2.5">
       {weekDays.map((d) => {
         const isSelected = selectedDate === d.dateStr
         const hasEvents = eventDates.has(d.dateStr)
