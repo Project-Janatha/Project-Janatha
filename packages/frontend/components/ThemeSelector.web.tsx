@@ -4,16 +4,12 @@ import { Sun, Moon, Monitor } from 'lucide-react-native'
 import { useThemeContext } from './contexts'
 
 export default function ThemeSelector({ style, className }: { style?: any; className?: string }) {
-  const { themePreference, setThemePreference, isDark, setTheme } = useThemeContext()
+  const { themePreference, setThemePreference, isDark } = useThemeContext()
   const themeOptions = ['light', 'dark', 'system'] as const
   const optionWidth = 70
 
   const handlePress = (option: 'light' | 'dark' | 'system') => {
     setThemePreference(option)
-    // Force theme update for immediate visual feedback
-    if (option !== 'system') {
-      setTheme(option)
-    }
   }
 
   return (
