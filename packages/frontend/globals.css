@@ -80,7 +80,7 @@ div, p, span, a, button, input, textarea, select {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  /* box-shadow removed - causes crash in NativeWind */
   transition: all 0.2s ease;
   outline: none;
 }
@@ -99,7 +99,7 @@ div, p, span, a, button, input, textarea, select {
 .map-control-dark:hover {
   background-color: #f97316;
   color: #ffffff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  /* box-shadow removed - causes crash in NativeWind */
 }
 
 .map-control-light:active,

@@ -2,13 +2,13 @@ import React from 'react'
 import { View, Text, Pressable, ScrollView, Platform, useWindowDimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, usePathname, Slot, Stack } from 'expo-router'
-import { User, Settings as SettingsIcon, ChevronLeft } from 'lucide-react-native'
+import { ArrowLeft, User, Settings as SettingsIcon } from 'lucide-react-native'
 import { useThemeContext } from '../../components/contexts'
 import Logo from '../../components/ui/Logo'
 
 const SETTINGS_TABS = [
-  { id: 'profile', label: 'Profile', icon: User, path: '/settings' },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon, path: '/settings/settings' },
+  { id: 'profile', label: 'Profile', icon: User, path: '/settings/profile' },
+  { id: 'preferences', label: 'Preferences', icon: SettingsIcon, path: '/settings/preferences' },
 ]
 
 export default function SettingsLayout() {
@@ -17,7 +17,6 @@ export default function SettingsLayout() {
   const { isDark } = useThemeContext()
   const { width } = useWindowDimensions()
 
-  // Hide sidebar on narrow web viewports (< 768px)
   const showSidebar = Platform.OS === 'web' && width >= 768
 
   const handleTabPress = (path: string) => {
@@ -25,67 +24,45 @@ export default function SettingsLayout() {
   }
 
   const handleClose = () => {
-    router.back()
+    router.push('/')
   }
 
-  // Custom header for web
-  const HeaderTitle = () => {
-    if (Platform.OS !== 'web') {
-      return null
-    }
-
+  // Native: Stack with slide animation
+  if (Platform.OS !== 'web') {
     return (
-      <View className="flex-row items-center">
-        <Pressable
-          onPress={() => router.push('/')}
-          style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}
-        >
-          <Logo size={28} />
-        </Pressable>
-      </View>
+      <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+        <Stack.Screen name="preferences" />
+        <Stack.Screen name="profile" />
+      </Stack>
     )
   }
 
+  // Web: sidebar layout
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerStyle: {
-            backgroundColor: isDark ? '#171717' : '#fff',
-          },
-          headerTintColor: isDark ? '#fff' : '#000',
-          headerTitle: Platform.OS === 'web' ? () => <HeaderTitle /> : 'Settings',
-          headerLeft:
-            Platform.OS !== 'web'
-              ? () => (
-                  <Pressable
-                    onPress={handleClose}
-                    className="ml-2 flex-row items-center"
-                    style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}
-                  >
-                    <ChevronLeft size={24} color={isDark ? '#fff' : '#000'} />
-                    <Text className="text-base font-inter text-content dark:text-content-dark">Back</Text>
-                  </Pressable>
-                )
-              : undefined,
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900" edges={['bottom']}>
         <View className="flex-1 flex-row">
-          {/* Sidebar - web only, hidden on narrow viewports */}
           {showSidebar && (
             <View className="w-64 border-r border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900">
               <View className="p-6 border-b border-stone-200 dark:border-stone-700">
                 <View className="flex-row items-center justify-between mb-2">
+                  <Pressable
+                    onPress={handleClose}
+                    className="p-1"
+                    style={{ minWidth: 44, minHeight: 44, justifyContent: 'center', alignItems: 'center' }}
+                  >
+                    <ArrowLeft size={20} color={isDark ? '#a1a1aa' : '#71717a'} />
+                  </Pressable>
                   <Text className="text-2xl font-inter font-bold text-content dark:text-content-dark">
                     Settings
                   </Text>
+                  <View style={{ width: 44 }} />
                 </View>
               </View>
-              {/* Navigation Tabs */}
               <ScrollView className="flex-1 p-3">
                 {SETTINGS_TABS.map((tab) => {
-                  const isActive = pathname === tab.path
+                  const isActive = pathname === tab.path || pathname.startsWith(tab.path + '/')
                   const Icon = tab.icon
                   return (
                     <Pressable
@@ -117,7 +94,6 @@ export default function SettingsLayout() {
               </ScrollView>
             </View>
           )}
-          {/* Content Area */}
           <View className="flex-1">
             <Slot />
           </View>

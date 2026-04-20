@@ -15,13 +15,14 @@ config.resolver.blockList = [
 
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
+  path.resolve(workspaceRoot, 'node_modules'),
 ]
 
 config.resolver.extraNodeModules = {
-  'react-native': path.resolve(projectRoot, 'node_modules/react-native'),
-  'react-native-web': path.resolve(projectRoot, 'node_modules/react-native-web'),
-  'react': path.resolve(projectRoot, 'node_modules/react'),
-  'react-dom': path.resolve(projectRoot, 'node_modules/react-dom'),
+  'react-native': path.resolve(workspaceRoot, 'node_modules/react-native'),
+  'react-native-web': path.resolve(workspaceRoot, 'node_modules/react-native-web'),
+  'react': path.resolve(workspaceRoot, 'node_modules/react'),
+  'react-dom': path.resolve(workspaceRoot, 'node_modules/react-dom'),
 }
 
 module.exports = withNativeWind(config, {
