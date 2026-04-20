@@ -2,7 +2,16 @@ import React, { useState } from 'react'
 import { View, Text, Pressable, ScrollView, StatusBar, Modal, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { ArrowLeft, User, Shield, Info, FileText, ChevronRight, LogOut, AlertTriangle } from 'lucide-react-native'
+import {
+  ArrowLeft,
+  User,
+  Shield,
+  Info,
+  FileText,
+  ChevronRight,
+  LogOut,
+  AlertTriangle,
+} from 'lucide-react-native'
 import { useUser, useThemeContext } from '../../components/contexts'
 import { Avatar } from '../../components/ui'
 import ThemeSelector from '../../components/ThemeSelector'
@@ -50,16 +59,22 @@ export default function PreferencesNative() {
   }
 
   const displayName =
-    user?.firstName && user?.lastName
-      ? `${user.firstName} ${user.lastName}`
-      : user?.username || ''
+    user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || ''
 
-  const MenuRow = ({ onPress, children, showArrow = true }: { onPress: () => void; children: React.ReactNode; showArrow?: boolean }) => (
+  const MenuRow = ({
+    onPress,
+    children,
+    showArrow = true,
+  }: {
+    onPress: () => void
+    children: React.ReactNode
+    showArrow?: boolean
+  }) => (
     <Pressable
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: showArrow ? 'space-between' : 'flex-start',
+        justifyContent: 'space-between',
         paddingVertical: 14,
         paddingHorizontal: 16,
         backgroundColor: cardBg,
@@ -67,47 +82,50 @@ export default function PreferencesNative() {
       onPress={onPress}
     >
       {children}
-      {showArrow && (
-        <ChevronRight size={20} color={textColor} />
-      )}
+      {showArrow && <ChevronRight size={20} color={textColor} />}
     </Pressable>
   )
 
   const Section = ({ title, children }: { title?: string; children: React.ReactNode }) => (
     <View style={{ marginBottom: 24 }}>
       {title && (
-        <Text style={{
-          fontSize: 13,
-          fontWeight: '600',
-          color: mutedTextColor,
-          textTransform: 'uppercase',
-          paddingHorizontal: 16,
-          paddingBottom: 8,
-        }}>
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: '600',
+            color: mutedTextColor,
+            textTransform: 'uppercase',
+            paddingHorizontal: 16,
+            paddingBottom: 8,
+          }}
+        >
           {title}
         </Text>
       )}
-      <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor }}>
-        {children}
-      </View>
+      <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor }}>{children}</View>
     </View>
   )
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#000' : '#fff' }} edges={['top', 'bottom']}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: isDark ? '#000' : '#fff' }}
+      edges={['top', 'bottom']}
+    >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header */}
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 8,
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderColor,
-        backgroundColor: isDark ? '#000' : '#fff',
-      }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 8,
+          paddingVertical: 8,
+          borderBottomWidth: 1,
+          borderColor,
+          backgroundColor: isDark ? '#000' : '#fff',
+        }}
+      >
         <Pressable onPress={() => router.back()} style={{ padding: 8 }}>
           <ArrowLeft size={24} color={textColor} />
         </Pressable>
@@ -119,11 +137,7 @@ export default function PreferencesNative() {
         {/* Profile Card */}
         <View style={{ paddingHorizontal: 16, paddingVertical: 16, marginBottom: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Avatar
-              image={user?.profileImage || undefined}
-              name={displayName}
-              size={56}
-            />
+            <Avatar image={user?.profileImage || undefined} name={displayName} size={56} />
             <View style={{ marginLeft: 12, flex: 1 }}>
               <Text style={{ fontSize: 17, fontWeight: '600', color: textColor }}>
                 {displayName}
@@ -157,28 +171,34 @@ export default function PreferencesNative() {
 
         {/* Regulatory */}
         <Section title="Regulatory">
-          <MenuRow onPress={() => {
-            posthog?.capture('privacy_policy_viewed')
-            router.push('/privacy')
-          }}>
+          <MenuRow
+            onPress={() => {
+              posthog?.capture('privacy_policy_viewed')
+              router.push('/privacy')
+            }}
+          >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Shield size={20} color={textColor} style={{ marginRight: 12 }} />
               <Text style={{ fontSize: 16, color: textColor }}>Privacy Policy</Text>
             </View>
           </MenuRow>
-          <MenuRow onPress={() => {
-            posthog?.capture('terms_viewed')
-            router.push('/terms')
-          }}>
+          <MenuRow
+            onPress={() => {
+              posthog?.capture('terms_viewed')
+              router.push('/terms')
+            }}
+          >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <FileText size={20} color={textColor} style={{ marginRight: 12 }} />
               <Text style={{ fontSize: 16, color: textColor }}>Terms of Service</Text>
             </View>
           </MenuRow>
-          <MenuRow onPress={() => {
-            posthog?.capture('cookie_policy_viewed')
-            router.push('/cookies')
-          }}>
+          <MenuRow
+            onPress={() => {
+              posthog?.capture('cookie_policy_viewed')
+              router.push('/cookies')
+            }}
+          >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Info size={20} color={textColor} style={{ marginRight: 12 }} />
               <Text style={{ fontSize: 16, color: textColor }}>Cookie Policy</Text>
@@ -189,18 +209,20 @@ export default function PreferencesNative() {
         {/* About */}
         <Section title="About">
           <MenuRow onPress={() => {}} showArrow={false}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
               <Info size={20} color={textColor} style={{ marginRight: 12 }} />
               <Text style={{ fontSize: 16, color: textColor }}>Version</Text>
             </View>
-            <Text style={{ fontSize: 16, color: mutedTextColor, textAlign: 'right' }}>{APP_VERSION}</Text>
+            <Text style={{ fontSize: 16, color: mutedTextColor }}>{APP_VERSION}</Text>
           </MenuRow>
           <MenuRow onPress={() => {}} showArrow={false}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
               <Info size={20} color={textColor} style={{ marginRight: 12 }} />
-              <Text style={{ fontSize: 16, color: textColor, flex: 1 }}>Chinmaya Janata</Text>
+              <Text style={{ fontSize: 16, color: textColor }}>Chinmaya Janata</Text>
             </View>
-            <Text style={{ fontSize: 14, color: mutedTextColor, textAlign: 'right' }}>{currentYear} Chinmaya Mission</Text>
+            <Text style={{ fontSize: 14, color: mutedTextColor }}>
+              © {currentYear} Chinmaya Mission
+            </Text>
           </MenuRow>
         </Section>
 
@@ -212,13 +234,18 @@ export default function PreferencesNative() {
               <Text style={{ fontSize: 16, color: '#ef4444', fontWeight: '600' }}>Log Out</Text>
             </View>
           </MenuRow>
-          <MenuRow onPress={() => {
-            posthog?.capture('delete_account_started')
-            setShowDeleteModal(true)
-          }} showArrow={false}>
+          <MenuRow
+            onPress={() => {
+              posthog?.capture('delete_account_started')
+              setShowDeleteModal(true)
+            }}
+            showArrow={false}
+          >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <AlertTriangle size={20} color="#dc2626" style={{ marginRight: 12 }} />
-              <Text style={{ fontSize: 16, color: '#dc2626', fontWeight: '600' }}>Delete Account</Text>
+              <Text style={{ fontSize: 16, color: '#dc2626', fontWeight: '600' }}>
+                Delete Account
+              </Text>
             </View>
           </MenuRow>
         </Section>
@@ -227,15 +254,60 @@ export default function PreferencesNative() {
       </ScrollView>
 
       {/* Delete confirmation modal */}
-      <Modal transparent visible={showDeleteModal} animationType="fade" onRequestClose={() => setShowDeleteModal(false)}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 24 }}>
-          <View style={{ backgroundColor: cardBg, borderRadius: 20, padding: 24, width: '100%', maxWidth: 340, borderWidth: 1, borderColor: '#FECACA' }}>
+      <Modal
+        transparent
+        visible={showDeleteModal}
+        animationType="fade"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            paddingHorizontal: 24,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: cardBg,
+              borderRadius: 20,
+              padding: 24,
+              width: '100%',
+              maxWidth: 340,
+              borderWidth: 1,
+              borderColor: '#FECACA',
+            }}
+          >
             <View style={{ alignItems: 'center', marginBottom: 16 }}>
-              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: isDark ? 'rgba(220,38,38,0.15)' : '#FEE2E2', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+              <View
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 32,
+                  backgroundColor: isDark ? 'rgba(220,38,38,0.15)' : '#FEE2E2',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 12,
+                }}
+              >
                 <AlertTriangle size={32} color="#DC2626" />
               </View>
-              <Text style={{ fontSize: 20, fontWeight: '700', color: textColor, marginBottom: 8, textAlign: 'center' }}>Delete Account?</Text>
-              <Text style={{ fontSize: 15, color: mutedTextColor, textAlign: 'center', lineHeight: 22 }}>
+              <Text
+                style={{
+                  fontSize: 20,
+                  fontWeight: '700',
+                  color: textColor,
+                  marginBottom: 8,
+                  textAlign: 'center',
+                }}
+              >
+                Delete Account?
+              </Text>
+              <Text
+                style={{ fontSize: 15, color: mutedTextColor, textAlign: 'center', lineHeight: 22 }}
+              >
                 This action cannot be undone. All your data will be permanently deleted.
               </Text>
             </View>
@@ -243,17 +315,31 @@ export default function PreferencesNative() {
               <Pressable
                 onPress={() => setShowDeleteModal(false)}
                 disabled={isDeleting}
-                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: isDark ? '#1c1c1c' : '#f3f4f6', alignItems: 'center' }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  backgroundColor: isDark ? '#1c1c1c' : '#f3f4f6',
+                  alignItems: 'center',
+                }}
               >
                 <Text style={{ fontSize: 16, fontWeight: '600', color: textColor }}>Cancel</Text>
               </Pressable>
               <Pressable
                 onPress={handleDeleteAccount}
                 disabled={isDeleting}
-                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#DC2626', alignItems: 'center' }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  backgroundColor: '#DC2626',
+                  alignItems: 'center',
+                }}
               >
                 {isDeleting ? (
-                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Deleting...</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>
+                    Deleting...
+                  </Text>
                 ) : (
                   <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Delete</Text>
                 )}
