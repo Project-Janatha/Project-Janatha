@@ -398,9 +398,9 @@ export default function DiscoverScreen() {
 
             {/* Search Input */}
             <View
-              className="flex-row items-center mx-4 mb-2 px-3 rounded-xl"
+              className="flex-row items-center mx-4 mb-3 px-3 rounded-xl"
               style={{
-                minHeight: 40,
+                minHeight: 44,
                 backgroundColor: isDark ? '#262626' : '#F3F4F6',
               }}
             >
@@ -431,24 +431,26 @@ export default function DiscoverScreen() {
 
             {/* Filter checkboxes */}
             {activeFilter !== 'Centers' && (
-              <View className="flex-row items-center px-4 py-1 gap-4">
+              <View className="flex-row items-center px-4 py-2 gap-5">
                 <Pressable
                   onPress={() => setShowGoingOnly((prev) => !prev)}
                   className="flex-row items-center"
+                  style={{ minHeight: 32 }}
                 >
-                  <View className={`w-4 h-4 rounded border mr-2 items-center justify-center ${showGoingOnly ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
+                  <View className={`w-[18px] h-[18px] rounded border mr-2 items-center justify-center ${showGoingOnly ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
                     {showGoingOnly && <Text className="text-white text-xs font-bold">✓</Text>}
                   </View>
-                  <Text className="text-xs text-stone-500 dark:text-stone-400 font-inter">Going</Text>
+                  <Text className="text-[13px] text-stone-500 dark:text-stone-400 font-inter">Going</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => setShowPastEvents((prev) => !prev)}
                   className="flex-row items-center"
+                  style={{ minHeight: 32 }}
                 >
-                  <View className={`w-4 h-4 rounded border mr-2 items-center justify-center ${showPastEvents ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
+                  <View className={`w-[18px] h-[18px] rounded border mr-2 items-center justify-center ${showPastEvents ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
                     {showPastEvents && <Text className="text-white text-xs font-bold">✓</Text>}
                   </View>
-                  <Text className="text-xs text-stone-500 dark:text-stone-400 font-inter">Show past events</Text>
+                  <Text className="text-[13px] text-stone-500 dark:text-stone-400 font-inter">Show past events</Text>
                 </Pressable>
               </View>
             )}
@@ -478,7 +480,7 @@ export default function DiscoverScreen() {
           {/* Unified List */}
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40, gap: 2 }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40, gap: 4 }}
             showsVerticalScrollIndicator={false}
             scrollEnabled={isSheetExpanded}
           >
@@ -561,12 +563,12 @@ const styles = StyleSheet.create({
   },
   handleRow: {
     alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 6,
+    paddingTop: 10,
+    paddingBottom: 8,
   },
   handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
+    width: 36,
+    height: 5,
+    borderRadius: 2.5,
   },
 })

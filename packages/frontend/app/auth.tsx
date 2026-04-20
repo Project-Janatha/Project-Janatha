@@ -255,11 +255,11 @@ export default function AuthScreen() {
 
             {/* Janata Wordmark */}
             <Pressable onPress={() => router.push('/landing')}>
-              <Logo size={32} style={{ marginBottom: 40 }} />
+              <Logo size={32} style={{ marginBottom: 32 }} />
             </Pressable>
 
             {/* Heading & Subtitle */}
-            <View className="mb-8">
+            <View className="mb-6">
               <Text
                 style={{ fontFamily: '"Inclusive Sans"', fontSize: 36, fontWeight: '400' }}
                 className="text-content dark:text-content-dark"
