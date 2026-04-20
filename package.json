@@ -33,7 +33,13 @@
     "test:backend": "cd packages/backend && npm run test",
     "test:cloudflare": "cd packages/backend && npm run test:cloudflare --",
     "test:cloudflare:app": "cd packages/backend && npm run test:cloudflare:app",
-    "test:frontend:jest": "cd packages/frontend && npm run test:jest"
+    "test:frontend:jest": "cd packages/frontend && npm run test:jest",
+    "eas:build:ios": "cd packages/frontend && eas build --profile production --platform ios",
+    "eas:build:android": "cd packages/frontend && eas build --profile production --platform android",
+    "eas:submit:ios": "cd packages/frontend && eas submit --platform ios",
+    "eas:submit:android": "cd packages/frontend && eas submit --platform android",
+    "app:deploy:ios": "npm run eas:build:ios && npm run eas:submit:ios",
+    "app:deploy:android": "npm run eas:build:android && npm run eas:submit:android"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260101.0",
