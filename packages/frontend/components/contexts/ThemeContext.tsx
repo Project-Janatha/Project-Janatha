@@ -1,6 +1,6 @@
 import { useColorScheme as useNativeWindColorScheme } from 'nativewind'
 import { Appearance, Platform } from 'react-native'
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const THEME_KEY = '@theme_preference'
@@ -13,10 +13,23 @@ function getSavedPreference(): 'light' | 'dark' | 'system' | null {
   return null
 }
 
+function getWebSystemTheme(): 'light' | 'dark' {
+  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) return 'dark'
+  return 'light'
+}
+
 function applyWebTheme(theme: 'light' | 'dark') {
   if (Platform.OS !== 'web' || typeof document === 'undefined') return
   document.documentElement.classList.toggle('dark', theme === 'dark')
   document.documentElement.style.colorScheme = theme
+}
+
+function subscribeToWebSystemChanges(fn: (theme: 'light' | 'dark') => void): () => void {
+  if (typeof window === 'undefined' || !window.matchMedia) return () => {}
+  const mq = window.matchMedia('(prefers-color-scheme: dark)')
+  const h = (e: MediaQueryListEvent) => fn(e.matches ? 'dark' : 'light')
+  mq.addEventListener('change', h)
+  return () => mq.removeEventListener('change', h)
 }
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
@@ -28,12 +41,23 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       const saved = await AsyncStorage.getItem(THEME_KEY).catch(() => null)
       if (cancelled) return
 
-      if (saved === 'light' || saved === 'dark') {
-        if (Platform.OS !== 'web') Appearance.setColorScheme(saved)
-        setColorScheme(saved)
-        applyWebTheme(saved)
+      const pref = saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system'
+
+      if (pref === 'system') {
+        if (Platform.OS !== 'web') {
+          // Native: let nativewind follow system automatically
+          Appearance.setColorScheme(null)
+        } else {
+          // Web: manually apply system theme
+          const sys = getWebSystemTheme()
+          setColorScheme(sys)
+          applyWebTheme(sys)
+        }
+      } else {
+        if (Platform.OS !== 'web') Appearance.setColorScheme(pref)
+        setColorScheme(pref)
+        applyWebTheme(pref)
       }
-      // If 'system' or no pref, do nothing — nativewind already follows system
     }
     init()
     return () => { cancelled = true }
@@ -43,7 +67,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 }
 
 export const useThemeContext = () => {
-  const { colorScheme, setColorScheme, toggleColorScheme } = useNativeWindColorScheme()
+  const { colorScheme, setColorScheme } = useNativeWindColorScheme()
   const initialPref = getSavedPreference()
   const [pref, setPref] = useState<'light' | 'dark' | 'system'>(initialPref ?? 'system')
   const [loaded, setLoaded] = useState(initialPref !== null)
@@ -61,13 +85,30 @@ export const useThemeContext = () => {
     return () => { cancelled = true }
   }, [loaded])
 
+  // Web only: listen to system changes when in 'system' mode
+  useEffect(() => {
+    if (Platform.OS !== 'web' || pref !== 'system' || !loaded) return
+    return subscribeToWebSystemChanges((theme) => {
+      setColorScheme(theme)
+      applyWebTheme(theme)
+    })
+  }, [pref, loaded, setColorScheme])
+
   const setThemePreference = useCallback(
     async (mode: 'light' | 'dark' | 'system') => {
       setPref(mode)
       AsyncStorage.setItem(THEME_KEY, mode).catch(() => {})
 
       if (mode === 'system') {
-        if (Platform.OS !== 'web') Appearance.setColorScheme(null)
+        if (Platform.OS !== 'web') {
+          // Native: let nativewind follow system
+          Appearance.setColorScheme(null)
+        } else {
+          // Web: apply current system theme
+          const sys = getWebSystemTheme()
+          setColorScheme(sys)
+          applyWebTheme(sys)
+        }
       } else {
         if (Platform.OS !== 'web') Appearance.setColorScheme(mode)
         setColorScheme(mode)
