@@ -72,13 +72,20 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       const saved = await safeStorage.getItem(THEME_PREFERENCE_KEY)
       if (cancelled) return
       if (saved === 'light' || saved === 'dark') {
-        Appearance.setColorScheme(saved)
+        if (Platform.OS !== 'web') Appearance.setColorScheme(saved)
         setColorScheme(saved)
         requestAnimationFrame(() => applyWebTheme(saved))
       } else {
         // 'system' or no preference — follow system
-        Appearance.setColorScheme(null as any)
-        setColorScheme('system' as any)
+        if (Platform.OS !== 'web') Appearance.setColorScheme(null as any)
+        // On web, just apply the current system theme
+        if (Platform.OS === 'web') {
+          const sys = getWebSystemColorScheme()
+          setColorScheme(sys)
+          requestAnimationFrame(() => applyWebTheme(sys))
+        } else {
+          setColorScheme('system' as any)
+        }
       }
     }
     init()
@@ -134,7 +141,7 @@ export const useThemeContext = () => {
       await safeStorage.setItem(THEME_PREFERENCE_KEY, mode)
 
       if (mode === 'system') {
-        Appearance.setColorScheme(null as any)
+        if (Platform.OS !== 'web') Appearance.setColorScheme(null as any)
         if (Platform.OS === 'web') {
           const sys = getWebSystemColorScheme()
           setColorScheme(sys)
@@ -143,7 +150,7 @@ export const useThemeContext = () => {
           setColorScheme('system' as any)
         }
       } else {
-        Appearance.setColorScheme(mode)
+        if (Platform.OS !== 'web') Appearance.setColorScheme(mode)
         setColorScheme(mode)
         requestAnimationFrame(() => applyWebTheme(mode))
       }
