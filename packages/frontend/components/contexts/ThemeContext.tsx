@@ -52,8 +52,7 @@ function applyToDOM(theme: ResolvedTheme): void {
   if (!isWeb || typeof document === 'undefined') return
   const root = document.documentElement
   root.classList.toggle('dark', theme === 'dark')
-  root.classList.toggle('light', theme === 'light')
-  root.style.colorScheme = theme // lets the browser chrome match too
+  root.style.colorScheme = theme
 }
 
 // ─── System-theme hook ────────────────────────────────────────────────────────

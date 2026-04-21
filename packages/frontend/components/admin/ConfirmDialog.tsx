@@ -1,6 +1,6 @@
 import React from 'react'
 import { Modal, View, Text, Pressable, StyleSheet } from 'react-native'
-import { useThemeContext } from '../contexts'
+import { useTheme } from '../contexts'
 
 type ConfirmDialogProps = {
   visible: boolean
@@ -19,7 +19,7 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
 
   if (!visible) return null
 

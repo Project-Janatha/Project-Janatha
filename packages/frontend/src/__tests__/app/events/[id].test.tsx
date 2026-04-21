@@ -13,7 +13,7 @@ jest.mock('../../../../hooks/useApiData', () => ({
 
 jest.mock('../../../../components/contexts', () => ({
   useUser: jest.fn(),
-  useThemeContext: jest.fn(() => ({ isDark: false })),
+  useTheme: jest.fn(() => ({ isDark: false })),
 }))
 
 jest.mock('../../../../hooks/useDetailColors', () => ({

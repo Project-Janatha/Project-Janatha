@@ -804,7 +804,7 @@ export default function DiscoverScreenWeb() {
   const panelWidth = isTablet ? 340 : 420
 
   const router = useRouter()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const { user } = useUser()
   const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
   const canCreate = isAdmin || isLocal

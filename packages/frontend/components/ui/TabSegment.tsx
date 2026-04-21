@@ -9,7 +9,7 @@
 
 import React, { useEffect, useRef } from 'react'
 import { TouchableOpacity, Text, View, Animated } from 'react-native'
-import { useThemeContext } from '../contexts'
+import { useTheme } from '../contexts'
 
 export interface TabOption {
   value: string
@@ -29,7 +29,7 @@ export function TabSegment({
   onValueChange,
   variant = 'primary',
 }: TabSegmentProps) {
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const selectedIndex = options.findIndex((opt) => opt.value === value)
   const optionWidth = 80
   const indicatorPadding = 8

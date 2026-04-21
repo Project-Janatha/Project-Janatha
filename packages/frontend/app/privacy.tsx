@@ -1,8 +1,8 @@
 import { View, Text, ScrollView } from 'react-native'
-import { useThemeContext } from '../components/contexts'
+import { useTheme } from '../components/contexts'
 
 export default function PrivacyPolicy() {
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const bg = isDark ? '#171717' : '#FAFAF7'
   const heading = isDark ? '#F5F5F4' : '#1C1917'
   const body = isDark ? '#D6D3D1' : '#44403C'
