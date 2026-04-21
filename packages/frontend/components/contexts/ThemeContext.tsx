@@ -1,109 +1,119 @@
 import { useColorScheme as useNativeWindColorScheme } from 'nativewind'
-import { useColorScheme as useSystemColorScheme, Platform } from 'react-native'
-import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react'
+import { Appearance, Platform, View } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 const THEME_KEY = '@theme_preference'
 
-type ThemePreference = 'light' | 'dark' | 'system'
+export type ThemePreference = 'light' | 'dark' | 'system'
 
 interface ThemeContextValue {
   isDark: boolean
   themePreference: ThemePreference
-  setThemePreference: (mode: ThemePreference) => void
+  setThemePreference: (pref: ThemePreference) => void
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-function getInitialEffectiveTheme(): 'light' | 'dark' {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    const saved = localStorage.getItem(THEME_KEY)
-    if (saved === 'light' || saved === 'dark') return saved
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  }
-  return 'light'
+function getSystemTheme(): 'light' | 'dark' {
+  return Appearance.getColorScheme() === 'dark' ? 'dark' : 'light'
 }
 
-function applyWebTheme(theme: 'light' | 'dark') {
+function readPersistedPreference(): ThemePreference {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const v = localStorage.getItem(THEME_KEY)
+    if (v === 'light' || v === 'dark' || v === 'system') return v
+  }
+  return 'system'
+}
+
+function persistPreference(pref: ThemePreference) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    localStorage.setItem(THEME_KEY, pref)
+  } else {
+    AsyncStorage.setItem(THEME_KEY, pref).catch(() => {})
+  }
+}
+
+function applyWebClass(theme: 'light' | 'dark') {
   if (Platform.OS !== 'web' || typeof document === 'undefined') return
   document.documentElement.classList.toggle('dark', theme === 'dark')
   document.documentElement.style.colorScheme = theme
-  const root = document.getElementById('root')
-  if (root) root.classList.toggle('dark', theme === 'dark')
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const { setColorScheme } = useNativeWindColorScheme()
-  const systemColorScheme = useSystemColorScheme()
-  const [themePreference, setThemePreferenceState] = useState<ThemePreference>('system')
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>(getInitialEffectiveTheme)
+  const { colorScheme, setColorScheme } = useNativeWindColorScheme()
+  const initialPref = readPersistedPreference()
+  const [preference, setPreferenceState] = useState<ThemePreference>(initialPref)
+  const [systemTick, setSystemTick] = useState(0)
 
-  const systemTheme = systemColorScheme === 'dark' ? 'dark' : 'light'
+  const systemTheme: 'light' | 'dark' = getSystemTheme()
+  const effective = preference === 'system' ? systemTheme : preference
 
+  const preferenceRef = useRef(preference)
   useEffect(() => {
-    let cancelled = false
+    preferenceRef.current = preference
+  }, [preference])
 
-    const init = async () => {
-      let saved: ThemePreference | null = null
-
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        const v = localStorage.getItem(THEME_KEY)
-        if (v === 'light' || v === 'dark' || v === 'system') saved = v
-      } else {
-        const v = await AsyncStorage.getItem(THEME_KEY).catch(() => null)
-        if (v === 'light' || v === 'dark' || v === 'system') saved = v
-      }
-
-      if (cancelled) return
-
-      const pref = saved ?? 'system'
-      setThemePreferenceState(pref)
-      setIsLoaded(true)
-    }
-
-    init()
-    return () => { cancelled = true }
+  // Load AsyncStorage on native
+  useEffect(() => {
+    if (Platform.OS === 'web') return
+    AsyncStorage.getItem(THEME_KEY)
+      .then((v) => {
+        if (v === 'light' || v === 'dark' || v === 'system') setPreferenceState(v)
+      })
+      .catch(() => {})
   }, [])
 
+  // Listen for system theme changes on native
   useEffect(() => {
-    if (!isLoaded) return
+    if (Platform.OS === 'web') return
 
-    const effective = themePreference === 'system' ? systemTheme : themePreference
-    setEffectiveTheme(effective)
-    setColorScheme(effective)
-    applyWebTheme(effective)
-  }, [themePreference, systemTheme, isLoaded, setColorScheme])
+    const sub = Appearance.addChangeListener(() => {
+      if (preferenceRef.current !== 'system') return
+      setSystemTick((t) => t + 1)
+    })
 
-  const setThemePreference = useCallback(
-    (mode: ThemePreference) => {
-      setThemePreferenceState(mode)
+    return () => sub.remove()
+  }, [])
 
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        localStorage.setItem(THEME_KEY, mode)
-      } else {
-        AsyncStorage.setItem(THEME_KEY, mode).catch(() => {})
-      }
-    },
-    []
+  // Apply theme
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      setColorScheme(effective)
+      applyWebClass(effective)
+    } else {
+      setColorScheme(effective)
+    }
+  }, [effective, setColorScheme])
+
+  const setThemePreference = useCallback((pref: ThemePreference) => {
+    setPreferenceState(pref)
+    persistPreference(pref)
+  }, [])
+
+  const value = useMemo<ThemeContextValue>(
+    () => ({ isDark: colorScheme === 'dark', themePreference: preference, setThemePreference }),
+    [colorScheme, preference, setThemePreference]
   )
 
-  const value = useMemo(
-    () => ({
-      isDark: effectiveTheme === 'dark',
-      themePreference,
-      setThemePreference,
-    }),
-    [effectiveTheme, themePreference, setThemePreference]
+  return (
+    <ThemeContext.Provider value={value}>
+      {Platform.OS === 'web' ? (
+        children
+      ) : (
+        <View className={effective === 'dark' ? 'flex-1 dark' : 'flex-1'} style={{ flex: 1 }}>
+          {children}
+        </View>
+      )}
+    </ThemeContext.Provider>
   )
-
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
-export function useThemeContext() {
-  const context = useContext(ThemeContext)
-  if (!context) {
-    throw new Error('useThemeContext must be used within a ThemeProvider')
-  }
-  return context
+export function useTheme() {
+  const ctx = useContext(ThemeContext)
+  if (!ctx) throw new Error('useTheme must be used within a ThemeProvider')
+  return ctx
 }
+
+export const useThemeContext = useTheme
