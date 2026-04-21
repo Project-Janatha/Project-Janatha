@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Camera, Pencil, MapPin, ArrowLeft } from 'lucide-react-native'
 import { useRouter, usePathname } from 'expo-router'
-import { useUser, useThemeContext } from '../../components/contexts'
+import { useUser, useTheme } from '../../components/contexts'
 import BirthdatePicker from '../../components/BirthdatePicker'
 import { fetchCenters, CenterData } from '../../utils/api'
 
@@ -63,7 +63,7 @@ export default function ProfileNative() {
   const router = useRouter()
   const pathname = usePathname()
   const { user, updateProfile, setUser } = useUser()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})

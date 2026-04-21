@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { Bell, Building2, CalendarDays, Users, Ticket } from 'lucide-react-native'
-import { useThemeContext } from '../contexts'
+import { useTheme } from '../contexts'
 
 export type AdminTab = 'Centers' | 'Events' | 'Users' | 'Invite Codes' | 'Notifications'
 
@@ -19,7 +19,7 @@ const tabs: { key: AdminTab; label: string; Icon: typeof Building2 }[] = [
 ]
 
 export default function AdminSidebar({ activeTab, onTabChange }: AdminSidebarProps) {
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
 
   const inactiveColor = isDark ? '#A8A29E' : '#78716C'
 

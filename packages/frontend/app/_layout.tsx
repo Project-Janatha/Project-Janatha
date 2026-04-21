@@ -16,7 +16,7 @@ import {
   UserProvider,
   useUser,
   ThemeProvider as CustomThemeProvider,
-  useThemeContext,
+  useTheme,
 } from '../components/contexts'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 import '../globals.css'
@@ -79,7 +79,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const { user, loading } = useUser()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const pathname = usePathname()
   const router = useRouter()
   const isAuthenticated = !!user

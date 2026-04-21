@@ -1,6 +1,4 @@
-import OnboardingProvider, { useOnboarding } from './OnboardingProvider'
-import UserContext, { UserProvider, useUser } from './UserContext'
-import { ThemeProvider, useThemeContext } from './ThemeContext'
+import { ThemeProvider, useTheme } from './ThemeContext'
 
 export {
   OnboardingProvider,
@@ -9,5 +7,5 @@ export {
   UserContext,
   useUser,
   ThemeProvider,
-  useThemeContext,
+  useTheme,
 }

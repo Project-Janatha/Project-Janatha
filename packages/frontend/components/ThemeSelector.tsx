@@ -1,13 +1,13 @@
 import React from 'react'
 import { View, Text, Pressable } from 'react-native'
 import { Sun, Moon, Monitor } from 'lucide-react-native'
-import { useThemeContext } from './contexts'
+import { useTheme } from './contexts'
 
 const themeOptions = ['light', 'dark', 'system'] as const
 const optionWidth = 70
 
 export default function ThemeSelector({ style, className }: { style?: any; className?: string }) {
-  const { themePreference, setThemePreference, isDark } = useThemeContext()
+  const { preference: themePreference, setPreference: setThemePreference, isDark } = useTheme()
 
   const handlePress = (option: (typeof themeOptions)[number]) => {
     setThemePreference(option)

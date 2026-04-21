@@ -12,7 +12,7 @@ import {
   type EventData,
 } from '../../utils/api'
 import { useDetailColors } from '../../hooks/useDetailColors'
-import { useThemeContext } from '../contexts'
+import { useTheme } from '../contexts'
 
 const formatDate = (dateStr: string) => {
   const d = new Date(dateStr)
@@ -26,7 +26,7 @@ const formatTime = (dateStr: string) => {
 
 export default function EventsTab() {
   const colors = useDetailColors()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const [search, setSearch] = useState('')
   const [events, setEvents] = useState<EventData[]>([])
   const [total, setTotal] = useState(0)

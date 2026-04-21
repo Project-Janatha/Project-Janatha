@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { View, Text } from 'react-native'
-import { useUser, useThemeContext } from '../components/contexts'
+import { useUser, useTheme } from '../components/contexts'
 import { router } from 'expo-router'
 import AdminSidebar, { type AdminTab } from '../components/admin/AdminSidebar'
 import CentersTab from '../components/admin/CentersTab'
@@ -12,7 +12,7 @@ import { isSuperAdmin as checkSuperAdmin } from '../utils/admin'
 
 export default function AdminPage() {
   const { user, loading } = useUser()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const [activeTab, setActiveTab] = useState<AdminTab>('Centers')
 
   // TODO: backend must enforce admin auth on all admin-specific endpoints

@@ -1,13 +1,12 @@
 import { View, Text, Image } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useEffect, useState } from 'react'
-import { useOnboarding } from '../contexts'
-import { useThemeContext } from '../contexts'
+import { useOnboarding, useTheme } from '../contexts'
 import { PrimaryButton } from '../ui'
 
 export default function Complete() {
   const { completeOnboarding, isSubmitting, submitError } = useOnboarding()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const logoSize = 160
   const [showLogo, setShowLogo] = useState(false)
   const [showContent, setShowContent] = useState(false)
