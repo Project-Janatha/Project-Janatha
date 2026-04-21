@@ -113,9 +113,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // ── Apply to NativeWind + DOM on every change ──────────────────────────────
   useEffect(() => {
-    setColorScheme(theme)
-    applyToDOM(theme)
-  }, [theme, setColorScheme])
+    setColorScheme(preference)
+    if (isWeb) {
+      document.documentElement.classList.toggle('dark', theme === 'dark')
+      document.documentElement.style.colorScheme = theme
+    }
+  }, [theme, preference, setColorScheme])
 
   // ── Public setter: update state + persist ─────────────────────────────────
   const setPreference = useCallback((pref: ThemePreference) => {
