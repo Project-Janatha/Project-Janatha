@@ -10,12 +10,12 @@
     "splash": {
       "image": "./assets/images/logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#e8862a"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#e8862a"
       },
       "permissions": [
         "INTERNET",
@@ -25,9 +25,7 @@
       ],
       "package": "org.chinmayamission.janata"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "buildNumber": "21",
@@ -44,11 +42,7 @@
       "output": "single",
       "favicon": "./assets/images/logo.png"
     },
-    "plugins": [
-      "expo-router",
-      "expo-font",
-      "expo-localization"
-    ],
+    "plugins": ["expo-router", "expo-font", "expo-localization"],
     "experiments": {
       "typedRoutes": true
     },
