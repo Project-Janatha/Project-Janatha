@@ -12,7 +12,7 @@ import {
   LogOut,
   AlertTriangle,
 } from 'lucide-react-native'
-import { useUser, useThemeContext } from '../../components/contexts'
+import { useUser, useTheme } from '../../components/contexts'
 import { Avatar } from '../../components/ui'
 import ThemeSelector from '../../components/ThemeSelector'
 import { usePostHog } from 'posthog-react-native'
@@ -23,7 +23,7 @@ const APP_VERSION = Constants.expoConfig?.version || '1.0.0'
 export default function PreferencesNative() {
   const router = useRouter()
   const { user, logout } = useUser()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const { deleteAccount } = useUser()
   const posthog = usePostHog()
   const [isDeleting, setIsDeleting] = useState(false)

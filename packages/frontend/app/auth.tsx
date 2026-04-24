@@ -13,7 +13,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Code, ArrowLeft } from 'lucide-react-native'
 import { usePostHog } from 'posthog-react-native'
 import { AuthInput, Logo, PrimaryButton } from '../components/ui'
-import { useUser, useThemeContext } from '../components/contexts'
+import { useUser, useTheme } from '../components/contexts'
 import { validateEmail, validatePassword } from '../utils'
 import { PasswordStrength } from '../components'
 import DevPanel from '../components/DevPanel'
@@ -25,7 +25,7 @@ type AuthStep = 'initial' | 'login' | 'invite-code' | 'signup'
 
 export default function AuthScreen() {
   const router = useRouter()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const { checkUserExists, login, signup, loading } = useUser()
   const posthog = usePostHog()
 

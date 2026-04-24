@@ -1,225 +1,156 @@
+// theme.tsx
 import { useColorScheme as useNativeWindColorScheme } from 'nativewind'
-import { useColorScheme as useSystemColorScheme, Appearance, Platform } from 'react-native'
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, createContext } from 'react'
+import { Appearance, Platform, View } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-const THEME_PREFERENCE_KEY = '@theme_preference'
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-// Read initial preference synchronously on web, null on native (loaded async)
-function getInitialPreference(): 'light' | 'dark' | 'system' | null {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    const saved = localStorage.getItem(THEME_PREFERENCE_KEY)
-    if (saved === 'light' || saved === 'dark' || saved === 'system') return saved
+export type ThemePreference = 'light' | 'dark' | 'system'
+export type ResolvedTheme = 'light' | 'dark'
+
+interface ThemeContextValue {
+  /** The resolved, effective theme ("light" | "dark") */
+  theme: ResolvedTheme
+  /** What the user explicitly chose */
+  preference: ThemePreference
+  setPreference: (pref: ThemePreference) => void
+  /** Convenience boolean */
+  isDark: boolean
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = '@theme'
+const isWeb = Platform.OS === 'web'
+
+// ─── Storage helpers ──────────────────────────────────────────────────────────
+
+function storageRead(): ThemePreference {
+  if (isWeb && typeof window !== 'undefined') {
+    const v = localStorage.getItem(STORAGE_KEY)
+    if (v === 'light' || v === 'dark' || v === 'system') return v
   }
-  return null
+  return 'system'
 }
 
-// Safe storage wrapper
-const safeStorage = {
-  getItem: async (key: string): Promise<string | null> => {
-    try {
-      if (Platform.OS === 'web') {
-        if (typeof window !== 'undefined') {
-          return localStorage.getItem(key)
-        }
-        return null
-      }
-      return await AsyncStorage.getItem(key)
-    } catch (error) {
-      return null
-    }
-  },
-  setItem: async (key: string, value: string): Promise<void> => {
-    try {
-      if (Platform.OS === 'web') {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(key, value)
-        }
-      } else {
-        await AsyncStorage.setItem(key, value)
-      }
-    } catch (error) {
-      // Silently fail
-    }
-  },
-}
-
-/** Apply dark/light class and colorScheme style on web */
-function applyWebTheme(theme: 'light' | 'dark') {
-  if (Platform.OS !== 'web' || typeof document === 'undefined') return
-  if (theme === 'dark') {
-    document.documentElement.classList.add('dark')
-    document.documentElement.style.colorScheme = 'dark'
+function storageWrite(pref: ThemePreference): void {
+  if (isWeb && typeof window !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY, pref)
   } else {
-    document.documentElement.classList.remove('dark')
-    document.documentElement.style.colorScheme = 'light'
+    AsyncStorage.setItem(STORAGE_KEY, pref).catch(() => {})
   }
 }
 
-/** Get system color scheme on web */
-function getWebSystemColorScheme(): 'light' | 'dark' | null {
-  if (typeof window === 'undefined') return null
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'dark'
-  }
-  return 'light'
+// ─── Web DOM helper (Twitter-style: toggle class + colorScheme on <html>) ─────
+//
+// Twitter writes `color-scheme` on <html> and toggles a "dark" class so both
+// Tailwind/NativeWind and native CSS `prefers-color-scheme` media queries stay
+// in sync without a flash of unstyled content.
+
+function applyToDOM(theme: ResolvedTheme): void {
+  if (!isWeb || typeof document === 'undefined') return
+  const root = document.documentElement
+  root.classList.toggle('dark', theme === 'dark')
+  root.style.colorScheme = theme
 }
 
-/** Subscribe to web system color scheme changes */
-function subscribeToWebSystemColorScheme(callback: (theme: 'light' | 'dark') => void): () => void {
-  if (typeof window === 'undefined' || !window.matchMedia) return () => {}
+// ─── System-theme hook ────────────────────────────────────────────────────────
 
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-  const handler = (e: MediaQueryListEvent) => {
-    callback(e.matches ? 'dark' : 'light')
-  }
+function useSystemTheme(): ResolvedTheme {
+  const getSystem = (): ResolvedTheme => (Appearance.getColorScheme() === 'dark' ? 'dark' : 'light')
 
-  mediaQuery.addEventListener('change', handler)
-  return () => mediaQuery.removeEventListener('change', handler)
+  const [system, setSystem] = useState<ResolvedTheme>(getSystem)
+
+  useEffect(() => {
+    if (isWeb) {
+      // On web, mirror the OS via a media-query listener (most reliable)
+      const mq = window.matchMedia('(prefers-color-scheme: dark)')
+      const handler = (e: MediaQueryListEvent) => setSystem(e.matches ? 'dark' : 'light')
+      mq.addEventListener('change', handler)
+      return () => mq.removeEventListener('change', handler)
+    }
+
+    // On native, use Appearance API
+    const sub = Appearance.addChangeListener(({ colorScheme }) =>
+      setSystem(colorScheme === 'dark' ? 'dark' : 'light')
+    )
+    return () => sub.remove()
+  }, [])
+
+  return system
 }
 
-// Provider that initializes theme from storage/system
-export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+// ─── Context ──────────────────────────────────────────────────────────────────
+
+const ThemeContext = createContext<ThemeContextValue | null>(null)
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { setColorScheme } = useNativeWindColorScheme()
+  const system = useSystemTheme()
+  const [preference, setPreferenceState] = useState<ThemePreference>(storageRead)
+  const preferenceRef = useRef(preference)
 
-  // Load saved preference on mount and apply once
+  // Keep ref current so async callbacks always see the latest value
   useEffect(() => {
-    let isMounted = true
-    const loadPreference = async () => {
-      try {
-        const saved = await safeStorage.getItem(THEME_PREFERENCE_KEY)
-        if (!isMounted) return
+    preferenceRef.current = preference
+  }, [preference])
 
-        if (saved === 'light' || saved === 'dark') {
-          Appearance.setColorScheme(saved)
-          setColorScheme(saved)
-          requestAnimationFrame(() => applyWebTheme(saved))
-        } else if (saved === 'system') {
-          Appearance.setColorScheme(null as any)
-        }
-        // If no saved preference, leave it to system (Appearance.setColorScheme(null) is default)
-      } catch (error) {
-        // ignore
-      }
-    }
-    loadPreference()
-    return () => {
-      isMounted = false
-    }
-  }, []) // Only run once on mount
+  // ── On native: hydrate from AsyncStorage (web is sync via localStorage) ───
+  useEffect(() => {
+    if (isWeb) return
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((v) => {
+        if (v === 'light' || v === 'dark' || v === 'system') setPreferenceState(v)
+      })
+      .catch(() => {})
+  }, [])
 
-  return <>{children}</>
+  // ── Resolve: "system" falls back to OS preference ─────────────────────────
+  const theme: ResolvedTheme = preference === 'system' ? system : preference
+
+  // ── Apply to NativeWind + DOM on every change ──────────────────────────────
+  useEffect(() => {
+    setColorScheme(preference)
+    if (isWeb) {
+      document.documentElement.classList.toggle('dark', theme === 'dark')
+      document.documentElement.style.colorScheme = theme
+    }
+  }, [theme, preference, setColorScheme])
+
+  // ── Public setter: update state + persist ─────────────────────────────────
+  const setPreference = useCallback((pref: ThemePreference) => {
+    setPreferenceState(pref)
+    storageWrite(pref)
+  }, [])
+
+  const value = useMemo<ThemeContextValue>(
+    () => ({ theme, preference, setPreference, isDark: theme === 'dark' }),
+    [theme, preference, setPreference]
+  )
+
+  // On web the <html> class handles everything; on native we need a root View
+  // that carries the NativeWind dark-mode class so child components resolve
+  // their dark: variants correctly.
+  return (
+    <ThemeContext.Provider value={value}>
+      {isWeb ? (
+        children
+      ) : (
+        <View className={`flex-1${theme === 'dark' ? ' dark' : ''}`} style={{ flex: 1 }}>
+          {children}
+        </View>
+      )}
+    </ThemeContext.Provider>
+  )
 }
 
-// Re-export NativeWind's hook with additional theme preference methods
-export const useThemeContext = () => {
-  const { colorScheme, setColorScheme, toggleColorScheme } = useNativeWindColorScheme()
-  const systemScheme = useSystemColorScheme() // MUST be called at top level to subscribe to system changes
-  const initialPref = getInitialPreference()
-  const [themePreference, setThemePreferenceState] = useState<'light' | 'dark' | 'system'>(
-    initialPref ?? 'system'
-  )
-  const [loaded, setLoaded] = useState(initialPref !== null)
+// ─── Hooks ────────────────────────────────────────────────────────────────────
 
-  // Load saved preference (async — needed for native, instant on web)
-  useEffect(() => {
-    if (loaded) return // Already loaded synchronously on web
-    let isMounted = true
-    const loadPreference = async () => {
-      try {
-        const saved = await safeStorage.getItem(THEME_PREFERENCE_KEY)
-        if (isMounted && (saved === 'light' || saved === 'dark' || saved === 'system')) {
-          const mode = saved as 'light' | 'dark' | 'system'
-          setThemePreferenceState(mode)
-
-          // Apply theme after loading
-          if (mode === 'system') {
-            if (Platform.OS === 'web') {
-              const systemTheme = getWebSystemColorScheme()
-              if (systemTheme) {
-                setColorScheme(systemTheme)
-                requestAnimationFrame(() => applyWebTheme(systemTheme))
-              }
-            } else {
-              // On native, Appearance.setColorScheme(null) is set in ThemeProvider
-            }
-          } else {
-            if (Platform.OS === 'web') {
-              Appearance.setColorScheme(mode)
-            }
-            setColorScheme(mode)
-            requestAnimationFrame(() => applyWebTheme(mode))
-          }
-        }
-      } catch (error) {
-        // Failed to load theme preference
-      } finally {
-        if (isMounted) setLoaded(true)
-      }
-    }
-    loadPreference()
-    return () => {
-      isMounted = false
-    }
-  }, [loaded, setColorScheme])
-
-  // Subscribe to system changes when in 'system' mode
-  useEffect(() => {
-    if (!loaded || themePreference !== 'system') return
-
-    let unsubscribe: (() => void) | undefined
-
-    if (Platform.OS === 'web') {
-      // On web, manually subscribe to color scheme changes
-      unsubscribe = subscribeToWebSystemColorScheme((theme) => {
-        setColorScheme(theme)
-        requestAnimationFrame(() => applyWebTheme(theme))
-      })
-    }
-    // On native, nativewind automatically follows system via Appearance.setColorScheme(null)
-
-    return () => {
-      if (unsubscribe) unsubscribe()
-    }
-  }, [loaded, themePreference, setColorScheme])
-
-  const setThemePreference = useCallback(
-    async (mode: 'light' | 'dark' | 'system') => {
-      try {
-        setThemePreferenceState(mode)
-        await safeStorage.setItem(THEME_PREFERENCE_KEY, mode)
-
-        if (mode === 'system') {
-          if (Platform.OS === 'web') {
-            const systemTheme = getWebSystemColorScheme() || 'light'
-            setColorScheme(systemTheme)
-            requestAnimationFrame(() => applyWebTheme(systemTheme))
-          } else {
-            Appearance.setColorScheme(null as any)
-          }
-        } else {
-          if (Platform.OS === 'web') {
-            Appearance.setColorScheme(mode)
-          }
-          setColorScheme(mode)
-          requestAnimationFrame(() => applyWebTheme(mode))
-        }
-      } catch (error) {
-        // Failed to save theme preference
-      }
-    },
-    [setColorScheme]
-  )
-
-  return useMemo(
-    () => ({
-      theme: colorScheme || 'light',
-      isDark: colorScheme === 'dark',
-      toggleTheme: toggleColorScheme,
-      setTheme: setColorScheme,
-      themePreference,
-      setThemePreference,
-    }),
-    [colorScheme, toggleColorScheme, setColorScheme, themePreference, setThemePreference]
-  )
+export function useTheme(): ThemeContextValue {
+  const ctx = useContext(ThemeContext)
+  if (!ctx) throw new Error('useTheme must be used inside <ThemeProvider>')
+  return ctx
 }

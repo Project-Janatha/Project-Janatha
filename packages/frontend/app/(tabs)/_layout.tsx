@@ -1,7 +1,7 @@
 import { Link, Tabs, useRouter } from 'expo-router'
 import { Platform, View, Text, Pressable, Image, StatusBar } from 'react-native'
 import { useState, useEffect } from 'react'
-import { useUser, useThemeContext } from '../../components/contexts'
+import { useUser, useTheme } from '../../components/contexts'
 import { Plus } from 'lucide-react-native'
 import SettingsPanel from '../../components/SettingsPanel'
 import Logo from '../../components/ui/Logo'
@@ -17,7 +17,7 @@ import { isSuperAdmin } from '../../utils/admin'
 export default function TabLayout() {
   const router = useRouter()
   const { user, loading, logout } = useUser()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const [settingsVisible, setSettingsVisible] = useState(false)
   const canCreate = isSuperAdmin(user)
   const posthog = usePostHog()

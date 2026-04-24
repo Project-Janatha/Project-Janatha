@@ -13,7 +13,7 @@ import {
   type AdminNotificationStats,
 } from '../../utils/api'
 import { useDetailColors } from '../../hooks/useDetailColors'
-import { useThemeContext } from '../contexts'
+import { useTheme } from '../contexts'
 
 const NOTIFICATION_TYPE_NAMES: Record<number, string> = {
   1: 'Event Reminder',
@@ -27,7 +27,7 @@ const NOTIFICATION_TYPE_NAMES: Record<number, string> = {
 
 export default function NotificationsTab() {
   const colors = useDetailColors()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const [notifications, setNotifications] = useState<AdminNotification[]>([])
   const [stats, setStats] = useState<AdminNotificationStats | null>(null)
   const [total, setTotal] = useState(0)

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useThemeContext } from '../components/contexts'
+import { useTheme } from '../components/contexts'
 
 export type DetailColors = {
   panelBg: string
@@ -15,7 +15,7 @@ export type DetailColors = {
 }
 
 export function useDetailColors(): DetailColors {
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
 
   return useMemo(
     () =>

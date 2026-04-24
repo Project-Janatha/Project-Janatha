@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Camera, Pencil, MapPin, ArrowLeft } from 'lucide-react-native'
 import { useRouter, usePathname } from 'expo-router'
-import { useUser, useThemeContext } from '../../components/contexts'
+import { useUser, useTheme } from '../../components/contexts'
 import BirthdatePicker from '../../components/BirthdatePicker'
 import { fetchCenters, CenterData } from '../../utils/api'
 
@@ -63,7 +63,7 @@ export default function ProfileNative() {
   const router = useRouter()
   const pathname = usePathname()
   const { user, updateProfile, setUser } = useUser()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
@@ -370,18 +370,23 @@ export default function ProfileNative() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }} edges={['top', 'bottom']}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: isDark ? '#171717' : '#FAFAF7' }}
+      edges={['top', 'bottom']}
+    >
       {/* Header */}
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 8,
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderColor,
-        backgroundColor: isDark ? '#171717' : '#FAFAF7',
-      }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 8,
+          paddingVertical: 8,
+          borderBottomWidth: 1,
+          borderColor,
+          backgroundColor: isDark ? '#171717' : '#FAFAF7',
+        }}
+      >
         <Pressable onPress={() => router.back()} style={{ padding: 8 }}>
           <ArrowLeft size={24} color={textColor} />
         </Pressable>
@@ -470,7 +475,9 @@ export default function ProfileNative() {
             {isEditing ? (
               <TextInput
                 defaultValue={profileData.name}
-                onChangeText={(v) => { draftName.current = v }}
+                onChangeText={(v) => {
+                  draftName.current = v
+                }}
                 placeholderTextColor="#9ca3af"
                 style={{
                   fontFamily: 'Inter-SemiBold',
@@ -497,9 +504,7 @@ export default function ProfileNative() {
               </Text>
             )}
             <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: mutedTextColor }}>
-              {user?.email ||
-                (user?.username ? `@${user.username}` : '') ||
-                '—'}
+              {user?.email || (user?.username ? `@${user.username}` : '') || '—'}
             </Text>
             {isEditing && user?.email && user.email !== user.username && (
               <Text
@@ -522,19 +527,35 @@ export default function ProfileNative() {
             {isEditing ? (
               <TextInput
                 defaultValue={profileData.bio}
-                onChangeText={(v) => { draftBio.current = v }}
+                onChangeText={(v) => {
+                  draftBio.current = v
+                }}
                 multiline
                 textAlignVertical="top"
                 placeholderTextColor="#9ca3af"
                 style={multilineInputStyle}
               />
             ) : (
-              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor, lineHeight: 22 }}>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 15,
+                  color: mutedTextColor,
+                  lineHeight: 22,
+                }}
+              >
                 {profileData.bio || '—'}
               </Text>
             )}
             {errors.bio && (
-              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 13,
+                  color: '#DC2626',
+                  marginTop: 6,
+                }}
+              >
                 {errors.bio}
               </Text>
             )}
@@ -545,15 +566,31 @@ export default function ProfileNative() {
             {isEditing ? (
               <BirthdatePicker
                 value={draftBirthday.current ?? undefined}
-                onChange={(d: Date) => { draftBirthday.current = d }}
+                onChange={(d: Date) => {
+                  draftBirthday.current = d
+                }}
               />
             ) : (
-              <Text style={{ fontFamily: 'Inter-Medium', fontSize: 16, color: textColor, lineHeight: 24 }}>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Medium',
+                  fontSize: 16,
+                  color: textColor,
+                  lineHeight: 24,
+                }}
+              >
                 {formatBirthday(profileData.birthday) || '—'}
               </Text>
             )}
             {errors.birthday && (
-              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 6 }}>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 13,
+                  color: '#DC2626',
+                  marginTop: 6,
+                }}
+              >
                 {errors.birthday}
               </Text>
             )}
@@ -648,7 +685,15 @@ export default function ProfileNative() {
             ) : (
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
                 <MapPin size={18} color={mutedTextColor} style={{ marginTop: 2 }} />
-                <Text style={{ fontFamily: 'Inter-Regular', fontSize: 15, color: mutedTextColor, flex: 1, lineHeight: 22 }}>
+                <Text
+                  style={{
+                    fontFamily: 'Inter-Regular',
+                    fontSize: 15,
+                    color: mutedTextColor,
+                    flex: 1,
+                    lineHeight: 22,
+                  }}
+                >
                   {profileData.centerID
                     ? allCenters.find((c) => c.centerID === profileData.centerID)?.name || '—'
                     : '—'}
@@ -677,7 +722,13 @@ export default function ProfileNative() {
                       opacity: !isEditing && !selected ? 0.5 : 1,
                     }}
                   >
-                    <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: selected ? '#FFFFFF' : mutedTextColor }}>
+                    <Text
+                      style={{
+                        fontFamily: 'Inter-SemiBold',
+                        fontSize: 14,
+                        color: selected ? '#FFFFFF' : mutedTextColor,
+                      }}
+                    >
                       {pref}
                     </Text>
                   </Pressable>
@@ -685,14 +736,23 @@ export default function ProfileNative() {
               })}
             </View>
             {errors.interests && (
-              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 13,
+                  color: '#DC2626',
+                  marginTop: 8,
+                }}
+              >
                 {errors.interests}
               </Text>
             )}
           </View>
 
           {(errors.form || errors.profileImage) && (
-            <Text style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}>
+            <Text
+              style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: '#DC2626', marginTop: 8 }}
+            >
               {errors.form || errors.profileImage}
             </Text>
           )}

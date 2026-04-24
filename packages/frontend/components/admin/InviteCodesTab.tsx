@@ -13,7 +13,7 @@ import {
   type UserData,
 } from '../../utils/api'
 import { useDetailColors } from '../../hooks/useDetailColors'
-import { useThemeContext } from '../contexts'
+import { useTheme } from '../contexts'
 import { Avatar } from '../ui'
 
 // ---------------------------------------------------------------------------
@@ -32,7 +32,7 @@ function formatDate(iso?: string): string {
 
 export default function InviteCodesTab() {
   const colors = useDetailColors()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
 
   const [codes, setCodes] = useState<InviteCodeData[]>([])
   const [loading, setLoading] = useState(true)

@@ -11,7 +11,7 @@ import {
   useWindowDimensions,
 } from 'react-native'
 import { Camera, Pencil, MapPin } from 'lucide-react-native'
-import { useUser, useThemeContext } from '../../components/contexts'
+import { useUser, useTheme } from '../../components/contexts'
 import BirthdatePicker from '../../components/BirthdatePicker'
 import WebAvatarCropper from '../../components/AvatarCropper.web'
 import { fetchCenters, CenterData } from '../../utils/api'
@@ -54,7 +54,7 @@ const PREFERENCE_OPTIONS = [
 
 export default function Profile() {
   const { user, updateProfile, setUser } = useUser()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})

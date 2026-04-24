@@ -22,7 +22,7 @@ import {
 } from 'react-native'
 import { MapPin, Search, Building2, Users, ChevronUp, ChevronDown } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
-import { useThemeContext, useUser } from '../../components/contexts'
+import { useTheme, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar, Avatar } from '../../components/ui'
 const Map = lazy(() => import('../../components/Map'))
 import MapPopover from '../../components/MapPopover'
@@ -433,7 +433,7 @@ type SheetSnap = 'collapsed' | 'mid' | 'expanded'
 
 function MobileDiscoverFallback() {
   const router = useRouter()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('Events')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -804,7 +804,7 @@ export default function DiscoverScreenWeb() {
   const panelWidth = isTablet ? 340 : 420
 
   const router = useRouter()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const { user } = useUser()
   const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
   const canCreate = isAdmin || isLocal

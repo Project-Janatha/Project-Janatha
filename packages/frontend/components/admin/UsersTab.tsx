@@ -12,7 +12,7 @@ import {
   type UserData,
 } from '../../utils/api'
 import { useDetailColors } from '../../hooks/useDetailColors'
-import { useThemeContext } from '../contexts'
+import { useTheme } from '../contexts'
 import { Avatar } from '../ui'
 
 // ---------------------------------------------------------------------------
@@ -46,7 +46,7 @@ function formatJoinDate(iso?: string): string {
 
 export default function UsersTab() {
   const colors = useDetailColors()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
 
   const [search, setSearch] = useState('')
   const [users, setUsers] = useState<UserData[]>([])

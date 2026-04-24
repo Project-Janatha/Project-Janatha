@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, Pressable } from 'react-native'
-import { useThemeContext } from '../contexts'
+import { useTheme } from '../contexts'
 
 export interface UnderlineTabBarProps {
   tabs: string[]
@@ -9,7 +9,7 @@ export interface UnderlineTabBarProps {
 }
 
 export default function UnderlineTabBar({ tabs, activeTab, onTabChange }: UnderlineTabBarProps) {
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const borderColor = isDark ? '#404040' : '#E7E5E4'
   const inactiveColor = isDark ? '#6B7280' : '#A8A29E'
 

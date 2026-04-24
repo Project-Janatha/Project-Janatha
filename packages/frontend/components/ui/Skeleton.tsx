@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { View, Animated, StyleSheet, type ViewStyle } from 'react-native'
-import { useThemeContext } from '../contexts'
+import { useTheme } from '../contexts'
 
 interface SkeletonProps {
   width?: number | string
@@ -10,7 +10,7 @@ interface SkeletonProps {
 }
 
 function SkeletonBox({ width = '100%', height = 16, borderRadius = 8, style }: SkeletonProps) {
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const opacity = useRef(new Animated.Value(0.3)).current
 
   useEffect(() => {
@@ -41,7 +41,7 @@ function SkeletonBox({ width = '100%', height = 16, borderRadius = 8, style }: S
 }
 
 export function EventCardSkeleton() {
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   return (
     <View style={[styles.card, isDark && styles.cardDark]}>
       <View style={styles.cardBody}>
@@ -59,7 +59,7 @@ export function EventCardSkeleton() {
 }
 
 export function CenterCardSkeleton() {
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   return (
     <View style={[styles.card, isDark && styles.cardDark]}>
       <View style={styles.cardBody}>

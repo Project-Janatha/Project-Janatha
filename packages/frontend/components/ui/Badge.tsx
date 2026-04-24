@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text } from 'react-native'
 import { Check } from 'lucide-react-native'
-import { useThemeContext } from '../contexts'
+import { useTheme } from '../contexts'
 
 type BadgeVariant = 'going' | 'member' | 'upcoming' | 'past' | 'host'
 
@@ -29,7 +29,7 @@ const DARK_STYLES: Record<BadgeVariant, VariantStyle> = {
 }
 
 export default function Badge({ label, variant }: BadgeProps) {
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const style = isDark ? DARK_STYLES[variant] : LIGHT_STYLES[variant]
 
   return (

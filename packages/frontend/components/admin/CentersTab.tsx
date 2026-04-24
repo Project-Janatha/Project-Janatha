@@ -17,11 +17,11 @@ import {
   type UserData,
 } from '../../utils/api'
 import { useDetailColors } from '../../hooks/useDetailColors'
-import { useThemeContext } from '../contexts'
+import { useTheme } from '../contexts'
 
 export default function CentersTab() {
   const colors = useDetailColors()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const [search, setSearch] = useState('')
   const [centers, setCenters] = useState<CenterData[]>([])
   const [total, setTotal] = useState(0)

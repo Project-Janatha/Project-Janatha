@@ -22,7 +22,7 @@ import {
 } from 'lucide-react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { usePostHog } from 'posthog-react-native'
-import { useThemeContext } from '../../components/contexts'
+import { useTheme } from '../../components/contexts'
 import { Badge, UnderlineTabBar, Avatar } from '../../components/ui'
 import { useUser } from '../../components/contexts/UserContext'
 import { useDiscoverData, type DiscoverFilter } from '../../hooks/useApiData'
@@ -210,7 +210,7 @@ function CenterItem({ center, onPress, isMyCenter }: { center: DiscoverCenter; o
 
 export default function DiscoverScreen() {
   const router = useRouter()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const posthog = usePostHog()
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('Events')
   const [searchQuery, setSearchQuery] = useState('')

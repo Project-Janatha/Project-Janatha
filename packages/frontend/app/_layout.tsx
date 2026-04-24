@@ -1,6 +1,6 @@
 import '@expo/metro-runtime'
-import { useEffect } from 'react'
-import { ActivityIndicator, LogBox, Platform, View } from 'react-native'
+import { useEffect, useRef } from 'react'
+import { ActivityIndicator, Animated, LogBox, Platform, View } from 'react-native'
 
 // Suppress non-fatal WorkletsTurboModule error in Expo Go (reanimated v4 compat)
 LogBox.ignoreLogs(['Exception in HostFunction: <unknown>'])
@@ -16,7 +16,7 @@ import {
   UserProvider,
   useUser,
   ThemeProvider as CustomThemeProvider,
-  useThemeContext,
+  useTheme,
 } from '../components/contexts'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
 import '../globals.css'
@@ -79,7 +79,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const { user, loading } = useUser()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const pathname = usePathname()
   const router = useRouter()
   const isAuthenticated = !!user
@@ -130,6 +130,18 @@ function RootLayoutNav() {
   }, [user, loading, pathname, isAuthenticated])
 
   const navTheme = isDark ? DarkTheme : DefaultTheme
+  const prevIsDark = useRef(isDark)
+  const fadeAnim = useRef(new Animated.Value(1)).current
+
+  useEffect(() => {
+    if (prevIsDark.current !== isDark) {
+      prevIsDark.current = isDark
+      Animated.sequence([
+        Animated.timing(fadeAnim, { toValue: 0.85, duration: 80, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+      ]).start()
+    }
+  }, [isDark, fadeAnim])
 
   if (loading) {
     return (
@@ -140,62 +152,24 @@ function RootLayoutNav() {
   }
 
   return (
-    <NavigationThemeProvider value={navTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="auth" options={{ headerShown: false }} />
-        <Stack.Screen name="landing" options={{ headerShown: false }} />
-        {/* Registering onboarding explicitly ensures stable navigation */}
-        <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
-        <Stack.Screen
-          name="settings"
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="events/index"
-          options={{
-            headerShown: true,
-            title: 'My Events',
-            headerBackTitle: '',
-          }}
-        />
-        <Stack.Screen
-          name="events/[id]"
-          options={{
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="events/form"
-          options={{
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="center/[id]"
-          options={{
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="privacy"
-          options={{ headerShown: Platform.OS !== 'web', title: 'Privacy Policy', headerBackTitle: '' }}
-        />
-        <Stack.Screen
-          name="terms"
-          options={{ headerShown: Platform.OS !== 'web', title: 'Terms of Service', headerBackTitle: '' }}
-        />
-        <Stack.Screen
-          name="cookies"
-          options={{ headerShown: Platform.OS !== 'web', title: 'Cookie Policy', headerBackTitle: '' }}
-        />
-        <Stack.Screen
-          name="admin"
-          options={{
-            headerShown: false,
-          }}
-        />
-      </Stack>
-    </NavigationThemeProvider>
+    <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+      <NavigationThemeProvider value={navTheme}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="auth" options={{ headerShown: false }} />
+          <Stack.Screen name="landing" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
+          <Stack.Screen name="settings" options={{ headerShown: false }} />
+          <Stack.Screen name="events/index" options={{ headerShown: true, title: 'My Events', headerBackTitle: '' }} />
+          <Stack.Screen name="events/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="events/form" options={{ headerShown: false }} />
+          <Stack.Screen name="center/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="privacy" options={{ headerShown: Platform.OS !== 'web', title: 'Privacy Policy', headerBackTitle: '' }} />
+          <Stack.Screen name="terms" options={{ headerShown: Platform.OS !== 'web', title: 'Terms of Service', headerBackTitle: '' }} />
+          <Stack.Screen name="cookies" options={{ headerShown: Platform.OS !== 'web', title: 'Cookie Policy', headerBackTitle: '' }} />
+          <Stack.Screen name="admin" options={{ headerShown: false }} />
+        </Stack>
+      </NavigationThemeProvider>
+    </Animated.View>
   )
 }

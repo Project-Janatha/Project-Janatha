@@ -12,7 +12,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Eye, Shield, Info, ExternalLink, AlertTriangle } from 'lucide-react-native'
-import { useUser, useThemeContext } from '../../components/contexts'
+import { useUser, useTheme } from '../../components/contexts'
 import { useRouter } from 'expo-router'
 import { DestructiveButton, SecondaryButton } from '../../components/ui'
 import ThemeSelector from '../../components/ThemeSelector'
@@ -22,7 +22,7 @@ import Constants from 'expo-constants'
 const APP_VERSION = Constants.expoConfig?.version || '1.0.0'
 
 export default function Preferences() {
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const { deleteAccount } = useUser()
   const router = useRouter()
   const [isDeleting, setIsDeleting] = useState(false)

@@ -12,7 +12,7 @@
 import React, { useState, useCallback, memo, useRef, useMemo, useEffect } from 'react'
 import Map, { Marker, MapRef, AttributionControl } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { useThemeContext } from './contexts'
+import { useTheme } from './contexts'
 import { getLocationAccess, getCurrentPosition } from '../utils/locationServices'
 
 // Type definitions
@@ -190,7 +190,7 @@ const MapComponent = memo<MapProps>(
     userCenterID,
     flyTo,
   }) => {
-    const { isDark } = useThemeContext()
+    const { isDark } = useTheme()
     const mapRef = useRef<MapRef>(null)
     const pointsRef = useRef(points)
     pointsRef.current = points

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Animated, Text, Pressable, View, Image, Easing } from 'react-native'
-import { useUser, useThemeContext } from './contexts'
+import { useUser, useTheme } from './contexts'
 import { Settings, LogOut, Sun, Moon, User, Monitor, Shield } from 'lucide-react-native'
 import { router, usePathname } from 'expo-router'
 import ThemeSelector from './ThemeSelector'
@@ -11,7 +11,7 @@ function SettingsPanel({ visible, onClose, onLogout }) {
   const opacityAnim = useRef(new Animated.Value(0)).current
   const translateYAnim = useRef(new Animated.Value(-20)).current
   const { user } = useUser()
-  const { themePreference, setThemePreference, isDark } = useThemeContext()
+  const { preference: themePreference, setPreference: setThemePreference, isDark } = useTheme()
   const pathname = usePathname()
   const themeOptions = ['light', 'dark', 'system']
   const optionWidth = 70

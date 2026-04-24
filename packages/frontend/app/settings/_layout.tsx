@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView, Platform, useWindowDimensions } from
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, usePathname, Slot, Stack } from 'expo-router'
 import { ArrowLeft, User, Settings as SettingsIcon } from 'lucide-react-native'
-import { useThemeContext } from '../../components/contexts'
+import { useTheme } from '../../components/contexts'
 import Logo from '../../components/ui/Logo'
 
 const SETTINGS_TABS = [
@@ -14,7 +14,7 @@ const SETTINGS_TABS = [
 export default function SettingsLayout() {
   const router = useRouter()
   const pathname = usePathname()
-  const { isDark } = useThemeContext()
+  const { isDark } = useTheme()
   const { width } = useWindowDimensions()
 
   const showSidebar = Platform.OS === 'web' && width >= 768
