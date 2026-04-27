@@ -66,6 +66,15 @@ export async function createTestUser(
     await page.waitForURL(/\/(onboarding|\(tabs\))/, { timeout: 15000 })
   })
 
+  await step(page, 'click Welcome Get Started (if shown)', async () => {
+    // Onboarding now begins with a "Welcome to Janata!" splash. Click through.
+    const welcome = page.getByText(/welcome to janata/i)
+    if (await welcome.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await page.getByRole('button', { name: /get started/i }).first().click()
+      await page.waitForTimeout(800)
+    }
+  })
+
   await step(page, 'onboarding step 1: name', async () => {
     await page.getByPlaceholder(/first name/i).fill('E2E')
     await page.getByPlaceholder(/last name/i).fill('TestUser')
