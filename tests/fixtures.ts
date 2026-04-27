@@ -11,7 +11,12 @@ import { test as base, type APIRequestContext, request as pwRequest } from '@pla
  */
 export const test = base.extend<{ api: APIRequestContext }>({
   api: async ({}, use) => {
-    const apiURL = process.env.E2E_API_URL || 'http://localhost:8787'
+    // Priority: E2E_API_URL (explicit split), then E2E_BASE_URL (same-origin
+    // prod), then prod fallback.
+    const apiURL =
+      process.env.E2E_API_URL ||
+      process.env.E2E_BASE_URL ||
+      'https://chinmaya-janata.pages.dev'
     const ctx = await pwRequest.newContext({ baseURL: apiURL })
     await use(ctx)
     await ctx.dispose()
