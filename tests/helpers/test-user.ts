@@ -29,7 +29,20 @@ export async function createTestUser(
 ): Promise<TestUser> {
   const user = newTestUserCreds(area)
 
-  await step(page, 'goto /auth (signup)', async () => {
+  // Register via API to bypass the beta invite-code UI gate (per migrations
+  // 0006/0007). The backend register endpoint doesn't enforce invite codes —
+  // only the UI signup flow does. After registering, the userExistence check
+  // routes the UI to Sign In (existing user), skipping the invite step.
+  const registerRes = await api.post('/api/auth/register', {
+    data: { username: user.email, password: user.password },
+  })
+  if (!registerRes.ok()) {
+    throw new Error(
+      `createTestUser: register failed (${registerRes.status()}): ${await registerRes.text()}`
+    )
+  }
+
+  await step(page, 'goto /auth (login as existing user)', async () => {
     await page.goto('/auth')
     await page.waitForLoadState('networkidle')
   })
@@ -41,25 +54,12 @@ export async function createTestUser(
     await page.getByRole('button', { name: /continue/i }).click()
   })
 
-  await step(page, 'bypass invite-code gate via Developer Mode (if present)', async () => {
-    // Local app gates new signups behind a beta invite code. Tests use the
-    // Developer Mode escape hatch. On environments without the gate this is a no-op.
-    const devMode = page.getByText(/developer mode/i).first()
-    if (await devMode.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await devMode.click()
-      await page.waitForTimeout(800)
-    }
-  })
-
-  await step(page, 'submit password (signup)', async () => {
+  await step(page, 'submit password (login)', async () => {
     const pw = page.locator('input[placeholder="Password"]').first()
     await expect(pw).toBeVisible({ timeout: 10000 })
     await pw.fill(user.password)
-    const confirm = page.locator('input[placeholder="Confirm password"]')
-    await expect(confirm).toBeVisible({ timeout: 5000 })
-    await confirm.fill(user.password)
-    await page.getByRole('button', { name: /create account/i }).click()
-    await page.waitForURL(/\/onboarding/, { timeout: 15000 })
+    await page.getByRole('button', { name: /sign in|log in/i }).click()
+    await page.waitForURL(/\/(onboarding|\(tabs\))/, { timeout: 15000 })
   })
 
   await step(page, 'onboarding step 1: name', async () => {
