@@ -66,6 +66,12 @@
   - **Outcome A (unified):** frontend proxies `/api/*` → backend. `E2E_BASE_URL` alone is sufficient.
   - **Outcome B (split):** need both `E2E_BASE_URL` (frontend) and `E2E_API_URL` (backend); `playwright.config.ts` and the helpers must thread the API URL separately.
 
+  > **Outcome B confirmed (2026-04-26):**
+  > - Backend: `http://localhost:8787` (`wrangler dev --port 8787` in `packages/backend`).
+  > - Frontend: `http://localhost:8081` (`expo start -c` in `packages/frontend`, Metro web).
+  > - Frontend `.env` sets `EXPO_PUBLIC_API_BASE_URL=http://localhost:8787/api` — frontend pages call the backend cross-origin, no proxy.
+  > - **Implication:** Playwright's `baseURL` should remain the frontend URL (so `page.goto('/landing')` works). API calls in tests previously used `request.get('/api/...')` which implicitly resolved against `baseURL` — that worked on prod (same origin) but breaks against split-origin local. **Fix:** add `tests/fixtures.ts` exporting an extended `test` with a custom `api` request context whose `baseURL = E2E_API_URL`. Tests use `{ api }` for API calls and `{ request }` only when the call legitimately should go through the frontend origin (rare).
+
 - [ ] **Step 4:** Stop the dev processes (`pkill -f wrangler; pkill -f expo`).
 
 - [ ] **Step 5:** Commit findings.
@@ -157,10 +163,36 @@
   Run: `npx playwright test --list | head -10`
   Expected: lists the 5 existing specs without error.
 
-- [ ] **Step 3:** Commit.
+- [ ] **Step 3:** Create `tests/fixtures.ts` exposing a custom `test` with an `api` request context bound to `E2E_API_URL`. Required because `baseURL` is the frontend origin (split from backend in local dev — see Task 1.1 outcome).
+  ```ts
+  // tests/fixtures.ts
+  import { test as base, type APIRequestContext, request as pwRequest } from '@playwright/test'
+
+  /**
+   * Extends the default test with an `api` fixture: a request context whose
+   * baseURL is the backend API. Use this for any /api/* call in tests, since
+   * Playwright's default `request` fixture uses the page baseURL (frontend).
+   */
+  export const test = base.extend<{ api: APIRequestContext }>({
+    api: async ({}, use) => {
+      const apiURL = process.env.E2E_API_URL || 'http://localhost:8787'
+      const ctx = await pwRequest.newContext({ baseURL: apiURL })
+      await use(ctx)
+      await ctx.dispose()
+    },
+  })
+
+  export { expect } from '@playwright/test'
+  ```
+
+- [ ] **Step 4:** Verify the fixture file syntax-checks.
+  Run: `node --input-type=module --check < tests/fixtures.ts || npx tsc --noEmit tests/fixtures.ts 2>&1 | head -10`
+  (Best-effort — Playwright runs TS natively. The actual proof is the next task running a spec that imports it.)
+
+- [ ] **Step 5:** Commit.
   ```bash
-  git add playwright.config.ts
-  git commit -m "feat(e2e): record video and screenshots on every test run"
+  git add playwright.config.ts tests/fixtures.ts
+  git commit -m "feat(e2e): record video/screenshots and add api request fixture"
   ```
 
 ---
@@ -196,7 +228,17 @@
 **Files:**
 - Modify: `tests/auth-flow.spec.ts`, `tests/navigation.spec.ts`, `tests/api-health.spec.ts`
 
-- [ ] **Step 1:** For each spec, repeat the retrofit pattern from Task 1.4: import `step`, wrap UI actions. For `api-health.spec.ts`, which is API-only (uses `request` not `page`), skip — no UI to screenshot. Add a comment at the top of `api-health.spec.ts`:
+- [ ] **Step 1:** For each spec, repeat the retrofit pattern from Task 1.4: import `step`, wrap UI actions. Then, for any test that hits the backend, switch the `request` fixture to the new `api` fixture from `tests/fixtures.ts` — required because `baseURL` is now the frontend origin in local runs. Pattern:
+  ```ts
+  // Before:
+  import { test, expect } from '@playwright/test'
+  test('...', async ({ request }) => { await request.get('/api/health') })
+
+  // After:
+  import { test, expect } from './fixtures'
+  test('...', async ({ api }) => { await api.get('/api/health') })
+  ```
+  For `api-health.spec.ts` (API-only — no `page`), skip step() but apply the `api` fixture switch. Add a comment at the top:
   ```ts
   // No step() wrapping — this spec is API-only and has no UI to capture.
   ```
@@ -785,13 +827,15 @@ This is the largest and most valuable spec — every meaningful action gets a la
 
 # Phase 2 — Web feature coverage
 
+> **Phase 2 convention:** Every spec in this phase MUST `import { test, expect } from './fixtures'` (NOT `@playwright/test`) and use the `{ api }` fixture for any `/api/*` call. The default `request` fixture would resolve against `baseURL` (frontend origin), which fails in local-split-origin mode. The Phase 2 spec code blocks below were drafted before the fixture was finalized — when applying them, swap `({ browser, request })` → `({ browser, api })` and `request.<method>` → `api.<method>`, and update the import.
+
 ## Task 2.1: Extract `tests/helpers/test-user.ts`
 
 **Files:**
 - Create: `tests/helpers/test-user.ts`
 - Modify: `tests/live-walkthrough.spec.ts`
 
-- [ ] **Step 1:** Write the helper.
+- [ ] **Step 1:** Write the helper. (Note: API calls must use the `api` request context from `tests/fixtures.ts`, not the default `request` — `baseURL` resolves to the frontend origin.)
   ```ts
   // tests/helpers/test-user.ts
   import { expect, type Page, type APIRequestContext } from '@playwright/test'
