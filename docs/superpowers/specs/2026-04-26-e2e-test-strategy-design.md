@@ -20,22 +20,42 @@ Scope is happy paths and obvious sad paths. Not visual regression, not load, not
 - Replacing `TESTING_CHECKLIST.md` for pre-release manual smoke. The automation augments the checklist, doesn't retire it.
 - Real-device cloud farms (BrowserStack, Sauce). Local sim/emulator only.
 
+## Visual Review Artifacts (cross-cutting)
+
+Goal: after a run, Kish can scrub through what each test did without re-running anything. Every E2E test produces:
+
+1. **Step-by-step screenshots.** A helper `step(page, label, fn)` wraps each significant UI action; it runs `fn`, then screenshots `test-results/<spec>/<test>/NN-<label>.png`. Specs use this in place of bare interactions for steps worth reviewing (form fills, button clicks, navigation). Cheap actions (typing into a single field) can be grouped into one labeled step.
+2. **Per-test video.** Playwright `video: 'on'` (override the existing `retain-on-failure`). Video saved per test as `.webm`.
+3. **Per-test GIF.** Post-run script `scripts/videos-to-gifs.sh` runs `ffmpeg` over each `.webm` → `.gif` at 10fps, max 800px wide. (`ffmpeg` is a new dev-environment dependency; documented in README.)
+4. **Review dashboard.** Post-run script `scripts/build-review.mjs` generates `test-results/review.html` — a single page indexing every test with: test name, pass/fail, GIF embedded, link to full video, thumbnail strip of step screenshots. Open with `npm run e2e:review`. Playwright's built-in HTML report (`playwright-report/`) is kept for debugging traces; the review dashboard is the at-a-glance artifact for Kish.
+5. **Maestro (Phase 4):** `maestro test --format junit --output ...` plus `--debug-output` produces screenshots and video. Same review dashboard ingests them.
+
+Specs from Phase 2 onward MUST use the `step()` helper for every UI action that's worth seeing in review. Existing Phase-1 specs get retrofitted as part of Phase 1 implementation so the review artifact is useful from day one.
+
 ## Phases
 
 Each phase produces a working artifact and is independently shippable. Phases are sequenced so later phases reuse infrastructure built earlier.
 
-### Phase 1 — Local-dev target + run existing suite
+### Phase 1 — Local-dev target + run existing suite + review artifacts
 
-**Outcome:** `npm run e2e:local` boots backend + frontend on localhost, runs the existing 5 specs, tears everything down. Run completes in ~2 minutes.
+**Outcome:** `npm run e2e:local` boots backend + frontend on localhost, runs the existing 5 specs (retrofitted with `step()` helper), tears everything down, generates the review dashboard. `npm run e2e:review` opens the dashboard. Run completes in ~3 minutes.
 
 **Changes:**
-1. `playwright.config.ts` already honors `E2E_BASE_URL`. Verify, no change needed.
-2. Add npm scripts at repo root:
-   - `e2e:local` — wipes local D1, starts `npm run dev` in background, polls until backend `/api/health` and frontend (port 8081) are both reachable, runs Playwright with `E2E_BASE_URL=http://localhost:8081`, kills background processes on exit (trap-on-exit).
-   - `e2e:prod` — runs Playwright with the existing prod baseURL (current default behavior, made explicit).
-   - `e2e` — alias for `e2e:local` (the dev-loop default).
-3. Reset script: `scripts/reset-local-db.sh` — drops + recreates local D1, applies all migrations, re-seeds. Called by `e2e:local` before each run.
-4. README: one-paragraph "Running E2E tests" section with the two commands, where the HTML report lands (`playwright-report/`), and how to debug a single spec.
+1. `playwright.config.ts`: already honors `E2E_BASE_URL`. Change `video: 'retain-on-failure'` → `video: 'on'`. Add `screenshot: 'on'` (was `only-on-failure`).
+2. Add `tests/helpers/step.ts` exporting `step(page, label, fn)` — runs fn, then screenshots into the per-test results dir with monotonic numeric prefix.
+3. Retrofit existing 5 specs to use `step()` for the meaningful actions (form fills, clicks, nav). Keep test names + assertions identical.
+4. Add npm scripts at repo root:
+   - `e2e:local` — wipes local D1, starts `npm run dev` in background, polls until backend `/api/health` and frontend (port 8081) are both reachable, runs Playwright with `E2E_BASE_URL=http://localhost:8081`, runs `videos-to-gifs.sh` + `build-review.mjs`, kills background processes on exit (trap-on-exit).
+   - `e2e:prod` — runs Playwright against the existing prod baseURL (no DB reset, no background dev).
+   - `e2e:review` — opens `test-results/review.html` in default browser.
+   - `e2e` — alias for `e2e:local`.
+5. Reset script: `scripts/reset-local-db.sh` — drops + recreates local D1, applies all migrations, re-seeds. Called by `e2e:local` before each run.
+6. Artifact scripts:
+   - `scripts/videos-to-gifs.sh` — finds all `.webm` under `test-results/`, runs ffmpeg → `.gif` (10fps, max 800px wide).
+   - `scripts/build-review.mjs` — reads Playwright JSON reporter output + filesystem, emits `test-results/review.html`.
+7. Add JSON reporter to `playwright.config.ts` so `build-review.mjs` has structured input.
+8. `.gitignore`: ensure `test-results/` and `playwright-report/` are ignored (verify, add if missing).
+9. README: "Running E2E tests" section — the four commands, ffmpeg dependency, where artifacts land, how to debug a single spec.
 
 **Test data:** local D1 starts empty + seeded centers. Specs create their own users and clean up. Hard reset before each run is acceptable per scope decision.
 
@@ -66,6 +86,7 @@ Each new spec uses these so we don't copy-paste 50 lines of signup boilerplate.
 - `afterAll` always cleans up created users.
 - Timestamp-prefixed emails: `e2e_<area>_${Date.now()}@test.janata.dev`.
 - Network assertions where they add signal (e.g., assert `POST /api/events/:id/rsvp` returns 200, not just "the UI doesn't crash").
+- Every meaningful UI action is wrapped in `step(page, '<label>', async () => { ... })` so the review dashboard has labeled screenshots end-to-end.
 
 **Out of scope for Phase 2:** account deletion E2E (handled in cleanup), map interactions (deferred — flaky against MapLibre tile loading, manual smoke is fine), notification *delivery* (only prefs toggle).
 
@@ -104,8 +125,10 @@ Each new spec uses these so we don't copy-paste 50 lines of signup boilerplate.
 3. Add npm script `e2e:ios`:
    - Assumes app is already built and running on the iOS sim (`npm run ios` separately).
    - Boots local backend if not already running.
-   - Runs `maestro test .maestro/`.
+   - Runs `maestro test .maestro/ --format junit --debug-output test-results/maestro/`.
 4. Test users: same timestamp pattern, cleanup via API call from a YAML `runScript` step.
+5. Maestro flows use `takeScreenshot` after each meaningful action (label included in filename) — equivalent of the `step()` helper for web. Maestro automatically records a per-flow video in debug-output mode.
+6. Extend `scripts/build-review.mjs` to ingest Maestro's `test-results/maestro/` (screenshots + video) into the same dashboard. Each flow appears alongside web specs.
 
 **Open question deferred to implementation:** how to point the iOS sim app at `localhost` vs prod. Likely an env-driven config in `app.json` or `EXPO_PUBLIC_API_URL`. Decide during Phase 4 planning.
 
@@ -130,10 +153,10 @@ Each new spec uses these so we don't copy-paste 50 lines of signup boilerplate.
 ## Success Criteria
 
 Per phase:
-- **Phase 1:** `npm run e2e:local` exits 0 against a clean local checkout. Existing 5 specs all pass.
-- **Phase 2:** All Phase 2 specs pass against local. Total wall-clock under 10 min.
-- **Phase 3:** Full suite runs on both `chromium` and `mobile-safari` projects. At least 80% of specs pass on both (some viewport-dependent failures expected and tagged).
-- **Phase 4:** All 3 Maestro flows pass against iOS sim with locally-running backend.
+- **Phase 1:** `npm run e2e:local` exits 0 against a clean local checkout. Existing 5 specs all pass. `npm run e2e:review` opens a dashboard showing labeled step screenshots + GIF + video for every test.
+- **Phase 2:** All Phase 2 specs pass against local. Total wall-clock under 10 min. Review dashboard includes every new test with end-to-end labeled screenshots + GIF.
+- **Phase 3:** Full suite runs on both `chromium` and `mobile-safari` projects. At least 80% of specs pass on both (some viewport-dependent failures expected and tagged). Review dashboard distinguishes desktop and mobile runs side-by-side per spec.
+- **Phase 4:** All 3 Maestro flows pass against iOS sim with locally-running backend. Maestro screenshots + video appear in the same review dashboard as the web specs.
 
 ## What this spec does NOT decide
 
