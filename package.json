@@ -33,7 +33,11 @@
     "test:backend": "cd packages/backend && npm run test",
     "test:cloudflare": "cd packages/backend && npm run test:cloudflare --",
     "test:cloudflare:app": "cd packages/backend && npm run test:cloudflare:app",
-    "test:frontend:jest": "cd packages/frontend && npm run test:jest"
+    "test:frontend:jest": "cd packages/frontend && npm run test:jest",
+    "e2e": "npm run e2e:local",
+    "e2e:local": "node scripts/run-e2e-local.mjs",
+    "e2e:prod": "npx playwright test",
+    "e2e:review": "open test-results/review.html"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260101.0",
