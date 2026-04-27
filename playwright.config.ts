@@ -7,7 +7,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  // Workers=1 by default: each Phase 2 spec calls /api/auth/register in
+  // beforeAll, and the backend rate-limits aggressive parallel signups
+  // (429s). Override locally with E2E_WORKERS if you need parallelism.
+  workers: Number(process.env.E2E_WORKERS) || 1,
   reporter: [
     ['html', { open: 'never', outputFolder: 'playwright-report' }],
     ['json', { outputFile: 'test-results/results.json' }],
