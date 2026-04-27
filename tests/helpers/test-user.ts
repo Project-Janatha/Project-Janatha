@@ -29,12 +29,16 @@ export async function createTestUser(
 ): Promise<TestUser> {
   const user = newTestUserCreds(area)
 
-  // Register via API to bypass the beta invite-code UI gate (per migrations
-  // 0006/0007). The backend register endpoint doesn't enforce invite codes —
-  // only the UI signup flow does. After registering, the userExistence check
-  // routes the UI to Sign In (existing user), skipping the invite step.
+  // Register via API using the seeded PUBLIC-EXPLORE invite code (added by
+  // migration 0007 for frictionless event-link signup). After registering,
+  // the userExistence check routes the UI to Sign In, skipping the invite-
+  // code UI step entirely.
   const registerRes = await api.post('/api/auth/register', {
-    data: { username: user.email, password: user.password },
+    data: {
+      username: user.email,
+      password: user.password,
+      inviteCode: 'PUBLIC-EXPLORE',
+    },
   })
   if (!registerRes.ok()) {
     throw new Error(
