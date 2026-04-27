@@ -107,7 +107,31 @@ npm run deploy:backend    # Backend only
 ```bash
 # Backend unit tests (vitest + Cloudflare Workers pool)
 cd packages/backend && npm test
-
-# E2E tests (Playwright)
-npx playwright test
 ```
+
+## End-to-end tests
+
+Playwright suite lives in `tests/`. Two run modes:
+
+```bash
+npm run e2e:local    # Boots backend + frontend on localhost (resets local D1),
+                     # runs the suite, generates a review dashboard.
+npm run e2e:prod     # Runs the suite against the deployed prod URL.
+npm run e2e:review   # Opens test-results/review.html.
+npm run e2e          # Alias for e2e:local.
+```
+
+Single spec, debug mode:
+
+```bash
+npx playwright test tests/landing.spec.ts --debug
+```
+
+After each run you'll find:
+
+- `test-results/review.html` — at-a-glance dashboard: per-test GIF, labeled
+  step screenshots, link to full video.
+- `playwright-report/index.html` — Playwright's standard HTML report (traces,
+  full attachments).
+
+Requirements: `ffmpeg` (`brew install ffmpeg`) for video → GIF conversion.
