@@ -41,6 +41,16 @@ export async function createTestUser(
     await page.getByRole('button', { name: /continue/i }).click()
   })
 
+  await step(page, 'bypass invite-code gate via Developer Mode (if present)', async () => {
+    // Local app gates new signups behind a beta invite code. Tests use the
+    // Developer Mode escape hatch. On environments without the gate this is a no-op.
+    const devMode = page.getByText(/developer mode/i).first()
+    if (await devMode.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await devMode.click()
+      await page.waitForTimeout(800)
+    }
+  })
+
   await step(page, 'submit password (signup)', async () => {
     const pw = page.locator('input[placeholder="Password"]').first()
     await expect(pw).toBeVisible({ timeout: 10000 })
