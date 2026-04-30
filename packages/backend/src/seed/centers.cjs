@@ -68,9 +68,12 @@ const headers = parseCSVLine(lines[0])
 // Track seen names to combine duplicates
 const seenNames = {}
 
+// Upsert so admin-curated columns (image, website, acharya, point_of_contact)
+// survive a reseed. Only the fields sourced from CSV are overwritten.
 let sql = `-- Seed centers from CSV (standardized names)\n`
 sql += `-- Run: npx wrangler d1 execute chinmaya-janata-db --local --file=packages/backend/src/seed/centers.sql\n\n`
-sql += `DELETE FROM centers;\n\n`
+
+const csvIds = []
 
 for (let i = 1; i < lines.length; i++) {
   const values = parseCSVLine(lines[i])
@@ -85,19 +88,22 @@ for (let i = 1; i < lines.length; i++) {
   const address = (values[16] || '').replace(/"/g, '').replace(/'/g, "''")
   const phone = values[10] || ''
 
-  // Standardize the name
   const stdName = standardizeName(name, city, state)
 
-  // Check for duplicates (skip if same name already added)
   const nameKey = stdName.toLowerCase()
   if (seenNames[nameKey]) {
     console.log(`Skipping duplicate: ${stdName} (already exists as ${seenNames[nameKey]})`)
     continue
   }
   seenNames[nameKey] = stdName
+  csvIds.push(id)
 
-  sql += `INSERT INTO centers (id, name, latitude, longitude, address, phone, is_verified) VALUES ('${id}', '${stdName}', ${lat}, ${lng}, '${address}', '${phone}', 1);\n`
+  sql += `INSERT INTO centers (id, name, latitude, longitude, address, phone, is_verified) VALUES ('${id}', '${stdName}', ${lat}, ${lng}, '${address}', '${phone}', 1)\n`
+  sql += `  ON CONFLICT(id) DO UPDATE SET name=excluded.name, latitude=excluded.latitude, longitude=excluded.longitude, address=excluded.address, phone=excluded.phone, is_verified=excluded.is_verified, updated_at=datetime('now');\n`
 }
+
+// Remove any centers no longer in the CSV.
+sql += `\nDELETE FROM centers WHERE id NOT IN (${csvIds.map((id) => `'${id}'`).join(', ')});\n`
 
 fs.writeFileSync(__dirname + '/centers.sql', sql)
 console.log('Generated centers.sql with ' + Object.keys(seenNames).length + ' unique centers')

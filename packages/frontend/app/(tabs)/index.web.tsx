@@ -19,6 +19,7 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  Image,
 } from 'react-native'
 import { MapPin, Search, Building2, Users, ChevronUp, ChevronDown } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
@@ -221,8 +222,12 @@ function CenterItem({ center, onPress, isMyCenter }: { center: DiscoverCenter; o
       style={{ minHeight: 72 }}
     >
       {/* Icon pill */}
-      <View className="w-[52px] h-[60px] rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center">
-        <Building2 size={22} color="#9A3412" />
+      <View className="w-[52px] h-[60px] rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center overflow-hidden">
+        {center.image ? (
+          <Image source={{ uri: center.image }} style={{ width: 52, height: 60 }} resizeMode="cover" />
+        ) : (
+          <Building2 size={22} color="#9A3412" />
+        )}
       </View>
 
       {/* Content */}

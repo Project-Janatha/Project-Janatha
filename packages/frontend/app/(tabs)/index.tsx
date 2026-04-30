@@ -12,6 +12,7 @@ import {
   Animated,
   PanResponder,
   StyleSheet,
+  Image,
 } from 'react-native'
 import {
   MapPin,
@@ -180,8 +181,12 @@ function CenterItem({ center, onPress, isMyCenter }: { center: DiscoverCenter; o
       }`}
     >
       {/* Icon pill */}
-      <View className="w-12 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center">
-        <Building2 size={20} color="#9A3412" />
+      <View className="w-12 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center overflow-hidden">
+        {center.image ? (
+          <Image source={{ uri: center.image }} style={{ width: 48, height: 56 }} resizeMode="cover" />
+        ) : (
+          <Building2 size={20} color="#9A3412" />
+        )}
       </View>
 
       {/* Content */}
