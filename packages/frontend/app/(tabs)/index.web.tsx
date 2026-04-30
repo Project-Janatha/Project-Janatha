@@ -39,6 +39,7 @@ import CenterDetailPanel from '../../components/web/CenterDetailPanel'
 import { useDetailColors } from '../../hooks/useDetailColors'
 import AuthPromptModal from '../../components/ui/AuthPromptModal'
 import type { MapPoint, EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
+import { extractCityState } from '../../utils/addressParsing'
 import { WeekCalendar } from '../../components'
 import { ADMIN_EMAIL, isLocal } from '../../utils/admin'
 
@@ -190,24 +191,6 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
       </View>
     </Pressable>
   )
-}
-
-// ─── Center helpers ─────────────────────────────────────
-
-/** Extract "City, ST" from a full address string, or return fallback */
-function extractCityState(address?: string): string | null {
-  if (!address) return null
-  // Try to match "City, State ZIP" or "City, ST" patterns
-  const parts = address.split(',').map((s) => s.trim())
-  if (parts.length >= 2) {
-    const city = parts[parts.length - 2]
-    // State part may include ZIP — extract just the state abbreviation or name
-    const stateZip = parts[parts.length - 1]
-    const stateMatch = stateZip.match(/^([A-Za-z\s]+)/)
-    const state = stateMatch ? stateMatch[1].trim() : stateZip
-    return `${city}, ${state}`
-  }
-  return null
 }
 
 // ─── Center Item (Desktop) ──────────────────────────────
