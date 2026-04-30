@@ -110,6 +110,7 @@ export interface DiscoverCenter {
   eventCount?: number
   isMember?: boolean
   distanceMi?: number
+  image?: string | null
 }
 
 export type DiscoverItem =
@@ -415,6 +416,7 @@ export function centersToDiscoverCenters(centers: CenterData[]): DiscoverCenter[
       latitude: c.latitude,
       longitude: c.longitude,
       memberCount: c.memberCount,
+      image: c.image && c.image.startsWith('/') ? `${API_BASE_URL}${c.image}` : c.image ?? null,
     }))
 }
 

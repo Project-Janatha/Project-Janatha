@@ -12,6 +12,7 @@ import {
   Animated,
   PanResponder,
   StyleSheet,
+  Image,
 } from 'react-native'
 import {
   MapPin,
@@ -27,6 +28,7 @@ import { Badge, UnderlineTabBar, Avatar } from '../../components/ui'
 import { useUser } from '../../components/contexts/UserContext'
 import { useDiscoverData, type DiscoverFilter } from '../../hooks/useApiData'
 import type { EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
+import { extractCityState } from '../../utils/addressParsing'
 import WeekCalendar from '../../components/WeekCalendar'
 
 
@@ -152,21 +154,6 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
   )
 }
 
-// ─── Center helpers ─────────────────────────────────────
-
-function extractCityState(address?: string): string | null {
-  if (!address) return null
-  const parts = address.split(',').map((s) => s.trim())
-  if (parts.length >= 2) {
-    const city = parts[parts.length - 2]
-    const stateZip = parts[parts.length - 1]
-    const stateMatch = stateZip.match(/^([A-Za-z\s]+)/)
-    const state = stateMatch ? stateMatch[1].trim() : stateZip
-    return `${city}, ${state}`
-  }
-  return null
-}
-
 // ─── Center Item ────────────────────────────────────────
 
 function CenterItem({ center, onPress, isMyCenter }: { center: DiscoverCenter; onPress: () => void; isMyCenter?: boolean }) {
@@ -180,8 +167,12 @@ function CenterItem({ center, onPress, isMyCenter }: { center: DiscoverCenter; o
       }`}
     >
       {/* Icon pill */}
-      <View className="w-12 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center">
-        <Building2 size={20} color="#9A3412" />
+      <View className="w-12 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center overflow-hidden">
+        {center.image ? (
+          <Image source={{ uri: center.image }} style={{ width: 48, height: 56 }} resizeMode="cover" />
+        ) : (
+          <Building2 size={20} color="#9A3412" />
+        )}
       </View>
 
       {/* Content */}

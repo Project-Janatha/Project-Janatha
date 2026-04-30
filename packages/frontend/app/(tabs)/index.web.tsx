@@ -19,6 +19,7 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  Image,
 } from 'react-native'
 import { MapPin, Search, Building2, Users, ChevronUp, ChevronDown } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
@@ -38,6 +39,7 @@ import CenterDetailPanel from '../../components/web/CenterDetailPanel'
 import { useDetailColors } from '../../hooks/useDetailColors'
 import AuthPromptModal from '../../components/ui/AuthPromptModal'
 import type { MapPoint, EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
+import { extractCityState } from '../../utils/addressParsing'
 import { WeekCalendar } from '../../components'
 import { ADMIN_EMAIL, isLocal } from '../../utils/admin'
 
@@ -191,24 +193,6 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
   )
 }
 
-// ─── Center helpers ─────────────────────────────────────
-
-/** Extract "City, ST" from a full address string, or return fallback */
-function extractCityState(address?: string): string | null {
-  if (!address) return null
-  // Try to match "City, State ZIP" or "City, ST" patterns
-  const parts = address.split(',').map((s) => s.trim())
-  if (parts.length >= 2) {
-    const city = parts[parts.length - 2]
-    // State part may include ZIP — extract just the state abbreviation or name
-    const stateZip = parts[parts.length - 1]
-    const stateMatch = stateZip.match(/^([A-Za-z\s]+)/)
-    const state = stateMatch ? stateMatch[1].trim() : stateZip
-    return `${city}, ${state}`
-  }
-  return null
-}
-
 // ─── Center Item (Desktop) ──────────────────────────────
 
 function CenterItem({ center, onPress, isMyCenter }: { center: DiscoverCenter; onPress: () => void; isMyCenter?: boolean }) {
@@ -221,8 +205,12 @@ function CenterItem({ center, onPress, isMyCenter }: { center: DiscoverCenter; o
       style={{ minHeight: 72 }}
     >
       {/* Icon pill */}
-      <View className="w-[52px] h-[60px] rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center">
-        <Building2 size={22} color="#9A3412" />
+      <View className="w-[52px] h-[60px] rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center overflow-hidden">
+        {center.image ? (
+          <Image source={{ uri: center.image }} style={{ width: 52, height: 60 }} resizeMode="cover" />
+        ) : (
+          <Building2 size={22} color="#9A3412" />
+        )}
       </View>
 
       {/* Content */}
