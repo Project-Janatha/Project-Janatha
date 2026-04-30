@@ -540,7 +540,7 @@ describe('centersToDiscoverCenters', () => {
     ]
     const result = api.centersToDiscoverCenters(centers)
     expect(result).toEqual([
-      { id: '1', name: 'A', address: '123 St', latitude: 37.0, longitude: -122.0, memberCount: 10 },
+      { id: '1', name: 'A', address: '123 St', latitude: 37.0, longitude: -122.0, memberCount: 10, image: null },
     ])
   })
 
