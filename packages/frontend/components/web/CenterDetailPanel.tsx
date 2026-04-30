@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, Image, ScrollView, Pressable, Linking } from 'react-native'
-import { MapPin, Globe, Phone, User, ChevronLeft } from 'lucide-react-native'
+import { MapPin, Globe, Phone, User, ChevronLeft, Navigation, BadgeCheck, Users } from 'lucide-react-native'
 import type { CenterDisplay } from '../../hooks/useApiData'
 import type { EventDisplay } from '../../utils/api'
 import { useDetailColors } from '../../hooks/useDetailColors'
@@ -110,6 +110,43 @@ export default function CenterDetailPanel({
         >
           {center.name}
         </Text>
+
+        {/* Stats row */}
+        {(center.memberCount > 0 || center.isVerified) && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {center.memberCount > 0 && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Users size={13} color={colors.textSecondary} />
+                <Text
+                  style={{
+                    fontFamily: 'Inter-Medium',
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                  }}
+                >
+                  {center.memberCount} {center.memberCount === 1 ? 'member' : 'members'}
+                </Text>
+              </View>
+            )}
+            {center.memberCount > 0 && center.isVerified && (
+              <Text style={{ fontSize: 13, color: colors.textMuted }}>·</Text>
+            )}
+            {center.isVerified && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <BadgeCheck size={13} color="#E8862A" />
+                <Text
+                  style={{
+                    fontFamily: 'Inter-Medium',
+                    fontSize: 13,
+                    color: '#E8862A',
+                  }}
+                >
+                  Verified
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
 
       {/* ── Scrollable content ──────────────────────────────────── */}
@@ -141,10 +178,7 @@ export default function CenterDetailPanel({
           <View style={{ gap: 16 }}>
             {/* Address */}
             {center.address ? (
-              <Pressable
-                onPress={handleAddressPress}
-                style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, minHeight: 44 }}
-              >
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
                 <View
                   style={{
                     width: 32,
@@ -158,7 +192,7 @@ export default function CenterDetailPanel({
                 >
                   <MapPin size={16} color="#E8862A" />
                 </View>
-                <View style={{ flex: 1, justifyContent: 'center' }}>
+                <View style={{ flex: 1, gap: 8 }}>
                   <Text
                     style={{
                       fontFamily: 'Inter-Medium',
@@ -169,8 +203,35 @@ export default function CenterDetailPanel({
                   >
                     {center.address}
                   </Text>
+                  <Pressable
+                    onPress={handleAddressPress}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      backgroundColor: '#E8862A',
+                      paddingVertical: 9,
+                      paddingHorizontal: 14,
+                      borderRadius: 8,
+                      alignSelf: 'flex-start',
+                      minHeight: 36,
+                    }}
+                    accessibilityLabel="Get directions"
+                  >
+                    <Navigation size={14} color="#fff" />
+                    <Text
+                      style={{
+                        fontFamily: 'Inter-SemiBold',
+                        fontSize: 13,
+                        color: '#fff',
+                      }}
+                    >
+                      Get Directions
+                    </Text>
+                  </Pressable>
                 </View>
-              </Pressable>
+              </View>
             ) : null}
 
             {/* Website */}
