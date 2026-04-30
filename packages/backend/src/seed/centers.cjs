@@ -98,8 +98,12 @@ for (let i = 1; i < lines.length; i++) {
   seenNames[nameKey] = stdName
   csvIds.push(id)
 
-  sql += `INSERT INTO centers (id, name, latitude, longitude, address, phone, is_verified) VALUES ('${id}', '${stdName}', ${lat}, ${lng}, '${address}', '${phone}', 1)\n`
-  sql += `  ON CONFLICT(id) DO UPDATE SET name=excluded.name, latitude=excluded.latitude, longitude=excluded.longitude, address=excluded.address, phone=excluded.phone, is_verified=excluded.is_verified, updated_at=datetime('now');\n`
+  // Deterministic placeholder photo per center until coordinators upload real ones.
+  // Same seed -> same image forever. Only used when image is currently NULL.
+  const placeholder = `https://picsum.photos/seed/cm-${id}/600/400`
+
+  sql += `INSERT INTO centers (id, name, latitude, longitude, address, phone, is_verified, image) VALUES ('${id}', '${stdName}', ${lat}, ${lng}, '${address}', '${phone}', 1, '${placeholder}')\n`
+  sql += `  ON CONFLICT(id) DO UPDATE SET name=excluded.name, latitude=excluded.latitude, longitude=excluded.longitude, address=excluded.address, phone=excluded.phone, is_verified=excluded.is_verified, image=COALESCE(centers.image, excluded.image), updated_at=datetime('now');\n`
 }
 
 // Remove any centers no longer in the CSV.
