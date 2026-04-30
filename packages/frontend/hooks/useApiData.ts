@@ -392,6 +392,8 @@ export interface CenterDisplay {
   acharya: string
   latitude?: number
   longitude?: number
+  memberCount: number
+  isVerified: boolean
 }
 
 const SAMPLE_CENTER_DETAILS: Record<string, CenterDisplay> = {}
@@ -437,6 +439,8 @@ export function useCenterDetail(centerId: string) {
             acharya: apiCenter.acharya || '',
             latitude: apiCenter.latitude,
             longitude: apiCenter.longitude,
+            memberCount: apiCenter.memberCount ?? 0,
+            isVerified: apiCenter.isVerified ?? false,
           })
           setIsLive(true)
         }
