@@ -704,37 +704,23 @@ function MobileDiscoverFallback() {
               />
             </View>
 
-            {/* Filter checkboxes */}
+            {/* Filter chips */}
             {activeFilter !== 'Centers' && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 4, gap: 16 }}>
-                <Pressable
-                  onPress={() => setShowGoingOnly((prev: boolean) => !prev)}
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                >
-                  <View style={{
-                    width: 16, height: 16, borderRadius: 3, borderWidth: 1,
-                    marginRight: 8, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: showGoingOnly ? '#ea580c' : 'transparent',
-                    borderColor: showGoingOnly ? '#ea580c' : '#9ca3af',
-                  }}>
-                    {showGoingOnly && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#78716c' }}>Going</Text>
-                </Pressable>
-                <Pressable
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 6, gap: 8 }}>
+                {user && (
+                  <FilterChip
+                    label="Going"
+                    variant="outline"
+                    active={showGoingOnly}
+                    onPress={() => setShowGoingOnly((prev: boolean) => !prev)}
+                  />
+                )}
+                <FilterChip
+                  label="Show past"
+                  variant="outline"
+                  active={showPastEvents}
                   onPress={() => setShowPastEvents((prev: boolean) => !prev)}
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                >
-                  <View style={{
-                    width: 16, height: 16, borderRadius: 3, borderWidth: 1,
-                    marginRight: 8, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: showPastEvents ? '#ea580c' : 'transparent',
-                    borderColor: showPastEvents ? '#ea580c' : '#9ca3af',
-                  }}>
-                    {showPastEvents && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#78716c' }}>Show past events</Text>
-                </Pressable>
+                />
               </View>
             )}
 
@@ -1126,37 +1112,23 @@ export default function DiscoverScreenWeb() {
               />
             </View>
 
-            {/* Filter checkboxes */}
+            {/* Filter chips */}
             {activeFilter !== 'Centers' && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 4, gap: 16 }}>
-                <Pressable
-                  onPress={() => setShowGoingOnly((prev: boolean) => !prev)}
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                >
-                  <View style={{
-                    width: 16, height: 16, borderRadius: 3, borderWidth: 1,
-                    marginRight: 8, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: showGoingOnly ? '#ea580c' : 'transparent',
-                    borderColor: showGoingOnly ? '#ea580c' : '#9ca3af',
-                  }}>
-                    {showGoingOnly && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#78716c' }}>Going</Text>
-                </Pressable>
-                <Pressable
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 6, gap: 8 }}>
+                {user && (
+                  <FilterChip
+                    label="Going"
+                    variant="outline"
+                    active={showGoingOnly}
+                    onPress={() => setShowGoingOnly((prev: boolean) => !prev)}
+                  />
+                )}
+                <FilterChip
+                  label="Show past"
+                  variant="outline"
+                  active={showPastEvents}
                   onPress={() => setShowPastEvents((prev: boolean) => !prev)}
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                >
-                  <View style={{
-                    width: 16, height: 16, borderRadius: 3, borderWidth: 1,
-                    marginRight: 8, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: showPastEvents ? '#ea580c' : 'transparent',
-                    borderColor: showPastEvents ? '#ea580c' : '#9ca3af',
-                  }}>
-                    {showPastEvents && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#78716c' }}>Show past events</Text>
-                </Pressable>
+                />
               </View>
             )}
 
