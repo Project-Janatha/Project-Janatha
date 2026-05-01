@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Alert, Share } from 'react-native'
+import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Alert, Share, Linking } from 'react-native'
 import { DetailSkeleton } from '../../components/ui/Skeleton'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -258,7 +258,7 @@ function MetaSection({
   isPast,
   colors,
 }: {
-  event: { location: string; address?: string; attendees: number; pointOfContact?: string }
+  event: { location: string; address?: string; attendees: number; pointOfContact?: string; signupUrl?: string | null; allowJanataSignup?: boolean }
   attendees: { image?: string; initials?: string; name: string; subtitle: string }[]
   isPast?: boolean
   colors: DetailColors
@@ -285,14 +285,16 @@ function MetaSection({
         </View>
       </View>
 
-      {/* Attendees */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <MetaIcon icon={Users} color={iconColor} colors={colors} />
-        <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: colors.text }}>
-          {attendLabel}
-        </Text>
-        <AvatarStack attendees={attendees} colors={colors} />
-      </View>
+      {/* Attendees — hidden when external signup is exclusive (no native RSVP) */}
+      {!(event.signupUrl && !event.allowJanataSignup) && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <MetaIcon icon={Users} color={iconColor} colors={colors} />
+          <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: colors.text }}>
+            {attendLabel}
+          </Text>
+          <AvatarStack attendees={attendees} colors={colors} />
+        </View>
+      )}
 
       {/* Point of contact */}
       {event.pointOfContact ? (
@@ -370,38 +372,95 @@ function AttendedBanner({ count, colors }: { count: number; colors: DetailColors
 
 // ── Action bar ───────────────────────────────────────────────────────────
 
+function hostnameOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return 'official site'
+  }
+}
+
 function ActionBar({
   isRegistered,
   isPast,
   onToggle,
   isToggling,
+  signupUrl,
+  allowJanataSignup,
   colors,
 }: {
   isRegistered?: boolean
   isPast?: boolean
   onToggle: () => void
   isToggling: boolean
+  signupUrl?: string | null
+  allowJanataSignup?: boolean
   colors: DetailColors
 }) {
   if (isPast) return null
 
+  const wrapperStyle = {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 28,
+    backgroundColor: colors.panelBg,
+  } as const
+
+  // External signup + admin opted into Janata as alternate. Janata primary,
+  // external secondary.
+  if (signupUrl && allowJanataSignup) {
+    return (
+      <View style={{ ...wrapperStyle, gap: 8 }}>
+        {isRegistered ? (
+          <DestructiveButton onPress={onToggle} disabled={isToggling} loading={isToggling}>
+            Cancel Registration
+          </DestructiveButton>
+        ) : (
+          <PrimaryButton onPress={onToggle} disabled={isToggling} loading={isToggling}>
+            Attend on Janata
+          </PrimaryButton>
+        )}
+        <Pressable
+          onPress={() => Linking.openURL(signupUrl)}
+          style={{ paddingVertical: 12, alignItems: 'center', justifyContent: 'center' }}
+          accessibilityLabel={`Sign up at ${hostnameOf(signupUrl)}`}
+        >
+          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: '#E8862A' }}>
+            Or sign up at {hostnameOf(signupUrl)}
+          </Text>
+        </Pressable>
+      </View>
+    )
+  }
+
+  // External signup is exclusive.
+  if (signupUrl) {
+    return (
+      <View style={wrapperStyle}>
+        <PrimaryButton onPress={() => Linking.openURL(signupUrl)}>
+          Sign up at {hostnameOf(signupUrl)}
+        </PrimaryButton>
+        <Text
+          style={{
+            fontFamily: 'Inter-Regular',
+            fontSize: 12,
+            color: colors.textMuted,
+            textAlign: 'center',
+            marginTop: 8,
+          }}
+        >
+          Registration handled on the official site
+        </Text>
+      </View>
+    )
+  }
+
   if (isRegistered) {
     return (
-      <View
-        style={{
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          paddingHorizontal: 16,
-          paddingTop: 12,
-          paddingBottom: 28,
-          backgroundColor: colors.panelBg,
-        }}
-      >
-        <DestructiveButton
-          onPress={onToggle}
-          disabled={isToggling}
-          loading={isToggling}
-        >
+      <View style={wrapperStyle}>
+        <DestructiveButton onPress={onToggle} disabled={isToggling} loading={isToggling}>
           Cancel Registration
         </DestructiveButton>
       </View>
@@ -409,21 +468,8 @@ function ActionBar({
   }
 
   return (
-    <View
-      style={{
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
-        paddingHorizontal: 16,
-        paddingTop: 12,
-        paddingBottom: 28,
-        backgroundColor: colors.panelBg,
-      }}
-    >
-      <PrimaryButton
-        onPress={onToggle}
-        disabled={isToggling}
-        loading={isToggling}
-      >
+    <View style={wrapperStyle}>
+      <PrimaryButton onPress={onToggle} disabled={isToggling} loading={isToggling}>
         Attend Event
       </PrimaryButton>
       <Text
@@ -661,6 +707,8 @@ export default function EventDetailPage() {
           isRegistered
           onToggle={handleToggleRegistration}
           isToggling={isToggling}
+          signupUrl={event.signupUrl}
+          allowJanataSignup={event.allowJanataSignup}
           colors={colors}
         />
       </SafeAreaView>
@@ -743,6 +791,8 @@ export default function EventDetailPage() {
         isPast={isPast}
         onToggle={handleToggleRegistration}
         isToggling={isToggling}
+        signupUrl={event.signupUrl}
+        allowJanataSignup={event.allowJanataSignup}
         colors={colors}
       />
     </SafeAreaView>

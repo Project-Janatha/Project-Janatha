@@ -95,6 +95,7 @@ type EventDetailPanelProps = {
     isRegistered?: boolean
     externalUrl?: string | null
     signupUrl?: string | null
+    allowJanataSignup?: boolean
   }
   attendees: Attendee[]
   isPast?: boolean
@@ -343,20 +344,23 @@ function MetaSection({
         </View>
       </View>
 
-      {/* Attendees row */}
-      <View className="flex-row items-center" style={{ gap: 12 }}>
-        <MetaIcon icon={Users} color={iconColor} colors={colors} />
-        <Text
-          style={{
-            fontFamily: 'Inter-Medium',
-            fontSize: 14,
-            color: colors.text,
-          }}
-        >
-          {attendLabel}
-        </Text>
-        <AvatarStack attendees={attendees} colors={colors} />
-      </View>
+      {/* Attendees row — hidden when external signup is exclusive (no native
+          RSVP allowed), since the on-Janata count would always be 0. */}
+      {!(event.signupUrl && !event.allowJanataSignup) && (
+        <View className="flex-row items-center" style={{ gap: 12 }}>
+          <MetaIcon icon={Users} color={iconColor} colors={colors} />
+          <Text
+            style={{
+              fontFamily: 'Inter-Medium',
+              fontSize: 14,
+              color: colors.text,
+            }}
+          >
+            {attendLabel}
+          </Text>
+          <AvatarStack attendees={attendees} colors={colors} />
+        </View>
+      )}
 
       {/* Point of contact row */}
       {event.pointOfContact && (
@@ -687,6 +691,7 @@ function ActionBar({
   onToggleRegistration,
   isToggling,
   signupUrl,
+  allowJanataSignup,
   colors,
 }: {
   isRegistered?: boolean
@@ -694,11 +699,65 @@ function ActionBar({
   onToggleRegistration: () => void
   isToggling: boolean
   signupUrl?: string | null
+  allowJanataSignup?: boolean
   colors: DetailColors
 }) {
   if (isPast) return null
 
-  // External signup wins over native RSVP. We're a referrer, not the registrar.
+  // External signup is set + admin opted into letting users RSVP on Janata
+  // too. Janata is primary, external is the alternate.
+  if (signupUrl && allowJanataSignup) {
+    return (
+      <View
+        style={{
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          padding: 16,
+          backgroundColor: colors.panelBg,
+          gap: 8,
+        }}
+      >
+        {isRegistered ? (
+          <DestructiveButton
+            onPress={onToggleRegistration}
+            disabled={isToggling}
+            loading={isToggling}
+          >
+            Cancel Registration
+          </DestructiveButton>
+        ) : (
+          <PrimaryButton
+            onPress={onToggleRegistration}
+            disabled={isToggling}
+            loading={isToggling}
+          >
+            Attend on Janata
+          </PrimaryButton>
+        )}
+        <Pressable
+          onPress={() => Linking.openURL(signupUrl)}
+          style={{
+            paddingVertical: 12,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          accessibilityLabel={`Sign up at ${hostnameOf(signupUrl)}`}
+        >
+          <Text
+            style={{
+              fontFamily: 'Inter-SemiBold',
+              fontSize: 14,
+              color: '#E8862A',
+            }}
+          >
+            Or sign up at {hostnameOf(signupUrl)}
+          </Text>
+        </Pressable>
+      </View>
+    )
+  }
+
+  // External signup is exclusive. We're just a referrer.
   if (signupUrl) {
     return (
       <View
@@ -843,6 +902,7 @@ export default function EventDetailPanel({
         onToggleRegistration={onToggleRegistration}
         isToggling={isToggling}
         signupUrl={event.signupUrl}
+        allowJanataSignup={event.allowJanataSignup}
         colors={colors}
       />
     </View>

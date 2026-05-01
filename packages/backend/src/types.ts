@@ -83,6 +83,7 @@ export interface EventRow {
   created_by: string | null
   external_url: string | null
   signup_url: string | null
+  allow_janata_signup: number // 0 | 1
   created_at: string
   updated_at: string
 }
@@ -168,6 +169,7 @@ export interface EventApiResponse {
   createdBy: string | null
   externalUrl: string | null
   signupUrl: string | null
+  allowJanataSignup: boolean
   createdAt: string
   updatedAt: string
 }
@@ -248,6 +250,7 @@ export function eventRowToApi(row: EventRow): EventApiResponse {
     createdBy: row.created_by,
     externalUrl: row.external_url,
     signupUrl: row.signup_url,
+    allowJanataSignup: row.allow_janata_signup === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }

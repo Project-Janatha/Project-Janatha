@@ -1192,6 +1192,9 @@ app.put('/admin/events/:id', adminMiddleware, async (c) => {
     pointOfContact?: string
     image?: string
     category?: number
+    externalUrl?: string | null
+    signupUrl?: string | null
+    allowJanataSignup?: boolean
   }>()
 
   const updates: Partial<EventRow> = {}
@@ -1202,6 +1205,9 @@ app.put('/admin/events/:id', adminMiddleware, async (c) => {
   if (body.pointOfContact !== undefined) updates.point_of_contact = body.pointOfContact
   if (body.image !== undefined) updates.image = body.image
   if (body.category !== undefined) updates.category = body.category
+  if (body.externalUrl !== undefined) updates.external_url = body.externalUrl
+  if (body.signupUrl !== undefined) updates.signup_url = body.signupUrl
+  if (body.allowJanataSignup !== undefined) updates.allow_janata_signup = body.allowJanataSignup ? 1 : 0
 
   const result = await db.updateEvent(c.env.DB, eventId, updates)
   if (result.success) {

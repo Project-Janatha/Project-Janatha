@@ -41,6 +41,7 @@ export interface EventData {
   createdBy: string | null
   externalUrl?: string | null
   signupUrl?: string | null
+  allowJanataSignup?: boolean
   createdAt?: string
   updatedAt?: string
 }
@@ -104,6 +105,7 @@ export interface EventDisplay {
   category?: number | null
   externalUrl?: string | null
   signupUrl?: string | null
+  allowJanataSignup?: boolean
 }
 
 export interface DiscoverCenter {
