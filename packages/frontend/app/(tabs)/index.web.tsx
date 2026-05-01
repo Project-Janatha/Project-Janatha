@@ -456,9 +456,7 @@ function MobileDiscoverFallback() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showGoingOnly, setShowGoingOnly] = useState(false)
   const [showPastEvents, setShowPastEvents] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<number | 'other' | null>(null)
   const [selectedCenter, setSelectedCenter] = useState<string | null>(null)
-  const [showTypeModal, setShowTypeModal] = useState(false)
   const [showCenterModal, setShowCenterModal] = useState(false)
   const { user } = useUser()
   const { items, filteredPoints, loading, allEvents, allCenters, refresh } = useDiscoverData(
@@ -489,7 +487,7 @@ function MobileDiscoverFallback() {
     const h = containerRef.current?.clientHeight || window.innerHeight
     return {
       expanded: 0, // flush with the top of the container — full height
-      mid: h * 0.55, // 55% down
+      mid: h * 0.45, // sheet ~55% of viewport — between low peek and full
       collapsed: h - 80, // 80px from bottom (just the handle + peek)
     }
   }, [])
@@ -603,16 +601,6 @@ function MobileDiscoverFallback() {
         (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
       )
     }
-    if (selectedCategory !== null) {
-      result = result.filter((item) => {
-        if (item.type !== 'event') return true // keep section headers
-        const cat = (item.data as EventDisplay).category
-        if (selectedCategory === 'other') {
-          return cat != null && cat !== 91 && cat !== 92
-        }
-        return cat === selectedCategory
-      })
-    }
     if (selectedCenter) {
       result = result.filter((item) => {
         if (item.type !== 'event') return true
@@ -620,38 +608,33 @@ function MobileDiscoverFallback() {
       })
     }
     return result
-  }, [items, selectedDate, selectedCategory, selectedCenter])
+  }, [items, selectedDate, selectedCenter])
 
   const isExpanded = sheetSnap === 'expanded' && sheetTranslateY === null
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
 
-  // Filter chip helpers
+  // Filter chip helpers — counts are computed over upcoming events
+  // (past events are hidden by default, so the counts should match
+  // what the user would actually see when picking that option).
   const todayStr = new Date().toISOString().split('T')[0]
-  const typeOptions = useMemo<FilterPickerOption<number | 'other'>[]>(
-    () => [
-      { value: 91, label: 'Satsangs' },
-      { value: 92, label: 'Bhiksha' },
-      { value: 'other', label: 'Other' },
-    ],
-    []
+  const eventsForCounts = useMemo(
+    () => (showPastEvents ? allEvents : allEvents.filter((e) => !e.date || e.date >= todayStr)),
+    [allEvents, showPastEvents, todayStr]
   )
-  const centerOptions = useMemo<FilterPickerOption<string>[]>(
-    () =>
-      [...allCenters]
-        .sort((a, b) => {
-          if (user?.centerID && a.id === user.centerID) return -1
-          if (user?.centerID && b.id === user.centerID) return 1
-          return a.name.localeCompare(b.name)
-        })
-        .map((c) => ({ value: c.id, label: c.name, sublabel: c.address })),
-    [allCenters, user?.centerID]
-  )
-  const typeChipLabel =
-    selectedCategory === null
-      ? 'Type'
-      : selectedCategory === 'other'
-        ? 'Other'
-        : typeOptions.find((o) => o.value === selectedCategory)?.label ?? 'Type'
+  const centerOptions = useMemo<FilterPickerOption<string>[]>(() => {
+    const counts: Record<string, number> = {}
+    for (const e of eventsForCounts) {
+      if (e.centerId) counts[e.centerId] = (counts[e.centerId] ?? 0) + 1
+    }
+    return [...allCenters]
+      .map((c) => ({ value: c.id, label: c.name, sublabel: c.address, count: counts[c.id] ?? 0 }))
+      .filter((o) => (o.count ?? 0) > 0)
+      .sort((a, b) => {
+        if (user?.centerID && a.value === user.centerID) return -1
+        if (user?.centerID && b.value === user.centerID) return 1
+        return a.label.localeCompare(b.label)
+      })
+  }, [allCenters, eventsForCounts, user?.centerID])
   const centerChipLabel = selectedCenter
     ? centerOptions.find((o) => o.value === selectedCenter)?.label ?? 'Center'
     : 'Center'
@@ -789,12 +772,6 @@ function MobileDiscoverFallback() {
                   onPress={() => setSelectedDate((prev) => (prev === todayStr ? null : todayStr))}
                 />
                 <FilterChip
-                  label={typeChipLabel}
-                  variant="outline"
-                  active={selectedCategory !== null}
-                  onPress={() => setShowTypeModal(true)}
-                />
-                <FilterChip
                   label={centerChipLabel}
                   variant="outline"
                   active={selectedCenter !== null}
@@ -895,15 +872,6 @@ function MobileDiscoverFallback() {
         </div>
       </div>
 
-      <FilterPickerModal
-        visible={showTypeModal}
-        title="Event type"
-        options={typeOptions}
-        selected={selectedCategory}
-        onSelect={setSelectedCategory}
-        onClear={() => setSelectedCategory(null)}
-        onClose={() => setShowTypeModal(false)}
-      />
       <FilterPickerModal
         visible={showCenterModal}
         title="Center"
