@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { View, Text, ScrollView, Pressable, ActivityIndicator, useWindowDimensions } from 'react-native'
+import { View, Text, ScrollView, Pressable, ActivityIndicator, useWindowDimensions, Linking } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ChevronLeft, Share2, MapPin, Users, User, Clock, CheckCircle } from 'lucide-react-native'
 import { useUser } from '../../components/contexts'
@@ -128,13 +128,16 @@ function MobileEventDetail({ eventId }: { eventId: string }) {
               </View>
             )}
 
-            {/* Attendees count */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Users size={18} color={colors.textSecondary} />
-              <Text style={{ color: colors.text, fontSize: 15 }}>
-                {event.attendees} {event.attendees === 1 ? 'person' : 'people'} attending
-              </Text>
-            </View>
+            {/* Attendees count — hidden when signup is external-only
+                (the on-Janata count would always read 0). */}
+            {!(event.signupUrl && !event.allowJanataSignup) && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Users size={18} color={colors.textSecondary} />
+                <Text style={{ color: colors.text, fontSize: 15 }}>
+                  {event.attendees} {event.attendees === 1 ? 'person' : 'people'} attending
+                </Text>
+              </View>
+            )}
 
             {/* Contact */}
             {event.pointOfContact && (
@@ -169,10 +172,65 @@ function MobileEventDetail({ eventId }: { eventId: string }) {
         )}
       </ScrollView>
 
-      {/* Action button */}
+      {/* Action button(s) — three modes (matches EventDetailPanel.ActionBar):
+          1. signupUrl + allowJanataSignup → Janata primary, external alt
+          2. signupUrl only → external referrer, no native RSVP
+          3. no signupUrl → native Register / Cancel */}
       {!isPast && (
-        <View style={{ padding: 16 }}>
-          {event.isRegistered ? (
+        <View style={{ padding: 16, gap: 8 }}>
+          {event.signupUrl && event.allowJanataSignup ? (
+            <>
+              {event.isRegistered ? (
+                <DestructiveButton
+                  onPress={() => user?.username && toggleRegistration(user.username)}
+                  disabled={isToggling}
+                  loading={isToggling}
+                >
+                  Cancel Registration
+                </DestructiveButton>
+              ) : (
+                <PrimaryButton
+                  onPress={() => {
+                    if (!user) {
+                      setShowAuthPrompt(true)
+                    } else if (user.username) {
+                      toggleRegistration(user.username)
+                    }
+                  }}
+                  disabled={isToggling}
+                  loading={isToggling}
+                >
+                  Attend on Janata
+                </PrimaryButton>
+              )}
+              <Pressable
+                onPress={() => Linking.openURL(event.signupUrl!)}
+                style={{ paddingVertical: 12, alignItems: 'center' }}
+                accessibilityLabel={`Sign up at ${hostnameOf(event.signupUrl)}`}
+              >
+                <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: '#E8862A' }}>
+                  Or sign up at {hostnameOf(event.signupUrl)}
+                </Text>
+              </Pressable>
+            </>
+          ) : event.signupUrl ? (
+            <>
+              <PrimaryButton onPress={() => Linking.openURL(event.signupUrl!)}>
+                Sign up at {hostnameOf(event.signupUrl)}
+              </PrimaryButton>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                  textAlign: 'center',
+                  marginTop: 4,
+                }}
+              >
+                Registration handled on the official site
+              </Text>
+            </>
+          ) : event.isRegistered ? (
             <DestructiveButton
               onPress={() => user?.username && toggleRegistration(user.username)}
               disabled={isToggling}
@@ -206,4 +264,12 @@ function MobileEventDetail({ eventId }: { eventId: string }) {
       />
     </View>
   )
+}
+
+function hostnameOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
 }
