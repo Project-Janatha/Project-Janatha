@@ -77,6 +77,7 @@ function apiEventToDisplay(e: EventData, _username?: string): EventDisplay {
     category: e.category,
     externalUrl: e.externalUrl ?? null,
     signupUrl: e.signupUrl ?? null,
+    allowJanataSignup: e.allowJanataSignup ?? false,
   }
 
   // If we have an image URL for the event, ensure it's absolute
