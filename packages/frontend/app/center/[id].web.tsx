@@ -155,21 +155,12 @@ function MobileCenterDetail({ centerId }: { centerId: string }) {
                 <Text style={{ color: colors.text, fontSize: 15 }}>{center.address}</Text>
                 <Pressable
                   onPress={handleAddressPress}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    backgroundColor: '#E8862A',
-                    paddingVertical: 9,
-                    paddingHorizontal: 14,
-                    borderRadius: 8,
-                    alignSelf: 'flex-start',
-                  }}
+                  style={{ alignSelf: 'flex-start', paddingVertical: 4 }}
                   accessibilityLabel="Get directions"
                 >
-                  <Navigation size={14} color="#fff" />
-                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Get Directions</Text>
+                  <Text style={{ color: '#E8862A', fontSize: 14, fontWeight: '600', fontFamily: 'Inter-SemiBold' }}>
+                    Get directions →
+                  </Text>
                 </Pressable>
               </View>
             </View>

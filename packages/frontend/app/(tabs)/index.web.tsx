@@ -613,6 +613,34 @@ function MobileDiscoverFallback() {
   const isExpanded = sheetSnap === 'expanded' && sheetTranslateY === null
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
 
+  // Default the Centers list to fully collapsed on first visit. The list
+  // is long (state groupings across 90+ centers) and an all-expanded view
+  // is overwhelming. Re-initializes when user toggles back from another tab.
+  const collapsedInitFor = useRef<DiscoverFilter | null>(null)
+  useEffect(() => {
+    if (activeFilter !== 'Centers') {
+      collapsedInitFor.current = null
+      return
+    }
+    if (collapsedInitFor.current === 'Centers') return
+    if (items.length === 0) return
+    const labels = new Set<string>()
+    for (const item of items) {
+      if (item.type === 'section') labels.add(item.data.label)
+    }
+    setCollapsedSections(labels)
+    collapsedInitFor.current = 'Centers'
+  }, [activeFilter, items])
+
+  const stickyHeaderIndices = useMemo(
+    () =>
+      displayItems.reduce<number[]>((acc, item, idx) => {
+        if (item.type === 'section') acc.push(idx)
+        return acc
+      }, []),
+    [displayItems]
+  )
+
   // Filter chip helpers — counts are computed over upcoming events
   // (past events are hidden by default, so the counts should match
   // what the user would actually see when picking that option).
@@ -749,6 +777,7 @@ function MobileDiscoverFallback() {
                 placeholderTextColor="#9CA3AF"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
+                onFocus={() => setSheetSnap('expanded')}
               />
             </View>
 
@@ -799,9 +828,10 @@ function MobileDiscoverFallback() {
           {/* Scrollable list */}
           <ScrollView
             className="flex-1"
-            contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 32, gap: 4 }}
+            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 32, gap: 4 }}
             showsVerticalScrollIndicator={false}
-            scrollEnabled={isExpanded}
+            scrollEnabled={sheetSnap !== 'collapsed' && sheetTranslateY === null}
+            stickyHeaderIndices={stickyHeaderIndices}
           >
             {!loading && comingUpHint && (
               <View
@@ -836,7 +866,12 @@ function MobileDiscoverFallback() {
                 const label = item.data.label
                 const isCollapsed = collapsedSections.has(label)
                 return (
-                  <Pressable key={`section-${idx}`} onPress={() => toggleSection(label)} style={{ marginTop: idx > 0 ? 12 : 0, marginBottom: 4 }}>
+                  <Pressable
+                    key={`section-${idx}`}
+                    onPress={() => toggleSection(label)}
+                    className="bg-white dark:bg-neutral-900"
+                    style={{ paddingTop: idx > 0 ? 12 : 4, paddingBottom: 6 }}
+                  >
                     <View className="flex-row items-center gap-2 px-1">
                       <Text className="text-xs font-inter-semibold text-stone-400 dark:text-stone-500 uppercase" style={{ letterSpacing: 0.5 }}>
                         {label}
