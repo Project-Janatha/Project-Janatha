@@ -25,11 +25,11 @@ import { useRouter, useFocusEffect } from 'expo-router'
 import { usePostHog } from 'posthog-react-native'
 import { useTheme } from '../../components/contexts'
 import { Badge, UnderlineTabBar, Avatar, FilterChip } from '../../components/ui'
+import FilterPickerModal, { type FilterPickerOption } from '../../components/ui/FilterPickerModal'
 import { useUser } from '../../components/contexts/UserContext'
 import { useDiscoverData, type DiscoverFilter } from '../../hooks/useApiData'
 import type { EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
 import { extractCityState } from '../../utils/addressParsing'
-import WeekCalendar from '../../components/WeekCalendar'
 
 
 // Lazy load Map to avoid loading heavy web dependencies on mobile web
@@ -231,6 +231,8 @@ export default function DiscoverScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showGoingOnly, setShowGoingOnly] = useState(false)
   const [showPastEvents, setShowPastEvents] = useState(false)
+  const [selectedCenter, setSelectedCenter] = useState<string | null>(null)
+  const [showCenterModal, setShowCenterModal] = useState(false)
     const { user } = useUser()
     const {
     items,
@@ -327,17 +329,45 @@ export default function DiscoverScreen() {
   ).current
 
   // ── Data ──────────────────────────────────────────────
-  const eventDates = React.useMemo(
-    () => new Set(allEvents.filter((e) => e.date).map((e) => e.date)),
-    [allEvents]
-  )
-
   const displayItems = React.useMemo(() => {
-    if (!selectedDate) return items
-    return items.filter(
-      (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
-    )
-  }, [items, selectedDate])
+    let result = items
+    if (selectedDate) {
+      result = result.filter(
+        (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
+      )
+    }
+    if (selectedCenter) {
+      result = result.filter((item) => {
+        if (item.type !== 'event') return true
+        return (item.data as EventDisplay).centerId === selectedCenter
+      })
+    }
+    return result
+  }, [items, selectedDate, selectedCenter])
+
+  // Filter chip helpers — counts over upcoming events
+  const todayStr = new Date().toISOString().split('T')[0]
+  const eventsForCounts = useMemo(
+    () => (showPastEvents ? allEvents : allEvents.filter((e) => !e.date || e.date >= todayStr)),
+    [allEvents, showPastEvents, todayStr]
+  )
+  const centerOptions = useMemo<FilterPickerOption<string>[]>(() => {
+    const counts: Record<string, number> = {}
+    for (const e of eventsForCounts) {
+      if (e.centerId) counts[e.centerId] = (counts[e.centerId] ?? 0) + 1
+    }
+    return [...allCenters]
+      .map((c) => ({ value: c.id, label: c.name, sublabel: c.address, count: counts[c.id] ?? 0 }))
+      .filter((o) => (o.count ?? 0) > 0)
+      .sort((a, b) => {
+        if (user?.centerID && a.value === user.centerID) return -1
+        if (user?.centerID && b.value === user.centerID) return 1
+        return a.label.localeCompare(b.label)
+      })
+  }, [allCenters, eventsForCounts, user?.centerID])
+  const centerChipLabel = selectedCenter
+    ? centerOptions.find((o) => o.value === selectedCenter)?.label ?? 'Center'
+    : 'Center'
 
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
   const toggleSection = useCallback((label: string) => {
@@ -472,9 +502,27 @@ export default function DiscoverScreen() {
               />
             </View>
 
-            {/* Filter chips */}
+            {/* Filter chips — Today / Center / Going (max 4) */}
             {activeFilter === 'Events' && (
               <View className="flex-row flex-wrap items-center px-4 py-2 gap-2">
+                <FilterChip
+                  label="Today"
+                  variant="outline"
+                  active={selectedDate === todayStr}
+                  onPress={() => {
+                    setSelectedDate((prev) => {
+                      const next = prev === todayStr ? null : todayStr
+                      if (next) posthog?.capture('discover_date_selected', { date: next })
+                      return next
+                    })
+                  }}
+                />
+                <FilterChip
+                  label={centerChipLabel}
+                  variant="outline"
+                  active={selectedCenter !== null}
+                  onPress={() => setShowCenterModal(true)}
+                />
                 {user && (
                   <FilterChip
                     label="Going"
@@ -483,27 +531,7 @@ export default function DiscoverScreen() {
                     onPress={() => setShowGoingOnly((prev) => !prev)}
                   />
                 )}
-                <FilterChip
-                  label="Show past"
-                  variant="outline"
-                  active={showPastEvents}
-                  onPress={() => setShowPastEvents((prev) => !prev)}
-                />
               </View>
-            )}
-
-            {/* Week Calendar */}
-            {activeFilter === 'Events' && !searchQuery.trim() && (
-              <WeekCalendar
-                eventDates={eventDates}
-                selectedDate={selectedDate}
-                onSelectDate={(date) => {
-                  setSelectedDate(date)
-                  if (date) {
-                    posthog?.capture('discover_date_selected', { date })
-                  }
-                }}
-              />
             )}
           </View>
 
@@ -580,6 +608,16 @@ export default function DiscoverScreen() {
         </View>
       </Animated.View>
       )}
+
+      <FilterPickerModal
+        visible={showCenterModal}
+        title="Center"
+        options={centerOptions}
+        selected={selectedCenter}
+        onSelect={setSelectedCenter}
+        onClear={() => setSelectedCenter(null)}
+        onClose={() => setShowCenterModal(false)}
+      />
     </View>
   )
 }
