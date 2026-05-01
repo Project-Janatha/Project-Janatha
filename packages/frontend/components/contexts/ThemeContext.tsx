@@ -71,7 +71,11 @@ function useSystemTheme(): ResolvedTheme {
       return () => mq.removeEventListener('change', handler)
     }
 
-    // On native, use Appearance API
+    // On native, re-read on mount in case Appearance was uninitialized
+    // when useState's initializer ran (happens on iOS cold start with
+    // dark mode — initial value can be null until the appearance module
+    // wires up, which leaves us stuck in light mode).
+    setSystem(getSystem())
     const sub = Appearance.addChangeListener(({ colorScheme }) =>
       setSystem(colorScheme === 'dark' ? 'dark' : 'light')
     )
@@ -112,13 +116,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const theme: ResolvedTheme = preference === 'system' ? system : preference
 
   // ── Apply to NativeWind + DOM on every change ──────────────────────────────
+  // Pass the *resolved* theme ('light' | 'dark') rather than the user
+  // preference ('system' | 'light' | 'dark'). NativeWind supports 'system'
+  // but the resolution lag caused some components on iOS to render in
+  // light mode on cold start when the device was in dark mode.
   useEffect(() => {
-    setColorScheme(preference)
+    setColorScheme(theme)
     if (isWeb) {
       document.documentElement.classList.toggle('dark', theme === 'dark')
       document.documentElement.style.colorScheme = theme
     }
-  }, [theme, preference, setColorScheme])
+  }, [theme, setColorScheme])
 
   // ── Public setter: update state + persist ─────────────────────────────────
   const setPreference = useCallback((pref: ThemePreference) => {

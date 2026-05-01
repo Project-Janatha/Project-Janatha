@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback, memo } from 'react'
 import { StyleSheet, View, Pressable, Platform } from 'react-native'
 import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Plus, Minus, Navigation } from 'lucide-react-native'
 import { getCurrentPosition } from '../utils'
 
@@ -73,6 +74,8 @@ const Map = memo<MapProps>(function Map({
   }
 
   const [region] = useState<Region>(computeInitialRegion)
+  const currentRegionRef = useRef<Region>(region)
+  const insets = useSafeAreaInsets()
 
   // Async: try to get device location and fly to it
   useEffect(() => {
@@ -107,13 +110,22 @@ const Map = memo<MapProps>(function Map({
     return PIN_COLORS[type] || PIN_COLORS.event
   }, [])
 
-  // Zoom in/out by adjusting the camera zoom level. iOS Apple Maps doesn't
-  // ship with zoom buttons by default, so we render our own.
-  const handleZoom = useCallback(async (delta: number) => {
-    const cam = await mapRef.current?.getCamera()
-    if (!cam) return
-    cam.zoom = Math.max(2, Math.min(20, (cam.zoom ?? 12) + delta))
-    mapRef.current?.animateCamera(cam, { duration: 200 })
+  // Zoom by adjusting region delta. Camera.zoom is Google-Maps-only;
+  // on iOS Apple Maps the camera object doesn't expose zoom, which is
+  // why the previous implementation was a no-op on iOS.
+  // factor < 1 → zoom in (smaller delta); factor > 1 → zoom out.
+  const handleZoom = useCallback((factor: number) => {
+    const r = currentRegionRef.current
+    if (!r) return
+    mapRef.current?.animateToRegion(
+      {
+        latitude: r.latitude,
+        longitude: r.longitude,
+        latitudeDelta: Math.max(0.0005, Math.min(180, r.latitudeDelta * factor)),
+        longitudeDelta: Math.max(0.0005, Math.min(180, r.longitudeDelta * factor)),
+      },
+      200
+    )
   }, [])
 
   // Recenter to device location. iOS's `showsMyLocationButton` is
@@ -136,6 +148,7 @@ const Map = memo<MapProps>(function Map({
         style={styles.map}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         initialRegion={region}
+        onRegionChangeComplete={(r) => { currentRegionRef.current = r }}
         showsUserLocation={showUserLocation}
         showsMyLocationButton={true}
         showsCompass={true}
@@ -172,13 +185,14 @@ const Map = memo<MapProps>(function Map({
           ))}
       </MapView>
 
-      {/* Custom controls — react-native-maps' built-in user-location button
-          is Android-only; zoom buttons aren't built in at all. */}
-      <View style={[styles.controls, { bottom: 16 + bottomPadding }]} pointerEvents="box-none">
-        <Pressable onPress={() => handleZoom(1)} style={styles.controlButton} accessibilityLabel="Zoom in">
+      {/* Custom controls in the top-right, sitting under the profile
+          icon. react-native-maps' built-in user-location button is
+          Android-only and zoom buttons aren't built in at all. */}
+      <View style={[styles.controls, { top: insets.top + 64 }]} pointerEvents="box-none">
+        <Pressable onPress={() => handleZoom(0.5)} style={styles.controlButton} accessibilityLabel="Zoom in">
           <Plus size={18} color="#1a1a1a" />
         </Pressable>
-        <Pressable onPress={() => handleZoom(-1)} style={styles.controlButton} accessibilityLabel="Zoom out">
+        <Pressable onPress={() => handleZoom(2)} style={styles.controlButton} accessibilityLabel="Zoom out">
           <Minus size={18} color="#1a1a1a" />
         </Pressable>
         <Pressable onPress={handleLocate} style={[styles.controlButton, { marginTop: 8 }]} accessibilityLabel="Show my location">
