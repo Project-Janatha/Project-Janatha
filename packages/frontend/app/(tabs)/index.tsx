@@ -24,7 +24,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router'
 import { usePostHog } from 'posthog-react-native'
 import { useTheme } from '../../components/contexts'
-import { Badge, UnderlineTabBar, Avatar } from '../../components/ui'
+import { Badge, UnderlineTabBar, Avatar, FilterChip } from '../../components/ui'
 import { useUser } from '../../components/contexts/UserContext'
 import { useDiscoverData, type DiscoverFilter } from '../../hooks/useApiData'
 import type { EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
@@ -443,29 +443,23 @@ export default function DiscoverScreen() {
               />
             </View>
 
-            {/* Filter checkboxes */}
+            {/* Filter chips */}
             {activeFilter !== 'Centers' && (
-              <View className="flex-row items-center px-4 py-2 gap-5">
-                <Pressable
-                  onPress={() => setShowGoingOnly((prev) => !prev)}
-                  className="flex-row items-center"
-                  style={{ minHeight: 32 }}
-                >
-                  <View className={`w-[18px] h-[18px] rounded border mr-2 items-center justify-center ${showGoingOnly ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
-                    {showGoingOnly && <Text className="text-white text-xs font-bold">✓</Text>}
-                  </View>
-                  <Text className="text-[13px] text-stone-500 dark:text-stone-400 font-inter">Going</Text>
-                </Pressable>
-                <Pressable
+              <View className="flex-row flex-wrap items-center px-4 py-2 gap-2">
+                {user && (
+                  <FilterChip
+                    label="Going"
+                    variant="outline"
+                    active={showGoingOnly}
+                    onPress={() => setShowGoingOnly((prev) => !prev)}
+                  />
+                )}
+                <FilterChip
+                  label="Show past"
+                  variant="outline"
+                  active={showPastEvents}
                   onPress={() => setShowPastEvents((prev) => !prev)}
-                  className="flex-row items-center"
-                  style={{ minHeight: 32 }}
-                >
-                  <View className={`w-[18px] h-[18px] rounded border mr-2 items-center justify-center ${showPastEvents ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
-                    {showPastEvents && <Text className="text-white text-xs font-bold">✓</Text>}
-                  </View>
-                  <Text className="text-[13px] text-stone-500 dark:text-stone-400 font-inter">Show past events</Text>
-                </Pressable>
+                />
               </View>
             )}
 
