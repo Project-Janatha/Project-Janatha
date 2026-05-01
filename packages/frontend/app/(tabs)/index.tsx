@@ -21,7 +21,7 @@ import {
   ChevronUp,
   ChevronDown,
 } from 'lucide-react-native'
-import { useRouter, useFocusEffect } from 'expo-router'
+import { useRouter, useFocusEffect, useNavigation } from 'expo-router'
 import { usePostHog } from 'posthog-react-native'
 import { useTheme } from '../../components/contexts'
 import { Badge, UnderlineTabBar, Avatar, FilterChip } from '../../components/ui'
@@ -251,9 +251,9 @@ export default function DiscoverScreen() {
 
   // ── Sheet snap points ──────────────────────────────────
   // Three positions (as translateY values from the expanded state):
-  //   expanded  = 0            → sheet covers almost everything
-  //   mid       = ~55% down    → roughly half the screen, showing map + sheet header/list
-  //   collapsed = near bottom  → just the drag handle + filter chips peeking up
+  //   expanded  = 0          → 100% sheet visible (full screen, header hidden)
+  //   mid       = sheet * 0.2 → ~80% sheet visible (most content, map peeking)
+  //   collapsed = sheet * 0.6 → ~40% sheet visible (peek + a few rows)
 
   const EXPANDED_TOP = 60 // px from top of container when fully expanded
 
@@ -261,8 +261,8 @@ export default function DiscoverScreen() {
   const sheetHeight = containerHeight - EXPANDED_TOP // total sheet height
 
   const SNAP_EXPANDED = 0
-  const SNAP_MID = Math.max(0, sheetHeight * 0.45)       // sheet top sits ~halfway
-  const SNAP_COLLAPSED = Math.max(0, sheetHeight - 80)    // only ~80px visible (handle + chip row)
+  const SNAP_MID = Math.max(0, sheetHeight * 0.2)        // ~80% sheet visible
+  const SNAP_COLLAPSED = Math.max(0, sheetHeight * 0.6)  // ~40% sheet visible
 
   const snapsRef = useRef({ expanded: SNAP_EXPANDED, mid: SNAP_MID, collapsed: SNAP_COLLAPSED })
   snapsRef.current = { expanded: SNAP_EXPANDED, mid: SNAP_MID, collapsed: SNAP_COLLAPSED }
@@ -274,10 +274,18 @@ export default function DiscoverScreen() {
   // Track expansion state for scroll behavior
   const [isSheetExpanded, setIsSheetExpanded] = useState(false)
 
+  // Hide the nav header (with the profile-pic button) when the sheet is at
+  // expanded snap so the sheet covers the full screen, including over where
+  // the profile button sits. Restore when sheet leaves expanded.
+  const navigation = useNavigation()
+  React.useEffect(() => {
+    navigation.setOptions({ headerShown: !isSheetExpanded })
+  }, [navigation, isSheetExpanded])
+
   // Set initial sheet position to mid once we know the container height
   React.useEffect(() => {
     if (containerHeight > 0 && !initializedRef.current) {
-      const mid = Math.max(0, (containerHeight - EXPANDED_TOP) * 0.45)
+      const mid = Math.max(0, (containerHeight - EXPANDED_TOP) * 0.2)
       sheetY.setValue(mid)
       offsetRef.current = mid
       initializedRef.current = true
@@ -545,9 +553,9 @@ export default function DiscoverScreen() {
           {/* Unified List */}
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 40, gap: 4 }}
+            contentContainerStyle={{ paddingHorizontal: 4, paddingTop: 12, paddingBottom: 40, gap: 4 }}
             showsVerticalScrollIndicator={false}
-            scrollEnabled={isSheetExpanded}
+            scrollEnabled={true}
             stickyHeaderIndices={stickyHeaderIndices}
           >
             {!loading && activeFilter === 'Seva' && (

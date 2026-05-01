@@ -71,7 +71,10 @@ function useSystemTheme(): ResolvedTheme {
       return () => mq.removeEventListener('change', handler)
     }
 
-    // On native, use Appearance API
+    // On native, re-read on mount in case Appearance was uninitialized
+    // when the useState initializer ran (iOS cold start sometimes returns
+    // null briefly). Then subscribe to OS changes via Appearance.
+    setSystem(Appearance.getColorScheme() === 'dark' ? 'dark' : 'light')
     const sub = Appearance.addChangeListener(({ colorScheme }) =>
       setSystem(colorScheme === 'dark' ? 'dark' : 'light')
     )
