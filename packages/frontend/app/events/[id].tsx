@@ -264,7 +264,7 @@ function MetaSection({
   colors: DetailColors
 }) {
   const iconColor = isPast ? colors.textMuted : '#E8862A'
-  const attendLabel = isPast ? `${event.attendees} attended` : `${event.attendees} attending`
+  const attendLabel = `${event.attendees} on Janata`
 
   return (
     <View style={{ gap: 16 }}>
@@ -597,7 +597,7 @@ export default function EventDetailPage() {
                   marginBottom: 12,
                 }}
               >
-                {event.attendees} {event.attendees === 1 ? 'person' : 'people'} attending
+                {event.attendees} {event.attendees === 1 ? 'person' : 'people'} on Janata
               </Text>
               {attendees.length > 0 ? (
                 attendees.map((attendee, index) => (

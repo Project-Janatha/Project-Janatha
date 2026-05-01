@@ -312,9 +312,7 @@ function MetaSection({
   colors: DetailColors
 }) {
   const iconColor = isPast ? colors.textMuted : '#E8862A'
-  const attendLabel = isPast
-    ? `${event.attendees} attended`
-    : `${event.attendees} attending`
+  const attendLabel = `${event.attendees} on Janata`
 
   return (
     <View style={{ gap: 16 }}>
@@ -492,7 +490,7 @@ function PeopleTab({ attendees, colors }: { attendees: Attendee[]; colors: Detai
           marginBottom: 12,
         }}
       >
-        {attendees.length} {attendees.length === 1 ? 'person' : 'people'} attending
+        {attendees.length} {attendees.length === 1 ? 'person' : 'people'} on Janata
       </Text>
 
       {attendees.length === 0 ? (

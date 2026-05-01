@@ -141,7 +141,15 @@ function AttendeeAvatars({ count, attendees }: { count: number; attendees?: Atte
 
 // ─── Event Item (Desktop) ───────────────────────────────
 
-function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => void }) {
+function EventItem({
+  event,
+  onPress,
+  centerName,
+}: {
+  event: EventDisplay
+  onPress: () => void
+  centerName?: string
+}) {
   const { month, day } = event.date ? formatDatePill(event.date) : { month: '', day: '' }
 
   return (
@@ -176,6 +184,14 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
         <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm">
           {event.date && isToday(event.date) ? 'Today · ' : ''}{event.time || ''}
         </Text>
+        {centerName && (
+          <Text
+            className="text-stone-500 dark:text-stone-400 font-inter text-sm"
+            numberOfLines={1}
+          >
+            By {centerName}
+          </Text>
+        )}
         <View className="flex-row items-center gap-1.5">
           <MapPin size={12} color="#E8862A" />
           <Text
@@ -185,10 +201,21 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
             {event.location}
           </Text>
         </View>
-        <View style={{ marginTop: 4 }}>
-          <AttendeeAvatars count={event.attendees} attendees={event.attendeesList} />
-        </View>
+        {event.attendees > 0 && (
+          <View style={{ marginTop: 4 }}>
+            <AttendeeAvatars count={event.attendees} attendees={event.attendeesList} />
+          </View>
+        )}
       </View>
+
+      {/* Hero thumbnail */}
+      {event.image && (
+        <Image
+          source={{ uri: event.image }}
+          style={{ width: 84, height: 84, borderRadius: 12 }}
+          resizeMode="cover"
+        />
+      )}
     </Pressable>
   )
 }
@@ -761,6 +788,7 @@ function MobileDiscoverFallback() {
                   <EventItem
                     key={`event-${item.data.id}`}
                     event={item.data as EventDisplay}
+                    centerName={allCenters.find((c) => c.id === (item.data as EventDisplay).centerId)?.name}
                     onPress={() => router.push(`/events/${item.data.id}`)}
                   />
                 )
@@ -1169,6 +1197,7 @@ export default function DiscoverScreenWeb() {
                     <EventItem
                       key={`event-${item.data.id}`}
                       event={item.data as EventDisplay}
+                      centerName={allCenters.find((c) => c.id === (item.data as EventDisplay).centerId)?.name}
                       onPress={() => setSelectedItem({ type: 'event', id: item.data.id })}
                     />
                   )
