@@ -828,7 +828,7 @@ function MobileDiscoverFallback() {
           {/* Scrollable list */}
           <ScrollView
             className="flex-1"
-            contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 32, gap: 4 }}
+            contentContainerStyle={{ paddingHorizontal: 4, paddingTop: 12, paddingBottom: 32, gap: 4 }}
             showsVerticalScrollIndicator={false}
             scrollEnabled={sheetSnap !== 'collapsed' && sheetTranslateY === null}
             stickyHeaderIndices={stickyHeaderIndices}
