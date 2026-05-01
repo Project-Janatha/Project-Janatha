@@ -81,6 +81,8 @@ export interface EventRow {
   image: string | null
   category: number | null
   created_by: string | null
+  external_url: string | null
+  signup_url: string | null
   created_at: string
   updated_at: string
 }
@@ -164,6 +166,8 @@ export interface EventApiResponse {
   image: string | null
   category: number | null
   createdBy: string | null
+  externalUrl: string | null
+  signupUrl: string | null
   createdAt: string
   updatedAt: string
 }
@@ -242,6 +246,8 @@ export function eventRowToApi(row: EventRow): EventApiResponse {
     image: row.image,
     category: row.category,
     createdBy: row.created_by,
+    externalUrl: row.external_url,
+    signupUrl: row.signup_url,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }

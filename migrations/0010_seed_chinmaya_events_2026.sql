@@ -343,7 +343,7 @@ INSERT INTO events (
   'e-mahasamadhi-2026', '33rd Chinmaya Mahasamadhi Aradhana Camp 2026',
   'Six-day national residential spiritual retreat honoring Pujya Gurudev Swami Chinmayananda''s 33rd Mahasamadhi (Jul 30 – Aug 4), with discourses, meditation, workshops, and cultural offerings for all ages.',
   '2026-07-30', '2026-08-04', 0,
-  0, 0, 'Sheraton Parsippany Hotel, Parsippany, NJ, US',
+  40.8617, -74.4087, '199 Smith Rd, Parsippany, NJ - 07054, US',
   NULL, 0, 0,
   'Central Chinmaya Mission Trust, ccmt@chinmayamission.com, +91-22-2803 4900', 'https://images.chinmayamission.com/uploads/Whats_App_Image_2026_01_07_at_9_56_19_PM_2_a892b6ce85.webp', 94,
   datetime('now'), datetime('now')
