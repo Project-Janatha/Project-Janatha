@@ -28,8 +28,12 @@ export const GLOBAL_HEAD = 1000008
 export const ADMIN_CUTOFF = 107
 
 // Event categories
-export const SATSANG = 91
-export const BHIKSHA = 92
+export const SATSANG = 91   // devotional gatherings, bhajans, chanting
+export const BHIKSHA = 92   // food offerings, community meals
+export const YAJNA = 93     // discourses, scriptural study, fire offerings, chanting competitions
+export const CAMP = 94      // multi-day immersives — summer camps, retreats, residential programs
+export const FESTIVAL = 95  // public celebrations — Holi, Diwali, Gurudev Jayanti, inaugurations
+export const OTHER = 99     // catch-all for events that don't fit above (workshops, service trips, social)
 
 // Tier calculation
 export const TIER_DESCALE = 1081008
