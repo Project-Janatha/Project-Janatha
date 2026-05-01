@@ -572,6 +572,24 @@ function MobileDiscoverFallback() {
     [allEvents]
   )
 
+  // "Coming up" hint shown when there's a real gap between today and the
+  // next event. Bridges the dead air for users browsing an empty week.
+  const comingUpHint = useMemo(() => {
+    if (selectedDate || showPastEvents || activeFilter === 'Centers' || searchQuery.trim()) return null
+    const todayStr = new Date().toISOString().split('T')[0]
+    const upcoming = allEvents
+      .filter((e) => e.date && e.date >= todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date))
+    if (upcoming.length === 0) return null
+    const next = upcoming[0]
+    const todayMs = Date.parse(todayStr + 'T00:00:00')
+    const nextMs = Date.parse(next.date + 'T00:00:00')
+    if (isNaN(todayMs) || isNaN(nextMs)) return null
+    const days = Math.round((nextMs - todayMs) / 86400000)
+    if (days < 7) return null  // only worth showing when there's a real gap
+    return { days, title: next.title }
+  }, [allEvents, selectedDate, showPastEvents, activeFilter, searchQuery])
+
   const displayItems = useMemo(() => {
     if (!selectedDate) return items
     return items.filter(
@@ -750,6 +768,28 @@ function MobileDiscoverFallback() {
             showsVerticalScrollIndicator={false}
             scrollEnabled={isExpanded}
           >
+            {!loading && comingUpHint && (
+              <View
+                className="border border-orange-100 dark:border-orange-900/40 rounded-2xl px-4 py-3 mb-3"
+                style={{ backgroundColor: 'rgba(232, 134, 42, 0.06)' }}
+              >
+                <Text
+                  className="text-[10px] font-inter-semibold text-stone-500 dark:text-stone-400 uppercase"
+                  style={{ letterSpacing: 0.6 }}
+                >
+                  Coming up
+                </Text>
+                <Text className="text-sm font-inter-semibold text-content dark:text-content-dark mt-1">
+                  Next event in {comingUpHint.days} days
+                </Text>
+                <Text
+                  className="text-xs font-inter text-stone-500 dark:text-stone-400 mt-0.5"
+                  numberOfLines={1}
+                >
+                  {comingUpHint.title}
+                </Text>
+              </View>
+            )}
             {!loading && displayItems.length === 0 && (
               <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
             )}
@@ -900,6 +940,24 @@ export default function DiscoverScreenWeb() {
     () => new Set(allEvents.filter((e) => e.date).map((e) => e.date)),
     [allEvents]
   )
+
+  // "Coming up" hint shown when there's a real gap between today and the
+  // next event. Bridges the dead air for users browsing an empty week.
+  const comingUpHint = useMemo(() => {
+    if (selectedDate || showPastEvents || activeFilter === 'Centers' || searchQuery.trim()) return null
+    const todayStr = new Date().toISOString().split('T')[0]
+    const upcoming = allEvents
+      .filter((e) => e.date && e.date >= todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date))
+    if (upcoming.length === 0) return null
+    const next = upcoming[0]
+    const todayMs = Date.parse(todayStr + 'T00:00:00')
+    const nextMs = Date.parse(next.date + 'T00:00:00')
+    if (isNaN(todayMs) || isNaN(nextMs)) return null
+    const days = Math.round((nextMs - todayMs) / 86400000)
+    if (days < 7) return null  // only worth showing when there's a real gap
+    return { days, title: next.title }
+  }, [allEvents, selectedDate, showPastEvents, activeFilter, searchQuery])
 
   const displayItems = useMemo(() => {
     if (!selectedDate) return items
