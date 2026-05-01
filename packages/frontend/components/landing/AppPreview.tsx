@@ -38,17 +38,24 @@ interface FeatureTab {
 const FEATURES: FeatureTab[] = [
   {
     number: '01',
-    title: 'Discover Centers',
+    title: 'Discover centers',
     heading: 'Find your nearest Chinmaya Mission center',
     description:
-      'Explore an interactive map of centers worldwide. View detailed profiles with upcoming events, member counts, and directions — all in one place.',
+      'A live map of every CM center. Tap any pin to see the acharya, schedule, address, and what’s coming up — even before you sign up.',
   },
   {
     number: '02',
-    title: 'Attend Events',
-    heading: 'Never miss a study group or celebration',
+    title: 'Show up & RSVP',
+    heading: 'See who’s going before you walk in',
     description:
-      'Browse upcoming events across all your centers. Register with one tap, get reminders, and see who else is attending before you arrive.',
+      'Browse events near you across every center. RSVP in one tap and see who else is coming — so you never have to walk into a room of strangers cold.',
+  },
+  {
+    number: '03',
+    title: 'Run your events',
+    heading: 'Post once. Reach every CHYK nearby.',
+    description:
+      'For coordinators: create an event in under a minute, track RSVPs in real time, and reach CHYKs beyond your WhatsApp group. No flyer, no Google Form, no spreadsheet.',
   },
 ]
 
@@ -650,6 +657,420 @@ function MockupEventDetail({ delay }: { delay?: number }) {
   )
 }
 
+function MockupAvatarPile({ count }: { count: number }) {
+  const colors = ['#E8862A', '#9A3412', '#78716C', '#A8A29E', '#D6D3D1']
+  const visible = Math.min(count, 5)
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      {Array.from({ length: visible }).map((_, i) => (
+        <View
+          key={i}
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 11,
+            backgroundColor: colors[i % colors.length],
+            marginLeft: i === 0 ? 0 : -7,
+            borderWidth: 2,
+            borderColor: '#FFFFFF',
+          }}
+        />
+      ))}
+      {count > visible && (
+        <View
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 11,
+            backgroundColor: '#F3F4F6',
+            marginLeft: -7,
+            borderWidth: 2,
+            borderColor: '#FFFFFF',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontSize: 9,
+              fontWeight: '600',
+              color: '#57534E',
+            }}
+          >
+            +{count - visible}
+          </Text>
+        </View>
+      )}
+    </View>
+  )
+}
+
+function CoordinatorAttendeeRow({
+  name,
+  role,
+  status,
+  delay,
+}: {
+  name: string
+  role: string
+  status: 'going' | 'just-rsvpd'
+  delay?: number
+}) {
+  return (
+    <div style={{ animation: `fadeSlideIn 0.3s ease-out ${delay || 0}ms both` }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 10,
+          paddingVertical: 8,
+          paddingHorizontal: 4,
+        }}
+      >
+        <View
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            backgroundColor: '#E8862A',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: '600',
+              fontSize: 11,
+              color: '#FFFFFF',
+            }}
+          >
+            {name[0]}
+          </Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: '600',
+              fontSize: 12,
+              color: '#1C1917',
+            }}
+          >
+            {name}
+          </Text>
+          <Text
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontSize: 10,
+              color: '#A8A29E',
+            }}
+          >
+            {role}
+          </Text>
+        </View>
+        {status === 'just-rsvpd' ? (
+          <View
+            style={{
+              backgroundColor: '#DCFCE7',
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 6,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '600',
+                fontSize: 9,
+                color: '#15803D',
+              }}
+            >
+              Just RSVP'd
+            </Text>
+          </View>
+        ) : (
+          <Text
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontSize: 10,
+              color: '#A8A29E',
+            }}
+          >
+            Going
+          </Text>
+        )}
+      </View>
+    </div>
+  )
+}
+
+function CoordinatorVisual() {
+  return (
+    <div key="coordinator" style={{ animation: 'fadeSlideIn 0.4s ease-out' }}>
+      <MockupShell>
+        {/* Header */}
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            paddingBottom: 12,
+            borderBottomWidth: 1,
+            borderBottomColor: '#F3F4F6',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: '700',
+              fontSize: 14,
+              color: '#1C1917',
+            }}
+          >
+            Manage event
+          </Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 5,
+              backgroundColor: '#DCFCE7',
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 100,
+            }}
+          >
+            <View
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: '#15803D',
+              }}
+            />
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '600',
+                fontSize: 10,
+                color: '#15803D',
+              }}
+            >
+              Live
+            </Text>
+          </View>
+        </View>
+
+        {/* Event card */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+          <View
+            style={{
+              backgroundColor: '#FFF7ED',
+              borderRadius: 14,
+              padding: 14,
+              gap: 8,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '700',
+                fontSize: 14,
+                color: '#1C1917',
+              }}
+            >
+              Spring CHYK Satsang
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Text
+                style={{
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: 11,
+                  color: '#57534E',
+                }}
+              >
+                Sat, Apr 12 · 6:00 PM
+              </Text>
+              <View
+                style={{
+                  width: 3,
+                  height: 3,
+                  borderRadius: 1.5,
+                  backgroundColor: '#A8A29E',
+                }}
+              />
+              <Text
+                style={{
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: 11,
+                  color: '#57534E',
+                }}
+              >
+                CM Dallas
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Stats grid */}
+        <View
+          style={{
+            flexDirection: 'row',
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            gap: 8,
+          }}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: '#FFFFFF',
+              borderWidth: 1,
+              borderColor: '#F3F4F6',
+              borderRadius: 10,
+              padding: 10,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: '"Inclusive Sans", sans-serif',
+                fontSize: 22,
+                color: '#C2410C',
+                marginBottom: 2,
+              }}
+            >
+              28
+            </Text>
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontSize: 10,
+                color: '#78716C',
+              }}
+            >
+              Going
+            </Text>
+          </View>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: '#FFFFFF',
+              borderWidth: 1,
+              borderColor: '#F3F4F6',
+              borderRadius: 10,
+              padding: 10,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: '"Inclusive Sans", sans-serif',
+                fontSize: 22,
+                color: '#1C1917',
+                marginBottom: 2,
+              }}
+            >
+              94
+            </Text>
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontSize: 10,
+                color: '#78716C',
+              }}
+            >
+              CHYKs reached
+            </Text>
+          </View>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: '#FFFFFF',
+              borderWidth: 1,
+              borderColor: '#F3F4F6',
+              borderRadius: 10,
+              padding: 10,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: '"Inclusive Sans", sans-serif',
+                fontSize: 22,
+                color: '#1C1917',
+                marginBottom: 2,
+              }}
+            >
+              5
+            </Text>
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontSize: 10,
+                color: '#78716C',
+              }}
+            >
+              Centers
+            </Text>
+          </View>
+        </View>
+
+        {/* RSVP feed */}
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingTop: 14,
+            flex: 1,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 4,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: '600',
+                fontSize: 11,
+                letterSpacing: 0.4,
+                textTransform: 'uppercase',
+                color: '#78716C',
+              }}
+            >
+              Recent RSVPs
+            </Text>
+            <MockupAvatarPile count={28} />
+          </View>
+          <CoordinatorAttendeeRow
+            name="Anika S."
+            role="CM Frisco · new"
+            status="just-rsvpd"
+            delay={250}
+          />
+          <CoordinatorAttendeeRow
+            name="Rohan P."
+            role="CM Dallas"
+            status="going"
+            delay={400}
+          />
+          <CoordinatorAttendeeRow
+            name="Meera K."
+            role="CM Houston · visiting"
+            status="going"
+            delay={550}
+          />
+        </View>
+      </MockupShell>
+    </div>
+  )
+}
+
 function EventsVisual() {
   return (
     <div key="events" style={{ animation: 'fadeSlideIn 0.4s ease-out' }}>
@@ -745,6 +1166,8 @@ export function AppPreview() {
         return <DiscoverVisual />
       case 1:
         return <EventsVisual />
+      case 2:
+        return <CoordinatorVisual />
       default:
         return null
     }
