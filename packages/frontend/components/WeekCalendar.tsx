@@ -1,19 +1,24 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { View, Text, Pressable } from 'react-native'
+import { ChevronLeft, ChevronRight } from 'lucide-react-native'
 
-function getWeekDays(): { dateStr: string; dayLetter: string; dayNum: number; isToday: boolean; date: Date }[] {
+function getWeekDays(weekOffset: number = 0): { dateStr: string; dayLetter: string; dayNum: number; isToday: boolean; date: Date }[] {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
+  const todayStr = today.toISOString().split('T')[0]
+  const anchor = new Date(today)
+  anchor.setDate(today.getDate() + weekOffset * 7)
   const days: { dateStr: string; dayLetter: string; dayNum: number; isToday: boolean; date: Date }[] = []
   const letters = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
   for (let offset = -3; offset <= 3; offset++) {
-    const d = new Date(today)
-    d.setDate(today.getDate() + offset)
+    const d = new Date(anchor)
+    d.setDate(anchor.getDate() + offset)
+    const dateStr = d.toISOString().split('T')[0]
     days.push({
-      dateStr: d.toISOString().split('T')[0],
+      dateStr,
       dayLetter: letters[d.getDay()],
       dayNum: d.getDate(),
-      isToday: offset === 0,
+      isToday: dateStr === todayStr,
       date: d,
     })
   }
@@ -51,18 +56,41 @@ type WeekCalendarProps = {
 }
 
 export default function WeekCalendar({ eventDates, selectedDate, onSelectDate }: WeekCalendarProps) {
-  const weekDays = useMemo(() => getWeekDays(), [])
+  const [weekOffset, setWeekOffset] = useState(0)
+  const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset])
   const monthLabel = useMemo(() => buildMonthLabel(weekDays), [weekDays])
 
   return (
     <View>
-      <Text
-        className="text-[11px] font-inter-medium text-stone-500 dark:text-stone-400 px-4 pt-2"
-        style={{ letterSpacing: 0.3 }}
-      >
-        {monthLabel}
-      </Text>
-      <View className="flex-row justify-around px-3 py-2.5">
+      <View className="flex-row items-center justify-between px-4 pt-2">
+        <Text
+          className="text-[11px] font-inter-medium text-stone-500 dark:text-stone-400"
+          style={{ letterSpacing: 0.3 }}
+        >
+          {monthLabel}
+        </Text>
+        {weekOffset !== 0 && (
+          <Pressable
+            onPress={() => setWeekOffset(0)}
+            hitSlop={8}
+            accessibilityLabel="Jump to today"
+          >
+            <Text className="text-[11px] font-inter-semibold" style={{ color: '#E8862A' }}>
+              Today
+            </Text>
+          </Pressable>
+        )}
+      </View>
+      <View className="flex-row items-center px-2 py-2.5">
+        <Pressable
+          onPress={() => setWeekOffset((o) => o - 1)}
+          hitSlop={6}
+          accessibilityLabel="Previous week"
+          className="p-1"
+        >
+          <ChevronLeft size={18} color="#A8A29E" />
+        </Pressable>
+        <View className="flex-row flex-1 justify-around">
       {weekDays.map((d) => {
         const isSelected = selectedDate === d.dateStr
         const hasEvents = eventDates.has(d.dateStr)
@@ -110,6 +138,15 @@ export default function WeekCalendar({ eventDates, selectedDate, onSelectDate }:
           </Pressable>
         )
       })}
+        </View>
+        <Pressable
+          onPress={() => setWeekOffset((o) => o + 1)}
+          hitSlop={6}
+          accessibilityLabel="Next week"
+          className="p-1"
+        >
+          <ChevronRight size={18} color="#A8A29E" />
+        </Pressable>
       </View>
     </View>
   )
