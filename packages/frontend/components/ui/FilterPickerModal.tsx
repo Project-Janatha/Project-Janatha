@@ -7,6 +7,7 @@ export type FilterPickerOption<V> = {
   value: V
   label: string
   sublabel?: string
+  count?: number
 }
 
 interface FilterPickerModalProps<V> {
@@ -69,6 +70,20 @@ export default function FilterPickerModal<V extends string | number>({
             </Text>
           )}
         </View>
+        {opt.count !== undefined && (
+          <Text
+            style={{
+              fontSize: 13,
+              color: colors.textSecondary,
+              fontFamily: 'Inter-Medium',
+              marginRight: isSelected ? 10 : 0,
+              minWidth: 24,
+              textAlign: 'right',
+            }}
+          >
+            {opt.count}
+          </Text>
+        )}
         {isSelected && <Check size={18} color="#E8862A" />}
       </Pressable>
     )
