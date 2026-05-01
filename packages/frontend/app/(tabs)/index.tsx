@@ -108,7 +108,15 @@ function AttendeeAvatars({ count, attendees }: { count: number; attendees?: Atte
 
 // ─── Event Item ─────────────────────────────────────────
 
-function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => void }) {
+function EventItem({
+  event,
+  onPress,
+  centerName,
+}: {
+  event: EventDisplay
+  onPress: () => void
+  centerName?: string
+}) {
   const { month, day } = event.date ? formatDatePill(event.date) : { month: '', day: '' }
   const todayLabel = event.date ? isToday(event.date) : false
 
@@ -142,14 +150,28 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
         <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm">
           {todayLabel ? 'Today · ' : ''}{event.time || ''}
         </Text>
+        {centerName && (
+          <Text className="text-stone-500 dark:text-stone-400 font-inter text-xs" numberOfLines={1}>
+            By {centerName}
+          </Text>
+        )}
         <View className="flex-row items-center gap-1 mt-0.5">
           <MapPin size={12} color="#E8862A" />
           <Text className="text-stone-500 dark:text-stone-400 font-inter text-xs flex-1" numberOfLines={1}>
             {event.location}
           </Text>
         </View>
-        <AttendeeAvatars count={event.attendees} attendees={event.attendeesList} />
+        {event.attendees > 0 && <AttendeeAvatars count={event.attendees} attendees={event.attendeesList} />}
       </View>
+
+      {/* Hero thumbnail */}
+      {event.image && (
+        <Image
+          source={{ uri: event.image }}
+          style={{ width: 72, height: 72, borderRadius: 10 }}
+          resizeMode="cover"
+        />
+      )}
     </Pressable>
   )
 }
@@ -214,6 +236,7 @@ export default function DiscoverScreen() {
     filteredPoints,
     loading,
     allEvents,
+    allCenters,
     refresh,
   } = useDiscoverData(activeFilter, searchQuery, user?.id, showPastEvents, showGoingOnly, user?.interests ?? undefined, user?.centerID)
 
@@ -499,6 +522,7 @@ export default function DiscoverScreen() {
                   <EventItem
                     key={`event-${item.data.id}`}
                     event={item.data as EventDisplay}
+                    centerName={allCenters.find((c) => c.id === (item.data as EventDisplay).centerId)?.name}
                     onPress={() => {
                       posthog?.capture('event_list_item_pressed', { eventId: item.data.id, source: 'discover' })
                       router.push(`/events/${item.data.id}`)
