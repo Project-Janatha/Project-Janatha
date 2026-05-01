@@ -1,5 +1,5 @@
 id,name,short_name,description,address_line1,address_line2,city,state,zip,country,phone,email,tax_id,lat,lng,status,full_address
-0,ALL,UPD,All Centers,P.O. Box 129,,Piercy,CA,95587,US,707-247-3488,cmwsecretary@chinmayamission.org,,,,A,"P.O. Box 129, Piercy, CA - 95587, US"
+0,Chinmaya Krishnalaya,UPD,Chinmaya Krishnalaya,P.O. Box 129,,Piercy,CA,95587,US,707-247-3488,cmwsecretary@chinmayamission.org,,,,A,"P.O. Box 129, Piercy, CA - 95587, US"
 1,Chinmaya Mission Trinidad - Tobago Couva ,UPD,Chinmaya Mission Trinidad & Tobago Couva ,"#1 Swami Chinmayananada Dr., Calcutta Rd #1",,McBean,,,TT,,,,,,A,"#1 Swami Chinmayananada Dr., Calcutta Rd #1, McBean, TT"
 2,Chinmaya Maruti,UPD,Chinmaya Maruti,1 Union St,,Andover,MA,01810,US,978-496-4834,pnar98@yahoo.com,,42.6765858,-71.1508859,A,"1 Union St, Andover, MA - 01810, US"
 3,Chinmaya Stamford,UPD,Chinmaya Stamford,1 University Pl,,Stamford,CT,06901,US,203-273-1262,sunita.chinmaya@gmail.com,,41.0560942,-73.5421639,A,"1 University Pl, Stamford, CT - 06901, US"
@@ -91,3 +91,7 @@ id,name,short_name,description,address_line1,address_line2,city,state,zip,countr
 95,Chinmaya Mission Chicago,Gangotri,Urban Prairie Waldorf School,1310 S Ashland Ave,,Chicago,IL,60608,US,203-450-4540,pkanabar@gmail.com,,41.8646635,-87.6667808,A,"1310 S Ashland Ave, Chicago, IL - 60608, US"
 96,Chinmaya Mission Downtown Manhattan,Downtown Manhattan,Avenues The World School,259 10th Ave,,New York,NY,10001,US,,cmbvdowntown@chinmayanewyork.org,,40.749409,-74.003311,A,"259 10th Ave, New York, NY-10001, US"
 97,Chinmaya Mission Westchester,Westchester Bala Vihar,The Masters School,49 Clinton Ave,,Dobbs Ferry,NY,10522,US,,westchesterbv@chinmayanewyork.org,,41.01034,-73.87086,A,"49 Clinton Ave, Dobbs Ferry, NY-10522, US"
+98,Chinmaya Mission New York,Upavan,Chinmaya Upavan,129 Woodbury Rd,,Woodbury,NY,11797,US,,info@chinmayanewyork.org,,40.8203,-73.4684,A,"129 Woodbury Rd, Woodbury, NY - 11797, US"
+99,Central Chinmaya Mission Trust,CCMT,Umbrella anchor (CCMT Powai),Saki Vihar Rd,,"Powai, Mumbai",,400072,IN,+91-22-2803-4900,ccmt@chinmayamission.com,,19.1197,72.9053,A,"Saki Vihar Rd, Powai, Mumbai - 400072, IN"
+100,Sandeepany Himalayas (Sidhbari),Sidhbari,Sandeepany Himalayas Sidhbari,Tapovan Rd,,"Sidhbari, Dharamshala",HP,176057,IN,+91-1892-236199,sidhbari@chinmayamission.com,,32.1879,76.3175,A,"Tapovan Rd, Sidhbari, Dharamshala, Distt. Kangra, HP - 176057, IN"
+101,Chinmaya Mangalam,Mangalam,CMDFW retreat camp,10470 W FM 744,,Barry,TX,75102,US,(972) 250-2470,,,31.9938,-96.6394,A,"10470 W FM 744, Barry, TX - 75102, US"
