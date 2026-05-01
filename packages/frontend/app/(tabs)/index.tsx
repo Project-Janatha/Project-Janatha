@@ -1,5 +1,5 @@
 // Discover tab — mobile / native layout
-import React, { useState, Suspense, useRef, useCallback } from 'react'
+import React, { useState, Suspense, useRef, useCallback, useMemo } from 'react'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { DiscoverListSkeleton } from '../../components/ui/Skeleton'
 import {
@@ -349,6 +349,33 @@ export default function DiscoverScreen() {
     })
   }, [])
 
+  // Default Centers list to fully collapsed on first visit (90+ centers,
+  // an all-expanded view is overwhelming).
+  const collapsedInitFor = useRef<DiscoverFilter | null>(null)
+  React.useEffect(() => {
+    if (activeFilter !== 'Centers') {
+      collapsedInitFor.current = null
+      return
+    }
+    if (collapsedInitFor.current === 'Centers') return
+    if (items.length === 0) return
+    const labels = new Set<string>()
+    for (const item of items) {
+      if (item.type === 'section') labels.add(item.data.label)
+    }
+    setCollapsedSections(labels)
+    collapsedInitFor.current = 'Centers'
+  }, [activeFilter, items])
+
+  const stickyHeaderIndices = useMemo(
+    () =>
+      displayItems.reduce<number[]>((acc, item, idx) => {
+        if (item.type === 'section') acc.push(idx)
+        return acc
+      }, []),
+    [displayItems]
+  )
+
   const handleFilterPress = (f: DiscoverFilter) => {
     posthog?.capture('discover_filter_changed', { filter: f })
     setActiveFilter(f)
@@ -490,9 +517,10 @@ export default function DiscoverScreen() {
           {/* Unified List */}
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40, gap: 4 }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 40, gap: 4 }}
             showsVerticalScrollIndicator={false}
             scrollEnabled={isSheetExpanded}
+            stickyHeaderIndices={stickyHeaderIndices}
           >
             {!loading && activeFilter === 'Seva' && (
               <EmptyState message="Seva — coming soon" subtitle="Service opportunities will be listed here." />
@@ -505,7 +533,12 @@ export default function DiscoverScreen() {
                 const label = item.data.label
                 const isCollapsed = collapsedSections.has(label)
                 return (
-                  <Pressable key={`section-${idx}`} onPress={() => toggleSection(label)} className={`${idx > 0 ? 'mt-3' : ''} mb-1`}>
+                  <Pressable
+                    key={`section-${idx}`}
+                    onPress={() => toggleSection(label)}
+                    className="bg-white dark:bg-neutral-900"
+                    style={{ paddingTop: idx > 0 ? 12 : 4, paddingBottom: 6 }}
+                  >
                     <View className="flex-row items-center gap-2 px-1">
                       <Text className="text-xs font-inter-semibold text-stone-400 dark:text-stone-500 uppercase" style={{ letterSpacing: 0.5 }}>
                         {label}

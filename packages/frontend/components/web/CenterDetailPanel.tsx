@@ -207,29 +207,17 @@ export default function CenterDetailPanel({
                   </Text>
                   <Pressable
                     onPress={handleAddressPress}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                      backgroundColor: '#E8862A',
-                      paddingVertical: 9,
-                      paddingHorizontal: 14,
-                      borderRadius: 8,
-                      alignSelf: 'flex-start',
-                      minHeight: 36,
-                    }}
+                    style={{ alignSelf: 'flex-start', paddingVertical: 4 }}
                     accessibilityLabel="Get directions"
                   >
-                    <Navigation size={14} color="#fff" />
                     <Text
                       style={{
                         fontFamily: 'Inter-SemiBold',
-                        fontSize: 13,
-                        color: '#fff',
+                        fontSize: 14,
+                        color: '#E8862A',
                       }}
                     >
-                      Get Directions
+                      Get directions →
                     </Text>
                   </Pressable>
                 </View>
