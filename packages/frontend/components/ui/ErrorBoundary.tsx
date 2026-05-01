@@ -21,8 +21,16 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    if (__DEV__) {
-      console.error('ErrorBoundary caught:', error, info.componentStack)
+    // Log in prod too — silently swallowing crashes makes triage impossible.
+    // The component stack lets us identify which JSX site rendered an
+    // undefined element (the most common cause of React error #130 in prod).
+    console.error('ErrorBoundary caught:', error, info.componentStack)
+    if (typeof window !== 'undefined') {
+      ;(window as any).__lastErrorInfo = {
+        message: error?.message,
+        stack: error?.stack,
+        componentStack: info.componentStack,
+      }
     }
   }
 
