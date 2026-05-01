@@ -1,22 +1,24 @@
 import React from 'react'
-import { View, Text, Image, useWindowDimensions } from 'react-native'
+import { View, Text, useWindowDimensions } from 'react-native'
+import type { LucideIcon } from 'lucide-react-native'
+import { MapPin, Megaphone } from 'lucide-react-native'
 
 interface PersonaCardProps {
   role: string
-  name: string
+  headline: string
   situation: string
   quote: string
-  portrait: any
+  Icon: LucideIcon
   accent: string
   isMobile: boolean
 }
 
 function PersonaCard({
   role,
-  name,
+  headline,
   situation,
   quote,
-  portrait,
+  Icon,
   accent,
   isMobile,
 }: PersonaCardProps) {
@@ -45,14 +47,14 @@ function PersonaCard({
             width: 56,
             height: 56,
             borderRadius: 28,
-            backgroundColor: '#F5F0EB',
-            overflow: 'hidden',
-            borderWidth: 2,
-            borderColor: '#FFFFFF',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+            backgroundColor: '#FFF7ED',
+            borderWidth: 1,
+            borderColor: '#FED7AA',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          <Image source={portrait} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          <Icon size={26} color={accent} strokeWidth={1.75} />
         </View>
         <Text
           style={{
@@ -78,7 +80,7 @@ function PersonaCard({
           marginBottom: 16,
         }}
       >
-        Meet {name}.
+        {headline}
       </Text>
 
       <Text
@@ -185,19 +187,19 @@ export function ProblemSection() {
       >
         <PersonaCard
           role="For Members"
-          name="Kish"
-          situation="Discovered Chinmaya Mission in college in Dallas, then moved back to San Jose. Had no idea how to plug back in. Took weeks just to learn there was a CHYK WhatsApp group."
+          headline="Showing up shouldn't take weeks."
+          situation="Joins CHYK in college, then moves cities for work. No idea how to plug back in locally. Spends weeks tracking down a WhatsApp group — and only after someone mentions it in passing."
           quote="I didn't know which event to show up to first, or whether I'd even be welcome."
-          portrait={require('../../assets/images/landing/kish-portrait.png')}
+          Icon={MapPin}
           accent="#C2410C"
           isMobile={isMobile}
         />
         <PersonaCard
           role="For Coordinators"
-          name="Guha"
-          situation="Runs CHYK Dallas. Every event means making a flyer, posting to WhatsApp, creating a Google Form, checking it manually, copying the same message across five group chats. He rarely tracks who actually showed up."
+          headline="Running events shouldn't be a part-time job."
+          situation="Runs a local CHYK chapter. Every event means making a flyer, posting to WhatsApp, creating a Google Form, checking it manually, copying the same message across five group chats. Rarely tracks who actually showed up."
           quote="I don't have the tools I need for community and event management."
-          portrait={require('../../assets/images/landing/guha-portrait.png')}
+          Icon={Megaphone}
           accent="#9A3412"
           isMobile={isMobile}
         />
