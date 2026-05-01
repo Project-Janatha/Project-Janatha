@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { View, Text, Image, ScrollView, Pressable, ActivityIndicator } from 'react-native'
-import { MapPin, Users, User, Clock, CheckCircle, ChevronLeft, Pencil } from 'lucide-react-native'
+import { View, Text, Image, ScrollView, Pressable, ActivityIndicator, Linking } from 'react-native'
+import { MapPin, Users, User, Clock, CheckCircle, ChevronLeft, Pencil, ExternalLink } from 'lucide-react-native'
 import Badge from '../ui/Badge'
 import UnderlineTabBar from '../ui/UnderlineTabBar'
 import Avatar from '../ui/Avatar'
@@ -93,6 +93,8 @@ type EventDetailPanelProps = {
     pointOfContact?: string
     image?: string
     isRegistered?: boolean
+    externalUrl?: string | null
+    signupUrl?: string | null
   }
   attendees: Attendee[]
   isPast?: boolean
@@ -373,6 +375,28 @@ function MetaSection({
           </Text>
         </View>
       )}
+
+      {/* Official page link */}
+      {event.externalUrl && (
+        <Pressable
+          onPress={() => Linking.openURL(event.externalUrl!)}
+          className="flex-row items-center"
+          style={{ gap: 12, minHeight: 44 }}
+        >
+          <MetaIcon icon={ExternalLink} color={iconColor} colors={colors} />
+          <Text
+            style={{
+              fontFamily: 'Inter-Medium',
+              fontSize: 14,
+              color: '#E8862A',
+              flex: 1,
+            }}
+            numberOfLines={1}
+          >
+            Visit official page · {hostnameOf(event.externalUrl)}
+          </Text>
+        </Pressable>
+      )}
     </View>
   )
 }
@@ -651,20 +675,59 @@ function RegisteredContent({
 // Action bar (sticky bottom)
 // ---------------------------------------------------------------------------
 
+function hostnameOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return 'official site'
+  }
+}
+
 function ActionBar({
   isRegistered,
   isPast,
   onToggleRegistration,
   isToggling,
+  signupUrl,
   colors,
 }: {
   isRegistered?: boolean
   isPast?: boolean
   onToggleRegistration: () => void
   isToggling: boolean
+  signupUrl?: string | null
   colors: DetailColors
 }) {
   if (isPast) return null
+
+  // External signup wins over native RSVP. We're a referrer, not the registrar.
+  if (signupUrl) {
+    return (
+      <View
+        style={{
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          padding: 16,
+          backgroundColor: colors.panelBg,
+        }}
+      >
+        <PrimaryButton onPress={() => Linking.openURL(signupUrl)}>
+          Sign up at {hostnameOf(signupUrl)}
+        </PrimaryButton>
+        <Text
+          style={{
+            fontFamily: 'Inter-Regular',
+            fontSize: 12,
+            color: colors.textMuted,
+            textAlign: 'center',
+            marginTop: 8,
+          }}
+        >
+          Registration handled on the official site
+        </Text>
+      </View>
+    )
+  }
 
   if (isRegistered) {
     return (
@@ -781,6 +844,7 @@ export default function EventDetailPanel({
         isPast={isPast}
         onToggleRegistration={onToggleRegistration}
         isToggling={isToggling}
+        signupUrl={event.signupUrl}
         colors={colors}
       />
     </View>

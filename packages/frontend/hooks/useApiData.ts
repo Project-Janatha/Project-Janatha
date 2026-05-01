@@ -75,6 +75,8 @@ function apiEventToDisplay(e: EventData, _username?: string): EventDisplay {
     centerId: e.centerID ?? undefined,
     createdBy: e.createdBy ?? undefined,
     category: e.category,
+    externalUrl: e.externalUrl ?? null,
+    signupUrl: e.signupUrl ?? null,
   }
 
   // If we have an image URL for the event, ensure it's absolute

@@ -27,6 +27,8 @@ export interface EventData {
   title: string
   description: string
   date: string
+  endDate?: string | null
+  isRecurring?: boolean
   latitude: number
   longitude: number
   address: string | null
@@ -37,6 +39,8 @@ export interface EventData {
   image: string | null
   category: number | null
   createdBy: string | null
+  externalUrl?: string | null
+  signupUrl?: string | null
   createdAt?: string
   updatedAt?: string
 }
@@ -98,6 +102,8 @@ export interface EventDisplay {
   centerId?: string
   createdBy?: string
   category?: number | null
+  externalUrl?: string | null
+  signupUrl?: string | null
 }
 
 export interface DiscoverCenter {
