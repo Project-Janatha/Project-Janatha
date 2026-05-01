@@ -126,7 +126,7 @@ export type DiscoverItem =
   | { type: 'center'; data: DiscoverCenter }
   | { type: 'section'; data: { label: string } }
 
-export type DiscoverFilter = 'Events' | 'Centers'
+export type DiscoverFilter = 'Events' | 'Centers' | 'Seva'
 
 // ── Fetch helpers ──────────────────────────────────────────────────────
 

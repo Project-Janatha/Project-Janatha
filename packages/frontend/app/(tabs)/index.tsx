@@ -38,6 +38,7 @@ const Map = React.lazy(() => import('../../components/Map'))
 const FILTERS: { label: DiscoverFilter }[] = [
   { label: 'Events' },
   { label: 'Centers' },
+  { label: 'Seva' },
 ]
 
 /**
@@ -445,7 +446,7 @@ export default function DiscoverScreen() {
             </View>
 
             {/* Filter chips */}
-            {activeFilter !== 'Centers' && (
+            {activeFilter === 'Events' && (
               <View className="flex-row flex-wrap items-center px-4 py-2 gap-2">
                 {user && (
                   <FilterChip
@@ -465,7 +466,7 @@ export default function DiscoverScreen() {
             )}
 
             {/* Week Calendar */}
-            {activeFilter !== 'Centers' && !searchQuery.trim() && (
+            {activeFilter === 'Events' && !searchQuery.trim() && (
               <WeekCalendar
                 eventDates={eventDates}
                 selectedDate={selectedDate}
@@ -493,10 +494,13 @@ export default function DiscoverScreen() {
             showsVerticalScrollIndicator={false}
             scrollEnabled={isSheetExpanded}
           >
-            {!loading && displayItems.length === 0 && (
+            {!loading && activeFilter === 'Seva' && (
+              <EmptyState message="Seva — coming soon" subtitle="Service opportunities will be listed here." />
+            )}
+            {!loading && activeFilter !== 'Seva' && displayItems.length === 0 && (
               <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
             )}
-            {displayItems.map((item, idx) => {
+            {activeFilter !== 'Seva' && displayItems.map((item, idx) => {
               if (item.type === 'section') {
                 const label = item.data.label
                 const isCollapsed = collapsedSections.has(label)
