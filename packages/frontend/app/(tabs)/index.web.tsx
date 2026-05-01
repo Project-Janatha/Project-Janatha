@@ -832,6 +832,7 @@ export default function DiscoverScreenWeb() {
   const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'center'; id: string } | null>(
     null
   )
+  const [autoOpenPoint, setAutoOpenPoint] = useState<{ id: string; type: 'event' | 'center'; key: number } | null>(null)
   const [mapFlyTo, setMapFlyTo] = useState<{ latitude: number; longitude: number; key: number } | null>(
     null
   )
@@ -882,6 +883,15 @@ export default function DiscoverScreenWeb() {
     setMapFlyTo((prev) => ({
       latitude: coords.latitude,
       longitude: coords.longitude,
+      key: (prev?.key ?? 0) + 1,
+    }))
+    // Tell the map to auto-open the popover for THIS exact point after the
+    // fly-to settles. Disambiguates overlapping markers (e.g. multiple events
+    // at the same center's coordinates) and serves as the requested
+    // "popup opens after the map moves" UX.
+    setAutoOpenPoint((prev) => ({
+      id: selectedItem.id,
+      type: selectedItem.type,
       key: (prev?.key ?? 0) + 1,
     }))
   }, [selectedItem, filteredPoints, allEvents, allCenters])
@@ -1024,6 +1034,7 @@ export default function DiscoverScreenWeb() {
               onMapMove={handleMapMove}
               userCenterID={user?.centerID}
               flyTo={mapFlyTo}
+              autoOpenPoint={autoOpenPoint}
             />
           </Suspense>
 

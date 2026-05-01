@@ -43,6 +43,13 @@ export interface MapProps {
    * including re-selecting the same place.
    */
   flyTo?: { latitude: number; longitude: number; key: number } | null
+  /**
+   * After the next fly-to settles, simulate a click on the matching marker so
+   * the popover opens for THIS specific point. Necessary when several events
+   * share a center's coordinates and the visible top marker may not be the
+   * one the user picked from the list. `key` must change to retrigger.
+   */
+  autoOpenPoint?: { id: string; type: 'center' | 'event'; key: number } | null
 }
 
 // Default center - San Francisco Bay Area
@@ -189,6 +196,7 @@ const MapComponent = memo<MapProps>(
     showUserLocation = false,
     userCenterID,
     flyTo,
+    autoOpenPoint,
   }) => {
     const { isDark } = useTheme()
     const mapRef = useRef<MapRef>(null)
@@ -260,6 +268,59 @@ const MapComponent = memo<MapProps>(
         duration: 1200,
       })
     }, [flyTo?.key, flyTo?.latitude, flyTo?.longitude])
+
+    // After fly-to settles, programmatically open the popover for the
+    // requested point. Solves the "click event A in list, see event B's
+    // popup" overlap bug — the popup is keyed on the specific MapPoint id,
+    // not whichever marker happens to be on top.
+    useEffect(() => {
+      if (!autoOpenPoint) return
+      const map = mapRef.current
+      if (!map) return
+      const point = pointsRef.current.find(
+        (p) => p.id === autoOpenPoint.id && p.type === autoOpenPoint.type
+      )
+      if (!point) return
+
+      const fire = () => {
+        const m = mapRef.current
+        if (!m || !onPointClick) return
+        const projected = m.project([point.longitude, point.latitude])
+        const canvas = m.getCanvas()
+        const rect = canvas.getBoundingClientRect()
+        // Marker pin's tip sits ~8px above the projected coordinate.
+        const x = rect.left + projected.x
+        const y = rect.top + projected.y - 8
+        onPointClick(point, x, y)
+      }
+
+      // Wait for the fly-to animation to finish so the projected coords
+      // reflect the final viewport. moveend fires once when animation ends.
+      let cancelled = false
+      const onMoveEnd = () => {
+        if (cancelled) return
+        cancelled = true
+        map.off('moveend', onMoveEnd)
+        // One frame of breathing room so the marker DOM is in place.
+        requestAnimationFrame(fire)
+      }
+      map.on('moveend', onMoveEnd)
+
+      // Safety net: if no flyTo was scheduled (e.g. the point is already on
+      // screen), moveend won't fire — fire after a short delay.
+      const timer = setTimeout(() => {
+        if (cancelled) return
+        cancelled = true
+        map.off('moveend', onMoveEnd)
+        fire()
+      }, 1500)
+
+      return () => {
+        cancelled = true
+        map.off('moveend', onMoveEnd)
+        clearTimeout(timer)
+      }
+    }, [autoOpenPoint?.key, autoOpenPoint?.id, autoOpenPoint?.type, onPointClick])
 
     const handleMove = useCallback((evt: any) => {
       setViewState(evt.viewState)
