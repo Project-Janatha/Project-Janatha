@@ -46,6 +46,7 @@ import { ADMIN_EMAIL, isLocal } from '../../utils/admin'
 const FILTERS: { label: DiscoverFilter }[] = [
   { label: 'Events' },
   { label: 'Centers' },
+  { label: 'Seva' },
 ]
 
 function formatDatePill(dateStr: string): { month: string; day: string } {
@@ -482,7 +483,7 @@ function MobileDiscoverFallback() {
   const getSnapPositions = useCallback(() => {
     const h = containerRef.current?.clientHeight || window.innerHeight
     return {
-      expanded: 56, // 56px from top (below status bar area)
+      expanded: 0, // flush with the top of the container — full height
       mid: h * 0.55, // 55% down
       collapsed: h - 80, // 80px from bottom (just the handle + peek)
     }
@@ -575,7 +576,7 @@ function MobileDiscoverFallback() {
   // "Coming up" hint shown when there's a real gap between today and the
   // next event. Bridges the dead air for users browsing an empty week.
   const comingUpHint = useMemo(() => {
-    if (selectedDate || showPastEvents || activeFilter === 'Centers' || searchQuery.trim()) return null
+    if (selectedDate || showPastEvents || activeFilter !== 'Events' || searchQuery.trim()) return null
     const todayStr = new Date().toISOString().split('T')[0]
     const upcoming = allEvents
       .filter((e) => e.date && e.date >= todayStr)
@@ -724,7 +725,7 @@ function MobileDiscoverFallback() {
             </View>
 
             {/* Filter chips */}
-            {activeFilter !== 'Centers' && (
+            {activeFilter === 'Events' && (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 6, gap: 8 }}>
                 {user && (
                   <FilterChip
@@ -744,7 +745,7 @@ function MobileDiscoverFallback() {
             )}
 
             {/* Week Calendar */}
-            {activeFilter !== 'Centers' && !searchQuery.trim() && (
+            {activeFilter === 'Events' && !searchQuery.trim() && (
               <View style={{ paddingHorizontal: 12, paddingTop: 4 }}>
                 <WeekCalendar
                   eventDates={eventDates}
@@ -791,10 +792,13 @@ function MobileDiscoverFallback() {
                 </Text>
               </View>
             )}
-            {!loading && displayItems.length === 0 && (
+            {!loading && activeFilter === 'Seva' && (
+              <EmptyState message="Seva — coming soon" subtitle="Service opportunities will be listed here." />
+            )}
+            {!loading && activeFilter !== 'Seva' && displayItems.length === 0 && (
               <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
             )}
-            {displayItems.map((item, idx) => {
+            {activeFilter !== 'Seva' && displayItems.map((item, idx) => {
               if (item.type === 'section') {
                 const label = item.data.label
                 const isCollapsed = collapsedSections.has(label)
@@ -945,7 +949,7 @@ export default function DiscoverScreenWeb() {
   // "Coming up" hint shown when there's a real gap between today and the
   // next event. Bridges the dead air for users browsing an empty week.
   const comingUpHint = useMemo(() => {
-    if (selectedDate || showPastEvents || activeFilter === 'Centers' || searchQuery.trim()) return null
+    if (selectedDate || showPastEvents || activeFilter !== 'Events' || searchQuery.trim()) return null
     const todayStr = new Date().toISOString().split('T')[0]
     const upcoming = allEvents
       .filter((e) => e.date && e.date >= todayStr)
@@ -1173,7 +1177,7 @@ export default function DiscoverScreenWeb() {
             </View>
 
             {/* Filter chips */}
-            {activeFilter !== 'Centers' && (
+            {activeFilter === 'Events' && (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 6, gap: 8 }}>
                 {user && (
                   <FilterChip
@@ -1193,7 +1197,7 @@ export default function DiscoverScreenWeb() {
             )}
 
             {/* Week Calendar — hidden when Centers filter or searching */}
-            {activeFilter !== 'Centers' && !searchQuery.trim() && (
+            {activeFilter === 'Events' && !searchQuery.trim() && (
               <View style={{ paddingHorizontal: 20, paddingTop: 4 }}>
                 <WeekCalendar
                   eventDates={eventDates}
@@ -1216,10 +1220,13 @@ export default function DiscoverScreenWeb() {
               contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, gap: 4 }}
               showsVerticalScrollIndicator={false}
             >
-              {!loading && displayItems.length === 0 && (
+              {!loading && activeFilter === 'Seva' && (
+                <EmptyState message="Seva — coming soon" subtitle="Service opportunities will be listed here." />
+              )}
+              {!loading && activeFilter !== 'Seva' && displayItems.length === 0 && (
                 <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
               )}
-              {displayItems.map((item, idx) => {
+              {activeFilter !== 'Seva' && displayItems.map((item, idx) => {
                 if (item.type === 'section') {
                   const label = item.data.label
                   const isCollapsed = collapsedSections.has(label)
