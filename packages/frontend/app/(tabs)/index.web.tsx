@@ -25,6 +25,7 @@ import { MapPin, Search, Building2, Users, ChevronUp, ChevronDown } from 'lucide
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { useTheme, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar, Avatar } from '../../components/ui'
+import FilterPickerModal, { type FilterPickerOption } from '../../components/ui/FilterPickerModal'
 const Map = lazy(() => import('../../components/Map'))
 import MapPopover from '../../components/MapPopover'
 import {
@@ -455,6 +456,10 @@ function MobileDiscoverFallback() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showGoingOnly, setShowGoingOnly] = useState(false)
   const [showPastEvents, setShowPastEvents] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<number | 'other' | null>(null)
+  const [selectedCenter, setSelectedCenter] = useState<string | null>(null)
+  const [showTypeModal, setShowTypeModal] = useState(false)
+  const [showCenterModal, setShowCenterModal] = useState(false)
   const { user } = useUser()
   const { items, filteredPoints, loading, allEvents, allCenters, refresh } = useDiscoverData(
     activeFilter,
@@ -592,14 +597,64 @@ function MobileDiscoverFallback() {
   }, [allEvents, selectedDate, showPastEvents, activeFilter, searchQuery])
 
   const displayItems = useMemo(() => {
-    if (!selectedDate) return items
-    return items.filter(
-      (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
-    )
-  }, [items, selectedDate])
+    let result = items
+    if (selectedDate) {
+      result = result.filter(
+        (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
+      )
+    }
+    if (selectedCategory !== null) {
+      result = result.filter((item) => {
+        if (item.type !== 'event') return true // keep section headers
+        const cat = (item.data as EventDisplay).category
+        if (selectedCategory === 'other') {
+          return cat != null && cat !== 91 && cat !== 92
+        }
+        return cat === selectedCategory
+      })
+    }
+    if (selectedCenter) {
+      result = result.filter((item) => {
+        if (item.type !== 'event') return true
+        return (item.data as EventDisplay).centerId === selectedCenter
+      })
+    }
+    return result
+  }, [items, selectedDate, selectedCategory, selectedCenter])
 
   const isExpanded = sheetSnap === 'expanded' && sheetTranslateY === null
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
+
+  // Filter chip helpers
+  const todayStr = new Date().toISOString().split('T')[0]
+  const typeOptions = useMemo<FilterPickerOption<number | 'other'>[]>(
+    () => [
+      { value: 91, label: 'Satsangs' },
+      { value: 92, label: 'Bhiksha' },
+      { value: 'other', label: 'Other' },
+    ],
+    []
+  )
+  const centerOptions = useMemo<FilterPickerOption<string>[]>(
+    () =>
+      [...allCenters]
+        .sort((a, b) => {
+          if (user?.centerID && a.id === user.centerID) return -1
+          if (user?.centerID && b.id === user.centerID) return 1
+          return a.name.localeCompare(b.name)
+        })
+        .map((c) => ({ value: c.id, label: c.name, sublabel: c.address })),
+    [allCenters, user?.centerID]
+  )
+  const typeChipLabel =
+    selectedCategory === null
+      ? 'Type'
+      : selectedCategory === 'other'
+        ? 'Other'
+        : typeOptions.find((o) => o.value === selectedCategory)?.label ?? 'Type'
+  const centerChipLabel = selectedCenter
+    ? centerOptions.find((o) => o.value === selectedCenter)?.label ?? 'Center'
+    : 'Center'
   const toggleSection = useCallback((label: string) => {
     setCollapsedSections((prev) => {
       const next = new Set(prev)
@@ -724,9 +779,27 @@ function MobileDiscoverFallback() {
               />
             </View>
 
-            {/* Filter chips */}
+            {/* Filter chips — Today / Type / Center / Going (max 4) */}
             {activeFilter === 'Events' && (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 6, gap: 8 }}>
+                <FilterChip
+                  label="Today"
+                  variant="outline"
+                  active={selectedDate === todayStr}
+                  onPress={() => setSelectedDate((prev) => (prev === todayStr ? null : todayStr))}
+                />
+                <FilterChip
+                  label={typeChipLabel}
+                  variant="outline"
+                  active={selectedCategory !== null}
+                  onPress={() => setShowTypeModal(true)}
+                />
+                <FilterChip
+                  label={centerChipLabel}
+                  variant="outline"
+                  active={selectedCenter !== null}
+                  onPress={() => setShowCenterModal(true)}
+                />
                 {user && (
                   <FilterChip
                     label="Going"
@@ -735,23 +808,6 @@ function MobileDiscoverFallback() {
                     onPress={() => setShowGoingOnly((prev: boolean) => !prev)}
                   />
                 )}
-                <FilterChip
-                  label="Show past"
-                  variant="outline"
-                  active={showPastEvents}
-                  onPress={() => setShowPastEvents((prev: boolean) => !prev)}
-                />
-              </View>
-            )}
-
-            {/* Week Calendar */}
-            {activeFilter === 'Events' && !searchQuery.trim() && (
-              <View style={{ paddingHorizontal: 12, paddingTop: 4 }}>
-                <WeekCalendar
-                  eventDates={eventDates}
-                  selectedDate={selectedDate}
-                  onSelectDate={setSelectedDate}
-                />
               </View>
             )}
           </div>
@@ -838,6 +894,25 @@ function MobileDiscoverFallback() {
           </ScrollView>
         </div>
       </div>
+
+      <FilterPickerModal
+        visible={showTypeModal}
+        title="Event type"
+        options={typeOptions}
+        selected={selectedCategory}
+        onSelect={setSelectedCategory}
+        onClear={() => setSelectedCategory(null)}
+        onClose={() => setShowTypeModal(false)}
+      />
+      <FilterPickerModal
+        visible={showCenterModal}
+        title="Center"
+        options={centerOptions}
+        selected={selectedCenter}
+        onSelect={setSelectedCenter}
+        onClear={() => setSelectedCenter(null)}
+        onClose={() => setShowCenterModal(false)}
+      />
     </div>
   )
 }
