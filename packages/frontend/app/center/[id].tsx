@@ -186,10 +186,10 @@ export default function CenterDetailPage() {
   const handleShare = async () => {
     posthog?.capture('center_shared', { centerId: id })
     try {
+      const url = id ? `https://chinmayajanata.org/center/${id}` : 'https://chinmayajanata.org'
       await Share.share({
-        message: center
-          ? `Check out ${center.name}!`
-          : 'Check out this center!',
+        message: center ? `Check out ${center.name} on Chinmaya Janata! ${url}` : `Check out this center on Chinmaya Janata! ${url}`,
+        url,
       })
     } catch {
       // Share cancelled or failed

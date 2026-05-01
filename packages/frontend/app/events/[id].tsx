@@ -209,8 +209,10 @@ function HeaderBar({
           {!isPast && (
             <Pressable
               onPress={() => {
+                const url = eventId ? `https://chinmayajanata.org/events/${eventId}` : 'https://chinmayajanata.org'
                 Share.share({
-                  message: `Check out ${title} on Chinmaya Janata!`,
+                  message: `Check out ${title} on Chinmaya Janata! ${url}`,
+                  url,
                 }).catch(() => {})
               }}
               style={{

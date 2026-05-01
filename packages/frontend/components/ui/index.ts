@@ -21,6 +21,7 @@ import Logo from './Logo'
 import UnderlineTabBar from './UnderlineTabBar'
 import Avatar from './Avatar'
 import AuthPromptModal from './AuthPromptModal'
+import CopyLinkButton from './CopyLinkButton'
 
 export {
   PrimaryButton,
@@ -37,4 +38,5 @@ export {
   UnderlineTabBar,
   Avatar,
   AuthPromptModal,
+  CopyLinkButton,
 }
