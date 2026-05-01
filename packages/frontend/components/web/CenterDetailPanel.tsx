@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, Image, ScrollView, Pressable, Linking } from 'react-native'
 import { MapPin, Globe, Phone, User, ChevronLeft, Navigation, BadgeCheck, Users } from 'lucide-react-native'
+import CopyLinkButton from '../ui/CopyLinkButton'
 import type { CenterDisplay } from '../../hooks/useApiData'
 import type { EventDisplay } from '../../utils/api'
 import { useDetailColors } from '../../hooks/useDetailColors'
@@ -79,8 +80,8 @@ export default function CenterDetailPanel({
           gap: 10,
         }}
       >
-        {/* Top row: back */}
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {/* Top row: back + copy link */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Pressable
             onPress={onClose}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8, minHeight: 44, minWidth: 44 }}
@@ -97,6 +98,7 @@ export default function CenterDetailPanel({
               Back
             </Text>
           </Pressable>
+          <CopyLinkButton path={`/center/${center.id}`} color={colors.iconHeader} />
         </View>
 
         {/* Title row */}

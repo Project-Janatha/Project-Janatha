@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { View, Text, Image, ScrollView, Pressable, ActivityIndicator, Linking } from 'react-native'
 import { MapPin, Users, User, Clock, CheckCircle, ChevronLeft, Pencil, ExternalLink } from 'lucide-react-native'
+import CopyLinkButton from '../ui/CopyLinkButton'
 import Badge from '../ui/Badge'
 import UnderlineTabBar from '../ui/UnderlineTabBar'
 import Avatar from '../ui/Avatar'
@@ -214,6 +215,7 @@ function HeaderBar({
         </Pressable>
 
         <View className="flex-row items-center" style={{ gap: 4 }}>
+          {eventId && <CopyLinkButton path={`/events/${eventId}`} variant="icon" color={colors.iconHeader} />}
           {eventId && onEdit && (
             <Pressable
               onPress={() => onEdit(eventId)}
