@@ -10,8 +10,11 @@ import { NavBar } from '../components/landing/NavBar'
 import { Hero } from '../components/landing/Hero'
 import { AppPreview } from '../components/landing/AppPreview'
 import { ProblemSection } from '../components/landing/ProblemSection'
+import { WhySection } from '../components/landing/WhySection'
+import { HowSection } from '../components/landing/HowSection'
 import { CommunitySection } from '../components/landing/CommunitySection'
 import { FinalCTA } from '../components/landing/FinalCTA'
+import { GetAppSection } from '../components/landing/GetAppSection'
 import { Footer } from '../components/landing/Footer'
 
 export default function LandingPage() {
@@ -25,9 +28,12 @@ export default function LandingPage() {
       <NavBar />
       <Hero />
       <ProblemSection />
+      <WhySection />
       <AppPreview />
+      <HowSection />
       <CommunitySection />
       <FinalCTA />
+      <GetAppSection />
       <Footer />
     </ScrollView>
   )
