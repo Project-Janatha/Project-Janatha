@@ -13,6 +13,13 @@ export interface Env {
   AVATARS: R2Bucket
   JWT_SECRET: string
   JWT_REFRESH_SECRET?: string
+  /**
+   * Local-dev escape hatch: when "true", adminMiddleware skips the auth/role
+   * check so the admin UI can be exercised on localhost without a real admin
+   * login. Set in .dev.vars only — never in wrangler.toml / wrangler.staging.toml,
+   * so `wrangler deploy` cannot carry it to staging or prod.
+   */
+  DEV_BYPASS_ADMIN_AUTH?: string
 }
 
 // ── Database row types (mirrors D1 schema) ────────────────────────────
@@ -62,6 +69,8 @@ export interface EventRow {
   title: string
   description: string
   date: string
+  end_date: string | null
+  is_recurring: number // 0 | 1
   latitude: number
   longitude: number
   address: string | null
@@ -143,6 +152,8 @@ export interface EventApiResponse {
   title: string
   description: string
   date: string
+  endDate: string | null
+  isRecurring: boolean
   latitude: number
   longitude: number
   address: string | null
@@ -219,6 +230,8 @@ export function eventRowToApi(row: EventRow): EventApiResponse {
     title: row.title,
     description: row.description,
     date: row.date,
+    endDate: row.end_date,
+    isRecurring: row.is_recurring === 1,
     latitude: row.latitude,
     longitude: row.longitude,
     address: row.address,
