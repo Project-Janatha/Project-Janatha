@@ -455,7 +455,7 @@ function MobileDiscoverFallback() {
   const [showGoingOnly, setShowGoingOnly] = useState(false)
   const [showPastEvents, setShowPastEvents] = useState(false)
   const { user } = useUser()
-  const { items, filteredPoints, loading, allEvents, refresh } = useDiscoverData(
+  const { items, filteredPoints, loading, allEvents, allCenters, refresh } = useDiscoverData(
     activeFilter,
     searchQuery,
     user?.id,

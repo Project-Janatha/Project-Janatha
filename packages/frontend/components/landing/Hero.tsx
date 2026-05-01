@@ -655,8 +655,8 @@ export function Hero() {
             maxWidth: 480,
           }}
         >
-          Discover Chinmaya Mission centers, connect with your local community, and grow through
-          events, study groups, and seva opportunities.
+          One place where any CHYK can find events and centers nearby, RSVP in a tap, and run their
+          own events without juggling five group chats.
         </Text>
 
         {/* CTAs */}
@@ -698,7 +698,7 @@ export function Hero() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <AvatarStack />
           <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#78716C' }}>
-            A project built by CHYKs, for CHYKs.
+            By CHYKs, for CHYKs.
           </Text>
         </View>
 

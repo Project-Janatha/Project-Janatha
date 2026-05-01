@@ -324,14 +324,70 @@ export default function AuthScreen() {
           width: isNarrowWeb ? '100%' : '50%',
           backgroundColor: '#FAFAF7',
           display: 'flex',
-          alignItems: isMobile ? 'flex-start' : 'center',
-          justifyContent: 'center',
+          flexDirection: 'column',
           overflow: 'auto',
           WebkitOverflowScrolling: 'touch',
-          padding: isMobile ? '24px 16px' : isNarrowWeb ? '32px 20px' : 0,
           flex: 1,
         }}
       >
+        {/* Top nav: back to landing (left) + Discover (right) */}
+        <nav
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: isMobile ? '16px 16px' : '24px 32px',
+            flexShrink: 0,
+          }}
+        >
+          <button
+            onClick={() => router.push('/landing')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '8px 4px',
+              margin: '-8px -4px',
+              fontSize: 14,
+              fontFamily: 'Inter, sans-serif',
+              color: '#78716C',
+              minHeight: 44,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            &larr; Back to home
+          </button>
+          <button
+            onClick={() => router.push('/(tabs)')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '8px 4px',
+              margin: '-8px -4px',
+              fontSize: 14,
+              fontFamily: 'Inter, sans-serif',
+              fontWeight: '500',
+              color: '#C2410C',
+              minHeight: 44,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            Discover &rarr;
+          </button>
+        </nav>
+
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            justifyContent: 'center',
+            padding: isMobile ? '8px 16px 24px' : isNarrowWeb ? '0 20px 32px' : 0,
+          }}
+        >
         <div style={{ maxWidth: 400, width: '100%', padding: isNarrowWeb ? 0 : '0 48px' }}>
           {/* Back button (login/signup steps) */}
           {authStep !== 'initial' && (
@@ -699,6 +755,7 @@ export default function AuthScreen() {
             </span>
           </p>
 
+        </div>
         </div>
       </div>
     </div>
