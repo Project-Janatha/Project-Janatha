@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback, memo } from 'react'
-import { StyleSheet, View, Platform } from 'react-native'
+import { StyleSheet, View, Pressable, Platform } from 'react-native'
 import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps'
+import { Plus, Minus, Navigation } from 'lucide-react-native'
 import { getCurrentPosition } from '../utils'
 
 export interface MapPoint {
@@ -106,6 +107,28 @@ const Map = memo<MapProps>(function Map({
     return PIN_COLORS[type] || PIN_COLORS.event
   }, [])
 
+  // Zoom in/out by adjusting the camera zoom level. iOS Apple Maps doesn't
+  // ship with zoom buttons by default, so we render our own.
+  const handleZoom = useCallback(async (delta: number) => {
+    const cam = await mapRef.current?.getCamera()
+    if (!cam) return
+    cam.zoom = Math.max(2, Math.min(20, (cam.zoom ?? 12) + delta))
+    mapRef.current?.animateCamera(cam, { duration: 200 })
+  }, [])
+
+  // Recenter to device location. iOS's `showsMyLocationButton` is
+  // Android-only, so we wire our own button to getCurrentPosition.
+  const handleLocate = useCallback(async () => {
+    const position = await getCurrentPosition().catch(() => null)
+    if (!position || !Array.isArray(position) || position.length !== 2) return
+    const [longitude, latitude] = position
+    if (!isValidCoord(latitude, longitude)) return
+    mapRef.current?.animateToRegion(
+      { latitude, longitude, latitudeDelta: 0.05, longitudeDelta: 0.05 },
+      500
+    )
+  }, [])
+
   return (
     <View style={styles.container}>
       <MapView
@@ -141,9 +164,27 @@ const Map = memo<MapProps>(function Map({
               pinColor={getPinColor(point.type)}
               onPress={() => handleMarkerPress(point)}
               identifier={point.id}
+              // iOS performance: without this, every marker re-renders its
+              // view on each map gesture, which is what causes the "frozen
+              // map" symptom on iOS with 100+ markers.
+              tracksViewChanges={false}
             />
           ))}
       </MapView>
+
+      {/* Custom controls — react-native-maps' built-in user-location button
+          is Android-only; zoom buttons aren't built in at all. */}
+      <View style={[styles.controls, { bottom: 16 + bottomPadding }]} pointerEvents="box-none">
+        <Pressable onPress={() => handleZoom(1)} style={styles.controlButton} accessibilityLabel="Zoom in">
+          <Plus size={18} color="#1a1a1a" />
+        </Pressable>
+        <Pressable onPress={() => handleZoom(-1)} style={styles.controlButton} accessibilityLabel="Zoom out">
+          <Minus size={18} color="#1a1a1a" />
+        </Pressable>
+        <Pressable onPress={handleLocate} style={[styles.controlButton, { marginTop: 8 }]} accessibilityLabel="Show my location">
+          <Navigation size={16} color="#E8862A" />
+        </Pressable>
+      </View>
     </View>
   )
 })
@@ -159,5 +200,23 @@ const styles = StyleSheet.create({
   map: {
     width: '100%',
     height: '100%',
+  },
+  controls: {
+    position: 'absolute',
+    right: 12,
+    gap: 4,
+  },
+  controlButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
 })
