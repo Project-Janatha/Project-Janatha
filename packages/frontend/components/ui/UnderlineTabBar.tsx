@@ -6,9 +6,11 @@ export interface UnderlineTabBarProps {
   tabs: string[]
   activeTab: string
   onTabChange: (tab: string) => void
+  /** Optional per-tab count rendered as a subtle inline number after the label. */
+  counts?: Record<string, number | undefined>
 }
 
-export default function UnderlineTabBar({ tabs, activeTab, onTabChange }: UnderlineTabBarProps) {
+export default function UnderlineTabBar({ tabs, activeTab, onTabChange, counts }: UnderlineTabBarProps) {
   const { isDark } = useTheme()
   const borderColor = isDark ? '#404040' : '#E7E5E4'
   const inactiveColor = isDark ? '#6B7280' : '#A8A29E'
@@ -20,6 +22,9 @@ export default function UnderlineTabBar({ tabs, activeTab, onTabChange }: Underl
     >
       {tabs.map((tab) => {
         const isActive = tab === activeTab
+        const count = counts?.[tab]
+        const labelColor = isActive ? '#E8862A' : inactiveColor
+        const countColor = isActive ? '#E8862A99' : (isDark ? '#52525B' : '#D6D3D1')
         return (
           <Pressable
             key={tab}
@@ -31,10 +36,15 @@ export default function UnderlineTabBar({ tabs, activeTab, onTabChange }: Underl
               style={{
                 fontSize: 14,
                 fontFamily: 'Inter-Medium',
-                color: isActive ? '#E8862A' : inactiveColor,
+                color: labelColor,
               }}
             >
               {tab}
+              {count != null && (
+                <Text style={{ fontFamily: 'Inter-Regular', color: countColor }}>
+                  {'  '}{count}
+                </Text>
+              )}
             </Text>
           </Pressable>
         )

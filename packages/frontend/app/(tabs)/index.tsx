@@ -440,6 +440,7 @@ export default function DiscoverScreen() {
                 tabs={FILTERS.map((f) => f.label)}
                 activeTab={selectedDate ? '' : activeFilter}
                 onTabChange={(tab) => handleFilterPress(tab as DiscoverFilter)}
+                counts={{ Events: allEvents.length, Centers: allCenters.length }}
               />
             </View>
 
