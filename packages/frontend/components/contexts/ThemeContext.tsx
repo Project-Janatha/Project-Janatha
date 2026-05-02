@@ -1,7 +1,7 @@
 // theme.tsx
 import { useColorScheme as useNativeWindColorScheme } from 'nativewind'
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, createContext } from 'react'
-import { Appearance, Platform, View } from 'react-native'
+import { Platform, Appearance, View } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -43,10 +43,6 @@ function storageWrite(pref: ThemePreference): void {
 }
 
 // ─── Web DOM helper (Twitter-style: toggle class + colorScheme on <html>) ─────
-//
-// Twitter writes `color-scheme` on <html> and toggles a "dark" class so both
-// Tailwind/NativeWind and native CSS `prefers-color-scheme` media queries stay
-// in sync without a flash of unstyled content.
 
 function applyToDOM(theme: ResolvedTheme): void {
   if (!isWeb || typeof document === 'undefined') return
@@ -64,17 +60,12 @@ function useSystemTheme(): ResolvedTheme {
 
   useEffect(() => {
     if (isWeb) {
-      // On web, mirror the OS via a media-query listener (most reliable)
       const mq = window.matchMedia('(prefers-color-scheme: dark)')
       const handler = (e: MediaQueryListEvent) => setSystem(e.matches ? 'dark' : 'light')
       mq.addEventListener('change', handler)
       return () => mq.removeEventListener('change', handler)
     }
 
-    // On native, re-read on mount in case Appearance was uninitialized
-    // when the useState initializer ran (iOS cold start sometimes returns
-    // null briefly). Then subscribe to OS changes via Appearance.
-    setSystem(Appearance.getColorScheme() === 'dark' ? 'dark' : 'light')
     const sub = Appearance.addChangeListener(({ colorScheme }) =>
       setSystem(colorScheme === 'dark' ? 'dark' : 'light')
     )
@@ -96,12 +87,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [preference, setPreferenceState] = useState<ThemePreference>(storageRead)
   const preferenceRef = useRef(preference)
 
-  // Keep ref current so async callbacks always see the latest value
   useEffect(() => {
     preferenceRef.current = preference
   }, [preference])
 
-  // ── On native: hydrate from AsyncStorage (web is sync via localStorage) ───
+  // On native: hydrate from AsyncStorage (web is sync via localStorage)
   useEffect(() => {
     if (isWeb) return
     AsyncStorage.getItem(STORAGE_KEY)
@@ -111,19 +101,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {})
   }, [])
 
-  // ── Resolve: "system" falls back to OS preference ─────────────────────────
+  // Resolve: "system" falls back to OS preference
   const theme: ResolvedTheme = preference === 'system' ? system : preference
 
-  // ── Apply to NativeWind + DOM on every change ──────────────────────────────
+  // Apply to NativeWind (native) + DOM (web) on every change
   useEffect(() => {
-    setColorScheme(preference)
+    if (!isWeb) {
+      setColorScheme(preference)
+    }
     if (isWeb) {
-      document.documentElement.classList.toggle('dark', theme === 'dark')
-      document.documentElement.style.colorScheme = theme
+      applyToDOM(theme)
     }
   }, [theme, preference, setColorScheme])
 
-  // ── Public setter: update state + persist ─────────────────────────────────
+  // Public setter: update state + persist
   const setPreference = useCallback((pref: ThemePreference) => {
     setPreferenceState(pref)
     storageWrite(pref)

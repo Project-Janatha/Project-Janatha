@@ -10,7 +10,7 @@ import {
   DefaultTheme,
   ThemeProvider as NavigationThemeProvider,
 } from '@react-navigation/native'
-import { SplashScreen, Stack, usePathname, useRouter } from 'expo-router'
+import { SplashScreen as ExpoSplashScreen, Stack, usePathname, useRouter } from 'expo-router'
 import { PostHogProvider } from 'posthog-react-native'
 import {
   UserProvider,
@@ -19,13 +19,14 @@ import {
   useTheme,
 } from '../components/contexts'
 import { ErrorBoundary } from '../components/ui/ErrorBoundary'
+import SplashScreen from '../components/SplashScreen'
 import '../globals.css'
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
 }
 
-SplashScreen.preventAutoHideAsync()
+ExpoSplashScreen.preventAutoHideAsync()
 
 const posthogHost =
   process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
@@ -43,7 +44,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded) {
-      SplashScreen.hideAsync().catch(() => {})
+      ExpoSplashScreen.hideAsync().catch(() => {})
     }
   }, [fontsLoaded])
 
@@ -145,9 +146,10 @@ function RootLayoutNav() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#ea580c" />
-      </View>
+      <SplashScreen
+        visible={loading}
+        onDismiss={() => ExpoSplashScreen.hideAsync()}
+      />
     )
   }
 
