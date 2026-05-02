@@ -1,7 +1,7 @@
 // theme.tsx
-import { useColorScheme as useNativeWindColorScheme } from 'nativewind'
+import { useColorScheme } from 'nativewind'
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, createContext } from 'react'
-import { Appearance, Platform, View } from 'react-native'
+import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -10,12 +10,9 @@ export type ThemePreference = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
 interface ThemeContextValue {
-  /** The resolved, effective theme ("light" | "dark") */
   theme: ResolvedTheme
-  /** What the user explicitly chose */
   preference: ThemePreference
   setPreference: (pref: ThemePreference) => void
-  /** Convenience boolean */
   isDark: boolean
 }
 
@@ -42,43 +39,13 @@ function storageWrite(pref: ThemePreference): void {
   }
 }
 
-// ─── Web DOM helper (Twitter-style: toggle class + colorScheme on <html>) ─────
-//
-// Twitter writes `color-scheme` on <html> and toggles a "dark" class so both
-// Tailwind/NativeWind and native CSS `prefers-color-scheme` media queries stay
-// in sync without a flash of unstyled content.
+// ─── Web DOM helper ───────────────────────────────────────────────────────────
 
 function applyToDOM(theme: ResolvedTheme): void {
   if (!isWeb || typeof document === 'undefined') return
   const root = document.documentElement
   root.classList.toggle('dark', theme === 'dark')
   root.style.colorScheme = theme
-}
-
-// ─── System-theme hook ────────────────────────────────────────────────────────
-
-function useSystemTheme(): ResolvedTheme {
-  const getSystem = (): ResolvedTheme => (Appearance.getColorScheme() === 'dark' ? 'dark' : 'light')
-
-  const [system, setSystem] = useState<ResolvedTheme>(getSystem)
-
-  useEffect(() => {
-    if (isWeb) {
-      // On web, mirror the OS via a media-query listener (most reliable)
-      const mq = window.matchMedia('(prefers-color-scheme: dark)')
-      const handler = (e: MediaQueryListEvent) => setSystem(e.matches ? 'dark' : 'light')
-      mq.addEventListener('change', handler)
-      return () => mq.removeEventListener('change', handler)
-    }
-
-    // On native, use Appearance API
-    const sub = Appearance.addChangeListener(({ colorScheme }) =>
-      setSystem(colorScheme === 'dark' ? 'dark' : 'light')
-    )
-    return () => sub.remove()
-  }, [])
-
-  return system
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -88,12 +55,10 @@ const ThemeContext = createContext<ThemeContextValue | null>(null)
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const { setColorScheme } = useNativeWindColorScheme()
-  const system = useSystemTheme()
+  const { colorScheme, setColorScheme } = useColorScheme()
   const [preference, setPreferenceState] = useState<ThemePreference>(storageRead)
   const preferenceRef = useRef(preference)
 
-  // Keep ref current so async callbacks always see the latest value
   useEffect(() => {
     preferenceRef.current = preference
   }, [preference])
@@ -108,17 +73,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {})
   }, [])
 
-  // ── Resolve: "system" falls back to OS preference ─────────────────────────
-  const theme: ResolvedTheme = preference === 'system' ? system : preference
+  // ── Apply to DOM on web ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (isWeb && colorScheme) {
+      applyToDOM(colorScheme)
+    }
+  }, [colorScheme])
 
-  // ── Apply to NativeWind + DOM on every change ──────────────────────────────
+  // ── Sync preference → NativeWind (including 'system' to follow OS) ───────
   useEffect(() => {
     setColorScheme(preference)
-    if (isWeb) {
-      document.documentElement.classList.toggle('dark', theme === 'dark')
-      document.documentElement.style.colorScheme = theme
-    }
-  }, [theme, preference, setColorScheme])
+  }, [preference, setColorScheme])
 
   // ── Public setter: update state + persist ─────────────────────────────────
   const setPreference = useCallback((pref: ThemePreference) => {
@@ -126,25 +91,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     storageWrite(pref)
   }, [])
 
+  // NativeWind's colorScheme is already the resolved OS-followed value when preference is 'system'
+  const theme: ResolvedTheme = colorScheme ?? 'light'
+  const isDark = theme === 'dark'
+
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, preference, setPreference, isDark: theme === 'dark' }),
+    () => ({ theme, preference, setPreference, isDark }),
     [theme, preference, setPreference]
   )
 
-  // On web the <html> class handles everything; on native we need a root View
-  // that carries the NativeWind dark-mode class so child components resolve
-  // their dark: variants correctly.
-  return (
-    <ThemeContext.Provider value={value}>
-      {isWeb ? (
-        children
-      ) : (
-        <View className={`flex-1${theme === 'dark' ? ' dark' : ''}`} style={{ flex: 1 }}>
-          {children}
-        </View>
-      )}
-    </ThemeContext.Provider>
-  )
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
