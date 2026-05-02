@@ -298,8 +298,9 @@ export async function createEvent(
       .prepare(
         `INSERT INTO events (id, title, description, date, latitude, longitude, address,
           center_id, tier, people_attending, point_of_contact, image, category,
+          external_url, signup_url, allow_janata_signup,
           created_by, created_at, updated_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)`,
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)`,
       )
       .bind(
         event.id,
@@ -315,6 +316,9 @@ export async function createEvent(
         event.point_of_contact ?? null,
         event.image ?? null,
         event.category ?? null,
+        event.external_url ?? null,
+        event.signup_url ?? null,
+        event.allow_janata_signup ?? 0,
         event.created_by ?? null,
         now,
         now,

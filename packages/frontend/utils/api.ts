@@ -347,6 +347,9 @@ export async function createEvent(data: {
   pointOfContact?: string
   image?: string
   category?: number
+  externalUrl?: string | null
+  signupUrl?: string | null
+  allowJanataSignup?: boolean
 }): Promise<{ id: string; tier: number }> {
   const response = await authFetch('/addEvent', {
     method: 'POST',

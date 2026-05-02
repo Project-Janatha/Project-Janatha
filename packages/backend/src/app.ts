@@ -732,6 +732,9 @@ app.post('/addEvent', authMiddleware, async (c) => {
     pointOfContact?: string
     image?: string
     category?: number
+    externalUrl?: string | null
+    signupUrl?: string | null
+    allowJanataSignup?: boolean
   }>()
 
   // Validate required fields
@@ -776,6 +779,12 @@ app.post('/addEvent', authMiddleware, async (c) => {
 
   const eventId = crypto.randomUUID()
 
+  const validExternalUrl = validate.url(data.externalUrl)
+  const validSignupUrl = validate.url(data.signupUrl)
+  if (validExternalUrl === false || validSignupUrl === false) {
+    return c.json({ message: 'External URL or signup URL is invalid' }, 400)
+  }
+
   const result = await db.createEvent(c.env.DB, {
     id: eventId,
     title: validTitle ?? '',
@@ -788,6 +797,9 @@ app.post('/addEvent', authMiddleware, async (c) => {
     point_of_contact: data.pointOfContact ?? null,
     image: validImage ?? null,
     category: data.category ?? null,
+    external_url: validExternalUrl ?? null,
+    signup_url: validSignupUrl ?? null,
+    allow_janata_signup: data.allowJanataSignup ? 1 : 0,
     created_by: user.id,
   })
 
@@ -888,6 +900,10 @@ app.post('/updateEvent', authMiddleware, async (c) => {
   if (eventJSON.pointOfContact !== undefined) updates.point_of_contact = eventJSON.pointOfContact
   if (eventJSON.image !== undefined) updates.image = eventJSON.image
   if (eventJSON.category !== undefined) updates.category = eventJSON.category
+  if (eventJSON.externalUrl !== undefined) updates.external_url = eventJSON.externalUrl
+  if (eventJSON.signupUrl !== undefined) updates.signup_url = eventJSON.signupUrl
+  if (eventJSON.allowJanataSignup !== undefined)
+    updates.allow_janata_signup = eventJSON.allowJanataSignup ? 1 : 0
 
   const result = await db.updateEvent(c.env.DB, eventId, updates)
   if (result.success) {
