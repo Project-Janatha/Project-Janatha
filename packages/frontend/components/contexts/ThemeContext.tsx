@@ -115,11 +115,31 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const theme: ResolvedTheme = preference === 'system' ? system : preference
 
   // ── Apply to NativeWind + DOM on every change ──────────────────────────────
+  //
+  // Platform split is deliberate:
+  //
+  //   Web: pass the *preference* ('system' | 'light' | 'dark'). Browsers
+  //   resolve `system` natively via `prefers-color-scheme` CSS, NativeWind
+  //   reads `<html>`'s `color-scheme`, and the listener in `useSystemTheme`
+  //   keeps `theme` in sync for any code that reads it directly. This is
+  //   what shipped after PR #173 was reverted.
+  //
+  //   Native: pass the *resolved* theme ('light' | 'dark'). NativeWind v4
+  //   on native does NOT resubscribe to `Appearance` when given the literal
+  //   string `'system'` — it reads OS once and caches. So when the user
+  //   flips iOS dark mode mid-session, NativeWind's `dark:` variants stay
+  //   on the old value even though our `theme` state has flipped.
+  //   Forcing a resolved value sidesteps NativeWind's system-tracking
+  //   entirely; our `useSystemTheme` hook already subscribes to
+  //   `Appearance.addChangeListener` and updates `system` (and therefore
+  //   `theme`) on its own, so this effect re-runs on every OS flip.
   useEffect(() => {
-    setColorScheme(preference)
     if (isWeb) {
+      setColorScheme(preference)
       document.documentElement.classList.toggle('dark', theme === 'dark')
       document.documentElement.style.colorScheme = theme
+    } else {
+      setColorScheme(theme)
     }
   }, [theme, preference, setColorScheme])
 
@@ -137,12 +157,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // On web the <html> class handles everything; on native we need a root View
   // that carries the NativeWind dark-mode class so child components resolve
   // their dark: variants correctly.
+  //
+  // The `key={theme}` on the native wrapper is a defensive belt-and-suspenders
+  // remount: if NativeWind ever caches a `dark:` resolution at component level
+  // and skips the re-render on a class change, keying forces React to throw
+  // away the subtree and rebuild it with the new theme.
   return (
     <ThemeContext.Provider value={value}>
       {isWeb ? (
         children
       ) : (
-        <View className={`flex-1${theme === 'dark' ? ' dark' : ''}`} style={{ flex: 1 }}>
+        <View
+          key={theme}
+          className={`flex-1${theme === 'dark' ? ' dark' : ''}`}
+          style={{ flex: 1 }}
+        >
           {children}
         </View>
       )}
