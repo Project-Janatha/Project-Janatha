@@ -951,7 +951,9 @@ export default function DiscoverScreenWeb() {
   const { isDark } = useTheme()
   const { user } = useUser()
   const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
-  const canCreate = isAdmin || isLocal
+  // Beta: any signed-in user can create events. Backend enforces auth-only;
+  // post-beta this becomes a coordinator-tier gate (see issue tracker).
+  const canCreate = !!user
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('Events')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
