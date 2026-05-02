@@ -1,0 +1,11 @@
+# Backend (Cloudflare Worker) — copy to `.dev.vars` and set values for local dev.
+# This file is loaded by `wrangler dev`. Never commit `.dev.vars`.
+#
+# In staging/production, set these via:  npx wrangler secret put <NAME>
+
+# JWT signing secrets (rotate before production)
+JWT_SECRET=dev-secret-key-change-in-production
+JWT_REFRESH_SECRET=dev-refresh-secret-key-change-in-production
+
+# Resend API key (https://resend.com/api-keys). Required for password-reset emails.
+RESEND_API_KEY=
