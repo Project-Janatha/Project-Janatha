@@ -75,6 +75,11 @@ CREATE TABLE IF NOT EXISTS events (
   point_of_contact TEXT,
   image           TEXT,
   category        INTEGER,
+  end_date        TEXT,
+  is_recurring    INTEGER NOT NULL DEFAULT 0,
+  external_url    TEXT,
+  signup_url      TEXT,
+  allow_janata_signup INTEGER NOT NULL DEFAULT 0,
   created_by      TEXT REFERENCES users(id) ON DELETE SET NULL,
   created_at      TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at      TEXT NOT NULL DEFAULT (datetime('now'))

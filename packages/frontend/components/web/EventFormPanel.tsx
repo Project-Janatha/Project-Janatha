@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { View, Text, ScrollView, TextInput, Pressable, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TextInput, Pressable, ActivityIndicator, Switch } from 'react-native'
 import { ChevronLeft, ChevronDown } from 'lucide-react-native'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
 import { useTheme } from '../../components/contexts'
@@ -187,6 +187,9 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
   const [pointOfContact, setPointOfContact] = useState('')
   const [image, setImage] = useState('')
   const [category, setCategory] = useState<number | undefined>(undefined)
+  const [externalUrl, setExternalUrl] = useState('')
+  const [signupUrl, setSignupUrl] = useState('')
+  const [allowJanataSignup, setAllowJanataSignup] = useState(true)
   const [showAdvanced, setShowAdvanced] = useState(false)
 
   useEffect(() => {
@@ -224,6 +227,9 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
             setPointOfContact(event.pointOfContact || '')
             setImage(event.image || '')
             setCategory(event.category ?? undefined)
+            setExternalUrl(event.externalUrl || '')
+            setSignupUrl(event.signupUrl || '')
+            setAllowJanataSignup(event.allowJanataSignup ?? true)
 
             const matchingCenter = allCenters.find((c) => c.centerID === event.centerID)
             if (matchingCenter) setCenterName(matchingCenter.name)
@@ -282,34 +288,28 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
     setSaving(true)
 
     try {
+      const sharedFields = {
+        title: title.trim(),
+        description: description.trim(),
+        date: buildDateISO(),
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        address: address.trim() || undefined,
+        centerID,
+        pointOfContact: pointOfContact.trim() || undefined,
+        image: image.trim() || undefined,
+        category,
+        externalUrl: externalUrl.trim() || null,
+        signupUrl: signupUrl.trim() || null,
+        // Toggle is only meaningful when there's an external signup URL.
+        // Without one, native signups are always on, so default to true.
+        allowJanataSignup: signupUrl.trim() ? allowJanataSignup : true,
+      }
       let savedId = eventId
       if (isEdit && eventId) {
-        await updateEvent({
-          id: eventId,
-          title: title.trim(),
-          description: description.trim(),
-          date: buildDateISO(),
-          latitude: parseFloat(latitude),
-          longitude: parseFloat(longitude),
-          address: address.trim() || undefined,
-          centerID,
-          pointOfContact: pointOfContact.trim() || undefined,
-          image: image.trim() || undefined,
-          category,
-        })
+        await updateEvent({ id: eventId, ...sharedFields })
       } else {
-        const created = await createEvent({
-          title: title.trim(),
-          description: description.trim(),
-          date: buildDateISO(),
-          latitude: parseFloat(latitude),
-          longitude: parseFloat(longitude),
-          address: address.trim() || undefined,
-          centerID,
-          pointOfContact: pointOfContact.trim() || undefined,
-          image: image.trim() || undefined,
-          category,
-        })
+        const created = await createEvent(sharedFields)
         savedId = created.id
       }
       if (savedId) onSaved?.(savedId)
@@ -622,6 +622,70 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
             colors={colors}
             autoCapitalize="none"
           />
+        </View>
+
+        {/* External info link */}
+        <View>
+          <FieldLabel
+            label="External info link"
+            colors={colors}
+            hint="Optional. Page about the event on another site (e.g., chinmayamission.com)."
+          />
+          <FormInput
+            value={externalUrl}
+            onChangeText={setExternalUrl}
+            placeholder="https://..."
+            colors={colors}
+            autoCapitalize="none"
+          />
+        </View>
+
+        {/* External signup URL + Janata-RSVP toggle */}
+        <View>
+          <FieldLabel
+            label="External signup URL"
+            colors={colors}
+            hint="Optional. If attendees register on another site (Eventbrite, Google Form, etc.)."
+          />
+          <FormInput
+            value={signupUrl}
+            onChangeText={setSignupUrl}
+            placeholder="https://..."
+            colors={colors}
+            autoCapitalize="none"
+          />
+          {signupUrl.trim() ? (
+            <View
+              style={{
+                marginTop: 10,
+                padding: 12,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.cardBg,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 13, color: colors.text }}>
+                  Also accept Janata RSVPs
+                </Text>
+                <Text style={{ fontFamily: 'Inter-Regular', fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
+                  When off, the only signup option is the link above.
+                </Text>
+              </View>
+              <Switch
+                value={allowJanataSignup}
+                onValueChange={setAllowJanataSignup}
+                trackColor={{ true: '#E8862A', false: colors.border }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor={colors.border}
+                activeThumbColor="#FFFFFF"
+              />
+            </View>
+          ) : null}
         </View>
 
         {/* Advanced: coordinates (auto-filled from center) */}

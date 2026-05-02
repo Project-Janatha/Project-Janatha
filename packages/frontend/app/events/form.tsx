@@ -7,6 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
   Platform,
+  Switch,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -183,6 +184,9 @@ export default function EventFormPage() {
   const [pointOfContact, setPointOfContact] = useState('')
   const [image, setImage] = useState('')
   const [category, setCategory] = useState<number | undefined>(undefined)
+  const [externalUrl, setExternalUrl] = useState('')
+  const [signupUrl, setSignupUrl] = useState('')
+  const [allowJanataSignup, setAllowJanataSignup] = useState(true)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [showTimePicker, setShowTimePicker] = useState(false)
@@ -224,6 +228,9 @@ export default function EventFormPage() {
             setPointOfContact(event.pointOfContact || '')
             setImage(event.image || '')
             setCategory(event.category ?? undefined)
+            setExternalUrl(event.externalUrl || '')
+            setSignupUrl(event.signupUrl || '')
+            setAllowJanataSignup(event.allowJanataSignup ?? true)
 
             const matchingCenter = allCenters.find((c) => c.centerID === event.centerID)
             if (matchingCenter) setCenterName(matchingCenter.name)
@@ -282,35 +289,29 @@ export default function EventFormPage() {
     setSaving(true)
 
     try {
+      const sharedFields = {
+        title: title.trim(),
+        description: description.trim(),
+        date: buildDateISO(),
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        address: address.trim() || undefined,
+        centerID,
+        pointOfContact: pointOfContact.trim() || undefined,
+        image: image.trim() || undefined,
+        category,
+        externalUrl: externalUrl.trim() || null,
+        signupUrl: signupUrl.trim() || null,
+        // Toggle is only meaningful when there's an external signup URL.
+        // Without one, native signups are always on.
+        allowJanataSignup: signupUrl.trim() ? allowJanataSignup : true,
+      }
       let savedId = eventId
       if (isEdit && eventId) {
-        await updateEvent({
-          id: eventId,
-          title: title.trim(),
-          description: description.trim(),
-          date: buildDateISO(),
-          latitude: parseFloat(latitude),
-          longitude: parseFloat(longitude),
-          address: address.trim() || undefined,
-          centerID,
-          pointOfContact: pointOfContact.trim() || undefined,
-          image: image.trim() || undefined,
-          category,
-        })
+        await updateEvent({ id: eventId, ...sharedFields })
         posthog?.capture('event_updated', { eventId, title: title.trim() })
       } else {
-        const created = await createEvent({
-          title: title.trim(),
-          description: description.trim(),
-          date: buildDateISO(),
-          latitude: parseFloat(latitude),
-          longitude: parseFloat(longitude),
-          address: address.trim() || undefined,
-          centerID,
-          pointOfContact: pointOfContact.trim() || undefined,
-          image: image.trim() || undefined,
-          category,
-        })
+        const created = await createEvent(sharedFields)
         savedId = created.id
         posthog?.capture('event_created', { title: title.trim(), centerID })
       }
@@ -635,6 +636,78 @@ export default function EventFormPage() {
             keyboardType="url"
             style={inputStyle()}
           />
+        </FieldRow>
+
+        {/* External info link */}
+        <FieldRow
+          label="External info link"
+          colors={colors}
+          hint="Optional. Page about the event on another site (e.g., chinmayamission.com)."
+        >
+          <TextInput
+            value={externalUrl}
+            onChangeText={setExternalUrl}
+            placeholder="https://..."
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            keyboardType="url"
+            style={inputStyle()}
+          />
+        </FieldRow>
+
+        {/* External signup URL + Janata toggle */}
+        <FieldRow
+          label="External signup URL"
+          colors={colors}
+          hint="Optional. If attendees register on another site (Eventbrite, Google Form, etc.)."
+        >
+          <TextInput
+            value={signupUrl}
+            onChangeText={setSignupUrl}
+            placeholder="https://..."
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            keyboardType="url"
+            style={inputStyle()}
+          />
+          {signupUrl.trim() ? (
+            <View
+              style={{
+                marginTop: 10,
+                padding: 14,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.cardBg,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: colors.text }}>
+                  Also accept Janata RSVPs
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: 'Inter-Regular',
+                    fontSize: 12,
+                    color: colors.textMuted,
+                    marginTop: 2,
+                  }}
+                >
+                  When off, the only signup option is the link above.
+                </Text>
+              </View>
+              <Switch
+                value={allowJanataSignup}
+                onValueChange={setAllowJanataSignup}
+                trackColor={{ true: '#E8862A', false: colors.border }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor={colors.border}
+              />
+            </View>
+          ) : null}
         </FieldRow>
 
         {/* Advanced: coordinates (auto-filled from center) */}
