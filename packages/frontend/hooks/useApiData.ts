@@ -598,7 +598,8 @@ function groupCenterItems(centers: DiscoverCenter[], userCenterID?: string | nul
     }
   }
 
-  // Sort: user's group first, then alphabetical, "Other" last
+  // Sort: user's group first, then US states alphabetically, then international
+  // (keys containing a comma, e.g. "Alberta, Canada"), then "Other" last.
   const sortedKeys = [...groups.keys()].sort((a, b) => {
     if (userGroupKey) {
       if (a === userGroupKey) return -1
@@ -606,6 +607,9 @@ function groupCenterItems(centers: DiscoverCenter[], userCenterID?: string | nul
     }
     if (a === 'Other') return 1
     if (b === 'Other') return -1
+    const aIntl = a.includes(',')
+    const bIntl = b.includes(',')
+    if (aIntl !== bIntl) return aIntl ? 1 : -1
     return a.localeCompare(b)
   })
 

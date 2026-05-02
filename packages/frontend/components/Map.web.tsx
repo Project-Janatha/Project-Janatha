@@ -215,6 +215,10 @@ const MapComponent = memo<MapProps>(
       zoom: initialZoom,
     })
 
+    // Once we've moved away from the default, lock further auto-moves so the
+    // home-center / fit-all effect below doesn't overwrite a granted GPS fix.
+    const animatedToTargetRef = useRef(false)
+
     useEffect(() => {
       const storedLocation = localStorage.getItem('userLocation')
       if (storedLocation) {
@@ -224,6 +228,7 @@ const MapComponent = memo<MapProps>(
           const isOldDefault = Math.abs(latitude - 32.1765) < 0.01 && Math.abs(longitude - 76.3595) < 0.01
           if (latitude && longitude && !isOldDefault) {
             setViewState({ latitude, longitude, zoom: initialZoom })
+            animatedToTargetRef.current = true
             return
           }
           if (isOldDefault) localStorage.removeItem('userLocation')
@@ -240,8 +245,9 @@ const MapComponent = memo<MapProps>(
             longitude: homeCenter.longitude,
             zoom: initialZoom,
           })
+          animatedToTargetRef.current = true
         }
-        // Otherwise keep the existing default viewState
+        // Otherwise let the points-loaded effect below handle fit-all / retry.
       }
 
       getCurrentPosition().then((coords) => {
@@ -250,13 +256,53 @@ const MapComponent = memo<MapProps>(
           if (isValidCoordinate(latitude, longitude)) {
             setViewState({ latitude, longitude, zoom: initialZoom })
             localStorage.setItem('userLocation', JSON.stringify({ latitude, longitude }))
+            animatedToTargetRef.current = true
             return
           }
         }
-        // Location unavailable or denied — fall back to user's home center
+        // Location unavailable or denied — fall back to user's home center.
         fallbackToCenter()
       })
     }, [initialZoom, userCenterID])
+
+    // Fallback when GPS hasn't fired and points eventually load: fly to user's
+    // home center if known, otherwise frame all valid points. Solves the
+    // "always starts in SF" feedback for logged-out users and for logged-in
+    // users whose home center wasn't in `points` at mount time.
+    useEffect(() => {
+      if (animatedToTargetRef.current) return
+      if (points.length === 0) return
+
+      if (userCenterID) {
+        const homeCenter = points.find((p) => p.id === userCenterID && p.type === 'center')
+        if (homeCenter && isValidCoordinate(homeCenter.latitude, homeCenter.longitude)) {
+          animatedToTargetRef.current = true
+          mapRef.current?.flyTo({
+            center: [homeCenter.longitude, homeCenter.latitude],
+            zoom: initialZoom,
+            duration: 1200,
+          })
+        }
+        // If userCenterID is set but the center isn't in points yet, wait for
+        // the next points update — don't fall through to fit-all and risk
+        // overriding their home center later.
+        return
+      }
+
+      // Logged-out / no home center — frame all valid points
+      const valid = points.filter((p) => isValidCoordinate(p.latitude, p.longitude))
+      if (valid.length === 0) return
+      const lats = valid.map((p) => p.latitude)
+      const lngs = valid.map((p) => p.longitude)
+      animatedToTargetRef.current = true
+      mapRef.current?.fitBounds(
+        [
+          [Math.min(...lngs), Math.min(...lats)],
+          [Math.max(...lngs), Math.max(...lats)],
+        ],
+        { padding: 60, duration: 1200 }
+      )
+    }, [userCenterID, points, initialZoom])
 
     useEffect(() => {
       if (!flyTo) return

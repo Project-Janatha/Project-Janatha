@@ -250,10 +250,11 @@ export default function DiscoverScreen() {
   )
 
   // ── Sheet snap points ──────────────────────────────────
-  // Three positions (as translateY values from the expanded state):
-  //   expanded  = 0          → 100% sheet visible (full screen, header hidden)
+  // Four positions (as translateY values from the expanded state):
+  //   expanded  = 0           → 100% sheet visible (full screen, header hidden)
   //   mid       = sheet * 0.2 → ~80% sheet visible (most content, map peeking)
   //   collapsed = sheet * 0.6 → ~40% sheet visible (peek + a few rows)
+  //   peek      = sheet - 100 → just handle + search bar visible (100px)
 
   const EXPANDED_TOP = 60 // px from top of container when fully expanded
 
@@ -263,9 +264,10 @@ export default function DiscoverScreen() {
   const SNAP_EXPANDED = 0
   const SNAP_MID = Math.max(0, sheetHeight * 0.2)        // ~80% sheet visible
   const SNAP_COLLAPSED = Math.max(0, sheetHeight * 0.6)  // ~40% sheet visible
+  const SNAP_PEEK = Math.max(0, sheetHeight - 100)       // 100px sheet visible (handle + search)
 
-  const snapsRef = useRef({ expanded: SNAP_EXPANDED, mid: SNAP_MID, collapsed: SNAP_COLLAPSED })
-  snapsRef.current = { expanded: SNAP_EXPANDED, mid: SNAP_MID, collapsed: SNAP_COLLAPSED }
+  const snapsRef = useRef({ expanded: SNAP_EXPANDED, mid: SNAP_MID, collapsed: SNAP_COLLAPSED, peek: SNAP_PEEK })
+  snapsRef.current = { expanded: SNAP_EXPANDED, mid: SNAP_MID, collapsed: SNAP_COLLAPSED, peek: SNAP_PEEK }
 
   const sheetY = useRef(new Animated.Value(0)).current
   const offsetRef = useRef(0)
@@ -298,29 +300,35 @@ export default function DiscoverScreen() {
       onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 8,
       onPanResponderGrant: () => {},
       onPanResponderMove: (_, gs) => {
-        const max = snapsRef.current.collapsed
+        const max = snapsRef.current.peek
         const next = Math.max(0, Math.min(max, offsetRef.current + gs.dy))
         sheetY.setValue(next)
       },
       onPanResponderRelease: (_, gs) => {
-        const { expanded, mid, collapsed } = snapsRef.current
-        const current = Math.max(0, Math.min(collapsed, offsetRef.current + gs.dy))
+        const { expanded, mid, collapsed, peek } = snapsRef.current
+        const current = Math.max(0, Math.min(peek, offsetRef.current + gs.dy))
 
         // Find nearest snap, biased by velocity
         let snapTo: number
         if (gs.vy > 1) {
           // Fast swipe down — jump one stop down from current
-          snapTo = offsetRef.current <= expanded + 10 ? mid : collapsed
+          if (offsetRef.current <= expanded + 10) snapTo = mid
+          else if (offsetRef.current <= mid + 10) snapTo = collapsed
+          else snapTo = peek
         } else if (gs.vy < -1) {
           // Fast swipe up — jump one stop up from current
-          snapTo = offsetRef.current >= collapsed - 10 ? mid : expanded
+          if (offsetRef.current >= peek - 10) snapTo = collapsed
+          else if (offsetRef.current >= collapsed - 10) snapTo = mid
+          else snapTo = expanded
         } else {
-          // Position-based: snap to nearest
+          // Position-based: snap to nearest of 4
           const dExp = Math.abs(current - expanded)
           const dMid = Math.abs(current - mid)
           const dCol = Math.abs(current - collapsed)
-          const minD = Math.min(dExp, dMid, dCol)
-          snapTo = minD === dExp ? expanded : minD === dMid ? mid : collapsed
+          const dPeek = Math.abs(current - peek)
+          const minD = Math.min(dExp, dMid, dCol, dPeek)
+          snapTo =
+            minD === dExp ? expanded : minD === dMid ? mid : minD === dCol ? collapsed : peek
         }
 
         offsetRef.current = snapTo
@@ -398,8 +406,12 @@ export default function DiscoverScreen() {
     if (collapsedInitFor.current === 'Centers') return
     if (items.length === 0) return
     const labels = new Set<string>()
+    let isFirst = true
     for (const item of items) {
-      if (item.type === 'section') labels.add(item.data.label)
+      if (item.type === 'section') {
+        if (!isFirst) labels.add(item.data.label)
+        isFirst = false
+      }
     }
     setCollapsedSections(labels)
     collapsedInitFor.current = 'Centers'
@@ -572,15 +584,21 @@ export default function DiscoverScreen() {
                   <Pressable
                     key={`section-${idx}`}
                     onPress={() => toggleSection(label)}
-                    className="bg-white dark:bg-neutral-900"
-                    style={{ paddingTop: idx > 0 ? 12 : 4, paddingBottom: 6 }}
+                    className={`bg-white dark:bg-neutral-900 ${idx > 0 ? 'border-t border-stone-200 dark:border-neutral-800' : ''}`}
                   >
-                    <View className="flex-row items-center gap-2 px-1">
-                      <Text className="text-xs font-inter-semibold text-stone-400 dark:text-stone-500 uppercase" style={{ letterSpacing: 0.5 }}>
+                    <View
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 14,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Text className="text-xs font-inter-semibold text-stone-500 dark:text-stone-400 uppercase" style={{ letterSpacing: 0.6 }}>
                         {label}
                       </Text>
-                      <View className="flex-1 h-px bg-stone-200 dark:bg-neutral-700" />
-                      {isCollapsed ? <ChevronDown size={14} color="#a8a29e" /> : <ChevronUp size={14} color="#a8a29e" />}
+                      {isCollapsed ? <ChevronDown size={16} color="#a8a29e" /> : <ChevronUp size={16} color="#a8a29e" />}
                     </View>
                   </Pressable>
                 )
