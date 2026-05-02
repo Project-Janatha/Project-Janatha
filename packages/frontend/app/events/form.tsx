@@ -23,7 +23,6 @@ import {
   Image as ImageIcon,
   Tag,
   Building2,
-  AlertTriangle,
 } from 'lucide-react-native'
 import { usePostHog } from 'posthog-react-native'
 import { useUser } from '../../components/contexts'
@@ -38,7 +37,6 @@ import {
   type CenterData,
 } from '../../utils/api'
 
-const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
 
 const CATEGORY_OPTIONS = [
   { value: undefined, label: 'None' },
@@ -177,7 +175,6 @@ export default function EventFormPage() {
   const [image, setImage] = useState('')
   const [category, setCategory] = useState<number | undefined>(undefined)
 
-  const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
 
   // Load centers + event data (if editing)
   useEffect(() => {
@@ -346,46 +343,6 @@ export default function EventFormPage() {
     backgroundColor: colors.cardBg,
     marginLeft: 42,
   })
-
-  // ── Guard: not admin ────────────────────────────────────────────────
-
-  if (false && !isAdmin) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.panelBg }}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}>
-          <AlertTriangle size={48} color={colors.textMuted} />
-          <Text
-            style={{
-              fontFamily: 'Inter-SemiBold',
-              fontSize: 18,
-              color: colors.text,
-              marginTop: 16,
-              textAlign: 'center',
-            }}
-          >
-            Admin Access Required
-          </Text>
-          <Text
-            style={{
-              fontFamily: 'Inter-Regular',
-              fontSize: 14,
-              color: colors.textSecondary,
-              marginTop: 8,
-              textAlign: 'center',
-            }}
-          >
-            Only administrators can create or edit events.
-          </Text>
-          <Pressable
-            onPress={() => router.back()}
-            style={{ marginTop: 24, minHeight: 44, justifyContent: 'center' }}
-          >
-            <Text style={{ fontSize: 16, fontFamily: 'Inter-Medium', color: '#E8862A' }}>Go Back</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
-    )
-  }
 
   // ── Loading ─────────────────────────────────────────────────────────
 

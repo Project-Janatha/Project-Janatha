@@ -21,7 +21,6 @@ import {
   Image as ImageIcon,
   Tag,
   Building2,
-  AlertTriangle,
   ChevronDown,
 } from 'lucide-react-native'
 import { useUser } from '../../components/contexts'
@@ -35,7 +34,6 @@ import {
   type CenterData,
 } from '../../utils/api'
 
-const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
 
 const CATEGORY_OPTIONS = [
   { value: undefined, label: 'None' },
@@ -128,7 +126,6 @@ export default function EventFormPage() {
   const [image, setImage] = useState('')
   const [category, setCategory] = useState<number | undefined>(undefined)
 
-  const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
 
   useEffect(() => {
     let mounted = true
@@ -278,44 +275,6 @@ export default function EventFormPage() {
     backgroundColor: colors.cardBg,
     marginLeft: 42,
   })
-
-  // ── Guard: not admin (disabled for testing) ─────────────────────────
-
-  if (false && !isAdmin) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.panelBg, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}>
-        <AlertTriangle size={48} color={colors.textMuted} />
-        <Text
-          style={{
-            fontFamily: 'Inter-SemiBold',
-            fontSize: 18,
-            color: colors.text,
-            marginTop: 16,
-            textAlign: 'center',
-          }}
-        >
-          Admin Access Required
-        </Text>
-        <Text
-          style={{
-            fontFamily: 'Inter-Regular',
-            fontSize: 14,
-            color: colors.textSecondary,
-            marginTop: 8,
-            textAlign: 'center',
-          }}
-        >
-          Only administrators can create or edit events.
-        </Text>
-        <Pressable
-          onPress={() => router.back()}
-          style={{ marginTop: 24, minHeight: 44, justifyContent: 'center' }}
-        >
-          <Text style={{ fontSize: 16, fontFamily: 'Inter-Medium', color: '#E8862A' }}>Go Back</Text>
-        </Pressable>
-      </View>
-    )
-  }
 
   // ── Loading ─────────────────────────────────────────────────────────
 
