@@ -12,12 +12,14 @@ import {
   Clock,
   CheckCircle,
   Pencil,
+  Trash2,
 } from 'lucide-react-native'
 import { usePostHog } from 'posthog-react-native'
 import { useEventDetail } from '../../hooks/useApiData'
 import { useUser } from '../../components/contexts'
 import { Badge, UnderlineTabBar, Avatar, PrimaryButton, DestructiveButton } from '../../components/ui'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
+import { removeEvent } from '../../utils/api'
 
 const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
 
@@ -139,6 +141,7 @@ function HeaderBar({
   eventId,
   onBack,
   onEdit,
+  onDelete,
   colors,
 }: {
   title: string
@@ -148,6 +151,7 @@ function HeaderBar({
   eventId?: string
   onBack: () => void
   onEdit?: () => void
+  onDelete?: () => void
   colors: DetailColors
 }) {
   const router = useRouter()
@@ -202,8 +206,24 @@ function HeaderBar({
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
+              accessibilityLabel="Edit event"
             >
               <Pencil size={18} color={colors.iconHeader} />
+            </Pressable>
+          )}
+          {eventId && isAdmin && onDelete && (
+            <Pressable
+              onPress={onDelete}
+              style={{
+                padding: 8,
+                minHeight: 44,
+                minWidth: 44,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              accessibilityLabel="Delete event"
+            >
+              <Trash2 size={18} color="#DC2626" />
             </Pressable>
           )}
           {!isPast && (
@@ -553,6 +573,30 @@ export default function EventDetailPage() {
     posthog?.capture('event_edit_opened', { eventId: id })
   }
 
+  const handleDeletePress = () => {
+    if (!event) return
+    Alert.alert(
+      'Delete event?',
+      `"${event.title}" will be permanently removed. This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              posthog?.capture('event_deleted', { eventId: id })
+              await removeEvent(id as string)
+              router.replace('/')
+            } catch (err: any) {
+              Alert.alert('Delete failed', err?.message || 'Could not delete event.')
+            }
+          },
+        },
+      ],
+    )
+  }
+
   const handleToggleRegistration = async () => {
     if (!user?.username) return
     try {
@@ -629,6 +673,7 @@ export default function EventDetailPage() {
           eventId={id as string}
           onBack={() => router.back()}
           onEdit={handleEditPress}
+          onDelete={canEdit ? handleDeletePress : undefined}
           colors={colors}
         />
 
@@ -753,6 +798,7 @@ export default function EventDetailPage() {
         eventId={id as string}
         onBack={() => router.back()}
         onEdit={handleEditPress}
+        onDelete={canEdit ? handleDeletePress : undefined}
         colors={colors}
       />
 

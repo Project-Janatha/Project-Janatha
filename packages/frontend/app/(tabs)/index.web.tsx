@@ -40,6 +40,7 @@ import CenterDetailPanel from '../../components/web/CenterDetailPanel'
 import { useDetailColors } from '../../hooks/useDetailColors'
 import AuthPromptModal from '../../components/ui/AuthPromptModal'
 import type { MapPoint, EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
+import { removeEvent } from '../../utils/api'
 import { extractCityState } from '../../utils/addressParsing'
 import { WeekCalendar } from '../../components'
 import { ADMIN_EMAIL, isLocal } from '../../utils/admin'
@@ -393,6 +394,20 @@ function EventPanelInner({
         onToggleRegistration={handleToggleRegistration}
         isToggling={isToggling}
         onEdit={canEdit && !isPast ? onEdit : undefined}
+        onDelete={
+          canEdit
+            ? async (id) => {
+                if (typeof window === 'undefined') return
+                if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) return
+                try {
+                  await removeEvent(id)
+                  onClose()
+                } catch (err: any) {
+                  window.alert(err?.message || 'Failed to delete event')
+                }
+              }
+            : undefined
+        }
       />
       <AuthPromptModal
         visible={showAuthPrompt}

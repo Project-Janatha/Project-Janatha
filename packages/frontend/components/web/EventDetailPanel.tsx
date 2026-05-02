@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { View, Text, Image, ScrollView, Pressable, ActivityIndicator, Linking } from 'react-native'
-import { MapPin, Users, User, Clock, CheckCircle, ChevronLeft, Pencil, ExternalLink } from 'lucide-react-native'
+import { MapPin, Users, User, Clock, CheckCircle, ChevronLeft, Pencil, ExternalLink, Trash2 } from 'lucide-react-native'
 import CopyLinkButton from '../ui/CopyLinkButton'
 import Badge from '../ui/Badge'
 import UnderlineTabBar from '../ui/UnderlineTabBar'
@@ -105,6 +105,7 @@ type EventDetailPanelProps = {
   onToggleRegistration: () => void
   isToggling: boolean
   onEdit?: (eventId: string) => void
+  onDelete?: (eventId: string) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -172,6 +173,7 @@ function HeaderBar({
   eventId,
   onClose,
   onEdit,
+  onDelete,
   colors,
 }: {
   title: string
@@ -181,6 +183,7 @@ function HeaderBar({
   eventId?: string
   onClose: () => void
   onEdit?: (eventId: string) => void
+  onDelete?: (eventId: string) => void
   colors: DetailColors
 }) {
   return (
@@ -223,6 +226,15 @@ function HeaderBar({
               accessibilityLabel="Edit event"
             >
               <Pencil size={18} color={colors.iconHeader} />
+            </Pressable>
+          )}
+          {eventId && onDelete && (
+            <Pressable
+              onPress={() => onDelete(eventId)}
+              style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+              accessibilityLabel="Delete event"
+            >
+              <Trash2 size={18} color="#DC2626" />
             </Pressable>
           )}
         </View>
@@ -873,6 +885,7 @@ export default function EventDetailPanel({
   onToggleRegistration,
   isToggling,
   onEdit,
+  onDelete,
 }: EventDetailPanelProps) {
   const colors = useDetailColors()
   const isRegistered = event.isRegistered && !isPast
@@ -890,7 +903,7 @@ export default function EventDetailPanel({
       }}
     >
       {/* Header */}
-      <HeaderBar title={event.title} isPast={isPast} isRegistered={isRegistered} isAdmin={isAdmin} eventId={event.id} onClose={onClose} onEdit={onEdit} colors={colors} />
+      <HeaderBar title={event.title} isPast={isPast} isRegistered={isRegistered} isAdmin={isAdmin} eventId={event.id} onClose={onClose} onEdit={onEdit} onDelete={onDelete} colors={colors} />
 
       {/* Hero image (non-registered only) */}
       {!isRegistered && (
