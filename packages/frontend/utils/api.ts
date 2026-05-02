@@ -371,6 +371,17 @@ export async function updateEvent(eventJSON: Record<string, any>): Promise<any> 
   return response.json()
 }
 
+export async function removeEvent(id: string): Promise<void> {
+  const response = await authFetch('/removeEvent', {
+    method: 'POST',
+    body: JSON.stringify({ id }),
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ message: 'Failed to delete event' }))
+    throw new Error(err.message || 'Failed to delete event')
+  }
+}
+
 export async function getUserEvents(username: string): Promise<EventData[]> {
   try {
     const response = await authFetch('/getUserEvents', {

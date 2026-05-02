@@ -48,12 +48,16 @@ function FieldRow({
   label,
   colors,
   error,
+  required,
+  hint,
   children,
 }: {
   icon: React.ElementType
   label: string
   colors: DetailColors
   error?: string
+  required?: boolean
+  hint?: string
   children: React.ReactNode
 }) {
   return (
@@ -81,9 +85,15 @@ function FieldRow({
           }}
         >
           {label}
+          {required ? <Text style={{ color: '#E8862A' }}> *</Text> : null}
         </Text>
       </View>
       {children}
+      {hint && !error ? (
+        <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: colors.textMuted, marginLeft: 42 }}>
+          {hint}
+        </Text>
+      ) : null}
       {error ? (
         <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: '#DC2626', marginLeft: 42 }}>
           {error}
@@ -125,6 +135,7 @@ export default function EventFormPage() {
   const [pointOfContact, setPointOfContact] = useState('')
   const [image, setImage] = useState('')
   const [category, setCategory] = useState<number | undefined>(undefined)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
 
   useEffect(() => {
@@ -192,6 +203,7 @@ export default function EventFormPage() {
     }
 
     setErrors(newErrors)
+    if (newErrors.latitude || newErrors.longitude) setShowAdvanced(true)
     return Object.keys(newErrors).length === 0
   }, [title, date, centerID, latitude, longitude])
 
@@ -230,7 +242,6 @@ export default function EventFormPage() {
           image: image.trim() || undefined,
           category,
         })
-        alert('Event updated successfully')
       } else {
         await createEvent({
           title: title.trim(),
@@ -244,11 +255,12 @@ export default function EventFormPage() {
           image: image.trim() || undefined,
           category,
         })
-        alert('Event created successfully')
       }
       router.back()
     } catch (err: any) {
-      alert(err?.message || 'Something went wrong')
+      if (typeof window !== 'undefined') {
+        window.alert(err?.message || 'Something went wrong')
+      }
     } finally {
       setSaving(false)
     }
@@ -320,7 +332,9 @@ export default function EventFormPage() {
             {isEdit ? 'Edit Event' : 'Create Event'}
           </Text>
           <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: colors.textMuted, marginTop: 2 }}>
-            {isEdit ? 'Update event details below' : 'Fill in the details to create a new event'}
+            {isEdit
+              ? 'Update event details below'
+              : 'Fill in the details to create a new event. Fields marked * are required.'}
           </Text>
         </View>
       </View>
@@ -338,18 +352,18 @@ export default function EventFormPage() {
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
-        <FieldRow icon={Type} label="Title" colors={colors} error={errors.title}>
+        <FieldRow icon={Type} label="Title" colors={colors} error={errors.title} required>
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="Event title"
+            placeholder="e.g. Sunday Satsang with Swamiji"
             placeholderTextColor={colors.textMuted}
             style={inputStyle(!!errors.title)}
           />
         </FieldRow>
 
         {/* Description */}
-        <FieldRow icon={FileText} label="Description" colors={colors}>
+        <FieldRow icon={FileText} label="Description" colors={colors} hint="What will attendees experience? Speakers, agenda, what to bring.">
           <TextInput
             value={description}
             onChangeText={setDescription}
@@ -367,22 +381,23 @@ export default function EventFormPage() {
         {/* Date + Time side by side */}
         <View style={{ flexDirection: isNarrow ? 'column' : 'row', gap: isNarrow ? 24 : 28 }}>
           <View style={{ flex: 1 }}>
-            <FieldRow icon={Calendar} label="Date" colors={colors} error={errors.date}>
+            <FieldRow icon={Calendar} label="Date" colors={colors} error={errors.date} required hint="Format: YYYY-MM-DD">
               <TextInput
                 value={date}
                 onChangeText={setDate}
-                placeholder="YYYY-MM-DD"
+                placeholder="2026-06-15"
                 placeholderTextColor={colors.textMuted}
                 style={inputStyle(!!errors.date)}
+                {...({ dataSet: { type: 'date' } } as any)}
               />
             </FieldRow>
           </View>
           <View style={{ flex: 1 }}>
-            <FieldRow icon={Clock} label="Time" colors={colors}>
+            <FieldRow icon={Clock} label="Time" colors={colors} hint="12-hour format with AM/PM">
               <TextInput
                 value={time}
                 onChangeText={setTime}
-                placeholder="e.g. 10:30 AM"
+                placeholder="10:30 AM"
                 placeholderTextColor={colors.textMuted}
                 style={inputStyle()}
               />
@@ -391,7 +406,7 @@ export default function EventFormPage() {
         </View>
 
         {/* Center selection */}
-        <FieldRow icon={Building2} label="Center" colors={colors} error={errors.center}>
+        <FieldRow icon={Building2} label="Center" colors={colors} error={errors.center} required hint="Picking a center auto-fills address & coordinates.">
           <Pressable
             onPress={() => setShowCenterPicker(!showCenterPicker)}
             style={{
@@ -478,57 +493,29 @@ export default function EventFormPage() {
         </FieldRow>
 
         {/* Address */}
-        <FieldRow icon={MapPin} label="Address" colors={colors}>
+        <FieldRow icon={MapPin} label="Address" colors={colors} hint="Where the event is held. Auto-filled from center if blank.">
           <TextInput
             value={address}
             onChangeText={setAddress}
-            placeholder="Event address"
+            placeholder="123 Main St, City, ST 12345"
             placeholderTextColor={colors.textMuted}
             style={inputStyle()}
           />
         </FieldRow>
 
-        {/* Lat / Lng side by side */}
-        <FieldRow icon={Navigation} label="Coordinates" colors={colors} error={errors.latitude || errors.longitude}>
-          <View style={{ flexDirection: 'row', gap: 10, marginLeft: 42 }}>
-            <TextInput
-              value={latitude}
-              onChangeText={setLatitude}
-              placeholder="Latitude"
-              placeholderTextColor={colors.textMuted}
-              style={{
-                ...inputStyle(!!errors.latitude),
-                marginLeft: 0,
-                flex: 1,
-              }}
-            />
-            <TextInput
-              value={longitude}
-              onChangeText={setLongitude}
-              placeholder="Longitude"
-              placeholderTextColor={colors.textMuted}
-              style={{
-                ...inputStyle(!!errors.longitude),
-                marginLeft: 0,
-                flex: 1,
-              }}
-            />
-          </View>
-        </FieldRow>
-
         {/* Point of contact */}
-        <FieldRow icon={User} label="Point of Contact" colors={colors}>
+        <FieldRow icon={User} label="Point of Contact" colors={colors} hint="Optional. Email or name attendees can reach.">
           <TextInput
             value={pointOfContact}
             onChangeText={setPointOfContact}
-            placeholder="Contact person"
+            placeholder="contact@example.org"
             placeholderTextColor={colors.textMuted}
             style={inputStyle()}
           />
         </FieldRow>
 
         {/* Image URL */}
-        <FieldRow icon={ImageIcon} label="Image URL" colors={colors}>
+        <FieldRow icon={ImageIcon} label="Image URL" colors={colors} hint="Optional. A direct link to a JPG/PNG.">
           <TextInput
             value={image}
             onChangeText={setImage}
@@ -571,6 +558,65 @@ export default function EventFormPage() {
             })}
           </View>
         </FieldRow>
+
+        {/* Advanced: coordinates (collapsed by default — auto-filled from center) */}
+        <View style={{ gap: 12, marginTop: 4 }}>
+          <Pressable
+            onPress={() => setShowAdvanced((v) => !v)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+            accessibilityLabel="Toggle advanced location options"
+          >
+            <ChevronDown
+              size={14}
+              color={colors.textMuted}
+              style={{ transform: [{ rotate: showAdvanced ? '0deg' : '-90deg' }] }}
+            />
+            <Text
+              style={{
+                fontFamily: 'Inter-Medium',
+                fontSize: 12,
+                color: colors.textMuted,
+                letterSpacing: 0.4,
+                textTransform: 'uppercase',
+              }}
+            >
+              Advanced location
+            </Text>
+            {(errors.latitude || errors.longitude) ? (
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: '#DC2626' }}>
+                · check coordinates
+              </Text>
+            ) : null}
+          </Pressable>
+          {showAdvanced && (
+            <FieldRow icon={Navigation} label="Coordinates" colors={colors} error={errors.latitude || errors.longitude} hint="Auto-filled when you pick a center. Override only if pin is wrong.">
+              <View style={{ flexDirection: 'row', gap: 10, marginLeft: 42 }}>
+                <TextInput
+                  value={latitude}
+                  onChangeText={setLatitude}
+                  placeholder="Latitude"
+                  placeholderTextColor={colors.textMuted}
+                  style={{
+                    ...inputStyle(!!errors.latitude),
+                    marginLeft: 0,
+                    flex: 1,
+                  }}
+                />
+                <TextInput
+                  value={longitude}
+                  onChangeText={setLongitude}
+                  placeholder="Longitude"
+                  placeholderTextColor={colors.textMuted}
+                  style={{
+                    ...inputStyle(!!errors.longitude),
+                    marginLeft: 0,
+                    flex: 1,
+                  }}
+                />
+              </View>
+            </FieldRow>
+          )}
+        </View>
       </ScrollView>
 
       {/* Sticky action bar */}
