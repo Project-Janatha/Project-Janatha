@@ -7,7 +7,6 @@ import SettingsPanel from '../../components/SettingsPanel'
 import Logo from '../../components/ui/Logo'
 import { Avatar } from '../../components/ui'
 import { usePostHog } from 'posthog-react-native'
-import { isSuperAdmin } from '../../utils/admin'
 
 /**
  * TabLayout Component - The main layout for the tab-based navigation.
@@ -19,7 +18,9 @@ export default function TabLayout() {
   const { user, loading, logout } = useUser()
   const { isDark } = useTheme()
   const [settingsVisible, setSettingsVisible] = useState(false)
-  const canCreate = isSuperAdmin(user)
+  // Beta: any signed-in user can create events. Backend enforces auth-only;
+  // post-beta this becomes a coordinator-tier gate (issue #177).
+  const canCreate = !!user
   const posthog = usePostHog()
 
   useEffect(() => {
