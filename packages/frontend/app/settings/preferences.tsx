@@ -195,7 +195,7 @@ export default function PreferencesNative() {
                 {displayName}
               </Text>
               {user?.username && (
-                <Text style={{ fontSize: 14, color: mutedTextColor }}>@{user.username}</Text>
+                <Text style={{ fontSize: 14, color: mutedTextColor }}>{user.username}</Text>
               )}
             </View>
           </View>
