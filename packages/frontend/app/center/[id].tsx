@@ -12,7 +12,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ChevronLeft, Share2, MapPin, Globe, Phone, User } from 'lucide-react-native'
+import { ChevronLeft, Share2, MapPin, Globe, Phone, User, Navigation, BadgeCheck, Users } from 'lucide-react-native'
 import { usePostHog } from 'posthog-react-native'
 import { useCenterDetail } from '../../hooks/useApiData'
 import { Badge } from '../../components/ui'
@@ -66,11 +66,15 @@ function HeaderBar({
   onBack,
   onShare,
   colors,
+  memberCount = 0,
+  isVerified = false,
 }: {
   title: string
   onBack: () => void
   onShare: () => void
   colors: DetailColors
+  memberCount?: number
+  isVerified?: boolean
 }) {
   return (
     <View
@@ -117,6 +121,43 @@ function HeaderBar({
       >
         {title}
       </Text>
+
+      {/* Stats row */}
+      {(memberCount > 0 || isVerified) && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {memberCount > 0 && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Users size={13} color={colors.textSecondary} />
+              <Text
+                style={{
+                  fontFamily: 'Inter-Medium',
+                  fontSize: 13,
+                  color: colors.textSecondary,
+                }}
+              >
+                {memberCount} {memberCount === 1 ? 'member' : 'members'}
+              </Text>
+            </View>
+          )}
+          {memberCount > 0 && isVerified && (
+            <Text style={{ fontSize: 13, color: colors.textMuted }}>·</Text>
+          )}
+          {isVerified && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <BadgeCheck size={13} color="#E8862A" />
+              <Text
+                style={{
+                  fontFamily: 'Inter-Medium',
+                  fontSize: 13,
+                  color: '#E8862A',
+                }}
+              >
+                Verified
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
     </View>
   )
 }
@@ -145,10 +186,10 @@ export default function CenterDetailPage() {
   const handleShare = async () => {
     posthog?.capture('center_shared', { centerId: id })
     try {
+      const url = id ? `https://chinmayajanata.org/center/${id}` : 'https://chinmayajanata.org'
       await Share.share({
-        message: center
-          ? `Check out ${center.name}!`
-          : 'Check out this center!',
+        message: center ? `Check out ${center.name} on Chinmaya Janata! ${url}` : `Check out this center on Chinmaya Janata! ${url}`,
+        url,
       })
     } catch {
       // Share cancelled or failed
@@ -211,6 +252,8 @@ export default function CenterDetailPage() {
         onBack={() => router.back()}
         onShare={handleShare}
         colors={colors}
+        memberCount={center.memberCount}
+        isVerified={center.isVerified}
       />
 
       <ScrollView
@@ -247,12 +290,9 @@ export default function CenterDetailPage() {
           <View style={{ gap: 16 }}>
             {/* Address */}
             {center.address ? (
-              <Pressable
-                onPress={handleAddressPress}
-                style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, minHeight: 44 }}
-              >
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
                 <MetaIcon icon={MapPin} color="#E8862A" colors={colors} />
-                <View style={{ flex: 1, justifyContent: 'center' }}>
+                <View style={{ flex: 1, gap: 8 }}>
                   <Text
                     style={{
                       fontFamily: 'Inter-Medium',
@@ -263,8 +303,23 @@ export default function CenterDetailPage() {
                   >
                     {center.address}
                   </Text>
+                  <Pressable
+                    onPress={handleAddressPress}
+                    style={{ alignSelf: 'flex-start', paddingVertical: 4 }}
+                    accessibilityLabel="Get directions"
+                  >
+                    <Text
+                      style={{
+                        fontFamily: 'Inter-SemiBold',
+                        fontSize: 14,
+                        color: '#E8862A',
+                      }}
+                    >
+                      Get directions →
+                    </Text>
+                  </Pressable>
                 </View>
-              </Pressable>
+              </View>
             ) : null}
 
             {/* Website */}

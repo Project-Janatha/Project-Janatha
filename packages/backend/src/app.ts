@@ -818,11 +818,26 @@ app.post('/addEvent', authMiddleware, async (c) => {
 
 app.post('/removeEvent', authMiddleware, async (c) => {
   const user = c.get('user')
-  if (!isAdmin(user)) {
-    return c.json({ message: 'Insufficient permissions' }, 401)
+  const { id } = await c.req.json<{ id: string }>()
+  if (!id) {
+    return c.json({ message: 'Event ID required' }, 400)
   }
 
-  const { id } = await c.req.json<{ id: string }>()
+  const existing = await db.getEventById(c.env.DB, id)
+  if (!existing) {
+    return c.json({ message: 'Event not found' }, 404)
+  }
+
+  // Allow admin or the event creator to delete (mirrors /updateEvent gate;
+  // legacy events with no creator are admin-only)
+  const isCreator = existing.created_by === user.id
+  if (!isAdmin(user) && !isCreator) {
+    return c.json(
+      { message: 'Insufficient permissions - only admin or event creator can delete' },
+      401,
+    )
+  }
+
   const result = await db.deleteEvent(c.env.DB, id)
   if (result.success) {
     return c.json({ message: 'Event removed' })
@@ -1192,6 +1207,9 @@ app.put('/admin/events/:id', adminMiddleware, async (c) => {
     pointOfContact?: string
     image?: string
     category?: number
+    externalUrl?: string | null
+    signupUrl?: string | null
+    allowJanataSignup?: boolean
   }>()
 
   const updates: Partial<EventRow> = {}
@@ -1202,6 +1220,9 @@ app.put('/admin/events/:id', adminMiddleware, async (c) => {
   if (body.pointOfContact !== undefined) updates.point_of_contact = body.pointOfContact
   if (body.image !== undefined) updates.image = body.image
   if (body.category !== undefined) updates.category = body.category
+  if (body.externalUrl !== undefined) updates.external_url = body.externalUrl
+  if (body.signupUrl !== undefined) updates.signup_url = body.signupUrl
+  if (body.allowJanataSignup !== undefined) updates.allow_janata_signup = body.allowJanataSignup ? 1 : 0
 
   const result = await db.updateEvent(c.env.DB, eventId, updates)
   if (result.success) {

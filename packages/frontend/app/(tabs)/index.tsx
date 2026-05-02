@@ -1,5 +1,5 @@
 // Discover tab — mobile / native layout
-import React, { useState, Suspense, useRef, useCallback } from 'react'
+import React, { useState, Suspense, useRef, useCallback, useMemo } from 'react'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { DiscoverListSkeleton } from '../../components/ui/Skeleton'
 import {
@@ -12,6 +12,7 @@ import {
   Animated,
   PanResponder,
   StyleSheet,
+  Image,
 } from 'react-native'
 import {
   MapPin,
@@ -20,14 +21,15 @@ import {
   ChevronUp,
   ChevronDown,
 } from 'lucide-react-native'
-import { useRouter, useFocusEffect } from 'expo-router'
+import { useRouter, useFocusEffect, useNavigation } from 'expo-router'
 import { usePostHog } from 'posthog-react-native'
 import { useTheme } from '../../components/contexts'
-import { Badge, UnderlineTabBar, Avatar } from '../../components/ui'
+import { Badge, UnderlineTabBar, Avatar, FilterChip } from '../../components/ui'
+import FilterPickerModal, { type FilterPickerOption } from '../../components/ui/FilterPickerModal'
 import { useUser } from '../../components/contexts/UserContext'
 import { useDiscoverData, type DiscoverFilter } from '../../hooks/useApiData'
 import type { EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
-import WeekCalendar from '../../components/WeekCalendar'
+import { extractCityState } from '../../utils/addressParsing'
 
 
 // Lazy load Map to avoid loading heavy web dependencies on mobile web
@@ -36,6 +38,7 @@ const Map = React.lazy(() => import('../../components/Map'))
 const FILTERS: { label: DiscoverFilter }[] = [
   { label: 'Events' },
   { label: 'Centers' },
+  { label: 'Seva' },
 ]
 
 /**
@@ -106,7 +109,15 @@ function AttendeeAvatars({ count, attendees }: { count: number; attendees?: Atte
 
 // ─── Event Item ─────────────────────────────────────────
 
-function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => void }) {
+function EventItem({
+  event,
+  onPress,
+  centerName,
+}: {
+  event: EventDisplay
+  onPress: () => void
+  centerName?: string
+}) {
   const { month, day } = event.date ? formatDatePill(event.date) : { month: '', day: '' }
   const todayLabel = event.date ? isToday(event.date) : false
 
@@ -140,31 +151,30 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
         <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm">
           {todayLabel ? 'Today · ' : ''}{event.time || ''}
         </Text>
+        {centerName && (
+          <Text className="text-stone-500 dark:text-stone-400 font-inter text-xs" numberOfLines={1}>
+            By {centerName}
+          </Text>
+        )}
         <View className="flex-row items-center gap-1 mt-0.5">
           <MapPin size={12} color="#E8862A" />
           <Text className="text-stone-500 dark:text-stone-400 font-inter text-xs flex-1" numberOfLines={1}>
             {event.location}
           </Text>
         </View>
-        <AttendeeAvatars count={event.attendees} attendees={event.attendeesList} />
+        {event.attendees > 0 && <AttendeeAvatars count={event.attendees} attendees={event.attendeesList} />}
       </View>
+
+      {/* Hero thumbnail */}
+      {event.image && (
+        <Image
+          source={{ uri: event.image }}
+          style={{ width: 72, height: 72, borderRadius: 10 }}
+          resizeMode="cover"
+        />
+      )}
     </Pressable>
   )
-}
-
-// ─── Center helpers ─────────────────────────────────────
-
-function extractCityState(address?: string): string | null {
-  if (!address) return null
-  const parts = address.split(',').map((s) => s.trim())
-  if (parts.length >= 2) {
-    const city = parts[parts.length - 2]
-    const stateZip = parts[parts.length - 1]
-    const stateMatch = stateZip.match(/^([A-Za-z\s]+)/)
-    const state = stateMatch ? stateMatch[1].trim() : stateZip
-    return `${city}, ${state}`
-  }
-  return null
 }
 
 // ─── Center Item ────────────────────────────────────────
@@ -180,8 +190,12 @@ function CenterItem({ center, onPress, isMyCenter }: { center: DiscoverCenter; o
       }`}
     >
       {/* Icon pill */}
-      <View className="w-12 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center">
-        <Building2 size={20} color="#9A3412" />
+      <View className="w-12 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center overflow-hidden">
+        {center.image ? (
+          <Image source={{ uri: center.image }} style={{ width: 48, height: 56 }} resizeMode="cover" />
+        ) : (
+          <Building2 size={20} color="#9A3412" />
+        )}
       </View>
 
       {/* Content */}
@@ -217,12 +231,15 @@ export default function DiscoverScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showGoingOnly, setShowGoingOnly] = useState(false)
   const [showPastEvents, setShowPastEvents] = useState(false)
+  const [selectedCenter, setSelectedCenter] = useState<string | null>(null)
+  const [showCenterModal, setShowCenterModal] = useState(false)
     const { user } = useUser()
     const {
     items,
     filteredPoints,
     loading,
     allEvents,
+    allCenters,
     refresh,
   } = useDiscoverData(activeFilter, searchQuery, user?.id, showPastEvents, showGoingOnly, user?.interests ?? undefined, user?.centerID)
 
@@ -233,10 +250,11 @@ export default function DiscoverScreen() {
   )
 
   // ── Sheet snap points ──────────────────────────────────
-  // Three positions (as translateY values from the expanded state):
-  //   expanded  = 0            → sheet covers almost everything
-  //   mid       = ~55% down    → roughly half the screen, showing map + sheet header/list
-  //   collapsed = near bottom  → just the drag handle + filter chips peeking up
+  // Four positions (as translateY values from the expanded state):
+  //   expanded  = 0           → 100% sheet visible (full screen, header hidden)
+  //   mid       = sheet * 0.2 → ~80% sheet visible (most content, map peeking)
+  //   collapsed = sheet * 0.6 → ~40% sheet visible (peek + a few rows)
+  //   peek      = sheet - 100 → just handle + search bar visible (100px)
 
   const EXPANDED_TOP = 60 // px from top of container when fully expanded
 
@@ -244,11 +262,12 @@ export default function DiscoverScreen() {
   const sheetHeight = containerHeight - EXPANDED_TOP // total sheet height
 
   const SNAP_EXPANDED = 0
-  const SNAP_MID = Math.max(0, sheetHeight * 0.45)       // sheet top sits ~halfway
-  const SNAP_COLLAPSED = Math.max(0, sheetHeight - 80)    // only ~80px visible (handle + chip row)
+  const SNAP_MID = Math.max(0, sheetHeight * 0.2)        // ~80% sheet visible
+  const SNAP_COLLAPSED = Math.max(0, sheetHeight * 0.6)  // ~40% sheet visible
+  const SNAP_PEEK = Math.max(0, sheetHeight - 100)       // 100px sheet visible (handle + search)
 
-  const snapsRef = useRef({ expanded: SNAP_EXPANDED, mid: SNAP_MID, collapsed: SNAP_COLLAPSED })
-  snapsRef.current = { expanded: SNAP_EXPANDED, mid: SNAP_MID, collapsed: SNAP_COLLAPSED }
+  const snapsRef = useRef({ expanded: SNAP_EXPANDED, mid: SNAP_MID, collapsed: SNAP_COLLAPSED, peek: SNAP_PEEK })
+  snapsRef.current = { expanded: SNAP_EXPANDED, mid: SNAP_MID, collapsed: SNAP_COLLAPSED, peek: SNAP_PEEK }
 
   const sheetY = useRef(new Animated.Value(0)).current
   const offsetRef = useRef(0)
@@ -257,10 +276,18 @@ export default function DiscoverScreen() {
   // Track expansion state for scroll behavior
   const [isSheetExpanded, setIsSheetExpanded] = useState(false)
 
+  // Hide the nav header (with the profile-pic button) when the sheet is at
+  // expanded snap so the sheet covers the full screen, including over where
+  // the profile button sits. Restore when sheet leaves expanded.
+  const navigation = useNavigation()
+  React.useEffect(() => {
+    navigation.setOptions({ headerShown: !isSheetExpanded })
+  }, [navigation, isSheetExpanded])
+
   // Set initial sheet position to mid once we know the container height
   React.useEffect(() => {
     if (containerHeight > 0 && !initializedRef.current) {
-      const mid = Math.max(0, (containerHeight - EXPANDED_TOP) * 0.45)
+      const mid = Math.max(0, (containerHeight - EXPANDED_TOP) * 0.2)
       sheetY.setValue(mid)
       offsetRef.current = mid
       initializedRef.current = true
@@ -273,29 +300,35 @@ export default function DiscoverScreen() {
       onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dy) > 8,
       onPanResponderGrant: () => {},
       onPanResponderMove: (_, gs) => {
-        const max = snapsRef.current.collapsed
+        const max = snapsRef.current.peek
         const next = Math.max(0, Math.min(max, offsetRef.current + gs.dy))
         sheetY.setValue(next)
       },
       onPanResponderRelease: (_, gs) => {
-        const { expanded, mid, collapsed } = snapsRef.current
-        const current = Math.max(0, Math.min(collapsed, offsetRef.current + gs.dy))
+        const { expanded, mid, collapsed, peek } = snapsRef.current
+        const current = Math.max(0, Math.min(peek, offsetRef.current + gs.dy))
 
         // Find nearest snap, biased by velocity
         let snapTo: number
         if (gs.vy > 1) {
           // Fast swipe down — jump one stop down from current
-          snapTo = offsetRef.current <= expanded + 10 ? mid : collapsed
+          if (offsetRef.current <= expanded + 10) snapTo = mid
+          else if (offsetRef.current <= mid + 10) snapTo = collapsed
+          else snapTo = peek
         } else if (gs.vy < -1) {
           // Fast swipe up — jump one stop up from current
-          snapTo = offsetRef.current >= collapsed - 10 ? mid : expanded
+          if (offsetRef.current >= peek - 10) snapTo = collapsed
+          else if (offsetRef.current >= collapsed - 10) snapTo = mid
+          else snapTo = expanded
         } else {
-          // Position-based: snap to nearest
+          // Position-based: snap to nearest of 4
           const dExp = Math.abs(current - expanded)
           const dMid = Math.abs(current - mid)
           const dCol = Math.abs(current - collapsed)
-          const minD = Math.min(dExp, dMid, dCol)
-          snapTo = minD === dExp ? expanded : minD === dMid ? mid : collapsed
+          const dPeek = Math.abs(current - peek)
+          const minD = Math.min(dExp, dMid, dCol, dPeek)
+          snapTo =
+            minD === dExp ? expanded : minD === dMid ? mid : minD === dCol ? collapsed : peek
         }
 
         offsetRef.current = snapTo
@@ -312,17 +345,45 @@ export default function DiscoverScreen() {
   ).current
 
   // ── Data ──────────────────────────────────────────────
-  const eventDates = React.useMemo(
-    () => new Set(allEvents.filter((e) => e.date).map((e) => e.date)),
-    [allEvents]
-  )
-
   const displayItems = React.useMemo(() => {
-    if (!selectedDate) return items
-    return items.filter(
-      (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
-    )
-  }, [items, selectedDate])
+    let result = items
+    if (selectedDate) {
+      result = result.filter(
+        (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
+      )
+    }
+    if (selectedCenter) {
+      result = result.filter((item) => {
+        if (item.type !== 'event') return true
+        return (item.data as EventDisplay).centerId === selectedCenter
+      })
+    }
+    return result
+  }, [items, selectedDate, selectedCenter])
+
+  // Filter chip helpers — counts over upcoming events
+  const todayStr = new Date().toISOString().split('T')[0]
+  const eventsForCounts = useMemo(
+    () => (showPastEvents ? allEvents : allEvents.filter((e) => !e.date || e.date >= todayStr)),
+    [allEvents, showPastEvents, todayStr]
+  )
+  const centerOptions = useMemo<FilterPickerOption<string>[]>(() => {
+    const counts: Record<string, number> = {}
+    for (const e of eventsForCounts) {
+      if (e.centerId) counts[e.centerId] = (counts[e.centerId] ?? 0) + 1
+    }
+    return [...allCenters]
+      .map((c) => ({ value: c.id, label: c.name, sublabel: c.address, count: counts[c.id] ?? 0 }))
+      .filter((o) => (o.count ?? 0) > 0)
+      .sort((a, b) => {
+        if (user?.centerID && a.value === user.centerID) return -1
+        if (user?.centerID && b.value === user.centerID) return 1
+        return a.label.localeCompare(b.label)
+      })
+  }, [allCenters, eventsForCounts, user?.centerID])
+  const centerChipLabel = selectedCenter
+    ? centerOptions.find((o) => o.value === selectedCenter)?.label ?? 'Center'
+    : 'Center'
 
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
   const toggleSection = useCallback((label: string) => {
@@ -333,6 +394,37 @@ export default function DiscoverScreen() {
       return next
     })
   }, [])
+
+  // Default Centers list to fully collapsed on first visit (90+ centers,
+  // an all-expanded view is overwhelming).
+  const collapsedInitFor = useRef<DiscoverFilter | null>(null)
+  React.useEffect(() => {
+    if (activeFilter !== 'Centers') {
+      collapsedInitFor.current = null
+      return
+    }
+    if (collapsedInitFor.current === 'Centers') return
+    if (items.length === 0) return
+    const labels = new Set<string>()
+    let isFirst = true
+    for (const item of items) {
+      if (item.type === 'section') {
+        if (!isFirst) labels.add(item.data.label)
+        isFirst = false
+      }
+    }
+    setCollapsedSections(labels)
+    collapsedInitFor.current = 'Centers'
+  }, [activeFilter, items])
+
+  const stickyHeaderIndices = useMemo(
+    () =>
+      displayItems.reduce<number[]>((acc, item, idx) => {
+        if (item.type === 'section') acc.push(idx)
+        return acc
+      }, []),
+    [displayItems]
+  )
 
   const handleFilterPress = (f: DiscoverFilter) => {
     posthog?.capture('discover_filter_changed', { filter: f })
@@ -426,47 +518,40 @@ export default function DiscoverScreen() {
                 tabs={FILTERS.map((f) => f.label)}
                 activeTab={selectedDate ? '' : activeFilter}
                 onTabChange={(tab) => handleFilterPress(tab as DiscoverFilter)}
+                counts={{ Events: allEvents.length, Centers: allCenters.length }}
               />
             </View>
 
-            {/* Filter checkboxes */}
-            {activeFilter !== 'Centers' && (
-              <View className="flex-row items-center px-4 py-2 gap-5">
-                <Pressable
-                  onPress={() => setShowGoingOnly((prev) => !prev)}
-                  className="flex-row items-center"
-                  style={{ minHeight: 32 }}
-                >
-                  <View className={`w-[18px] h-[18px] rounded border mr-2 items-center justify-center ${showGoingOnly ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
-                    {showGoingOnly && <Text className="text-white text-xs font-bold">✓</Text>}
-                  </View>
-                  <Text className="text-[13px] text-stone-500 dark:text-stone-400 font-inter">Going</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setShowPastEvents((prev) => !prev)}
-                  className="flex-row items-center"
-                  style={{ minHeight: 32 }}
-                >
-                  <View className={`w-[18px] h-[18px] rounded border mr-2 items-center justify-center ${showPastEvents ? 'bg-orange-600 border-orange-600' : 'border-stone-300 dark:border-stone-600'}`}>
-                    {showPastEvents && <Text className="text-white text-xs font-bold">✓</Text>}
-                  </View>
-                  <Text className="text-[13px] text-stone-500 dark:text-stone-400 font-inter">Show past events</Text>
-                </Pressable>
+            {/* Filter chips — Today / Center / Going (max 4) */}
+            {activeFilter === 'Events' && (
+              <View className="flex-row flex-wrap items-center px-4 py-2 gap-2">
+                <FilterChip
+                  label="Today"
+                  variant="outline"
+                  active={selectedDate === todayStr}
+                  onPress={() => {
+                    setSelectedDate((prev) => {
+                      const next = prev === todayStr ? null : todayStr
+                      if (next) posthog?.capture('discover_date_selected', { date: next })
+                      return next
+                    })
+                  }}
+                />
+                <FilterChip
+                  label={centerChipLabel}
+                  variant="outline"
+                  active={selectedCenter !== null}
+                  onPress={() => setShowCenterModal(true)}
+                />
+                {user && (
+                  <FilterChip
+                    label="Going"
+                    variant="outline"
+                    active={showGoingOnly}
+                    onPress={() => setShowGoingOnly((prev) => !prev)}
+                  />
+                )}
               </View>
-            )}
-
-            {/* Week Calendar */}
-            {activeFilter !== 'Centers' && !searchQuery.trim() && (
-              <WeekCalendar
-                eventDates={eventDates}
-                selectedDate={selectedDate}
-                onSelectDate={(date) => {
-                  setSelectedDate(date)
-                  if (date) {
-                    posthog?.capture('discover_date_selected', { date })
-                  }
-                }}
-              />
             )}
           </View>
 
@@ -480,25 +565,40 @@ export default function DiscoverScreen() {
           {/* Unified List */}
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40, gap: 4 }}
+            contentContainerStyle={{ paddingHorizontal: 4, paddingTop: 12, paddingBottom: 40, gap: 4 }}
             showsVerticalScrollIndicator={false}
-            scrollEnabled={isSheetExpanded}
+            scrollEnabled={true}
+            stickyHeaderIndices={stickyHeaderIndices}
           >
-            {!loading && displayItems.length === 0 && (
+            {!loading && activeFilter === 'Seva' && (
+              <EmptyState message="Seva — coming soon" subtitle="Service opportunities will be listed here." />
+            )}
+            {!loading && activeFilter !== 'Seva' && displayItems.length === 0 && (
               <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
             )}
-            {displayItems.map((item, idx) => {
+            {activeFilter !== 'Seva' && displayItems.map((item, idx) => {
               if (item.type === 'section') {
                 const label = item.data.label
                 const isCollapsed = collapsedSections.has(label)
                 return (
-                  <Pressable key={`section-${idx}`} onPress={() => toggleSection(label)} className={`${idx > 0 ? 'mt-3' : ''} mb-1`}>
-                    <View className="flex-row items-center gap-2 px-1">
-                      <Text className="text-xs font-inter-semibold text-stone-400 dark:text-stone-500 uppercase" style={{ letterSpacing: 0.5 }}>
+                  <Pressable
+                    key={`section-${idx}`}
+                    onPress={() => toggleSection(label)}
+                    className={`bg-white dark:bg-neutral-900 ${idx > 0 ? 'border-t border-stone-200 dark:border-neutral-800' : ''}`}
+                  >
+                    <View
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 14,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Text className="text-xs font-inter-semibold text-stone-500 dark:text-stone-400 uppercase" style={{ letterSpacing: 0.6 }}>
                         {label}
                       </Text>
-                      <View className="flex-1 h-px bg-stone-200 dark:bg-neutral-700" />
-                      {isCollapsed ? <ChevronDown size={14} color="#a8a29e" /> : <ChevronUp size={14} color="#a8a29e" />}
+                      {isCollapsed ? <ChevronDown size={16} color="#a8a29e" /> : <ChevronUp size={16} color="#a8a29e" />}
                     </View>
                   </Pressable>
                 )
@@ -508,6 +608,7 @@ export default function DiscoverScreen() {
                   <EventItem
                     key={`event-${item.data.id}`}
                     event={item.data as EventDisplay}
+                    centerName={allCenters.find((c) => c.id === (item.data as EventDisplay).centerId)?.name}
                     onPress={() => {
                       posthog?.capture('event_list_item_pressed', { eventId: item.data.id, source: 'discover' })
                       router.push(`/events/${item.data.id}`)
@@ -533,6 +634,16 @@ export default function DiscoverScreen() {
         </View>
       </Animated.View>
       )}
+
+      <FilterPickerModal
+        visible={showCenterModal}
+        title="Center"
+        options={centerOptions}
+        selected={selectedCenter}
+        onSelect={setSelectedCenter}
+        onClear={() => setSelectedCenter(null)}
+        onClose={() => setShowCenterModal(false)}
+      />
     </View>
   )
 }

@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react'
 import { View, Text, Pressable } from 'react-native'
 
-function getWeekDays(): { dateStr: string; dayLetter: string; dayNum: number; isToday: boolean }[] {
+function getWeekDays(): { dateStr: string; dayLetter: string; dayNum: number; isToday: boolean; date: Date }[] {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const days: { dateStr: string; dayLetter: string; dayNum: number; isToday: boolean }[] = []
+  const days: { dateStr: string; dayLetter: string; dayNum: number; isToday: boolean; date: Date }[] = []
   const letters = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
   for (let offset = -3; offset <= 3; offset++) {
     const d = new Date(today)
@@ -14,9 +14,34 @@ function getWeekDays(): { dateStr: string; dayLetter: string; dayNum: number; is
       dayLetter: letters[d.getDay()],
       dayNum: d.getDate(),
       isToday: offset === 0,
+      date: d,
     })
   }
   return days
+}
+
+/**
+ * Build the month/year label that sits above the week strip. Shows the year
+ * once when all days share it; spans two months when the strip crosses a
+ * boundary (e.g. "April – May 2026").
+ */
+function buildMonthLabel(days: { date: Date }[]): string {
+  if (days.length === 0) return ''
+  const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                  'July', 'August', 'September', 'October', 'November', 'December']
+  const first = days[0].date
+  const last = days[days.length - 1].date
+  const firstMonth = first.getMonth()
+  const lastMonth = last.getMonth()
+  const firstYear = first.getFullYear()
+  const lastYear = last.getFullYear()
+  if (firstYear === lastYear && firstMonth === lastMonth) {
+    return `${months[firstMonth]} ${firstYear}`
+  }
+  if (firstYear === lastYear) {
+    return `${months[firstMonth]} – ${months[lastMonth]} ${firstYear}`
+  }
+  return `${months[firstMonth]} ${firstYear} – ${months[lastMonth]} ${lastYear}`
 }
 
 type WeekCalendarProps = {
@@ -27,9 +52,17 @@ type WeekCalendarProps = {
 
 export default function WeekCalendar({ eventDates, selectedDate, onSelectDate }: WeekCalendarProps) {
   const weekDays = useMemo(() => getWeekDays(), [])
+  const monthLabel = useMemo(() => buildMonthLabel(weekDays), [weekDays])
 
   return (
-    <View className="flex-row justify-around px-3 py-2.5">
+    <View>
+      <Text
+        className="text-[11px] font-inter-medium text-stone-500 dark:text-stone-400 px-4 pt-2"
+        style={{ letterSpacing: 0.3 }}
+      >
+        {monthLabel}
+      </Text>
+      <View className="flex-row justify-around px-3 py-2.5">
       {weekDays.map((d) => {
         const isSelected = selectedDate === d.dateStr
         const hasEvents = eventDates.has(d.dateStr)
@@ -77,6 +110,7 @@ export default function WeekCalendar({ eventDates, selectedDate, onSelectDate }:
           </Pressable>
         )
       })}
+      </View>
     </View>
   )
 }

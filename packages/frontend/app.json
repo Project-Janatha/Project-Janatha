@@ -28,7 +28,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "buildNumber": "21",
+      "buildNumber": "27",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Chinmaya Janata uses your location to show nearby centers and events on the map.",
         "NSPhotoLibraryUsageDescription": "Chinmaya Janata needs access to your photo library to set your profile picture.",

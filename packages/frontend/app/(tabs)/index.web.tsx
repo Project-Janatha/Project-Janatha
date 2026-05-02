@@ -19,11 +19,13 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  Image,
 } from 'react-native'
 import { MapPin, Search, Building2, Users, ChevronUp, ChevronDown } from 'lucide-react-native'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { useTheme, useUser } from '../../components/contexts'
 import { FilterChip, Badge, UnderlineTabBar, Avatar } from '../../components/ui'
+import FilterPickerModal, { type FilterPickerOption } from '../../components/ui/FilterPickerModal'
 const Map = lazy(() => import('../../components/Map'))
 import MapPopover from '../../components/MapPopover'
 import {
@@ -38,12 +40,15 @@ import CenterDetailPanel from '../../components/web/CenterDetailPanel'
 import { useDetailColors } from '../../hooks/useDetailColors'
 import AuthPromptModal from '../../components/ui/AuthPromptModal'
 import type { MapPoint, EventDisplay, DiscoverCenter, AttendeeInfo } from '../../utils/api'
+import { removeEvent } from '../../utils/api'
+import { extractCityState } from '../../utils/addressParsing'
 import { WeekCalendar } from '../../components'
 import { ADMIN_EMAIL, isLocal } from '../../utils/admin'
 
 const FILTERS: { label: DiscoverFilter }[] = [
   { label: 'Events' },
   { label: 'Centers' },
+  { label: 'Seva' },
 ]
 
 function formatDatePill(dateStr: string): { month: string; day: string } {
@@ -139,7 +144,15 @@ function AttendeeAvatars({ count, attendees }: { count: number; attendees?: Atte
 
 // ─── Event Item (Desktop) ───────────────────────────────
 
-function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => void }) {
+function EventItem({
+  event,
+  onPress,
+  centerName,
+}: {
+  event: EventDisplay
+  onPress: () => void
+  centerName?: string
+}) {
   const { month, day } = event.date ? formatDatePill(event.date) : { month: '', day: '' }
 
   return (
@@ -174,6 +187,14 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
         <Text className="text-stone-500 dark:text-stone-400 font-inter text-sm">
           {event.date && isToday(event.date) ? 'Today · ' : ''}{event.time || ''}
         </Text>
+        {centerName && (
+          <Text
+            className="text-stone-500 dark:text-stone-400 font-inter text-sm"
+            numberOfLines={1}
+          >
+            By {centerName}
+          </Text>
+        )}
         <View className="flex-row items-center gap-1.5">
           <MapPin size={12} color="#E8862A" />
           <Text
@@ -183,30 +204,23 @@ function EventItem({ event, onPress }: { event: EventDisplay; onPress: () => voi
             {event.location}
           </Text>
         </View>
-        <View style={{ marginTop: 4 }}>
-          <AttendeeAvatars count={event.attendees} attendees={event.attendeesList} />
-        </View>
+        {event.attendees > 0 && (
+          <View style={{ marginTop: 4 }}>
+            <AttendeeAvatars count={event.attendees} attendees={event.attendeesList} />
+          </View>
+        )}
       </View>
+
+      {/* Hero thumbnail */}
+      {event.image && (
+        <Image
+          source={{ uri: event.image }}
+          style={{ width: 84, height: 84, borderRadius: 12 }}
+          resizeMode="cover"
+        />
+      )}
     </Pressable>
   )
-}
-
-// ─── Center helpers ─────────────────────────────────────
-
-/** Extract "City, ST" from a full address string, or return fallback */
-function extractCityState(address?: string): string | null {
-  if (!address) return null
-  // Try to match "City, State ZIP" or "City, ST" patterns
-  const parts = address.split(',').map((s) => s.trim())
-  if (parts.length >= 2) {
-    const city = parts[parts.length - 2]
-    // State part may include ZIP — extract just the state abbreviation or name
-    const stateZip = parts[parts.length - 1]
-    const stateMatch = stateZip.match(/^([A-Za-z\s]+)/)
-    const state = stateMatch ? stateMatch[1].trim() : stateZip
-    return `${city}, ${state}`
-  }
-  return null
 }
 
 // ─── Center Item (Desktop) ──────────────────────────────
@@ -221,8 +235,12 @@ function CenterItem({ center, onPress, isMyCenter }: { center: DiscoverCenter; o
       style={{ minHeight: 72 }}
     >
       {/* Icon pill */}
-      <View className="w-[52px] h-[60px] rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center">
-        <Building2 size={22} color="#9A3412" />
+      <View className="w-[52px] h-[60px] rounded-xl bg-orange-100 dark:bg-orange-900/30 items-center justify-center overflow-hidden">
+        {center.image ? (
+          <Image source={{ uri: center.image }} style={{ width: 52, height: 60 }} resizeMode="cover" />
+        ) : (
+          <Building2 size={22} color="#9A3412" />
+        )}
       </View>
 
       {/* Content */}
@@ -376,6 +394,20 @@ function EventPanelInner({
         onToggleRegistration={handleToggleRegistration}
         isToggling={isToggling}
         onEdit={canEdit && !isPast ? onEdit : undefined}
+        onDelete={
+          canEdit
+            ? async (id) => {
+                if (typeof window === 'undefined') return
+                if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) return
+                try {
+                  await removeEvent(id)
+                  onClose()
+                } catch (err: any) {
+                  window.alert(err?.message || 'Failed to delete event')
+                }
+              }
+            : undefined
+        }
       />
       <AuthPromptModal
         visible={showAuthPrompt}
@@ -429,7 +461,7 @@ function CenterPanelInner({
 
 // ─── Mobile Discover (map + CSS bottom sheet) ──────────
 
-type SheetSnap = 'collapsed' | 'mid' | 'expanded'
+type SheetSnap = 'peek' | 'collapsed' | 'mid' | 'expanded'
 
 function MobileDiscoverFallback() {
   const router = useRouter()
@@ -439,8 +471,10 @@ function MobileDiscoverFallback() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showGoingOnly, setShowGoingOnly] = useState(false)
   const [showPastEvents, setShowPastEvents] = useState(false)
+  const [selectedCenter, setSelectedCenter] = useState<string | null>(null)
+  const [showCenterModal, setShowCenterModal] = useState(false)
   const { user } = useUser()
-  const { items, filteredPoints, loading, allEvents, refresh } = useDiscoverData(
+  const { items, filteredPoints, loading, allEvents, allCenters, refresh } = useDiscoverData(
     activeFilter,
     searchQuery,
     user?.id,
@@ -463,13 +497,18 @@ function MobileDiscoverFallback() {
   const dragStartTranslate = useRef(0)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Sheet snap positions (percentage from top of container)
+  // Sheet snap positions matching iOS native (4 stops):
+  //   expanded  = 0          → 100% sheet visible (full)
+  //   mid       = h * 0.2    → ~80% sheet visible
+  //   collapsed = h * 0.6    → ~40% sheet visible
+  //   peek      = h - 100    → 100px sheet visible (handle + search)
   const getSnapPositions = useCallback(() => {
     const h = containerRef.current?.clientHeight || window.innerHeight
     return {
-      expanded: 56, // 56px from top (below status bar area)
-      mid: h * 0.55, // 55% down
-      collapsed: h - 80, // 80px from bottom (just the handle + peek)
+      expanded: 0,
+      mid: h * 0.2,
+      collapsed: h * 0.6,
+      peek: Math.max(0, h - 100),
     }
   }, [])
 
@@ -498,7 +537,7 @@ function MobileDiscoverFallback() {
       const positions = getSnapPositions()
       const next = Math.max(
         positions.expanded,
-        Math.min(positions.collapsed, dragStartTranslate.current + dy)
+        Math.min(positions.peek, dragStartTranslate.current + dy)
       )
       setSheetTranslateY(next)
     },
@@ -509,25 +548,29 @@ function MobileDiscoverFallback() {
     (e: React.TouchEvent) => {
       if (sheetTranslateY === null) return
       const positions = getSnapPositions()
-      const velocity = e.changedTouches[0].clientY - dragStartY.current > 0 ? 1 : -1
+      const dragDy = e.changedTouches[0].clientY - dragStartY.current
 
-      // Snap to nearest position, biased by velocity
+      // Snap to nearest of 4 positions, biased by velocity
       let snapTo: SheetSnap
-      const distToExpanded = Math.abs(sheetTranslateY - positions.expanded)
-      const distToMid = Math.abs(sheetTranslateY - positions.mid)
-      const distToCollapsed = Math.abs(sheetTranslateY - positions.collapsed)
-
-      if (velocity > 0 && Math.abs(e.changedTouches[0].clientY - dragStartY.current) > 40) {
-        // Swiped down fast
-        snapTo = sheetSnap === 'expanded' ? 'mid' : 'collapsed'
-      } else if (velocity < 0 && Math.abs(e.changedTouches[0].clientY - dragStartY.current) > 40) {
-        // Swiped up fast
-        snapTo = sheetSnap === 'collapsed' ? 'mid' : 'expanded'
+      if (dragDy > 40) {
+        // Fast swipe down — go one stop down from current
+        if (sheetSnap === 'expanded') snapTo = 'mid'
+        else if (sheetSnap === 'mid') snapTo = 'collapsed'
+        else snapTo = 'peek'
+      } else if (dragDy < -40) {
+        // Fast swipe up — go one stop up from current
+        if (sheetSnap === 'peek') snapTo = 'collapsed'
+        else if (sheetSnap === 'collapsed') snapTo = 'mid'
+        else snapTo = 'expanded'
       } else {
-        // Position-based snap
-        const minDist = Math.min(distToExpanded, distToMid, distToCollapsed)
+        // Position-based snap to nearest
+        const dExp = Math.abs(sheetTranslateY - positions.expanded)
+        const dMid = Math.abs(sheetTranslateY - positions.mid)
+        const dCol = Math.abs(sheetTranslateY - positions.collapsed)
+        const dPeek = Math.abs(sheetTranslateY - positions.peek)
+        const minD = Math.min(dExp, dMid, dCol, dPeek)
         snapTo =
-          minDist === distToExpanded ? 'expanded' : minDist === distToMid ? 'mid' : 'collapsed'
+          minD === dExp ? 'expanded' : minD === dMid ? 'mid' : minD === dCol ? 'collapsed' : 'peek'
       }
 
       setSheetSnap(snapTo)
@@ -557,15 +600,100 @@ function MobileDiscoverFallback() {
     [allEvents]
   )
 
+  // "Coming up" hint shown when there's a real gap between today and the
+  // next event. Bridges the dead air for users browsing an empty week.
+  const comingUpHint = useMemo(() => {
+    if (selectedDate || showPastEvents || activeFilter !== 'Events' || searchQuery.trim()) return null
+    const todayStr = new Date().toISOString().split('T')[0]
+    const upcoming = allEvents
+      .filter((e) => e.date && e.date >= todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date))
+    if (upcoming.length === 0) return null
+    const next = upcoming[0]
+    const todayMs = Date.parse(todayStr + 'T00:00:00')
+    const nextMs = Date.parse(next.date + 'T00:00:00')
+    if (isNaN(todayMs) || isNaN(nextMs)) return null
+    const days = Math.round((nextMs - todayMs) / 86400000)
+    if (days < 7) return null  // only worth showing when there's a real gap
+    return { days, title: next.title }
+  }, [allEvents, selectedDate, showPastEvents, activeFilter, searchQuery])
+
   const displayItems = useMemo(() => {
-    if (!selectedDate) return items
-    return items.filter(
-      (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
-    )
-  }, [items, selectedDate])
+    let result = items
+    if (selectedDate) {
+      result = result.filter(
+        (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
+      )
+    }
+    if (selectedCenter) {
+      result = result.filter((item) => {
+        if (item.type !== 'event') return true
+        return (item.data as EventDisplay).centerId === selectedCenter
+      })
+    }
+    return result
+  }, [items, selectedDate, selectedCenter])
 
   const isExpanded = sheetSnap === 'expanded' && sheetTranslateY === null
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
+
+  // Default the Centers list to fully collapsed on first visit. The list
+  // is long (state groupings across 90+ centers) and an all-expanded view
+  // is overwhelming. Re-initializes when user toggles back from another tab.
+  const collapsedInitFor = useRef<DiscoverFilter | null>(null)
+  useEffect(() => {
+    if (activeFilter !== 'Centers') {
+      collapsedInitFor.current = null
+      return
+    }
+    if (collapsedInitFor.current === 'Centers') return
+    if (items.length === 0) return
+    const labels = new Set<string>()
+    let isFirst = true
+    for (const item of items) {
+      if (item.type === 'section') {
+        if (!isFirst) labels.add(item.data.label)
+        isFirst = false
+      }
+    }
+    setCollapsedSections(labels)
+    collapsedInitFor.current = 'Centers'
+  }, [activeFilter, items])
+
+  const stickyHeaderIndices = useMemo(
+    () =>
+      displayItems.reduce<number[]>((acc, item, idx) => {
+        if (item.type === 'section') acc.push(idx)
+        return acc
+      }, []),
+    [displayItems]
+  )
+
+  // Filter chip helpers — counts are computed over upcoming events
+  // (past events are hidden by default, so the counts should match
+  // what the user would actually see when picking that option).
+  const todayStr = new Date().toISOString().split('T')[0]
+  const eventsForCounts = useMemo(
+    () => (showPastEvents ? allEvents : allEvents.filter((e) => !e.date || e.date >= todayStr)),
+    [allEvents, showPastEvents, todayStr]
+  )
+  const centerOptions = useMemo<FilterPickerOption<string>[]>(() => {
+    const counts: Record<string, number> = {}
+    for (const e of eventsForCounts) {
+      if (e.centerId) counts[e.centerId] = (counts[e.centerId] ?? 0) + 1
+    }
+    return [...allCenters]
+      .map((c) => ({ value: c.id, label: c.name, sublabel: c.address, count: counts[c.id] ?? 0 }))
+      .filter((o) => (o.count ?? 0) > 0)
+      .sort((a, b) => {
+        if (user?.centerID && a.value === user.centerID) return -1
+        if (user?.centerID && b.value === user.centerID) return 1
+        return a.label.localeCompare(b.label)
+      })
+  }, [allCenters, eventsForCounts, user?.centerID])
+  const centerChipLabel = selectedCenter
+    ? centerOptions.find((o) => o.value === selectedCenter)?.label ?? 'Center'
+    : 'Center'
   const toggleSection = useCallback((label: string) => {
     setCollapsedSections((prev) => {
       const next = new Set(prev)
@@ -677,6 +805,7 @@ function MobileDiscoverFallback() {
                 placeholderTextColor="#9CA3AF"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
+                onFocus={() => setSheetSnap('expanded')}
               />
             </View>
 
@@ -686,51 +815,33 @@ function MobileDiscoverFallback() {
                 tabs={FILTERS.map((f) => f.label)}
                 activeTab={selectedDate ? '' : activeFilter}
                 onTabChange={(tab) => handleFilterPress(tab as DiscoverFilter)}
+                counts={{ Events: allEvents.length, Centers: allCenters.length }}
               />
             </View>
 
-            {/* Filter checkboxes */}
-            {activeFilter !== 'Centers' && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 4, gap: 16 }}>
-                <Pressable
-                  onPress={() => setShowGoingOnly((prev: boolean) => !prev)}
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                >
-                  <View style={{
-                    width: 16, height: 16, borderRadius: 3, borderWidth: 1,
-                    marginRight: 8, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: showGoingOnly ? '#ea580c' : 'transparent',
-                    borderColor: showGoingOnly ? '#ea580c' : '#9ca3af',
-                  }}>
-                    {showGoingOnly && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#78716c' }}>Going</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setShowPastEvents((prev: boolean) => !prev)}
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                >
-                  <View style={{
-                    width: 16, height: 16, borderRadius: 3, borderWidth: 1,
-                    marginRight: 8, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: showPastEvents ? '#ea580c' : 'transparent',
-                    borderColor: showPastEvents ? '#ea580c' : '#9ca3af',
-                  }}>
-                    {showPastEvents && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#78716c' }}>Show past events</Text>
-                </Pressable>
-              </View>
-            )}
-
-            {/* Week Calendar */}
-            {activeFilter !== 'Centers' && !searchQuery.trim() && (
-              <View style={{ paddingHorizontal: 12, paddingTop: 4 }}>
-                <WeekCalendar
-                  eventDates={eventDates}
-                  selectedDate={selectedDate}
-                  onSelectDate={setSelectedDate}
+            {/* Filter chips — Today / Type / Center / Going (max 4) */}
+            {activeFilter === 'Events' && (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 6, gap: 8 }}>
+                <FilterChip
+                  label="Today"
+                  variant="outline"
+                  active={selectedDate === todayStr}
+                  onPress={() => setSelectedDate((prev) => (prev === todayStr ? null : todayStr))}
                 />
+                <FilterChip
+                  label={centerChipLabel}
+                  variant="outline"
+                  active={selectedCenter !== null}
+                  onPress={() => setShowCenterModal(true)}
+                />
+                {user && (
+                  <FilterChip
+                    label="Going"
+                    variant="outline"
+                    active={showGoingOnly}
+                    onPress={() => setShowGoingOnly((prev: boolean) => !prev)}
+                  />
+                )}
               </View>
             )}
           </div>
@@ -745,24 +856,61 @@ function MobileDiscoverFallback() {
           {/* Scrollable list */}
           <ScrollView
             className="flex-1"
-            contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 32, gap: 4 }}
+            contentContainerStyle={{ paddingHorizontal: 4, paddingTop: 12, paddingBottom: 32, gap: 4 }}
             showsVerticalScrollIndicator={false}
-            scrollEnabled={isExpanded}
+            scrollEnabled={sheetSnap !== 'collapsed' && sheetTranslateY === null}
+            stickyHeaderIndices={stickyHeaderIndices}
           >
-            {!loading && displayItems.length === 0 && (
+            {!loading && comingUpHint && (
+              <View
+                className="border border-orange-100 dark:border-orange-900/40 rounded-2xl px-4 py-3 mb-3"
+                style={{ backgroundColor: 'rgba(232, 134, 42, 0.06)' }}
+              >
+                <Text
+                  className="text-[10px] font-inter-semibold text-stone-500 dark:text-stone-400 uppercase"
+                  style={{ letterSpacing: 0.6 }}
+                >
+                  Coming up
+                </Text>
+                <Text className="text-sm font-inter-semibold text-content dark:text-content-dark mt-1">
+                  Next event in {comingUpHint.days} days
+                </Text>
+                <Text
+                  className="text-xs font-inter text-stone-500 dark:text-stone-400 mt-0.5"
+                  numberOfLines={1}
+                >
+                  {comingUpHint.title}
+                </Text>
+              </View>
+            )}
+            {!loading && activeFilter === 'Seva' && (
+              <EmptyState message="Seva — coming soon" subtitle="Service opportunities will be listed here." />
+            )}
+            {!loading && activeFilter !== 'Seva' && displayItems.length === 0 && (
               <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
             )}
-            {displayItems.map((item, idx) => {
+            {activeFilter !== 'Seva' && displayItems.map((item, idx) => {
               if (item.type === 'section') {
                 const label = item.data.label
                 const isCollapsed = collapsedSections.has(label)
                 return (
-                  <Pressable key={`section-${idx}`} onPress={() => toggleSection(label)} style={{ marginTop: idx > 0 ? 12 : 0, marginBottom: 4 }}>
-                    <View className="flex-row items-center gap-2 px-1">
-                      <Text className="text-xs font-inter-semibold text-stone-400 dark:text-stone-500 uppercase" style={{ letterSpacing: 0.5 }}>
+                  <Pressable
+                    key={`section-${idx}`}
+                    onPress={() => toggleSection(label)}
+                    className={`bg-white dark:bg-neutral-900 ${idx > 0 ? 'border-t border-stone-200 dark:border-neutral-800' : ''}`}
+                  >
+                    <View
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 14,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Text className="text-xs font-inter-semibold text-stone-500 dark:text-stone-400 uppercase" style={{ letterSpacing: 0.6 }}>
                         {label}
                       </Text>
-                      <View className="flex-1 h-px bg-stone-200 dark:bg-neutral-700" />
                       {isCollapsed ? <ChevronDown size={14} color="#a8a29e" /> : <ChevronUp size={14} color="#a8a29e" />}
                     </View>
                   </Pressable>
@@ -773,6 +921,7 @@ function MobileDiscoverFallback() {
                   <EventItem
                     key={`event-${item.data.id}`}
                     event={item.data as EventDisplay}
+                    centerName={allCenters.find((c) => c.id === (item.data as EventDisplay).centerId)?.name}
                     onPress={() => router.push(`/events/${item.data.id}`)}
                   />
                 )
@@ -791,6 +940,16 @@ function MobileDiscoverFallback() {
           </ScrollView>
         </div>
       </div>
+
+      <FilterPickerModal
+        visible={showCenterModal}
+        title="Center"
+        options={centerOptions}
+        selected={selectedCenter}
+        onSelect={setSelectedCenter}
+        onClear={() => setSelectedCenter(null)}
+        onClose={() => setShowCenterModal(false)}
+      />
     </div>
   )
 }
@@ -807,15 +966,20 @@ export default function DiscoverScreenWeb() {
   const { isDark } = useTheme()
   const { user } = useUser()
   const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
-  const canCreate = isAdmin || isLocal
+  // Beta: any signed-in user can create events. Backend enforces auth-only;
+  // post-beta this becomes a coordinator-tier gate (see issue tracker).
+  const canCreate = !!user
   const [activeFilter, setActiveFilter] = useState<DiscoverFilter>('Events')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showGoingOnly, setShowGoingOnly] = useState(false)
   const [showPastEvents, setShowPastEvents] = useState(false)
+  const [selectedCenterDesktop, setSelectedCenterDesktop] = useState<string | null>(null)
+  const [showCenterModalDesktop, setShowCenterModalDesktop] = useState(false)
   const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'center'; id: string } | null>(
     null
   )
+  const [autoOpenPoint, setAutoOpenPoint] = useState<{ id: string; type: 'event' | 'center'; key: number } | null>(null)
   const [mapFlyTo, setMapFlyTo] = useState<{ latitude: number; longitude: number; key: number } | null>(
     null
   )
@@ -868,6 +1032,15 @@ export default function DiscoverScreenWeb() {
       longitude: coords.longitude,
       key: (prev?.key ?? 0) + 1,
     }))
+    // Tell the map to auto-open the popover for THIS exact point after the
+    // fly-to settles. Disambiguates overlapping markers (e.g. multiple events
+    // at the same center's coordinates) and serves as the requested
+    // "popup opens after the map moves" UX.
+    setAutoOpenPoint((prev) => ({
+      id: selectedItem.id,
+      type: selectedItem.type,
+      key: (prev?.key ?? 0) + 1,
+    }))
   }, [selectedItem, filteredPoints, allEvents, allCenters])
 
   // Listen for create event from header nav button
@@ -889,12 +1062,63 @@ export default function DiscoverScreenWeb() {
     [allEvents]
   )
 
+  // "Coming up" hint shown when there's a real gap between today and the
+  // next event. Bridges the dead air for users browsing an empty week.
+  const comingUpHint = useMemo(() => {
+    if (selectedDate || showPastEvents || activeFilter !== 'Events' || searchQuery.trim()) return null
+    const todayStr = new Date().toISOString().split('T')[0]
+    const upcoming = allEvents
+      .filter((e) => e.date && e.date >= todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date))
+    if (upcoming.length === 0) return null
+    const next = upcoming[0]
+    const todayMs = Date.parse(todayStr + 'T00:00:00')
+    const nextMs = Date.parse(next.date + 'T00:00:00')
+    if (isNaN(todayMs) || isNaN(nextMs)) return null
+    const days = Math.round((nextMs - todayMs) / 86400000)
+    if (days < 7) return null  // only worth showing when there's a real gap
+    return { days, title: next.title }
+  }, [allEvents, selectedDate, showPastEvents, activeFilter, searchQuery])
+
   const displayItems = useMemo(() => {
-    if (!selectedDate) return items
-    return items.filter(
-      (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
-    )
-  }, [items, selectedDate])
+    let result = items
+    if (selectedDate) {
+      result = result.filter(
+        (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
+      )
+    }
+    if (selectedCenterDesktop) {
+      result = result.filter((item) => {
+        if (item.type !== 'event') return true
+        return (item.data as EventDisplay).centerId === selectedCenterDesktop
+      })
+    }
+    return result
+  }, [items, selectedDate, selectedCenterDesktop])
+
+  // Filter chip helpers — counts over upcoming events
+  const todayStrDesktop = new Date().toISOString().split('T')[0]
+  const eventsForCountsDesktop = useMemo(
+    () => (showPastEvents ? allEvents : allEvents.filter((e) => !e.date || e.date >= todayStrDesktop)),
+    [allEvents, showPastEvents, todayStrDesktop]
+  )
+  const centerOptionsDesktop = useMemo<FilterPickerOption<string>[]>(() => {
+    const counts: Record<string, number> = {}
+    for (const e of eventsForCountsDesktop) {
+      if (e.centerId) counts[e.centerId] = (counts[e.centerId] ?? 0) + 1
+    }
+    return [...allCenters]
+      .map((c) => ({ value: c.id, label: c.name, sublabel: c.address, count: counts[c.id] ?? 0 }))
+      .filter((o) => (o.count ?? 0) > 0)
+      .sort((a, b) => {
+        if (user?.centerID && a.value === user.centerID) return -1
+        if (user?.centerID && b.value === user.centerID) return 1
+        return a.label.localeCompare(b.label)
+      })
+  }, [allCenters, eventsForCountsDesktop, user?.centerID])
+  const centerChipLabelDesktop = selectedCenterDesktop
+    ? centerOptionsDesktop.find((o) => o.value === selectedCenterDesktop)?.label ?? 'Center'
+    : 'Center'
 
   const handleFilterPress = useCallback((f: DiscoverFilter) => {
     setActiveFilter(f)
@@ -1008,6 +1232,7 @@ export default function DiscoverScreenWeb() {
               onMapMove={handleMapMove}
               userCenterID={user?.centerID}
               flyTo={mapFlyTo}
+              autoOpenPoint={autoOpenPoint}
             />
           </Suspense>
 
@@ -1040,6 +1265,10 @@ export default function DiscoverScreenWeb() {
         {formPanel ? (
           <EventFormPanel
             eventId={formPanel.id}
+            onSaved={(savedId) => {
+              setFormPanel(null)
+              setSelectedItem({ type: 'event', id: savedId })
+            }}
             onClose={() => {
               const editId = formPanel.id
               setFormPanel(null)
@@ -1096,51 +1325,35 @@ export default function DiscoverScreenWeb() {
                 tabs={FILTERS.map((f) => f.label)}
                 activeTab={selectedDate ? '' : activeFilter}
                 onTabChange={(tab) => handleFilterPress(tab as DiscoverFilter)}
+                counts={{ Events: allEvents.length, Centers: allCenters.length }}
               />
             </View>
 
-            {/* Filter checkboxes */}
-            {activeFilter !== 'Centers' && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 4, gap: 16 }}>
-                <Pressable
-                  onPress={() => setShowGoingOnly((prev: boolean) => !prev)}
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                >
-                  <View style={{
-                    width: 16, height: 16, borderRadius: 3, borderWidth: 1,
-                    marginRight: 8, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: showGoingOnly ? '#ea580c' : 'transparent',
-                    borderColor: showGoingOnly ? '#ea580c' : '#9ca3af',
-                  }}>
-                    {showGoingOnly && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#78716c' }}>Going</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setShowPastEvents((prev: boolean) => !prev)}
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
-                >
-                  <View style={{
-                    width: 16, height: 16, borderRadius: 3, borderWidth: 1,
-                    marginRight: 8, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: showPastEvents ? '#ea580c' : 'transparent',
-                    borderColor: showPastEvents ? '#ea580c' : '#9ca3af',
-                  }}>
-                    {showPastEvents && <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>✓</Text>}
-                  </View>
-                  <Text style={{ fontSize: 12, color: '#78716c' }}>Show past events</Text>
-                </Pressable>
-              </View>
-            )}
-
-            {/* Week Calendar — hidden when Centers filter or searching */}
-            {activeFilter !== 'Centers' && !searchQuery.trim() && (
-              <View style={{ paddingHorizontal: 20, paddingTop: 4 }}>
-                <WeekCalendar
-                  eventDates={eventDates}
-                  selectedDate={selectedDate}
-                  onSelectDate={setSelectedDate}
+            {/* Filter chips — Today / Center / Going (max 4) */}
+            {activeFilter === 'Events' && (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 6, gap: 8 }}>
+                <FilterChip
+                  label="Today"
+                  variant="outline"
+                  active={selectedDate === todayStrDesktop}
+                  onPress={() =>
+                    setSelectedDate((prev) => (prev === todayStrDesktop ? null : todayStrDesktop))
+                  }
                 />
+                <FilterChip
+                  label={centerChipLabelDesktop}
+                  variant="outline"
+                  active={selectedCenterDesktop !== null}
+                  onPress={() => setShowCenterModalDesktop(true)}
+                />
+                {user && (
+                  <FilterChip
+                    label="Going"
+                    variant="outline"
+                    active={showGoingOnly}
+                    onPress={() => setShowGoingOnly((prev: boolean) => !prev)}
+                  />
+                )}
               </View>
             )}
 
@@ -1154,13 +1367,16 @@ export default function DiscoverScreenWeb() {
             {/* List */}
             <ScrollView
               className="flex-1"
-              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, gap: 4 }}
+              contentContainerStyle={{ paddingHorizontal: 4, paddingTop: 12, paddingBottom: 24, gap: 4 }}
               showsVerticalScrollIndicator={false}
             >
-              {!loading && displayItems.length === 0 && (
+              {!loading && activeFilter === 'Seva' && (
+                <EmptyState message="Seva — coming soon" subtitle="Service opportunities will be listed here." />
+              )}
+              {!loading && activeFilter !== 'Seva' && displayItems.length === 0 && (
                 <EmptyState variant={selectedDate ? 'date' : searchQuery ? 'search' : 'events'} />
               )}
-              {displayItems.map((item, idx) => {
+              {activeFilter !== 'Seva' && displayItems.map((item, idx) => {
                 if (item.type === 'section') {
                   const label = item.data.label
                   const isCollapsed = collapsedSections.has(label)
@@ -1181,6 +1397,7 @@ export default function DiscoverScreenWeb() {
                     <EventItem
                       key={`event-${item.data.id}`}
                       event={item.data as EventDisplay}
+                      centerName={allCenters.find((c) => c.id === (item.data as EventDisplay).centerId)?.name}
                       onPress={() => setSelectedItem({ type: 'event', id: item.data.id })}
                     />
                   )
@@ -1200,6 +1417,16 @@ export default function DiscoverScreenWeb() {
           </View>
         )}
       </View>
+
+      <FilterPickerModal
+        visible={showCenterModalDesktop}
+        title="Center"
+        options={centerOptionsDesktop}
+        selected={selectedCenterDesktop}
+        onSelect={setSelectedCenterDesktop}
+        onClear={() => setSelectedCenterDesktop(null)}
+        onClose={() => setShowCenterModalDesktop(false)}
+      />
     </View>
   )
 }

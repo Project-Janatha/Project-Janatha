@@ -2,12 +2,11 @@ import { Link, Tabs, useRouter } from 'expo-router'
 import { Platform, View, Text, Pressable, Image, StatusBar } from 'react-native'
 import { useState, useEffect } from 'react'
 import { useUser, useTheme } from '../../components/contexts'
-import { Plus } from 'lucide-react-native'
+import { Plus, User } from 'lucide-react-native'
 import SettingsPanel from '../../components/SettingsPanel'
 import Logo from '../../components/ui/Logo'
-import { Avatar, PrimaryButton, SecondaryButton } from '../../components/ui'
+import { Avatar } from '../../components/ui'
 import { usePostHog } from 'posthog-react-native'
-import { isSuperAdmin } from '../../utils/admin'
 
 /**
  * TabLayout Component - The main layout for the tab-based navigation.
@@ -19,7 +18,9 @@ export default function TabLayout() {
   const { user, loading, logout } = useUser()
   const { isDark } = useTheme()
   const [settingsVisible, setSettingsVisible] = useState(false)
-  const canCreate = isSuperAdmin(user)
+  // Beta: any signed-in user can create events. Backend enforces auth-only;
+  // post-beta this becomes a coordinator-tier gate (issue #177).
+  const canCreate = !!user
   const posthog = usePostHog()
 
   useEffect(() => {
@@ -57,10 +58,25 @@ export default function TabLayout() {
         )
       }
       return (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginRight: 16 }}>
-          <SecondaryButton onPress={() => router.push('/auth?mode=login')}>Log In</SecondaryButton>
-          <PrimaryButton onPress={() => router.push('/auth?mode=signup')}>Sign Up</PrimaryButton>
-        </View>
+        <Pressable
+          accessibilityLabel="Sign in or sign up"
+          onPress={() => {
+            posthog?.capture('nav_signin_icon')
+            router.push('/auth')
+          }}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            borderWidth: 1,
+            borderColor: isDark ? '#404040' : '#D6D3D1',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 16,
+          }}
+        >
+          <User size={18} color={isDark ? '#FAFAFA' : '#1C1917'} />
+        </Pressable>
       )
     }
     if (Platform.OS === 'web') {

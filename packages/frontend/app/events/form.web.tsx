@@ -9,22 +9,8 @@ import {
   useWindowDimensions,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import {
-  ChevronLeft,
-  Type,
-  FileText,
-  Calendar,
-  Clock,
-  MapPin,
-  Navigation,
-  User,
-  Image as ImageIcon,
-  Tag,
-  Building2,
-  AlertTriangle,
-  ChevronDown,
-} from 'lucide-react-native'
-import { useUser } from '../../components/contexts'
+import { ChevronLeft, ChevronDown } from 'lucide-react-native'
+import { useTheme } from '../../components/contexts'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
 import { PrimaryButton, SecondaryButton } from '../../components/ui'
 import {
@@ -35,7 +21,14 @@ import {
   type CenterData,
 } from '../../utils/api'
 
-const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
+const todayLocalISODate = (): string => {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 
 const CATEGORY_OPTIONS = [
   { value: undefined, label: 'None' },
@@ -46,52 +39,86 @@ const CATEGORY_OPTIONS = [
 // ── Field row ────────────────────────────────────────────────────────────
 
 function FieldRow({
-  icon: Icon,
   label,
   colors,
   error,
+  required,
+  hint,
   children,
 }: {
-  icon: React.ElementType
   label: string
   colors: DetailColors
   error?: string
+  required?: boolean
+  hint?: string
   children: React.ReactNode
 }) {
   return (
-    <View style={{ gap: 8 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <View
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            backgroundColor: colors.iconBoxBg,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Icon size={16} color="#E8862A" />
-        </View>
-        <Text
-          style={{
-            fontFamily: 'Inter-Medium',
-            fontSize: 11,
-            color: colors.textMuted,
-            letterSpacing: 0.5,
-            textTransform: 'uppercase',
-          }}
-        >
-          {label}
+    <View style={{ gap: 6 }}>
+      <Text
+        style={{
+          fontFamily: 'Inter-Medium',
+          fontSize: 11,
+          color: colors.textMuted,
+          letterSpacing: 0.5,
+          textTransform: 'uppercase',
+        }}
+      >
+        {label}
+        {required ? <Text style={{ color: '#E8862A' }}> *</Text> : null}
+      </Text>
+      {hint && !error ? (
+        <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: colors.textMuted }}>
+          {hint}
         </Text>
-      </View>
+      ) : null}
       {children}
       {error ? (
-        <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: '#DC2626', marginLeft: 42 }}>
+        <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: '#DC2626' }}>
           {error}
         </Text>
       ) : null}
     </View>
+  )
+}
+
+function NativeDateTimeInput({
+  type,
+  value,
+  onChange,
+  min,
+  hasError,
+  colors,
+  isDark,
+}: {
+  type: 'date' | 'time'
+  value: string
+  onChange: (v: string) => void
+  min?: string
+  hasError?: boolean
+  colors: DetailColors
+  isDark?: boolean
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      min={min}
+      style={{
+        fontFamily: 'Inter, -apple-system, sans-serif',
+        fontSize: 15,
+        color: colors.text,
+        padding: '12px 14px',
+        borderRadius: 10,
+        border: `1px solid ${hasError ? '#DC2626' : colors.border}`,
+        backgroundColor: colors.cardBg,
+        outline: 'none',
+        boxSizing: 'border-box',
+        width: '100%',
+        colorScheme: isDark ? 'dark' : 'light',
+      }}
+    />
   )
 }
 
@@ -102,8 +129,9 @@ export default function EventFormPage() {
   const eventId = params.id
   const isEdit = !!eventId
   const router = useRouter()
-  const { user } = useUser()
   const colors = useDetailColors()
+  const { isDark } = useTheme()
+  const today = todayLocalISODate()
   const { width: viewportWidth } = useWindowDimensions()
 
   const isNarrow = viewportWidth < 768
@@ -127,8 +155,8 @@ export default function EventFormPage() {
   const [pointOfContact, setPointOfContact] = useState('')
   const [image, setImage] = useState('')
   const [category, setCategory] = useState<number | undefined>(undefined)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
-  const isAdmin = user?.email === ADMIN_EMAIL || (user?.verificationLevel !== undefined && user.verificationLevel >= 107)
 
   useEffect(() => {
     let mounted = true
@@ -149,10 +177,13 @@ export default function EventFormPage() {
 
             if (event.date) {
               const d = new Date(event.date)
-              setDate(d.toISOString().split('T')[0])
-              setTime(
-                d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-              )
+              const yyyy = d.getFullYear()
+              const mm = String(d.getMonth() + 1).padStart(2, '0')
+              const dd = String(d.getDate()).padStart(2, '0')
+              const hh = String(d.getHours()).padStart(2, '0')
+              const mi = String(d.getMinutes()).padStart(2, '0')
+              setDate(`${yyyy}-${mm}-${dd}`)
+              setTime(`${hh}:${mi}`)
             }
 
             setAddress(event.address || '')
@@ -182,8 +213,20 @@ export default function EventFormPage() {
     const newErrors: Record<string, string> = {}
 
     if (!title.trim()) newErrors.title = 'Title is required'
-    if (!date.trim()) newErrors.date = 'Date is required (YYYY-MM-DD)'
+    if (!date.trim()) newErrors.date = 'Date is required'
     if (!centerID) newErrors.center = 'Center is required'
+
+    if (date && !newErrors.date) {
+      // If time is missing, treat as end-of-day so today still passes the future-check
+      const eventDateTime = new Date(`${date}T${time || '23:59'}:00`)
+      if (!isNaN(eventDateTime.getTime()) && eventDateTime <= new Date()) {
+        if (date < today) {
+          newErrors.date = 'Date must be today or later'
+        } else {
+          newErrors.time = 'Time must be in the future'
+        }
+      }
+    }
 
     const lat = parseFloat(latitude)
     const lng = parseFloat(longitude)
@@ -195,23 +238,13 @@ export default function EventFormPage() {
     }
 
     setErrors(newErrors)
+    if (newErrors.latitude || newErrors.longitude) setShowAdvanced(true)
     return Object.keys(newErrors).length === 0
-  }, [title, date, centerID, latitude, longitude])
+  }, [title, date, time, centerID, latitude, longitude, today])
 
   const buildDateISO = (): string => {
     if (!time.trim()) return `${date}T12:00:00`
-
-    const match = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
-    if (match) {
-      let hours = parseInt(match[1], 10)
-      const minutes = match[2]
-      const ampm = match[3].toUpperCase()
-      if (ampm === 'PM' && hours !== 12) hours += 12
-      if (ampm === 'AM' && hours === 12) hours = 0
-      return `${date}T${String(hours).padStart(2, '0')}:${minutes}:00`
-    }
-
-    return `${date}T12:00:00`
+    return `${date}T${time}:00`
   }
 
   const handleSave = async () => {
@@ -233,9 +266,9 @@ export default function EventFormPage() {
           image: image.trim() || undefined,
           category,
         })
-        alert('Event updated successfully')
+        router.replace(`/events/${eventId}`)
       } else {
-        await createEvent({
+        const created = await createEvent({
           title: title.trim(),
           description: description.trim(),
           date: buildDateISO(),
@@ -247,11 +280,10 @@ export default function EventFormPage() {
           image: image.trim() || undefined,
           category,
         })
-        alert('Event created successfully')
+        router.replace(`/events/${created.id}`)
       }
-      router.back()
     } catch (err: any) {
-      alert(err?.message || 'Something went wrong')
+      setErrors({ submit: err?.message || 'Something went wrong. Please try again.' })
     } finally {
       setSaving(false)
     }
@@ -276,46 +308,7 @@ export default function EventFormPage() {
     borderWidth: 1,
     borderColor: hasError ? '#DC2626' : colors.border,
     backgroundColor: colors.cardBg,
-    marginLeft: 42,
   })
-
-  // ── Guard: not admin (disabled for testing) ─────────────────────────
-
-  if (false && !isAdmin) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.panelBg, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}>
-        <AlertTriangle size={48} color={colors.textMuted} />
-        <Text
-          style={{
-            fontFamily: 'Inter-SemiBold',
-            fontSize: 18,
-            color: colors.text,
-            marginTop: 16,
-            textAlign: 'center',
-          }}
-        >
-          Admin Access Required
-        </Text>
-        <Text
-          style={{
-            fontFamily: 'Inter-Regular',
-            fontSize: 14,
-            color: colors.textSecondary,
-            marginTop: 8,
-            textAlign: 'center',
-          }}
-        >
-          Only administrators can create or edit events.
-        </Text>
-        <Pressable
-          onPress={() => router.back()}
-          style={{ marginTop: 24, minHeight: 44, justifyContent: 'center' }}
-        >
-          <Text style={{ fontSize: 16, fontFamily: 'Inter-Medium', color: '#E8862A' }}>Go Back</Text>
-        </Pressable>
-      </View>
-    )
-  }
 
   // ── Loading ─────────────────────────────────────────────────────────
 
@@ -361,7 +354,9 @@ export default function EventFormPage() {
             {isEdit ? 'Edit Event' : 'Create Event'}
           </Text>
           <Text style={{ fontFamily: 'Inter-Regular', fontSize: 14, color: colors.textMuted, marginTop: 2 }}>
-            {isEdit ? 'Update event details below' : 'Fill in the details to create a new event'}
+            {isEdit
+              ? 'Update event details below'
+              : 'Fill in the details to create a new event. Fields marked * are required.'}
           </Text>
         </View>
       </View>
@@ -378,19 +373,35 @@ export default function EventFormPage() {
         }}
         showsVerticalScrollIndicator={false}
       >
+        {errors.submit ? (
+          <View
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: '#DC2626',
+              backgroundColor: 'rgba(220,38,38,0.08)',
+            }}
+          >
+            <Text style={{ fontFamily: 'Inter-Medium', fontSize: 13, color: '#DC2626' }}>
+              {errors.submit}
+            </Text>
+          </View>
+        ) : null}
+
         {/* Title */}
-        <FieldRow icon={Type} label="Title" colors={colors} error={errors.title}>
+        <FieldRow label="Title" colors={colors} error={errors.title} required>
           <TextInput
             value={title}
             onChangeText={setTitle}
-            placeholder="Event title"
+            placeholder="e.g. Sunday Satsang with Swamiji"
             placeholderTextColor={colors.textMuted}
             style={inputStyle(!!errors.title)}
           />
         </FieldRow>
 
         {/* Description */}
-        <FieldRow icon={FileText} label="Description" colors={colors}>
+        <FieldRow label="Description" colors={colors} hint="What will attendees experience? Speakers, agenda, what to bring.">
           <TextInput
             value={description}
             onChangeText={setDescription}
@@ -408,31 +419,34 @@ export default function EventFormPage() {
         {/* Date + Time side by side */}
         <View style={{ flexDirection: isNarrow ? 'column' : 'row', gap: isNarrow ? 24 : 28 }}>
           <View style={{ flex: 1 }}>
-            <FieldRow icon={Calendar} label="Date" colors={colors} error={errors.date}>
-              <TextInput
+            <FieldRow label="Date" colors={colors} error={errors.date} required>
+              <NativeDateTimeInput
+                type="date"
                 value={date}
-                onChangeText={setDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={colors.textMuted}
-                style={inputStyle(!!errors.date)}
+                onChange={setDate}
+                min={today}
+                hasError={!!errors.date}
+                colors={colors}
+                isDark={isDark}
               />
             </FieldRow>
           </View>
           <View style={{ flex: 1 }}>
-            <FieldRow icon={Clock} label="Time" colors={colors}>
-              <TextInput
+            <FieldRow label="Time" colors={colors} error={errors.time}>
+              <NativeDateTimeInput
+                type="time"
                 value={time}
-                onChangeText={setTime}
-                placeholder="e.g. 10:30 AM"
-                placeholderTextColor={colors.textMuted}
-                style={inputStyle()}
+                onChange={setTime}
+                hasError={!!errors.time}
+                colors={colors}
+                isDark={isDark}
               />
             </FieldRow>
           </View>
         </View>
 
         {/* Center selection */}
-        <FieldRow icon={Building2} label="Center" colors={colors} error={errors.center}>
+        <FieldRow label="Center" colors={colors} error={errors.center} required hint="Picking a center auto-fills address & coordinates.">
           <Pressable
             onPress={() => setShowCenterPicker(!showCenterPicker)}
             style={{
@@ -519,57 +533,29 @@ export default function EventFormPage() {
         </FieldRow>
 
         {/* Address */}
-        <FieldRow icon={MapPin} label="Address" colors={colors}>
+        <FieldRow label="Address" colors={colors} hint="Where the event is held. Auto-filled from center if blank.">
           <TextInput
             value={address}
             onChangeText={setAddress}
-            placeholder="Event address"
+            placeholder="123 Main St, City, ST 12345"
             placeholderTextColor={colors.textMuted}
             style={inputStyle()}
           />
         </FieldRow>
 
-        {/* Lat / Lng side by side */}
-        <FieldRow icon={Navigation} label="Coordinates" colors={colors} error={errors.latitude || errors.longitude}>
-          <View style={{ flexDirection: 'row', gap: 10, marginLeft: 42 }}>
-            <TextInput
-              value={latitude}
-              onChangeText={setLatitude}
-              placeholder="Latitude"
-              placeholderTextColor={colors.textMuted}
-              style={{
-                ...inputStyle(!!errors.latitude),
-                marginLeft: 0,
-                flex: 1,
-              }}
-            />
-            <TextInput
-              value={longitude}
-              onChangeText={setLongitude}
-              placeholder="Longitude"
-              placeholderTextColor={colors.textMuted}
-              style={{
-                ...inputStyle(!!errors.longitude),
-                marginLeft: 0,
-                flex: 1,
-              }}
-            />
-          </View>
-        </FieldRow>
-
         {/* Point of contact */}
-        <FieldRow icon={User} label="Point of Contact" colors={colors}>
+        <FieldRow label="Point of Contact" colors={colors} hint="Optional. Email or name attendees can reach.">
           <TextInput
             value={pointOfContact}
             onChangeText={setPointOfContact}
-            placeholder="Contact person"
+            placeholder="contact@example.org"
             placeholderTextColor={colors.textMuted}
             style={inputStyle()}
           />
         </FieldRow>
 
         {/* Image URL */}
-        <FieldRow icon={ImageIcon} label="Image URL" colors={colors}>
+        <FieldRow label="Image URL" colors={colors} hint="Optional. A direct link to a JPG/PNG.">
           <TextInput
             value={image}
             onChangeText={setImage}
@@ -581,7 +567,7 @@ export default function EventFormPage() {
         </FieldRow>
 
         {/* Category */}
-        <FieldRow icon={Tag} label="Category" colors={colors}>
+        <FieldRow label="Category" colors={colors}>
           <View style={{ flexDirection: 'row', gap: 8, marginLeft: 42, flexWrap: 'wrap' }}>
             {CATEGORY_OPTIONS.map((opt) => {
               const selected = category === opt.value
@@ -612,6 +598,65 @@ export default function EventFormPage() {
             })}
           </View>
         </FieldRow>
+
+        {/* Advanced: coordinates (collapsed by default — auto-filled from center) */}
+        <View style={{ gap: 12, marginTop: 4 }}>
+          <Pressable
+            onPress={() => setShowAdvanced((v) => !v)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+            accessibilityLabel="Toggle advanced location options"
+          >
+            <ChevronDown
+              size={14}
+              color={colors.textMuted}
+              style={{ transform: [{ rotate: showAdvanced ? '0deg' : '-90deg' }] }}
+            />
+            <Text
+              style={{
+                fontFamily: 'Inter-Medium',
+                fontSize: 12,
+                color: colors.textMuted,
+                letterSpacing: 0.4,
+                textTransform: 'uppercase',
+              }}
+            >
+              Advanced location
+            </Text>
+            {(errors.latitude || errors.longitude) ? (
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: '#DC2626' }}>
+                · check coordinates
+              </Text>
+            ) : null}
+          </Pressable>
+          {showAdvanced && (
+            <FieldRow label="Coordinates" colors={colors} error={errors.latitude || errors.longitude} hint="Auto-filled when you pick a center. Override only if pin is wrong.">
+              <View style={{ flexDirection: 'row', gap: 10, marginLeft: 42 }}>
+                <TextInput
+                  value={latitude}
+                  onChangeText={setLatitude}
+                  placeholder="Latitude"
+                  placeholderTextColor={colors.textMuted}
+                  style={{
+                    ...inputStyle(!!errors.latitude),
+                    marginLeft: 0,
+                    flex: 1,
+                  }}
+                />
+                <TextInput
+                  value={longitude}
+                  onChangeText={setLongitude}
+                  placeholder="Longitude"
+                  placeholderTextColor={colors.textMuted}
+                  style={{
+                    ...inputStyle(!!errors.longitude),
+                    marginLeft: 0,
+                    flex: 1,
+                  }}
+                />
+              </View>
+            </FieldRow>
+          )}
+        </View>
       </ScrollView>
 
       {/* Sticky action bar */}

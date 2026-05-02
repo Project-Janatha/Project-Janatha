@@ -59,7 +59,7 @@ export const US_STATES: Record<string, string> = {
 }
 
 /** Canadian provinces and territories (no overlap with US state abbreviations except CA = country). */
-const CANADA_PROVINCE_NAMES: Record<string, string> = {
+export const CANADA_PROVINCE_NAMES: Record<string, string> = {
   AB: 'Alberta',
   BC: 'British Columbia',
   MB: 'Manitoba',
@@ -225,4 +225,52 @@ export function centerGroupLabel(address?: string): string {
   if (country === 'Other' || state === 'Unknown') return 'Other'
   if (country === 'United States') return state
   return `${state}, ${country}`
+}
+
+/**
+ * Returns the discover list subtitle: "City, ST" for US centers, or
+ * "City, ST, Country" / "City, Country" for everywhere else.
+ *
+ *   Phoenix US      -> "MESA, AZ"
+ *   Calgary CA      -> "Calgary, AB, Canada"
+ *   Redlands US     -> "Redlands, CA"  (3-segment "City, CA, US")
+ *   San Jose US     -> "San Jose, CA"  (3-segment "City, CA")
+ *   Couva TT        -> "Couva, Trinidad and Tobago"
+ */
+export function extractCityState(address?: string): string | null {
+  if (!address) return null
+  const parts = address.split(',').map((s) => s.trim()).filter(Boolean)
+  if (parts.length < 2) return null
+
+  const { country, state } = extractCountryAndState(address)
+  const usAbbr = Object.entries(US_STATES).find(([, n]) => n === state)?.[0]
+  const caAbbr = Object.entries(CANADA_PROVINCE_NAMES).find(([, n]) => n === state)?.[0]
+  const stateAbbr = usAbbr || caAbbr
+
+  // Recognized US state or Canadian province: locate the segment starting
+  // with that abbreviation; the segment before it is the city.
+  if (stateAbbr) {
+    const re = new RegExp(`^${stateAbbr}([\\s\\-]|$)`, 'i')
+    for (let i = parts.length - 1; i >= 0; i--) {
+      if (re.test(parts[i]) && i > 0) {
+        const city = parts[i - 1]
+        if (country === 'Canada') return `${city}, ${stateAbbr}, Canada`
+        return `${city}, ${stateAbbr}`
+      }
+    }
+  }
+
+  // Non-US, non-Canada (or unparseable state). Show "City, Country" by
+  // finding the country token and using the segment before it as the city.
+  const countryTokens = new Set(['US', 'USA', 'UNITED STATES', 'CA', 'CAN', 'CANADA', 'TT'])
+  for (let i = parts.length - 1; i >= 0; i--) {
+    if (countryTokens.has(parts[i].toUpperCase()) && i > 0) {
+      const city = parts[i - 1]
+      const countryName = country === 'TT' ? 'Trinidad and Tobago' : country
+      if (country === 'United States' || country === 'Other') return city
+      return `${city}, ${countryName}`
+    }
+  }
+
+  return null
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Alert, Share } from 'react-native'
+import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Alert, Share, Linking } from 'react-native'
 import { DetailSkeleton } from '../../components/ui/Skeleton'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -12,12 +12,14 @@ import {
   Clock,
   CheckCircle,
   Pencil,
+  Trash2,
 } from 'lucide-react-native'
 import { usePostHog } from 'posthog-react-native'
 import { useEventDetail } from '../../hooks/useApiData'
 import { useUser } from '../../components/contexts'
 import { Badge, UnderlineTabBar, Avatar, PrimaryButton, DestructiveButton } from '../../components/ui'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
+import { removeEvent } from '../../utils/api'
 
 const ADMIN_EMAIL = 'chinmayajanata@gmail.com'
 
@@ -139,6 +141,7 @@ function HeaderBar({
   eventId,
   onBack,
   onEdit,
+  onDelete,
   colors,
 }: {
   title: string
@@ -148,6 +151,7 @@ function HeaderBar({
   eventId?: string
   onBack: () => void
   onEdit?: () => void
+  onDelete?: () => void
   colors: DetailColors
 }) {
   const router = useRouter()
@@ -202,15 +206,33 @@ function HeaderBar({
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
+              accessibilityLabel="Edit event"
             >
               <Pencil size={18} color={colors.iconHeader} />
+            </Pressable>
+          )}
+          {eventId && isAdmin && onDelete && (
+            <Pressable
+              onPress={onDelete}
+              style={{
+                padding: 8,
+                minHeight: 44,
+                minWidth: 44,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              accessibilityLabel="Delete event"
+            >
+              <Trash2 size={18} color="#DC2626" />
             </Pressable>
           )}
           {!isPast && (
             <Pressable
               onPress={() => {
+                const url = eventId ? `https://chinmayajanata.org/events/${eventId}` : 'https://chinmayajanata.org'
                 Share.share({
-                  message: `Check out ${title} on Chinmaya Janata!`,
+                  message: `Check out ${title} on Chinmaya Janata! ${url}`,
+                  url,
                 }).catch(() => {})
               }}
               style={{
@@ -258,41 +280,56 @@ function MetaSection({
   isPast,
   colors,
 }: {
-  event: { location: string; address?: string; attendees: number; pointOfContact?: string }
+  event: { location: string; address?: string; attendees: number; pointOfContact?: string; signupUrl?: string | null; allowJanataSignup?: boolean }
   attendees: { image?: string; initials?: string; name: string; subtitle: string }[]
   isPast?: boolean
   colors: DetailColors
 }) {
   const iconColor = isPast ? colors.textMuted : '#E8862A'
-  const attendLabel = isPast ? `${event.attendees} attended` : `${event.attendees} attending`
+  const attendLabel = `${event.attendees} on Janata`
 
   return (
     <View style={{ gap: 16 }}>
-      {/* Location */}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-        <MetaIcon icon={MapPin} color={iconColor} colors={colors} />
-        <View style={{ flex: 1, gap: 2, justifyContent: 'center' }}>
-          <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: colors.text }}>
-            {event.location}
-          </Text>
-          {event.address ? (
-            <Text
-              style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: colors.textSecondary }}
-            >
-              {event.address}
-            </Text>
-          ) : null}
-        </View>
-      </View>
+      {/* Location — when location and address are the same value (common
+          when the venue isn't named separately), split into "street" /
+          "city, state, zip" so the second line isn't a duplicate. */}
+      {(() => {
+        const loc = (event.location || '').trim()
+        const addr = (event.address || '').trim()
+        const dupe = loc && addr && loc === addr
+        const line1 = dupe ? splitStreet(addr) : loc
+        const line2 = dupe ? splitRest(addr) : addr
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+            <MetaIcon icon={MapPin} color={iconColor} colors={colors} />
+            <View style={{ flex: 1, gap: 2, justifyContent: 'center' }}>
+              {line1 ? (
+                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: colors.text }}>
+                  {line1}
+                </Text>
+              ) : null}
+              {line2 ? (
+                <Text
+                  style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: colors.textSecondary }}
+                >
+                  {line2}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        )
+      })()}
 
-      {/* Attendees */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <MetaIcon icon={Users} color={iconColor} colors={colors} />
-        <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: colors.text }}>
-          {attendLabel}
-        </Text>
-        <AvatarStack attendees={attendees} colors={colors} />
-      </View>
+      {/* Attendees — hidden when external signup is exclusive (no native RSVP) */}
+      {!(event.signupUrl && !event.allowJanataSignup) && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <MetaIcon icon={Users} color={iconColor} colors={colors} />
+          <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: colors.text }}>
+            {attendLabel}
+          </Text>
+          <AvatarStack attendees={attendees} colors={colors} />
+        </View>
+      )}
 
       {/* Point of contact */}
       {event.pointOfContact ? (
@@ -370,38 +407,107 @@ function AttendedBanner({ count, colors }: { count: number; colors: DetailColors
 
 // ── Action bar ───────────────────────────────────────────────────────────
 
+// Split an address like "129 Woodbury Rd, Woodbury, NY - 11797, US" into
+// the street segment ("129 Woodbury Rd") and the rest ("Woodbury, NY - 11797, US")
+// using the first comma as the boundary.
+function splitStreet(addr: string): string {
+  const i = addr.indexOf(',')
+  return i === -1 ? addr : addr.slice(0, i).trim()
+}
+function splitRest(addr: string): string {
+  const i = addr.indexOf(',')
+  return i === -1 ? '' : addr.slice(i + 1).trim()
+}
+
+function hostnameOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return 'official site'
+  }
+}
+
 function ActionBar({
   isRegistered,
   isPast,
   onToggle,
   isToggling,
+  signupUrl,
+  allowJanataSignup,
   colors,
 }: {
   isRegistered?: boolean
   isPast?: boolean
   onToggle: () => void
   isToggling: boolean
+  signupUrl?: string | null
+  allowJanataSignup?: boolean
   colors: DetailColors
 }) {
   if (isPast) return null
 
+  const wrapperStyle = {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 28,
+    backgroundColor: colors.panelBg,
+  } as const
+
+  // External signup + admin opted into Janata as alternate. Janata primary,
+  // external secondary.
+  if (signupUrl && allowJanataSignup) {
+    return (
+      <View style={{ ...wrapperStyle, gap: 8 }}>
+        {isRegistered ? (
+          <DestructiveButton onPress={onToggle} disabled={isToggling} loading={isToggling}>
+            Cancel Registration
+          </DestructiveButton>
+        ) : (
+          <PrimaryButton onPress={onToggle} disabled={isToggling} loading={isToggling}>
+            Attend on Janata
+          </PrimaryButton>
+        )}
+        <Pressable
+          onPress={() => Linking.openURL(signupUrl)}
+          style={{ paddingVertical: 12, alignItems: 'center', justifyContent: 'center' }}
+          accessibilityLabel={`Sign up at ${hostnameOf(signupUrl)}`}
+        >
+          <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: '#E8862A' }}>
+            Or sign up at {hostnameOf(signupUrl)}
+          </Text>
+        </Pressable>
+      </View>
+    )
+  }
+
+  // External signup is exclusive.
+  if (signupUrl) {
+    return (
+      <View style={wrapperStyle}>
+        <PrimaryButton onPress={() => Linking.openURL(signupUrl)}>
+          Sign up at {hostnameOf(signupUrl)}
+        </PrimaryButton>
+        <Text
+          style={{
+            fontFamily: 'Inter-Regular',
+            fontSize: 12,
+            color: colors.textMuted,
+            textAlign: 'center',
+            marginTop: 8,
+          }}
+        >
+          Registration handled on the official site
+        </Text>
+      </View>
+    )
+  }
+
   if (isRegistered) {
     return (
-      <View
-        style={{
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
-          paddingHorizontal: 16,
-          paddingTop: 12,
-          paddingBottom: 28,
-          backgroundColor: colors.panelBg,
-        }}
-      >
-        <DestructiveButton
-          onPress={onToggle}
-          disabled={isToggling}
-          loading={isToggling}
-        >
+      <View style={wrapperStyle}>
+        <DestructiveButton onPress={onToggle} disabled={isToggling} loading={isToggling}>
           Cancel Registration
         </DestructiveButton>
       </View>
@@ -409,21 +515,8 @@ function ActionBar({
   }
 
   return (
-    <View
-      style={{
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
-        paddingHorizontal: 16,
-        paddingTop: 12,
-        paddingBottom: 28,
-        backgroundColor: colors.panelBg,
-      }}
-    >
-      <PrimaryButton
-        onPress={onToggle}
-        disabled={isToggling}
-        loading={isToggling}
-      >
+    <View style={wrapperStyle}>
+      <PrimaryButton onPress={onToggle} disabled={isToggling} loading={isToggling}>
         Attend Event
       </PrimaryButton>
       <Text
@@ -478,6 +571,30 @@ export default function EventDetailPage() {
 
   const handleEditPress = () => {
     posthog?.capture('event_edit_opened', { eventId: id })
+  }
+
+  const handleDeletePress = () => {
+    if (!event) return
+    Alert.alert(
+      'Delete event?',
+      `"${event.title}" will be permanently removed. This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              posthog?.capture('event_deleted', { eventId: id })
+              await removeEvent(id as string)
+              router.replace('/')
+            } catch (err: any) {
+              Alert.alert('Delete failed', err?.message || 'Could not delete event.')
+            }
+          },
+        },
+      ],
+    )
   }
 
   const handleToggleRegistration = async () => {
@@ -556,6 +673,7 @@ export default function EventDetailPage() {
           eventId={id as string}
           onBack={() => router.back()}
           onEdit={handleEditPress}
+          onDelete={canEdit ? handleDeletePress : undefined}
           colors={colors}
         />
 
@@ -597,7 +715,7 @@ export default function EventDetailPage() {
                   marginBottom: 12,
                 }}
               >
-                {event.attendees} {event.attendees === 1 ? 'person' : 'people'} attending
+                {event.attendees} {event.attendees === 1 ? 'person' : 'people'} on Janata
               </Text>
               {attendees.length > 0 ? (
                 attendees.map((attendee, index) => (
@@ -661,6 +779,8 @@ export default function EventDetailPage() {
           isRegistered
           onToggle={handleToggleRegistration}
           isToggling={isToggling}
+          signupUrl={event.signupUrl}
+          allowJanataSignup={event.allowJanataSignup}
           colors={colors}
         />
       </SafeAreaView>
@@ -678,6 +798,7 @@ export default function EventDetailPage() {
         eventId={id as string}
         onBack={() => router.back()}
         onEdit={handleEditPress}
+        onDelete={canEdit ? handleDeletePress : undefined}
         colors={colors}
       />
 
@@ -743,6 +864,8 @@ export default function EventDetailPage() {
         isPast={isPast}
         onToggle={handleToggleRegistration}
         isToggling={isToggling}
+        signupUrl={event.signupUrl}
+        allowJanataSignup={event.allowJanataSignup}
         colors={colors}
       />
     </SafeAreaView>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { View, Text, Pressable, useWindowDimensions, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
+import { User } from 'lucide-react-native'
 import Logo from '../ui/Logo'
 
 // Inject hamburger animation CSS (web only)
@@ -73,55 +74,20 @@ export function NavBar() {
               </Pressable>
             ))}
 
-          {/* Log In */}
           <Pressable
-            onPress={() => router.push('/auth?mode=login')}
+            accessibilityLabel="Sign in or sign up"
+            onPress={() => router.push('/auth')}
             style={{
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderRadius: 100,
-              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              borderRadius: 18,
               borderWidth: 1,
               borderColor: '#D6D3D1',
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: '400',
-                fontSize: 16,
-                lineHeight: 16,
-                color: '#1C1917',
-                textAlign: 'center',
-              }}
-            >
-              Log In
-            </Text>
-          </Pressable>
-
-          {/* Sign Up */}
-          <Pressable
-            onPress={() => router.push('/auth?mode=signup')}
-            className="bg-primary active:bg-primary-press"
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderRadius: 100,
+              alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Text
-              style={{
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: '400',
-                fontSize: 16,
-                lineHeight: 16,
-                color: '#FFFFFF',
-                textAlign: 'center',
-              }}
-            >
-              Sign Up
-            </Text>
+            <User size={18} color="#1C1917" />
           </Pressable>
 
         </View>

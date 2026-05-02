@@ -41,6 +41,7 @@
     "expo-location": "~55.1.8",
     "expo-router": "~55.0.12",
     "expo-secure-store": "~55.0.13",
+    "expo-system-ui": "~55.0.16",
     "lucide-react-native": "^1.7.0",
     "maplibre-gl": "^4.7.1",
     "nativewind": "^4.2.2",

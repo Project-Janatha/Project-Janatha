@@ -988,7 +988,29 @@ describe('event routes', () => {
       expect(fetchRes.status).toBe(404)
     })
 
-    it('non-admin is rejected (401)', async () => {
+    it('event creator can delete their own event (200)', async () => {
+      const { body: addBody } = await jsonPost(
+        '/api/addEvent',
+        {
+          title: 'Owned Event',
+          date: '2025-06-01T10:00:00Z',
+          latitude: 37.0,
+          longitude: -121.0,
+          centerID: centerId,
+        },
+        authHeader(userToken)
+      )
+
+      const { res, body } = await jsonPost(
+        '/api/removeEvent',
+        { id: addBody.id },
+        authHeader(userToken)
+      )
+      expect(res.status).toBe(200)
+      expect(body.message).toBe('Event removed')
+    })
+
+    it('non-owner non-admin is rejected (401)', async () => {
       const { body: addBody } = await jsonPost(
         '/api/addEvent',
         {
@@ -1001,8 +1023,19 @@ describe('event routes', () => {
         authHeader(userToken)
       )
 
-      const { res } = await jsonPost('/api/removeEvent', { id: addBody.id }, authHeader(userToken))
+      // Different non-admin user — not the creator — must be rejected
+      const { token: otherToken } = await registerAndLogin('otheruser', 'password123')
+      const { res } = await jsonPost('/api/removeEvent', { id: addBody.id }, authHeader(otherToken))
       expect(res.status).toBe(401)
+    })
+
+    it('returns 404 when event does not exist', async () => {
+      const { res } = await jsonPost(
+        '/api/removeEvent',
+        { id: '00000000-0000-0000-0000-000000000000' },
+        authHeader(adminToken)
+      )
+      expect(res.status).toBe(404)
     })
   })
 

@@ -10,6 +10,7 @@ import { NavBar } from '../components/landing/NavBar'
 import { Hero } from '../components/landing/Hero'
 import { AppPreview } from '../components/landing/AppPreview'
 import { ProblemSection } from '../components/landing/ProblemSection'
+import { CommunitySection } from '../components/landing/CommunitySection'
 import { FinalCTA } from '../components/landing/FinalCTA'
 import { Footer } from '../components/landing/Footer'
 
@@ -23,8 +24,9 @@ export default function LandingPage() {
     >
       <NavBar />
       <Hero />
-      <AppPreview />
       <ProblemSection />
+      <AppPreview />
+      <CommunitySection />
       <FinalCTA />
       <Footer />
     </ScrollView>

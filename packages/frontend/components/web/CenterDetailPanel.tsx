@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, Image, ScrollView, Pressable, Linking } from 'react-native'
-import { MapPin, Globe, Phone, User, ChevronLeft } from 'lucide-react-native'
+import { MapPin, Globe, Phone, User, ChevronLeft, Navigation, BadgeCheck, Users } from 'lucide-react-native'
+import CopyLinkButton from '../ui/CopyLinkButton'
 import type { CenterDisplay } from '../../hooks/useApiData'
 import type { EventDisplay } from '../../utils/api'
 import { useDetailColors } from '../../hooks/useDetailColors'
@@ -79,8 +80,8 @@ export default function CenterDetailPanel({
           gap: 10,
         }}
       >
-        {/* Top row: back */}
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {/* Top row: back + copy link */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Pressable
             onPress={onClose}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8, minHeight: 44, minWidth: 44 }}
@@ -97,6 +98,7 @@ export default function CenterDetailPanel({
               Back
             </Text>
           </Pressable>
+          <CopyLinkButton path={`/center/${center.id}`} color={colors.iconHeader} />
         </View>
 
         {/* Title row */}
@@ -110,6 +112,43 @@ export default function CenterDetailPanel({
         >
           {center.name}
         </Text>
+
+        {/* Stats row */}
+        {(center.memberCount > 0 || center.isVerified) && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {center.memberCount > 0 && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Users size={13} color={colors.textSecondary} />
+                <Text
+                  style={{
+                    fontFamily: 'Inter-Medium',
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                  }}
+                >
+                  {center.memberCount} {center.memberCount === 1 ? 'member' : 'members'}
+                </Text>
+              </View>
+            )}
+            {center.memberCount > 0 && center.isVerified && (
+              <Text style={{ fontSize: 13, color: colors.textMuted }}>·</Text>
+            )}
+            {center.isVerified && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <BadgeCheck size={13} color="#E8862A" />
+                <Text
+                  style={{
+                    fontFamily: 'Inter-Medium',
+                    fontSize: 13,
+                    color: '#E8862A',
+                  }}
+                >
+                  Verified
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
 
       {/* ── Scrollable content ──────────────────────────────────── */}
@@ -141,10 +180,7 @@ export default function CenterDetailPanel({
           <View style={{ gap: 16 }}>
             {/* Address */}
             {center.address ? (
-              <Pressable
-                onPress={handleAddressPress}
-                style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12, minHeight: 44 }}
-              >
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
                 <View
                   style={{
                     width: 32,
@@ -158,7 +194,7 @@ export default function CenterDetailPanel({
                 >
                   <MapPin size={16} color="#E8862A" />
                 </View>
-                <View style={{ flex: 1, justifyContent: 'center' }}>
+                <View style={{ flex: 1, gap: 8 }}>
                   <Text
                     style={{
                       fontFamily: 'Inter-Medium',
@@ -169,8 +205,23 @@ export default function CenterDetailPanel({
                   >
                     {center.address}
                   </Text>
+                  <Pressable
+                    onPress={handleAddressPress}
+                    style={{ alignSelf: 'flex-start', paddingVertical: 4 }}
+                    accessibilityLabel="Get directions"
+                  >
+                    <Text
+                      style={{
+                        fontFamily: 'Inter-SemiBold',
+                        fontSize: 14,
+                        color: '#E8862A',
+                      }}
+                    >
+                      Get directions →
+                    </Text>
+                  </Pressable>
                 </View>
-              </Pressable>
+              </View>
             ) : null}
 
             {/* Website */}

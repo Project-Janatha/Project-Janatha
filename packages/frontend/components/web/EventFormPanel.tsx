@@ -1,16 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { View, Text, ScrollView, TextInput, Pressable, ActivityIndicator } from 'react-native'
-import {
-  ChevronLeft,
-  Calendar,
-  Clock,
-  MapPin,
-  User,
-  Tag,
-  Building2,
-  ChevronDown,
-} from 'lucide-react-native'
+import { ChevronLeft, ChevronDown } from 'lucide-react-native'
 import { useDetailColors, type DetailColors } from '../../hooks/useDetailColors'
+import { useTheme } from '../../components/contexts'
 import PrimaryButton from '../ui/buttons/PrimaryButton'
 import SecondaryButton from '../ui/buttons/SecondaryButton'
 import {
@@ -20,6 +12,14 @@ import {
   updateEvent,
   type CenterData,
 } from '../../utils/api'
+
+const todayLocalISODate = (): string => {
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 const CATEGORY_OPTIONS = [
   { value: undefined as number | undefined, label: 'None' },
@@ -32,7 +32,7 @@ const CATEGORY_OPTIONS = [
 type EventFormPanelProps = {
   eventId?: string
   onClose: () => void
-  onSaved?: () => void
+  onSaved?: (savedEventId: string) => void
 }
 
 // ── Input component ──────────────────────────────────────────────────────
@@ -82,31 +82,21 @@ function FormInput({
   )
 }
 
-// ── Section label ────────────────────────────────────────────────────────
+// ── Field label ──────────────────────────────────────────────────────────
 
-function SectionLabel({
-  icon: Icon,
+function FieldLabel({
   label,
   colors,
+  required,
+  hint,
 }: {
-  icon: React.ElementType
   label: string
   colors: DetailColors
+  required?: boolean
+  hint?: string
 }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-      <View
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: 7,
-          backgroundColor: colors.iconBoxBg,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Icon size={14} color="#E8862A" />
-      </View>
+    <View style={{ marginBottom: 6, gap: 2 }}>
       <Text
         style={{
           fontFamily: 'Inter-Medium',
@@ -117,8 +107,56 @@ function SectionLabel({
         }}
       >
         {label}
+        {required ? <Text style={{ color: '#E8862A' }}> *</Text> : null}
       </Text>
+      {hint ? (
+        <Text style={{ fontFamily: 'Inter-Regular', fontSize: 11, color: colors.textMuted }}>
+          {hint}
+        </Text>
+      ) : null}
     </View>
+  )
+}
+
+// ── Native HTML date / time inputs ───────────────────────────────────────
+
+function NativeDateTimeInput({
+  type,
+  value,
+  onChange,
+  min,
+  hasError,
+  colors,
+  isDark,
+}: {
+  type: 'date' | 'time'
+  value: string
+  onChange: (v: string) => void
+  min?: string
+  hasError?: boolean
+  colors: DetailColors
+  isDark?: boolean
+}) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      min={min}
+      style={{
+        fontFamily: 'Inter, -apple-system, sans-serif',
+        fontSize: 14,
+        color: colors.text,
+        padding: '10px 12px',
+        borderRadius: 8,
+        border: `1px solid ${hasError ? '#DC2626' : colors.border}`,
+        backgroundColor: colors.cardBg,
+        outline: 'none',
+        boxSizing: 'border-box',
+        width: '100%',
+        colorScheme: isDark ? 'dark' : 'light',
+      }}
+    />
   )
 }
 
@@ -127,6 +165,8 @@ function SectionLabel({
 export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormPanelProps) {
   const isEdit = !!eventId
   const colors = useDetailColors()
+  const { isDark } = useTheme()
+  const today = todayLocalISODate()
 
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
@@ -147,6 +187,7 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
   const [pointOfContact, setPointOfContact] = useState('')
   const [image, setImage] = useState('')
   const [category, setCategory] = useState<number | undefined>(undefined)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -167,10 +208,13 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
 
             if (event.date) {
               const d = new Date(event.date)
-              setDate(d.toISOString().split('T')[0])
-              setTime(
-                d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-              )
+              const yyyy = d.getFullYear()
+              const mm = String(d.getMonth() + 1).padStart(2, '0')
+              const dd = String(d.getDate()).padStart(2, '0')
+              const hh = String(d.getHours()).padStart(2, '0')
+              const mi = String(d.getMinutes()).padStart(2, '0')
+              setDate(`${yyyy}-${mm}-${dd}`)
+              setTime(`${hh}:${mi}`)
             }
 
             setAddress(event.address || '')
@@ -202,6 +246,18 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
     if (!date.trim()) newErrors.date = 'Date is required'
     if (!centerID) newErrors.center = 'Center is required'
 
+    if (date && !newErrors.date) {
+      // If time is missing, treat as end-of-day (so today still passes the future-check)
+      const eventDateTime = new Date(`${date}T${time || '23:59'}:00`)
+      if (!isNaN(eventDateTime.getTime()) && eventDateTime <= new Date()) {
+        if (date < today) {
+          newErrors.date = 'Date must be today or later'
+        } else {
+          newErrors.time = 'Time must be in the future'
+        }
+      }
+    }
+
     const lat = parseFloat(latitude)
     const lng = parseFloat(longitude)
     if (!latitude || isNaN(lat) || lat < -90 || lat > 90) {
@@ -212,21 +268,13 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
     }
 
     setErrors(newErrors)
+    if (newErrors.latitude || newErrors.longitude) setShowAdvanced(true)
     return Object.keys(newErrors).length === 0
-  }, [title, date, centerID, latitude, longitude])
+  }, [title, date, time, centerID, latitude, longitude, today])
 
   const buildDateISO = (): string => {
     if (!time.trim()) return `${date}T12:00:00`
-    const match = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
-    if (match) {
-      let hours = parseInt(match[1], 10)
-      const minutes = match[2]
-      const ampm = match[3].toUpperCase()
-      if (ampm === 'PM' && hours !== 12) hours += 12
-      if (ampm === 'AM' && hours === 12) hours = 0
-      return `${date}T${String(hours).padStart(2, '0')}:${minutes}:00`
-    }
-    return `${date}T12:00:00`
+    return `${date}T${time}:00`
   }
 
   const handleSave = async () => {
@@ -234,6 +282,7 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
     setSaving(true)
 
     try {
+      let savedId = eventId
       if (isEdit && eventId) {
         await updateEvent({
           id: eventId,
@@ -249,7 +298,7 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
           category,
         })
       } else {
-        await createEvent({
+        const created = await createEvent({
           title: title.trim(),
           description: description.trim(),
           date: buildDateISO(),
@@ -261,11 +310,11 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
           image: image.trim() || undefined,
           category,
         })
+        savedId = created.id
       }
-      onSaved?.()
-      onClose()
+      if (savedId) onSaved?.(savedId)
     } catch (err: any) {
-      alert(err?.message || 'Something went wrong')
+      setErrors({ submit: err?.message || 'Something went wrong. Please try again.' })
     } finally {
       setSaving(false)
     }
@@ -382,13 +431,30 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
         contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Submit error banner (network / backend) */}
+        {errors.submit ? (
+          <View
+            style={{
+              padding: 12,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: '#DC2626',
+              backgroundColor: 'rgba(220,38,38,0.08)',
+            }}
+          >
+            <Text style={{ fontFamily: 'Inter-Medium', fontSize: 12, color: '#DC2626' }}>
+              {errors.submit}
+            </Text>
+          </View>
+        ) : null}
+
         {/* Title */}
         <View>
-          <SectionLabel icon={Tag} label="Title" colors={colors} />
+          <FieldLabel label="Title" colors={colors} required />
           <FormInput
             value={title}
             onChangeText={setTitle}
-            placeholder="Event title"
+            placeholder="Sunday Satsang with Swamiji"
             colors={colors}
             hasError={!!errors.title}
           />
@@ -397,11 +463,11 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
 
         {/* Description */}
         <View>
-          <SectionLabel icon={Tag} label="Description" colors={colors} />
+          <FieldLabel label="Description" colors={colors} hint="What attendees will experience." />
           <FormInput
             value={description}
             onChangeText={setDescription}
-            placeholder="Describe the event..."
+            placeholder="Speakers, agenda, what to bring..."
             colors={colors}
             multiline
           />
@@ -410,30 +476,35 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
         {/* Date & Time row */}
         <View style={{ flexDirection: 'row', gap: 12 }}>
           <View style={{ flex: 1 }}>
-            <SectionLabel icon={Calendar} label="Date" colors={colors} />
-            <FormInput
+            <FieldLabel label="Date" colors={colors} required />
+            <NativeDateTimeInput
+              type="date"
               value={date}
-              onChangeText={setDate}
-              placeholder="YYYY-MM-DD"
-              colors={colors}
+              onChange={setDate}
+              min={today}
               hasError={!!errors.date}
+              colors={colors}
+              isDark={isDark}
             />
             {errorText('date')}
           </View>
           <View style={{ flex: 1 }}>
-            <SectionLabel icon={Clock} label="Time" colors={colors} />
-            <FormInput
+            <FieldLabel label="Time" colors={colors} />
+            <NativeDateTimeInput
+              type="time"
               value={time}
-              onChangeText={setTime}
-              placeholder="e.g. 10:30 AM"
+              onChange={setTime}
+              hasError={!!errors.time}
               colors={colors}
+              isDark={isDark}
             />
+            {errorText('time')}
           </View>
         </View>
 
         {/* Center */}
         <View>
-          <SectionLabel icon={Building2} label="Center" colors={colors} />
+          <FieldLabel label="Center" colors={colors} required hint="Picking a center auto-fills address & coordinates." />
           <Pressable
             onPress={() => setShowCenterPicker(!showCenterPicker)}
             style={{
@@ -521,56 +592,29 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
 
         {/* Address */}
         <View>
-          <SectionLabel icon={MapPin} label="Address" colors={colors} />
+          <FieldLabel label="Address" colors={colors} hint="Auto-filled from center if blank." />
           <FormInput
             value={address}
             onChangeText={setAddress}
-            placeholder="Event address"
+            placeholder="123 Main St, City, ST 12345"
             colors={colors}
           />
         </View>
 
-        {/* Coordinates */}
-        <View>
-          <SectionLabel icon={MapPin} label="Coordinates" colors={colors} />
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View style={{ flex: 1 }}>
-              <FormInput
-                value={latitude}
-                onChangeText={setLatitude}
-                placeholder="Latitude"
-                colors={colors}
-                hasError={!!errors.latitude}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <FormInput
-                value={longitude}
-                onChangeText={setLongitude}
-                placeholder="Longitude"
-                colors={colors}
-                hasError={!!errors.longitude}
-              />
-            </View>
-          </View>
-          {errorText('latitude')}
-          {errorText('longitude')}
-        </View>
-
         {/* Point of Contact */}
         <View>
-          <SectionLabel icon={User} label="Point of Contact" colors={colors} />
+          <FieldLabel label="Point of Contact" colors={colors} hint="Optional. Email or name." />
           <FormInput
             value={pointOfContact}
             onChangeText={setPointOfContact}
-            placeholder="Contact person"
+            placeholder="contact@example.org"
             colors={colors}
           />
         </View>
 
         {/* Image URL */}
         <View>
-          <SectionLabel icon={MapPin} label="Image URL" colors={colors} />
+          <FieldLabel label="Image URL" colors={colors} hint="Optional. Direct link to a JPG/PNG." />
           <FormInput
             value={image}
             onChangeText={setImage}
@@ -580,9 +624,67 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
           />
         </View>
 
+        {/* Advanced: coordinates (auto-filled from center) */}
+        <View style={{ gap: 10 }}>
+          <Pressable
+            onPress={() => setShowAdvanced((v) => !v)}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+            accessibilityLabel="Toggle advanced location options"
+          >
+            <ChevronDown
+              size={12}
+              color={colors.textMuted}
+              style={{ transform: [{ rotate: showAdvanced ? '0deg' : '-90deg' }] }}
+            />
+            <Text
+              style={{
+                fontFamily: 'Inter-Medium',
+                fontSize: 11,
+                color: colors.textMuted,
+                letterSpacing: 0.4,
+                textTransform: 'uppercase',
+              }}
+            >
+              Advanced location
+            </Text>
+            {(errors.latitude || errors.longitude) ? (
+              <Text style={{ fontFamily: 'Inter-Regular', fontSize: 11, color: '#DC2626' }}>
+                · check coordinates
+              </Text>
+            ) : null}
+          </Pressable>
+          {showAdvanced && (
+            <View>
+              <FieldLabel label="Coordinates" colors={colors} hint="Override only if the center's pin is wrong." />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <FormInput
+                    value={latitude}
+                    onChangeText={setLatitude}
+                    placeholder="Latitude"
+                    colors={colors}
+                    hasError={!!errors.latitude}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <FormInput
+                    value={longitude}
+                    onChangeText={setLongitude}
+                    placeholder="Longitude"
+                    colors={colors}
+                    hasError={!!errors.longitude}
+                  />
+                </View>
+              </View>
+              {errorText('latitude')}
+              {errorText('longitude')}
+            </View>
+          )}
+        </View>
+
         {/* Category */}
         <View>
-          <SectionLabel icon={Tag} label="Category" colors={colors} />
+          <FieldLabel label="Category" colors={colors} />
           <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
             {CATEGORY_OPTIONS.map((opt) => {
               const selected = category === opt.value

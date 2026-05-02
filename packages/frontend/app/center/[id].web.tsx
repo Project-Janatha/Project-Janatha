@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { View, Text, ScrollView, Image, Pressable, ActivityIndicator, Linking, useWindowDimensions } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ChevronLeft, Share2, MapPin, Globe, Phone, User } from 'lucide-react-native'
+import { ChevronLeft, Share2, MapPin, Globe, Phone, User, Navigation, BadgeCheck, Users } from 'lucide-react-native'
 import { useCenterDetail } from '../../hooks/useApiData'
 import { useDetailColors } from '../../hooks/useDetailColors'
 import type { EventDisplay } from '../../utils/api'
@@ -110,6 +110,27 @@ function MobileCenterDetail({ centerId }: { centerId: string }) {
           </Pressable>
         </View>
         <Text style={{ fontSize: 22, fontWeight: 'bold', color: colors.text }}>{center.name}</Text>
+        {(center.memberCount > 0 || center.isVerified) && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {center.memberCount > 0 && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Users size={13} color={colors.textSecondary} />
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+                  {center.memberCount} {center.memberCount === 1 ? 'member' : 'members'}
+                </Text>
+              </View>
+            )}
+            {center.memberCount > 0 && center.isVerified && (
+              <Text style={{ fontSize: 13, color: colors.textMuted }}>·</Text>
+            )}
+            {center.isVerified && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <BadgeCheck size={13} color="#E8862A" />
+                <Text style={{ fontSize: 13, color: '#E8862A' }}>Verified</Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -128,10 +149,21 @@ function MobileCenterDetail({ centerId }: { centerId: string }) {
 
           {/* Address */}
           {center.address ? (
-            <Pressable onPress={handleAddressPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <MapPin size={18} color="#E8862A" />
-              <Text style={{ color: colors.text, fontSize: 15, flex: 1 }}>{center.address}</Text>
-            </Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+              <MapPin size={18} color="#E8862A" style={{ marginTop: 2 }} />
+              <View style={{ flex: 1, gap: 8 }}>
+                <Text style={{ color: colors.text, fontSize: 15 }}>{center.address}</Text>
+                <Pressable
+                  onPress={handleAddressPress}
+                  style={{ alignSelf: 'flex-start', paddingVertical: 4 }}
+                  accessibilityLabel="Get directions"
+                >
+                  <Text style={{ color: '#E8862A', fontSize: 14, fontWeight: '600', fontFamily: 'Inter-SemiBold' }}>
+                    Get directions →
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
           ) : null}
 
           {/* Website */}

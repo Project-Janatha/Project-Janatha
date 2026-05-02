@@ -1,9 +1,11 @@
 import { useEffect, useState, useRef } from 'react'
-import { View, Text, ScrollView, Pressable, ActivityIndicator, useWindowDimensions } from 'react-native'
+import { View, Text, ScrollView, Pressable, ActivityIndicator, useWindowDimensions, Linking } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ChevronLeft, Share2, MapPin, Users, User, Clock, CheckCircle } from 'lucide-react-native'
+import { ChevronLeft, Share2, MapPin, Users, User, Clock, CheckCircle, Pencil, Trash2 } from 'lucide-react-native'
 import { useUser } from '../../components/contexts'
 import { useEventDetail } from '../../hooks/useApiData'
+import { removeEvent } from '../../utils/api'
+import { isSuperAdmin } from '../../utils/admin'
 import Avatar from '../../components/ui/Avatar'
 import Badge from '../../components/ui/Badge'
 import UnderlineTabBar from '../../components/ui/UnderlineTabBar'
@@ -45,12 +47,28 @@ export default function EventDetailWeb() {
 function MobileEventDetail({ eventId }: { eventId: string }) {
   const router = useRouter()
   const { user } = useUser()
-  const { event, loading, toggleRegistration, isToggling, attendees } = useEventDetail(eventId, user?.username, user?.id)
+  const { event, loading, toggleRegistration, isToggling, attendees, isCreator } = useEventDetail(eventId, user?.username, user?.id)
   const colors = useDetailColors()
   const [activeTab, setActiveTab] = useState('Details')
   const [showAuthPrompt, setShowAuthPrompt] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const isPast = event?.date ? new Date(event.date + 'T23:59:59') < new Date() : false
+  const canEdit = !!user && (isSuperAdmin(user) || isCreator)
+
+  const handleDelete = async () => {
+    if (!event) return
+    const ok = typeof window !== 'undefined' && window.confirm(`Delete "${event.title}"? This cannot be undone.`)
+    if (!ok) return
+    try {
+      setIsDeleting(true)
+      await removeEvent(event.id)
+      router.replace('/')
+    } catch (err: any) {
+      window.alert(err?.message || 'Failed to delete event')
+      setIsDeleting(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -79,18 +97,39 @@ function MobileEventDetail({ eventId }: { eventId: string }) {
           <ChevronLeft size={20} color={colors.textSecondary} />
           <Text style={{ color: colors.textSecondary, fontSize: 16 }}>Back</Text>
         </Pressable>
-        <Pressable
-          onPress={() => {
-            if (typeof navigator !== 'undefined' && navigator.share) {
-              navigator.share({ title: event.title, text: `Check out ${event.title} on Chinmaya Janata!` }).catch(() => {})
-            } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
-              navigator.clipboard.writeText(window.location.href)
-            }
-          }}
-          style={{ padding: 8 }}
-        >
-          <Share2 size={18} color={colors.textSecondary} />
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          {canEdit && !isPast && (
+            <Pressable
+              onPress={() => router.push(`/events/form?id=${event.id}`)}
+              style={{ padding: 8 }}
+              accessibilityLabel="Edit event"
+            >
+              <Pencil size={18} color={colors.textSecondary} />
+            </Pressable>
+          )}
+          {canEdit && (
+            <Pressable
+              onPress={handleDelete}
+              disabled={isDeleting}
+              style={{ padding: 8, opacity: isDeleting ? 0.5 : 1 }}
+              accessibilityLabel="Delete event"
+            >
+              <Trash2 size={18} color="#DC2626" />
+            </Pressable>
+          )}
+          <Pressable
+            onPress={() => {
+              if (typeof navigator !== 'undefined' && navigator.share) {
+                navigator.share({ title: event.title, text: `Check out ${event.title} on Chinmaya Janata!` }).catch(() => {})
+              } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                navigator.clipboard.writeText(window.location.href)
+              }
+            }}
+            style={{ padding: 8 }}
+          >
+            <Share2 size={18} color={colors.textSecondary} />
+          </Pressable>
+        </View>
       </View>
 
       {/* Title + Badge */}
@@ -128,13 +167,16 @@ function MobileEventDetail({ eventId }: { eventId: string }) {
               </View>
             )}
 
-            {/* Attendees count */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Users size={18} color={colors.textSecondary} />
-              <Text style={{ color: colors.text, fontSize: 15 }}>
-                {event.attendees} {event.attendees === 1 ? 'person' : 'people'} attending
-              </Text>
-            </View>
+            {/* Attendees count — hidden when signup is external-only
+                (the on-Janata count would always read 0). */}
+            {!(event.signupUrl && !event.allowJanataSignup) && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Users size={18} color={colors.textSecondary} />
+                <Text style={{ color: colors.text, fontSize: 15 }}>
+                  {event.attendees} {event.attendees === 1 ? 'person' : 'people'} attending
+                </Text>
+              </View>
+            )}
 
             {/* Contact */}
             {event.pointOfContact && (
@@ -169,10 +211,65 @@ function MobileEventDetail({ eventId }: { eventId: string }) {
         )}
       </ScrollView>
 
-      {/* Action button */}
+      {/* Action button(s) — three modes (matches EventDetailPanel.ActionBar):
+          1. signupUrl + allowJanataSignup → Janata primary, external alt
+          2. signupUrl only → external referrer, no native RSVP
+          3. no signupUrl → native Register / Cancel */}
       {!isPast && (
-        <View style={{ padding: 16 }}>
-          {event.isRegistered ? (
+        <View style={{ padding: 16, gap: 8 }}>
+          {event.signupUrl && event.allowJanataSignup ? (
+            <>
+              {event.isRegistered ? (
+                <DestructiveButton
+                  onPress={() => user?.username && toggleRegistration(user.username)}
+                  disabled={isToggling}
+                  loading={isToggling}
+                >
+                  Cancel Registration
+                </DestructiveButton>
+              ) : (
+                <PrimaryButton
+                  onPress={() => {
+                    if (!user) {
+                      setShowAuthPrompt(true)
+                    } else if (user.username) {
+                      toggleRegistration(user.username)
+                    }
+                  }}
+                  disabled={isToggling}
+                  loading={isToggling}
+                >
+                  Attend on Janata
+                </PrimaryButton>
+              )}
+              <Pressable
+                onPress={() => Linking.openURL(event.signupUrl!)}
+                style={{ paddingVertical: 12, alignItems: 'center' }}
+                accessibilityLabel={`Sign up at ${hostnameOf(event.signupUrl)}`}
+              >
+                <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 14, color: '#E8862A' }}>
+                  Or sign up at {hostnameOf(event.signupUrl)}
+                </Text>
+              </Pressable>
+            </>
+          ) : event.signupUrl ? (
+            <>
+              <PrimaryButton onPress={() => Linking.openURL(event.signupUrl!)}>
+                Sign up at {hostnameOf(event.signupUrl)}
+              </PrimaryButton>
+              <Text
+                style={{
+                  fontFamily: 'Inter-Regular',
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                  textAlign: 'center',
+                  marginTop: 4,
+                }}
+              >
+                Registration handled on the official site
+              </Text>
+            </>
+          ) : event.isRegistered ? (
             <DestructiveButton
               onPress={() => user?.username && toggleRegistration(user.username)}
               disabled={isToggling}
@@ -206,4 +303,12 @@ function MobileEventDetail({ eventId }: { eventId: string }) {
       />
     </View>
   )
+}
+
+function hostnameOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
 }

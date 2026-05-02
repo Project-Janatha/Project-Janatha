@@ -27,6 +27,8 @@ export interface EventData {
   title: string
   description: string
   date: string
+  endDate?: string | null
+  isRecurring?: boolean
   latitude: number
   longitude: number
   address: string | null
@@ -37,6 +39,9 @@ export interface EventData {
   image: string | null
   category: number | null
   createdBy: string | null
+  externalUrl?: string | null
+  signupUrl?: string | null
+  allowJanataSignup?: boolean
   createdAt?: string
   updatedAt?: string
 }
@@ -98,6 +103,9 @@ export interface EventDisplay {
   centerId?: string
   createdBy?: string
   category?: number | null
+  externalUrl?: string | null
+  signupUrl?: string | null
+  allowJanataSignup?: boolean
 }
 
 export interface DiscoverCenter {
@@ -110,6 +118,7 @@ export interface DiscoverCenter {
   eventCount?: number
   isMember?: boolean
   distanceMi?: number
+  image?: string | null
 }
 
 export type DiscoverItem =
@@ -117,7 +126,7 @@ export type DiscoverItem =
   | { type: 'center'; data: DiscoverCenter }
   | { type: 'section'; data: { label: string } }
 
-export type DiscoverFilter = 'Events' | 'Centers'
+export type DiscoverFilter = 'Events' | 'Centers' | 'Seva'
 
 // ── Fetch helpers ──────────────────────────────────────────────────────
 
@@ -362,6 +371,17 @@ export async function updateEvent(eventJSON: Record<string, any>): Promise<any> 
   return response.json()
 }
 
+export async function removeEvent(id: string): Promise<void> {
+  const response = await authFetch('/removeEvent', {
+    method: 'POST',
+    body: JSON.stringify({ id }),
+  })
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ message: 'Failed to delete event' }))
+    throw new Error(err.message || 'Failed to delete event')
+  }
+}
+
 export async function getUserEvents(username: string): Promise<EventData[]> {
   try {
     const response = await authFetch('/getUserEvents', {
@@ -415,6 +435,7 @@ export function centersToDiscoverCenters(centers: CenterData[]): DiscoverCenter[
       latitude: c.latitude,
       longitude: c.longitude,
       memberCount: c.memberCount,
+      image: c.image && c.image.startsWith('/') ? `${API_BASE_URL}${c.image}` : c.image ?? null,
     }))
 }
 

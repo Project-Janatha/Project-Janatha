@@ -1,6 +1,8 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { View, Text, Pressable, Platform, useWindowDimensions, ScrollView, Image } from 'react-native'
 import { useRouter } from 'expo-router'
+import { useEventList, useCenterList } from '../../hooks/useApiData'
+import type { EventDisplay, DiscoverCenter } from '../../utils/api'
 
 // Inject CSS keyframes for the infinite scroll animation (web only)
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -64,7 +66,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 }
 
 interface CardData {
-  type: 'event' | 'center' | 'map' | 'stat'
+  type: 'event' | 'center' | 'stat'
   title: string
   subtitle: string
   color: string
@@ -73,36 +75,181 @@ interface CardData {
   image?: any
 }
 
-const CARDS: CardData[] = [
+const FALLBACK_EVENT_IMAGES = [
+  require('../../assets/images/landing/Swami Chinmayananda.jpg'),
+  require('../../assets/images/landing/youth-group.jpg'),
+  require('../../assets/images/landing/vedanta-class.jpg'),
+  require('../../assets/images/landing/bala-vihar.jpg'),
+  require('../../assets/images/landing/devi-group.jpg'),
+  require('../../assets/images/landing/meditation.jpg'),
+]
+
+const EVENT_CARD_COLORS = ['#FED7AA', '#BFDBFE', '#D9F99D', '#FBCFE8', '#FDE68A', '#E9D5FF']
+
+const FALLBACK_CARDS: CardData[] = [
   {
     type: 'event',
     title: 'Geeta Chanting',
     subtitle: 'Mar 15 · 6:00 PM',
     color: '#FED7AA',
-    image: require('../../assets/images/landing/Swami Chinmayananda.jpg'),
+    image: FALLBACK_EVENT_IMAGES[0],
   },
   { type: 'center', title: 'CM San Jose', subtitle: 'San Jose, CA', color: '#F5F0EB', icon: 'S' },
-  { type: 'event', title: 'Youth Retreat', subtitle: 'Apr 2 · 9:00 AM', color: '#BFDBFE', image: require('../../assets/images/landing/youth-group.jpg') },
-  { type: 'map', title: '12 Centers', subtitle: 'Within 50 miles', color: '#E8E4DF' },
+  { type: 'event', title: 'Youth Retreat', subtitle: 'Apr 2 · 9:00 AM', color: '#BFDBFE', image: FALLBACK_EVENT_IMAGES[1] },
   { type: 'stat', title: '1,240 Members', subtitle: 'Active this month', color: '#F0FDF4', stat: '1,240' },
-  { type: 'event', title: 'Vedanta Course', subtitle: 'Mar 22 · 7:00 PM', color: '#D9F99D', image: require('../../assets/images/landing/vedanta-class.jpg') },
+  { type: 'event', title: 'Vedanta Course', subtitle: 'Mar 22 · 7:00 PM', color: '#D9F99D', image: FALLBACK_EVENT_IMAGES[2] },
   { type: 'center', title: 'CM Houston', subtitle: 'Houston, TX', color: '#F5F0EB', icon: 'H' },
-  { type: 'event', title: 'Bala Vihar', subtitle: 'Every Sunday · 10 AM', color: '#FBCFE8', image: require('../../assets/images/landing/bala-vihar.jpg') },
+  { type: 'event', title: 'Bala Vihar', subtitle: 'Every Sunday · 10 AM', color: '#FBCFE8', image: FALLBACK_EVENT_IMAGES[3] },
   { type: 'stat', title: '86 Events', subtitle: 'This month', color: '#EFF6FF', stat: '86' },
   { type: 'center', title: 'CM Chicago', subtitle: 'Chicago, IL', color: '#F5F0EB', icon: 'C' },
-  { type: 'event', title: 'Devi Group', subtitle: 'Mar 18 · 7:30 PM', color: '#FDE68A', image: require('../../assets/images/landing/devi-group.jpg') },
-  { type: 'event', title: 'Meditation', subtitle: 'Daily · 6:00 AM', color: '#E9D5FF', image: require('../../assets/images/landing/meditation.jpg') },
+  { type: 'event', title: 'Devi Group', subtitle: 'Mar 18 · 7:30 PM', color: '#FDE68A', image: FALLBACK_EVENT_IMAGES[4] },
+  { type: 'event', title: 'Meditation', subtitle: 'Daily · 6:00 AM', color: '#E9D5FF', image: FALLBACK_EVENT_IMAGES[5] },
 ]
 
-function ScrollCard({ card }: { card: CardData }) {
+function formatEventDate(date: string, time: string): string {
+  // date is "YYYY-MM-DD"; time is a localized string like "6:00 PM"
+  if (!date) return time || 'Upcoming'
+  const parsed = new Date(`${date}T00:00:00`)
+  if (isNaN(parsed.getTime())) return time || 'Upcoming'
+  const month = parsed.toLocaleDateString('en-US', { month: 'short' })
+  const day = parsed.getDate()
+  return time ? `${month} ${day} · ${time}` : `${month} ${day}`
+}
+
+function shortCenterAddress(address?: string): string {
+  // Pull "City, State" out of full street address. Falls back to raw address.
+  if (!address) return ''
+  const parts = address.split(',').map((p) => p.trim()).filter(Boolean)
+  if (parts.length === 0) return ''
+  if (parts.length === 1) return parts[0]
+  // Last part often has "State ZIP" or "Country" — keep state token only
+  const last = parts[parts.length - 1]
+  const state = last.split(/\s+/)[0]
+  const city = parts[parts.length - 2]
+  return state ? `${city}, ${state}` : city
+}
+
+function buildLiveCards(events: EventDisplay[], centers: DiscoverCenter[]): CardData[] {
+  if (events.length === 0 && centers.length === 0) return []
+
+  const todayStr = new Date().toISOString().split('T')[0]
+  const upcoming = events
+    .filter((e) => !e.date || e.date >= todayStr)
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  const eventCards: CardData[] = upcoming.slice(0, 8).map((e, i) => ({
+    type: 'event',
+    title: e.title,
+    subtitle: formatEventDate(e.date, e.time),
+    color: EVENT_CARD_COLORS[i % EVENT_CARD_COLORS.length],
+    image: e.image ? { uri: e.image } : FALLBACK_EVENT_IMAGES[i % FALLBACK_EVENT_IMAGES.length],
+  }))
+
+  const centerCards: CardData[] = centers.slice(0, 4).map((c) => ({
+    type: 'center',
+    title: c.name,
+    subtitle: shortCenterAddress(c.address),
+    color: '#F5F0EB',
+    icon: (c.name?.[0] || 'C').toUpperCase(),
+  }))
+
+  const totalMembers = centers.reduce((sum, c) => sum + (c.memberCount ?? 0), 0)
+
+  // Count events scheduled in the current calendar month
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0]
+  const eventsThisMonth = events.filter((e) => e.date && e.date >= monthStart && e.date < monthEnd).length
+
+  const statCards: CardData[] = []
+  if (totalMembers > 0) {
+    const formatted = totalMembers.toLocaleString()
+    statCards.push({
+      type: 'stat',
+      title: `${formatted} Members`,
+      subtitle: 'Across centers',
+      color: '#F0FDF4',
+      stat: formatted,
+    })
+  }
+  if (eventsThisMonth > 0) {
+    statCards.push({
+      type: 'stat',
+      title: `${eventsThisMonth} Events`,
+      subtitle: 'This month',
+      color: '#EFF6FF',
+      stat: eventsThisMonth.toString(),
+    })
+  }
+  if (centers.length > 0) {
+    const centerCount = centers.length.toString()
+    statCards.push({
+      type: 'stat',
+      title: `${centerCount} Centers`,
+      subtitle: 'Worldwide',
+      color: '#FFF7ED',
+      stat: centerCount,
+    })
+  }
+
+  // Interleave: event-heavy with centers/stats sprinkled in. Pattern: E,E,C,E,S,E,C,E,M,E,C,E
+  const result: CardData[] = []
+  let ei = 0,
+    ci = 0,
+    si = 0
+  const accents = [...statCards] // mutable queue of stat/map cards
+  const ratio = [
+    'event',
+    'event',
+    'center',
+    'event',
+    'accent',
+    'event',
+    'center',
+    'event',
+    'accent',
+    'event',
+    'center',
+    'event',
+    'accent',
+    'event',
+  ] as const
+  for (const slot of ratio) {
+    if (slot === 'event' && ei < eventCards.length) {
+      result.push(eventCards[ei++])
+    } else if (slot === 'center' && ci < centerCards.length) {
+      result.push(centerCards[ci++])
+    } else if (slot === 'accent' && si < accents.length) {
+      result.push(accents[si++])
+    }
+  }
+  // Append any leftovers so nothing is dropped
+  while (ei < eventCards.length) result.push(eventCards[ei++])
+  while (ci < centerCards.length) result.push(centerCards[ci++])
+  while (si < accents.length) result.push(accents[si++])
+
+  return result
+}
+
+function ScrollCard({ card, width }: { card: CardData; width: number }) {
+  const isLarge = width >= 240
+  const imageHeight = isLarge ? 132 : 100
+  const titleSize = isLarge ? 15 : 13
+  const subtitleSize = isLarge ? 12 : 11
+  const padding = isLarge ? 16 : 14
+  const radius = isLarge ? 16 : 14
+  const iconBoxSize = isLarge ? 44 : 40
+  const iconFontSize = isLarge ? 18 : 16
+  const statSize = isLarge ? 32 : 28
+
   if (card.type === 'event') {
     return (
       <View
         style={{
-          width: 220,
+          width,
           backgroundColor: '#FFFFFF',
-          borderRadius: 14,
-          padding: 14,
+          borderRadius: radius,
+          padding,
           boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
         }}
       >
@@ -112,7 +259,7 @@ function ScrollCard({ card }: { card: CardData }) {
             resizeMode="cover"
             style={{
               width: '100%',
-              height: 100,
+              height: imageHeight,
               borderRadius: 8,
               marginBottom: 10,
             }}
@@ -121,7 +268,7 @@ function ScrollCard({ card }: { card: CardData }) {
           <View
             style={{
               width: '100%',
-              height: 100,
+              height: imageHeight,
               borderRadius: 8,
               backgroundColor: card.color,
               marginBottom: 10,
@@ -132,14 +279,14 @@ function ScrollCard({ card }: { card: CardData }) {
           style={{
             fontFamily: 'Inter, sans-serif',
             fontWeight: '600',
-            fontSize: 13,
+            fontSize: titleSize,
             color: '#1C1917',
             marginBottom: 3,
           }}
         >
           {card.title}
         </Text>
-        <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
+        <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: subtitleSize, color: '#78716C' }}>
           {card.subtitle}
         </Text>
       </View>
@@ -150,10 +297,10 @@ function ScrollCard({ card }: { card: CardData }) {
     return (
       <View
         style={{
-          width: 220,
+          width,
           backgroundColor: '#FFFFFF',
-          borderRadius: 14,
-          padding: 14,
+          borderRadius: radius,
+          padding,
           flexDirection: 'row',
           alignItems: 'center',
           gap: 12,
@@ -162,8 +309,8 @@ function ScrollCard({ card }: { card: CardData }) {
       >
         <View
           style={{
-            width: 40,
-            height: 40,
+            width: iconBoxSize,
+            height: iconBoxSize,
             borderRadius: 10,
             backgroundColor: card.color,
             alignItems: 'center',
@@ -174,7 +321,7 @@ function ScrollCard({ card }: { card: CardData }) {
             style={{
               fontFamily: 'Inter, sans-serif',
               fontWeight: '700',
-              fontSize: 16,
+              fontSize: iconFontSize,
               color: '#C2410C',
             }}
           >
@@ -186,58 +333,14 @@ function ScrollCard({ card }: { card: CardData }) {
             style={{
               fontFamily: 'Inter, sans-serif',
               fontWeight: '600',
-              fontSize: 13,
+              fontSize: titleSize,
               color: '#1C1917',
               marginBottom: 2,
             }}
           >
             {card.title}
           </Text>
-          <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
-            {card.subtitle}
-          </Text>
-        </View>
-      </View>
-    )
-  }
-
-  if (card.type === 'map') {
-    return (
-      <View
-        style={{
-          width: 220,
-          height: 100,
-          backgroundColor: '#FFFFFF',
-          borderRadius: 14,
-          overflow: 'hidden',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-        }}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: card.color,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {/* Map pin dots */}
-          <View style={{ flexDirection: 'row', gap: 20, marginBottom: 8 }}>
-            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#C2410C' }} />
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#C2410C', opacity: 0.6 }} />
-            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#C2410C' }} />
-          </View>
-          <Text
-            style={{
-              fontFamily: 'Inter, sans-serif',
-              fontWeight: '600',
-              fontSize: 12,
-              color: '#57534E',
-            }}
-          >
-            {card.title}
-          </Text>
-          <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: '#78716C' }}>
+          <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: subtitleSize, color: '#78716C' }}>
             {card.subtitle}
           </Text>
         </View>
@@ -249,10 +352,10 @@ function ScrollCard({ card }: { card: CardData }) {
   return (
     <View
       style={{
-        width: 220,
+        width,
         backgroundColor: '#FFFFFF',
-        borderRadius: 14,
-        padding: 14,
+        borderRadius: radius,
+        padding,
         boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
       }}
     >
@@ -260,7 +363,7 @@ function ScrollCard({ card }: { card: CardData }) {
         style={{
           fontFamily: '"Inclusive Sans", sans-serif',
           fontWeight: '400',
-          fontSize: 28,
+          fontSize: statSize,
           color: '#C2410C',
           marginBottom: 2,
         }}
@@ -271,14 +374,14 @@ function ScrollCard({ card }: { card: CardData }) {
         style={{
           fontFamily: 'Inter, sans-serif',
           fontWeight: '600',
-          fontSize: 13,
+          fontSize: titleSize,
           color: '#1C1917',
           marginBottom: 2,
         }}
       >
         {card.title.replace(card.stat + ' ', '')}
       </Text>
-      <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: '#78716C' }}>
+      <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: subtitleSize, color: '#78716C' }}>
         {card.subtitle}
       </Text>
     </View>
@@ -289,17 +392,20 @@ function InfiniteScrollColumn({
   cards,
   speed,
   offset,
+  cardWidth,
+  height,
 }: {
   cards: CardData[]
   speed: number
   offset: number
+  cardWidth: number
+  height: number
 }) {
   // Duplicate cards for seamless loop
   const doubled = [...cards, ...cards]
-  const totalHeight = cards.length * (130 + 14) // approx card height + gap
 
   return (
-    <View style={{ overflow: 'hidden', height: 900, marginTop: offset, paddingHorizontal: 14 }}>
+    <View style={{ overflow: 'hidden', height, marginTop: offset, paddingHorizontal: 14 }}>
       <div
         style={{
           display: 'flex',
@@ -309,7 +415,7 @@ function InfiniteScrollColumn({
         }}
       >
         {doubled.map((card, i) => (
-          <ScrollCard key={`${card.title}-${i}`} card={card} />
+          <ScrollCard key={`${card.title}-${i}`} card={card} width={cardWidth} />
         ))}
       </div>
     </View>
@@ -365,8 +471,8 @@ function AvatarStack() {
   )
 }
 
-function HorizontalScrollRow() {
-  const doubled = [...CARDS, ...CARDS]
+function HorizontalScrollRow({ cards }: { cards: CardData[] }) {
+  const doubled = [...cards, ...cards]
 
   return (
     <View style={{ overflow: 'hidden', marginTop: 32, marginHorizontal: -20, position: 'relative', paddingVertical: 14 }}>
@@ -380,7 +486,7 @@ function HorizontalScrollRow() {
       >
         {doubled.map((card, i) => (
           <View key={`${card.title}-h-${i}`} style={{ flexShrink: 0 }}>
-            <ScrollCard card={card} />
+            <ScrollCard card={card} width={220} />
           </View>
         ))}
       </div>
@@ -394,19 +500,89 @@ export function Hero() {
   const isMobile = width < 768
   const isTablet = width >= 768 && width < 1024
 
-  // Split cards into two columns
-  const col1Cards = CARDS.filter((_, i) => i % 2 === 0)
-  const col2Cards = CARDS.filter((_, i) => i % 2 === 1)
+  const { events } = useEventList()
+  const { centers } = useCenterList()
+
+  // Build live cards once data arrives. Need at least 6 to look reasonable in the
+  // multi-column scroller; otherwise fall back to the curated set so the hero never
+  // looks sparse during loading or in degraded states.
+  const cards = useMemo(() => {
+    const live = buildLiveCards(events, centers)
+    return live.length >= 6 ? live : FALLBACK_CARDS
+  }, [events, centers])
+
+  // Estimate the right column's width so the floating card area never extends
+  // past it into the headline text. The hero uses two flex:1 columns with
+  // leftCol capped at maxWidth 560 — mirror that here so the cards fit.
+  const heroPaddingTop = isMobile ? 60 : 100
+  const heroPaddingBottom = isMobile ? 40 : 80
+  const heroPaddingLeft = isMobile ? 20 : isTablet ? 40 : 80
+  const heroPaddingRight = isMobile ? 20 : 0
+  const cardsRightOffset = isTablet ? 54 : 34
+  const colGap = 14
+  const colInnerPadding = 14 // matches InfiniteScrollColumn paddingHorizontal
+  const availInner = Math.max(0, width - heroPaddingLeft - heroPaddingRight)
+  const leftColW = Math.min(560, availInner / 2)
+  const rightColW = Math.max(0, availInner - leftColW)
+  // The container is right-anchored with `right: -cardsRightOffset`, so its
+  // width may exceed the right column by exactly that offset before its left
+  // edge crosses into the leftCol.
+  const maxCardsContainer = Math.floor(rightColW + cardsRightOffset)
+
+  const fits = (cols: number, cw: number) =>
+    cols * cw + colInnerPadding * 2 * cols + colGap * (cols - 1) <= maxCardsContainer
+
+  let numColumns = 2
+  let cardWidth = 220
+  if (fits(3, 280)) {
+    numColumns = 3
+    cardWidth = 280
+  } else if (fits(3, 260)) {
+    numColumns = 3
+    cardWidth = 260
+  } else if (fits(3, 240)) {
+    numColumns = 3
+    cardWidth = 240
+  } else if (fits(2, 280)) {
+    numColumns = 2
+    cardWidth = 280
+  } else if (fits(2, 260)) {
+    numColumns = 2
+    cardWidth = 260
+  } else if (fits(2, 240)) {
+    numColumns = 2
+    cardWidth = 240
+  } else if (fits(2, 220)) {
+    numColumns = 2
+    cardWidth = 220
+  } else {
+    numColumns = 2
+    cardWidth = Math.max(180, Math.floor((maxCardsContainer - colInnerPadding * 4 - colGap) / 2))
+  }
+  const cardsContainerWidth =
+    numColumns * cardWidth + colInnerPadding * 2 * numColumns + colGap * (numColumns - 1)
+
+  const cardColumns = useMemo(() => {
+    const cols: CardData[][] = Array.from({ length: numColumns }, () => [])
+    cards.forEach((card, i) => {
+      cols[i % numColumns].push(card)
+    })
+    return cols
+  }, [cards, numColumns])
+
+  // Column scrollers must comfortably exceed the visible hero so a full
+  // animation cycle is always covered as the cards translate vertically.
+  const columnHeight = 1100
 
   return (
     <View
       style={{
         position: 'relative',
         overflow: 'hidden',
-        paddingTop: isMobile ? 60 : 100,
-        paddingBottom: isMobile ? 40 : 80,
-        paddingLeft: isMobile ? 20 : isTablet ? 40 : 80,
-        paddingRight: isMobile ? 20 : 0,
+        paddingTop: heroPaddingTop,
+        paddingBottom: heroPaddingBottom,
+        paddingLeft: heroPaddingLeft,
+        paddingRight: heroPaddingRight,
         minHeight: isMobile ? undefined : 656,
         backgroundColor: '#FAFAF7',
         flexDirection: isMobile ? 'column' : 'row',
@@ -479,8 +655,8 @@ export function Hero() {
             maxWidth: 480,
           }}
         >
-          Discover Chinmaya Mission centers, connect with your local community, and grow through
-          events, study groups, and seva opportunities.
+          One place where any CHYK can find events and centers nearby, RSVP in a tap, and run their
+          own events without juggling five group chats.
         </Text>
 
         {/* CTAs */}
@@ -522,7 +698,7 @@ export function Hero() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <AvatarStack />
           <Text style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: '#78716C' }}>
-            A project built by CHYKs, for CHYKs.
+            By CHYKs, for CHYKs.
           </Text>
         </View>
 
@@ -530,31 +706,47 @@ export function Hero() {
         {/* {isMobile && <HorizontalScrollRow />} */}
       </View>
 
-      {/* Infinite scrolling card columns -- rotated (hidden on mobile) */}
+      {/* Infinite scrolling card columns -- rotated (hidden on mobile).
+          Negative top/bottom margins extend the column through the hero's
+          padding so the cards fill the full hero height edge-to-edge. */}
       {!isMobile && (
         <View
           style={{
             flex: 1,
             position: 'relative',
-            minHeight: 560,
+            minHeight: 560 + heroPaddingTop + heroPaddingBottom,
             overflow: 'hidden',
             paddingHorizontal: 14,
+            marginTop: -heroPaddingTop,
+            marginBottom: -heroPaddingBottom,
           }}
         >
           <View
             style={{
               position: 'absolute',
-              top: -100,
-              right: isTablet ? -54 : -34,
-              width: isTablet ? 440 : 520,
-              height: 1000,
+              top: -120,
+              right: -cardsRightOffset,
+              width: cardsContainerWidth,
+              height: columnHeight + 200,
               transform: 'rotate(-4deg)',
               flexDirection: 'row',
-              gap: 14,
+              gap: colGap,
             }}
           >
-            <InfiniteScrollColumn cards={col1Cards} speed={30} offset={0} />
-            <InfiniteScrollColumn cards={col2Cards} speed={25} offset={-60} />
+            {cardColumns.map((colCards, i) => {
+              const speeds = [30, 25, 28]
+              const offsets = [0, -60, -30]
+              return (
+                <InfiniteScrollColumn
+                  key={i}
+                  cards={colCards}
+                  cardWidth={cardWidth}
+                  height={columnHeight}
+                  speed={speeds[i % speeds.length]}
+                  offset={offsets[i % offsets.length]}
+                />
+              )
+            })}
           </View>
           {/* Fade edges */}
           <div

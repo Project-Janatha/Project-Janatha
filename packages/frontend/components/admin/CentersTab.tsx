@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { View, Text, Pressable, ActivityIndicator } from 'react-native'
-import { MapPin, Globe, Phone, User } from 'lucide-react-native'
+import { View, Text, Pressable, ActivityIndicator, TextInput } from 'react-native'
+import { MapPin, Globe, Phone, User, Image as ImageIcon, Pencil } from 'lucide-react-native'
 import AdminTable, { type Column } from './AdminTable'
 import AdminDetailPanel from './AdminDetailPanel'
 import AdminSearchInput from './AdminSearchInput'
@@ -11,6 +11,7 @@ import ConfirmDialog from './ConfirmDialog'
 import {
   fetchAdminCenters,
   fetchAdminCenterMembers,
+  adminUpdateCenter,
   adminVerifyCenter,
   adminDeleteCenter,
   type CenterData,
@@ -32,6 +33,25 @@ export default function CentersTab() {
   const [membersLoading, setMembersLoading] = useState(false)
 
   const [error, setError] = useState<string | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  type FormValues = {
+    image: string
+    address: string
+    website: string
+    phone: string
+    acharya: string
+    pointOfContact: string
+  }
+  const [form, setForm] = useState<FormValues>({
+    image: '',
+    address: '',
+    website: '',
+    phone: '',
+    acharya: '',
+    pointOfContact: '',
+  })
 
   const loadCenters = useCallback(async (q?: string) => {
     try {
@@ -101,6 +121,44 @@ export default function CentersTab() {
         </Text>
       </View>
     )
+  }
+
+  // Reset edit state whenever the selection changes.
+  useEffect(() => {
+    setEditing(false)
+    setSaveError(null)
+    if (selected) {
+      setForm({
+        image: selected.image ?? '',
+        address: selected.address ?? '',
+        website: selected.website ?? '',
+        phone: selected.phone ?? '',
+        acharya: selected.acharya ?? '',
+        pointOfContact: selected.pointOfContact ?? '',
+      })
+    }
+  }, [selected])
+
+  const handleSave = async () => {
+    if (!selected) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await adminUpdateCenter(selected.centerID, {
+        image: form.image.trim() || null,
+        address: form.address.trim() || null,
+        website: form.website.trim() || null,
+        phone: form.phone.trim() || null,
+        acharya: form.acharya.trim() || null,
+        pointOfContact: form.pointOfContact.trim() || null,
+      })
+      await loadCenters(search)
+      setEditing(false)
+    } catch (err: any) {
+      setSaveError(err?.message || 'Failed to save')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleVerify = async () => {
@@ -208,42 +266,132 @@ export default function CentersTab() {
 
       {selected && (
         <AdminDetailPanel title={selected.name} onClose={() => setSelectedId(null)}>
-          <View style={{ gap: 12 }}>
-            {selected.address && (
-              <AdminInfoRow icon={<MapPin size={14} color={colors.textMuted} />} text={selected.address} colors={colors} />
-            )}
-            {selected.website && (
-              <AdminInfoRow icon={<Globe size={14} color={colors.textMuted} />} text={selected.website} colors={colors} />
-            )}
-            {selected.phone && (
-              <AdminInfoRow icon={<Phone size={14} color={colors.textMuted} />} text={selected.phone} colors={colors} />
-            )}
-            {selected.acharya && (
-              <AdminInfoRow icon={<User size={14} color={colors.textMuted} />} text={selected.acharya} colors={colors} />
-            )}
-          </View>
+          {editing ? (
+            <View style={{ gap: 10 }}>
+              <EditField
+                icon={<ImageIcon size={14} color={colors.textMuted} />}
+                label="Image URL"
+                value={form.image}
+                onChangeText={(v) => setForm((f) => ({ ...f, image: v }))}
+                placeholder="https://..."
+                colors={colors}
+              />
+              <EditField
+                icon={<MapPin size={14} color={colors.textMuted} />}
+                label="Address"
+                value={form.address}
+                onChangeText={(v) => setForm((f) => ({ ...f, address: v }))}
+                placeholder="Street, City, ST - ZIP, Country"
+                colors={colors}
+              />
+              <EditField
+                icon={<Globe size={14} color={colors.textMuted} />}
+                label="Website"
+                value={form.website}
+                onChangeText={(v) => setForm((f) => ({ ...f, website: v }))}
+                placeholder="example.org"
+                colors={colors}
+              />
+              <EditField
+                icon={<Phone size={14} color={colors.textMuted} />}
+                label="Phone"
+                value={form.phone}
+                onChangeText={(v) => setForm((f) => ({ ...f, phone: v }))}
+                placeholder="555-123-4567"
+                colors={colors}
+              />
+              <EditField
+                icon={<User size={14} color={colors.textMuted} />}
+                label="Acharya"
+                value={form.acharya}
+                onChangeText={(v) => setForm((f) => ({ ...f, acharya: v }))}
+                placeholder="Resident acharya"
+                colors={colors}
+              />
+              <EditField
+                icon={<User size={14} color={colors.textMuted} />}
+                label="Point of contact"
+                value={form.pointOfContact}
+                onChangeText={(v) => setForm((f) => ({ ...f, pointOfContact: v }))}
+                placeholder="Name"
+                colors={colors}
+              />
+              {saveError && (
+                <Text style={{ fontFamily: 'Inter-Regular', fontSize: 12, color: '#DC2626' }}>
+                  {saveError}
+                </Text>
+              )}
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                <Pressable
+                  onPress={handleSave}
+                  disabled={saving}
+                  style={{ backgroundColor: '#E8862A', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, opacity: saving ? 0.6 : 1 }}
+                >
+                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: '#fff' }}>
+                    {saving ? 'Saving…' : 'Save'}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => { setEditing(false); setSaveError(null) }}
+                  disabled={saving}
+                  style={{ backgroundColor: colors.iconBoxBg, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
+                >
+                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: colors.text }}>
+                    Cancel
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <>
+              <View style={{ gap: 12 }}>
+                {selected.address && (
+                  <AdminInfoRow icon={<MapPin size={14} color={colors.textMuted} />} text={selected.address} colors={colors} />
+                )}
+                {selected.website && (
+                  <AdminInfoRow icon={<Globe size={14} color={colors.textMuted} />} text={selected.website} colors={colors} />
+                )}
+                {selected.phone && (
+                  <AdminInfoRow icon={<Phone size={14} color={colors.textMuted} />} text={selected.phone} colors={colors} />
+                )}
+                {selected.acharya && (
+                  <AdminInfoRow icon={<User size={14} color={colors.textMuted} />} text={selected.acharya} colors={colors} />
+                )}
+              </View>
 
-          <View style={{ marginTop: 16 }}>{renderStatus(selected.isVerified)}</View>
+              <View style={{ marginTop: 16 }}>{renderStatus(selected.isVerified)}</View>
 
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
-            <Pressable
-              onPress={handleVerify}
-              style={{ backgroundColor: colors.iconBoxBg, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
-            >
-              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: colors.text }}>
-                {selected.isVerified ? 'Unverify' : 'Verify'}
-              </Text>
-            </Pressable>
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>
+                <Pressable
+                  onPress={() => setEditing(true)}
+                  style={{ backgroundColor: '#E8862A', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                >
+                  <Pencil size={12} color="#fff" />
+                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: '#fff' }}>
+                    Edit
+                  </Text>
+                </Pressable>
 
-            <Pressable
-              onPress={() => setDeleteTarget(selected)}
-              style={{ backgroundColor: colors.iconBoxBg, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
-            >
-              <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: isDark ? '#F87171' : '#DC2626' }}>
-                Delete
-              </Text>
-            </Pressable>
-          </View>
+                <Pressable
+                  onPress={handleVerify}
+                  style={{ backgroundColor: colors.iconBoxBg, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
+                >
+                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: colors.text }}>
+                    {selected.isVerified ? 'Unverify' : 'Verify'}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => setDeleteTarget(selected)}
+                  style={{ backgroundColor: colors.iconBoxBg, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
+                >
+                  <Text style={{ fontFamily: 'Inter-SemiBold', fontSize: 12, color: isDark ? '#F87171' : '#DC2626' }}>
+                    Delete
+                  </Text>
+                </Pressable>
+              </View>
+            </>
+          )}
 
           <AdminSectionHeader label="Members" colors={colors} />
           {membersLoading ? (
@@ -273,6 +421,45 @@ export default function CentersTab() {
         confirmLabel="Delete"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+    </View>
+  )
+}
+
+type EditFieldProps = {
+  icon: React.ReactNode
+  label: string
+  value: string
+  onChangeText: (v: string) => void
+  placeholder?: string
+  colors: ReturnType<typeof useDetailColors>
+}
+
+function EditField({ icon, label, value, onChangeText, placeholder, colors }: EditFieldProps) {
+  return (
+    <View style={{ gap: 4 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        {icon}
+        <Text style={{ fontFamily: 'Inter-Medium', fontSize: 11, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          {label}
+        </Text>
+      </View>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textMuted}
+        style={{
+          fontFamily: 'Inter-Regular',
+          fontSize: 13,
+          color: colors.text,
+          backgroundColor: colors.iconBoxBg,
+          paddingHorizontal: 10,
+          paddingVertical: 8,
+          borderRadius: 6,
+        }}
+        autoCapitalize="none"
+        autoCorrect={false}
       />
     </View>
   )

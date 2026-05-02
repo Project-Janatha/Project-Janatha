@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { View, Text, Image, ScrollView, Pressable, ActivityIndicator } from 'react-native'
-import { MapPin, Users, User, Clock, CheckCircle, ChevronLeft, Pencil } from 'lucide-react-native'
+import { View, Text, Image, ScrollView, Pressable, ActivityIndicator, Linking } from 'react-native'
+import { MapPin, Users, User, Clock, CheckCircle, ChevronLeft, Pencil, ExternalLink, Trash2 } from 'lucide-react-native'
+import CopyLinkButton from '../ui/CopyLinkButton'
 import Badge from '../ui/Badge'
 import UnderlineTabBar from '../ui/UnderlineTabBar'
 import Avatar from '../ui/Avatar'
@@ -93,6 +94,9 @@ type EventDetailPanelProps = {
     pointOfContact?: string
     image?: string
     isRegistered?: boolean
+    externalUrl?: string | null
+    signupUrl?: string | null
+    allowJanataSignup?: boolean
   }
   attendees: Attendee[]
   isPast?: boolean
@@ -101,6 +105,7 @@ type EventDetailPanelProps = {
   onToggleRegistration: () => void
   isToggling: boolean
   onEdit?: (eventId: string) => void
+  onDelete?: (eventId: string) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -168,6 +173,7 @@ function HeaderBar({
   eventId,
   onClose,
   onEdit,
+  onDelete,
   colors,
 }: {
   title: string
@@ -177,6 +183,7 @@ function HeaderBar({
   eventId?: string
   onClose: () => void
   onEdit?: (eventId: string) => void
+  onDelete?: (eventId: string) => void
   colors: DetailColors
 }) {
   return (
@@ -211,6 +218,7 @@ function HeaderBar({
         </Pressable>
 
         <View className="flex-row items-center" style={{ gap: 4 }}>
+          {eventId && <CopyLinkButton path={`/events/${eventId}`} variant="icon" color={colors.iconHeader} />}
           {eventId && onEdit && (
             <Pressable
               onPress={() => onEdit(eventId)}
@@ -218,6 +226,15 @@ function HeaderBar({
               accessibilityLabel="Edit event"
             >
               <Pencil size={18} color={colors.iconHeader} />
+            </Pressable>
+          )}
+          {eventId && onDelete && (
+            <Pressable
+              onPress={() => onDelete(eventId)}
+              style={{ padding: 8, minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+              accessibilityLabel="Delete event"
+            >
+              <Trash2 size={18} color="#DC2626" />
             </Pressable>
           )}
         </View>
@@ -310,16 +327,53 @@ function MetaSection({
   colors: DetailColors
 }) {
   const iconColor = isPast ? colors.textMuted : '#E8862A'
-  const attendLabel = isPast
-    ? `${event.attendees} attended`
-    : `${event.attendees} attending`
+  const attendLabel = `${event.attendees} on Janata`
 
   return (
     <View style={{ gap: 16 }}>
-      {/* Location row */}
-      <View className="flex-row" style={{ gap: 12, alignItems: 'flex-start' }}>
-        <MetaIcon icon={MapPin} color={iconColor} colors={colors} />
-        <View style={{ flex: 1, gap: 2 }}>
+      {/* Location row — split duplicate address into street / city,state,zip */}
+      {(() => {
+        const loc = (event.location || '').trim()
+        const addr = (event.address || '').trim()
+        const dupe = loc && addr && loc === addr
+        const line1 = dupe ? splitStreet(addr) : loc
+        const line2 = dupe ? splitRest(addr) : addr
+        return (
+          <View className="flex-row" style={{ gap: 12, alignItems: 'flex-start' }}>
+            <MetaIcon icon={MapPin} color={iconColor} colors={colors} />
+            <View style={{ flex: 1, gap: 2 }}>
+              {line1 && (
+                <Text
+                  style={{
+                    fontFamily: 'Inter-Medium',
+                    fontSize: 14,
+                    color: colors.text,
+                  }}
+                >
+                  {line1}
+                </Text>
+              )}
+              {line2 && (
+                <Text
+                  style={{
+                    fontFamily: 'Inter-Regular',
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                  }}
+                >
+                  {line2}
+                </Text>
+              )}
+            </View>
+          </View>
+        )
+      })()}
+
+      {/* Attendees row — hidden when external signup is exclusive (no native
+          RSVP allowed), since the on-Janata count would always be 0. */}
+      {!(event.signupUrl && !event.allowJanataSignup) && (
+        <View className="flex-row items-center" style={{ gap: 12 }}>
+          <MetaIcon icon={Users} color={iconColor} colors={colors} />
           <Text
             style={{
               fontFamily: 'Inter-Medium',
@@ -327,36 +381,11 @@ function MetaSection({
               color: colors.text,
             }}
           >
-            {event.location}
+            {attendLabel}
           </Text>
-          {event.address && (
-            <Text
-              style={{
-                fontFamily: 'Inter-Regular',
-                fontSize: 13,
-                color: colors.textSecondary,
-              }}
-            >
-              {event.address}
-            </Text>
-          )}
+          <AvatarStack attendees={attendees} colors={colors} />
         </View>
-      </View>
-
-      {/* Attendees row */}
-      <View className="flex-row items-center" style={{ gap: 12 }}>
-        <MetaIcon icon={Users} color={iconColor} colors={colors} />
-        <Text
-          style={{
-            fontFamily: 'Inter-Medium',
-            fontSize: 14,
-            color: colors.text,
-          }}
-        >
-          {attendLabel}
-        </Text>
-        <AvatarStack attendees={attendees} colors={colors} />
-      </View>
+      )}
 
       {/* Point of contact row */}
       {event.pointOfContact && (
@@ -372,6 +401,28 @@ function MetaSection({
             Contact: {event.pointOfContact}
           </Text>
         </View>
+      )}
+
+      {/* Official page link */}
+      {event.externalUrl && (
+        <Pressable
+          onPress={() => Linking.openURL(event.externalUrl!)}
+          className="flex-row items-center"
+          style={{ gap: 12, minHeight: 44 }}
+        >
+          <MetaIcon icon={ExternalLink} color={iconColor} colors={colors} />
+          <Text
+            style={{
+              fontFamily: 'Inter-Medium',
+              fontSize: 14,
+              color: '#E8862A',
+              flex: 1,
+            }}
+            numberOfLines={1}
+          >
+            Visit official page · {hostnameOf(event.externalUrl)}
+          </Text>
+        </Pressable>
       )}
     </View>
   )
@@ -468,7 +519,7 @@ function PeopleTab({ attendees, colors }: { attendees: Attendee[]; colors: Detai
           marginBottom: 12,
         }}
       >
-        {attendees.length} {attendees.length === 1 ? 'person' : 'people'} attending
+        {attendees.length} {attendees.length === 1 ? 'person' : 'people'} on Janata
       </Text>
 
       {attendees.length === 0 ? (
@@ -651,20 +702,123 @@ function RegisteredContent({
 // Action bar (sticky bottom)
 // ---------------------------------------------------------------------------
 
+function splitStreet(addr: string): string {
+  const i = addr.indexOf(',')
+  return i === -1 ? addr : addr.slice(0, i).trim()
+}
+function splitRest(addr: string): string {
+  const i = addr.indexOf(',')
+  return i === -1 ? '' : addr.slice(i + 1).trim()
+}
+
+function hostnameOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return 'official site'
+  }
+}
+
 function ActionBar({
   isRegistered,
   isPast,
   onToggleRegistration,
   isToggling,
+  signupUrl,
+  allowJanataSignup,
   colors,
 }: {
   isRegistered?: boolean
   isPast?: boolean
   onToggleRegistration: () => void
   isToggling: boolean
+  signupUrl?: string | null
+  allowJanataSignup?: boolean
   colors: DetailColors
 }) {
   if (isPast) return null
+
+  // External signup is set + admin opted into letting users RSVP on Janata
+  // too. Janata is primary, external is the alternate.
+  if (signupUrl && allowJanataSignup) {
+    return (
+      <View
+        style={{
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          padding: 16,
+          backgroundColor: colors.panelBg,
+          gap: 8,
+        }}
+      >
+        {isRegistered ? (
+          <DestructiveButton
+            onPress={onToggleRegistration}
+            disabled={isToggling}
+            loading={isToggling}
+          >
+            Cancel Registration
+          </DestructiveButton>
+        ) : (
+          <PrimaryButton
+            onPress={onToggleRegistration}
+            disabled={isToggling}
+            loading={isToggling}
+          >
+            Attend on Janata
+          </PrimaryButton>
+        )}
+        <Pressable
+          onPress={() => Linking.openURL(signupUrl)}
+          style={{
+            paddingVertical: 12,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          accessibilityLabel={`Sign up at ${hostnameOf(signupUrl)}`}
+        >
+          <Text
+            style={{
+              fontFamily: 'Inter-SemiBold',
+              fontSize: 14,
+              color: '#E8862A',
+            }}
+          >
+            Or sign up at {hostnameOf(signupUrl)}
+          </Text>
+        </Pressable>
+      </View>
+    )
+  }
+
+  // External signup is exclusive. We're just a referrer.
+  if (signupUrl) {
+    return (
+      <View
+        style={{
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          padding: 16,
+          backgroundColor: colors.panelBg,
+        }}
+      >
+        <PrimaryButton onPress={() => Linking.openURL(signupUrl)}>
+          Sign up at {hostnameOf(signupUrl)}
+        </PrimaryButton>
+        <Text
+          style={{
+            fontFamily: 'Inter-Regular',
+            fontSize: 12,
+            color: colors.textMuted,
+            textAlign: 'center',
+            marginTop: 8,
+          }}
+        >
+          Registration handled on the official site
+        </Text>
+      </View>
+    )
+  }
 
   if (isRegistered) {
     return (
@@ -731,6 +885,7 @@ export default function EventDetailPanel({
   onToggleRegistration,
   isToggling,
   onEdit,
+  onDelete,
 }: EventDetailPanelProps) {
   const colors = useDetailColors()
   const isRegistered = event.isRegistered && !isPast
@@ -748,7 +903,7 @@ export default function EventDetailPanel({
       }}
     >
       {/* Header */}
-      <HeaderBar title={event.title} isPast={isPast} isRegistered={isRegistered} isAdmin={isAdmin} eventId={event.id} onClose={onClose} onEdit={onEdit} colors={colors} />
+      <HeaderBar title={event.title} isPast={isPast} isRegistered={isRegistered} isAdmin={isAdmin} eventId={event.id} onClose={onClose} onEdit={onEdit} onDelete={onDelete} colors={colors} />
 
       {/* Hero image (non-registered only) */}
       {!isRegistered && (
@@ -781,6 +936,8 @@ export default function EventDetailPanel({
         isPast={isPast}
         onToggleRegistration={onToggleRegistration}
         isToggling={isToggling}
+        signupUrl={event.signupUrl}
+        allowJanataSignup={event.allowJanataSignup}
         colors={colors}
       />
     </View>

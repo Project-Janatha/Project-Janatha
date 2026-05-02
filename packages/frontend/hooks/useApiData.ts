@@ -75,6 +75,9 @@ function apiEventToDisplay(e: EventData, _username?: string): EventDisplay {
     centerId: e.centerID ?? undefined,
     createdBy: e.createdBy ?? undefined,
     category: e.category,
+    externalUrl: e.externalUrl ?? null,
+    signupUrl: e.signupUrl ?? null,
+    allowJanataSignup: e.allowJanataSignup ?? false,
   }
 
   // If we have an image URL for the event, ensure it's absolute
@@ -392,6 +395,8 @@ export interface CenterDisplay {
   acharya: string
   latitude?: number
   longitude?: number
+  memberCount: number
+  isVerified: boolean
 }
 
 const SAMPLE_CENTER_DETAILS: Record<string, CenterDisplay> = {}
@@ -437,6 +442,8 @@ export function useCenterDetail(centerId: string) {
             acharya: apiCenter.acharya || '',
             latitude: apiCenter.latitude,
             longitude: apiCenter.longitude,
+            memberCount: apiCenter.memberCount ?? 0,
+            isVerified: apiCenter.isVerified ?? false,
           })
           setIsLive(true)
         }
@@ -591,7 +598,8 @@ function groupCenterItems(centers: DiscoverCenter[], userCenterID?: string | nul
     }
   }
 
-  // Sort: user's group first, then alphabetical, "Other" last
+  // Sort: user's group first, then US states alphabetically, then international
+  // (keys containing a comma, e.g. "Alberta, Canada"), then "Other" last.
   const sortedKeys = [...groups.keys()].sort((a, b) => {
     if (userGroupKey) {
       if (a === userGroupKey) return -1
@@ -599,6 +607,9 @@ function groupCenterItems(centers: DiscoverCenter[], userCenterID?: string | nul
     }
     if (a === 'Other') return 1
     if (b === 'Other') return -1
+    const aIntl = a.includes(',')
+    const bIntl = b.includes(',')
+    if (aIntl !== bIntl) return aIntl ? 1 : -1
     return a.localeCompare(b)
   })
 

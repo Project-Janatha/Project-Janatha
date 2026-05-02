@@ -43,6 +43,13 @@ export interface MapProps {
    * including re-selecting the same place.
    */
   flyTo?: { latitude: number; longitude: number; key: number } | null
+  /**
+   * After the next fly-to settles, simulate a click on the matching marker so
+   * the popover opens for THIS specific point. Necessary when several events
+   * share a center's coordinates and the visible top marker may not be the
+   * one the user picked from the list. `key` must change to retrigger.
+   */
+  autoOpenPoint?: { id: string; type: 'center' | 'event'; key: number } | null
 }
 
 // Default center - San Francisco Bay Area
@@ -189,6 +196,7 @@ const MapComponent = memo<MapProps>(
     showUserLocation = false,
     userCenterID,
     flyTo,
+    autoOpenPoint,
   }) => {
     const { isDark } = useTheme()
     const mapRef = useRef<MapRef>(null)
@@ -207,6 +215,10 @@ const MapComponent = memo<MapProps>(
       zoom: initialZoom,
     })
 
+    // Once we've moved away from the default, lock further auto-moves so the
+    // home-center / fit-all effect below doesn't overwrite a granted GPS fix.
+    const animatedToTargetRef = useRef(false)
+
     useEffect(() => {
       const storedLocation = localStorage.getItem('userLocation')
       if (storedLocation) {
@@ -216,6 +228,7 @@ const MapComponent = memo<MapProps>(
           const isOldDefault = Math.abs(latitude - 32.1765) < 0.01 && Math.abs(longitude - 76.3595) < 0.01
           if (latitude && longitude && !isOldDefault) {
             setViewState({ latitude, longitude, zoom: initialZoom })
+            animatedToTargetRef.current = true
             return
           }
           if (isOldDefault) localStorage.removeItem('userLocation')
@@ -232,8 +245,9 @@ const MapComponent = memo<MapProps>(
             longitude: homeCenter.longitude,
             zoom: initialZoom,
           })
+          animatedToTargetRef.current = true
         }
-        // Otherwise keep the existing default viewState
+        // Otherwise let the points-loaded effect below handle fit-all / retry.
       }
 
       getCurrentPosition().then((coords) => {
@@ -242,13 +256,53 @@ const MapComponent = memo<MapProps>(
           if (isValidCoordinate(latitude, longitude)) {
             setViewState({ latitude, longitude, zoom: initialZoom })
             localStorage.setItem('userLocation', JSON.stringify({ latitude, longitude }))
+            animatedToTargetRef.current = true
             return
           }
         }
-        // Location unavailable or denied — fall back to user's home center
+        // Location unavailable or denied — fall back to user's home center.
         fallbackToCenter()
       })
     }, [initialZoom, userCenterID])
+
+    // Fallback when GPS hasn't fired and points eventually load: fly to user's
+    // home center if known, otherwise frame all valid points. Solves the
+    // "always starts in SF" feedback for logged-out users and for logged-in
+    // users whose home center wasn't in `points` at mount time.
+    useEffect(() => {
+      if (animatedToTargetRef.current) return
+      if (points.length === 0) return
+
+      if (userCenterID) {
+        const homeCenter = points.find((p) => p.id === userCenterID && p.type === 'center')
+        if (homeCenter && isValidCoordinate(homeCenter.latitude, homeCenter.longitude)) {
+          animatedToTargetRef.current = true
+          mapRef.current?.flyTo({
+            center: [homeCenter.longitude, homeCenter.latitude],
+            zoom: initialZoom,
+            duration: 1200,
+          })
+        }
+        // If userCenterID is set but the center isn't in points yet, wait for
+        // the next points update — don't fall through to fit-all and risk
+        // overriding their home center later.
+        return
+      }
+
+      // Logged-out / no home center — frame all valid points
+      const valid = points.filter((p) => isValidCoordinate(p.latitude, p.longitude))
+      if (valid.length === 0) return
+      const lats = valid.map((p) => p.latitude)
+      const lngs = valid.map((p) => p.longitude)
+      animatedToTargetRef.current = true
+      mapRef.current?.fitBounds(
+        [
+          [Math.min(...lngs), Math.min(...lats)],
+          [Math.max(...lngs), Math.max(...lats)],
+        ],
+        { padding: 60, duration: 1200 }
+      )
+    }, [userCenterID, points, initialZoom])
 
     useEffect(() => {
       if (!flyTo) return
@@ -260,6 +314,59 @@ const MapComponent = memo<MapProps>(
         duration: 1200,
       })
     }, [flyTo?.key, flyTo?.latitude, flyTo?.longitude])
+
+    // After fly-to settles, programmatically open the popover for the
+    // requested point. Solves the "click event A in list, see event B's
+    // popup" overlap bug — the popup is keyed on the specific MapPoint id,
+    // not whichever marker happens to be on top.
+    useEffect(() => {
+      if (!autoOpenPoint) return
+      const map = mapRef.current
+      if (!map) return
+      const point = pointsRef.current.find(
+        (p) => p.id === autoOpenPoint.id && p.type === autoOpenPoint.type
+      )
+      if (!point) return
+
+      const fire = () => {
+        const m = mapRef.current
+        if (!m || !onPointClick) return
+        const projected = m.project([point.longitude, point.latitude])
+        const canvas = m.getCanvas()
+        const rect = canvas.getBoundingClientRect()
+        // Marker pin's tip sits ~8px above the projected coordinate.
+        const x = rect.left + projected.x
+        const y = rect.top + projected.y - 8
+        onPointClick(point, x, y)
+      }
+
+      // Wait for the fly-to animation to finish so the projected coords
+      // reflect the final viewport. moveend fires once when animation ends.
+      let cancelled = false
+      const onMoveEnd = () => {
+        if (cancelled) return
+        cancelled = true
+        map.off('moveend', onMoveEnd)
+        // One frame of breathing room so the marker DOM is in place.
+        requestAnimationFrame(fire)
+      }
+      map.on('moveend', onMoveEnd)
+
+      // Safety net: if no flyTo was scheduled (e.g. the point is already on
+      // screen), moveend won't fire — fire after a short delay.
+      const timer = setTimeout(() => {
+        if (cancelled) return
+        cancelled = true
+        map.off('moveend', onMoveEnd)
+        fire()
+      }, 1500)
+
+      return () => {
+        cancelled = true
+        map.off('moveend', onMoveEnd)
+        clearTimeout(timer)
+      }
+    }, [autoOpenPoint?.key, autoOpenPoint?.id, autoOpenPoint?.type, onPointClick])
 
     const handleMove = useCallback((evt: any) => {
       setViewState(evt.viewState)
