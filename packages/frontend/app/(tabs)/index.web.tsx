@@ -1265,6 +1265,10 @@ export default function DiscoverScreenWeb() {
         {formPanel ? (
           <EventFormPanel
             eventId={formPanel.id}
+            onSaved={(savedId) => {
+              setFormPanel(null)
+              setSelectedItem({ type: 'event', id: savedId })
+            }}
             onClose={() => {
               const editId = formPanel.id
               setFormPanel(null)
