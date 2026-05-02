@@ -854,6 +854,63 @@ describe('event routes', () => {
       })
       expect(res.status).toBe(401)
     })
+
+    it('persists externalUrl, signupUrl, allowJanataSignup', async () => {
+      const { body: addBody } = await jsonPost(
+        '/api/addEvent',
+        {
+          title: 'Event with external links',
+          date: '2025-06-01T10:00:00Z',
+          latitude: 37.0,
+          longitude: -121.0,
+          centerID: centerId,
+          externalUrl: 'https://chinmayamission.com/events/satsang',
+          signupUrl: 'https://eventbrite.com/e/12345',
+          allowJanataSignup: true,
+        },
+        authHeader(userToken)
+      )
+
+      const { body } = await jsonPost('/api/fetchEvent', { id: addBody.id })
+      expect(body.event.externalUrl).toBe('https://chinmayamission.com/events/satsang')
+      expect(body.event.signupUrl).toBe('https://eventbrite.com/e/12345')
+      expect(body.event.allowJanataSignup).toBe(true)
+    })
+
+    it('defaults allowJanataSignup to false when omitted', async () => {
+      const { body: addBody } = await jsonPost(
+        '/api/addEvent',
+        {
+          title: 'Event without explicit toggle',
+          date: '2025-06-01T10:00:00Z',
+          latitude: 37.0,
+          longitude: -121.0,
+          centerID: centerId,
+        },
+        authHeader(userToken)
+      )
+      const { body } = await jsonPost('/api/fetchEvent', { id: addBody.id })
+      expect(body.event.allowJanataSignup).toBe(false)
+      expect(body.event.externalUrl).toBeNull()
+      expect(body.event.signupUrl).toBeNull()
+    })
+
+    it('rejects oversized signupUrl (400)', async () => {
+      const tooLong = 'https://example.com/' + 'a'.repeat(2048)
+      const { res } = await jsonPost(
+        '/api/addEvent',
+        {
+          title: 'Long URL',
+          date: '2025-06-01T10:00:00Z',
+          latitude: 37.0,
+          longitude: -121.0,
+          centerID: centerId,
+          signupUrl: tooLong,
+        },
+        authHeader(userToken)
+      )
+      expect(res.status).toBe(400)
+    })
   })
 
   describe('POST /api/fetchEvent', () => {
