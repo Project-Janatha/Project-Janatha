@@ -680,6 +680,9 @@ export default function EventFormPanel({ eventId, onClose, onSaved }: EventFormP
                 value={allowJanataSignup}
                 onValueChange={setAllowJanataSignup}
                 trackColor={{ true: '#E8862A', false: colors.border }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor={colors.border}
+                activeThumbColor="#FFFFFF"
               />
             </View>
           ) : null}

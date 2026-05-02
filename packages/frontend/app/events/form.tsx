@@ -703,6 +703,8 @@ export default function EventFormPage() {
                 value={allowJanataSignup}
                 onValueChange={setAllowJanataSignup}
                 trackColor={{ true: '#E8862A', false: colors.border }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor={colors.border}
               />
             </View>
           ) : null}
