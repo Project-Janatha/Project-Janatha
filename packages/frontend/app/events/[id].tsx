@@ -270,22 +270,35 @@ function MetaSection({
 
   return (
     <View style={{ gap: 16 }}>
-      {/* Location */}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-        <MetaIcon icon={MapPin} color={iconColor} colors={colors} />
-        <View style={{ flex: 1, gap: 2, justifyContent: 'center' }}>
-          <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: colors.text }}>
-            {event.location}
-          </Text>
-          {event.address ? (
-            <Text
-              style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: colors.textSecondary }}
-            >
-              {event.address}
-            </Text>
-          ) : null}
-        </View>
-      </View>
+      {/* Location — when location and address are the same value (common
+          when the venue isn't named separately), split into "street" /
+          "city, state, zip" so the second line isn't a duplicate. */}
+      {(() => {
+        const loc = (event.location || '').trim()
+        const addr = (event.address || '').trim()
+        const dupe = loc && addr && loc === addr
+        const line1 = dupe ? splitStreet(addr) : loc
+        const line2 = dupe ? splitRest(addr) : addr
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+            <MetaIcon icon={MapPin} color={iconColor} colors={colors} />
+            <View style={{ flex: 1, gap: 2, justifyContent: 'center' }}>
+              {line1 ? (
+                <Text style={{ fontFamily: 'Inter-Medium', fontSize: 14, color: colors.text }}>
+                  {line1}
+                </Text>
+              ) : null}
+              {line2 ? (
+                <Text
+                  style={{ fontFamily: 'Inter-Regular', fontSize: 13, color: colors.textSecondary }}
+                >
+                  {line2}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        )
+      })()}
 
       {/* Attendees — hidden when external signup is exclusive (no native RSVP) */}
       {!(event.signupUrl && !event.allowJanataSignup) && (
@@ -373,6 +386,18 @@ function AttendedBanner({ count, colors }: { count: number; colors: DetailColors
 }
 
 // ── Action bar ───────────────────────────────────────────────────────────
+
+// Split an address like "129 Woodbury Rd, Woodbury, NY - 11797, US" into
+// the street segment ("129 Woodbury Rd") and the rest ("Woodbury, NY - 11797, US")
+// using the first comma as the boundary.
+function splitStreet(addr: string): string {
+  const i = addr.indexOf(',')
+  return i === -1 ? addr : addr.slice(0, i).trim()
+}
+function splitRest(addr: string): string {
+  const i = addr.indexOf(',')
+  return i === -1 ? '' : addr.slice(i + 1).trim()
+}
 
 function hostnameOf(url: string): string {
   try {

@@ -81,6 +81,10 @@ const Map = memo<MapProps>(function Map({
   const buttonBg = isDark ? '#171717' : '#ffffff'
   const iconColor = isDark ? '#fafafa' : '#1a1a1a'
 
+  // Track whether we've already moved away from the SF default. Once true,
+  // neither the GPS nor the home-center effect fires again.
+  const animatedOnceRef = useRef(false)
+
   // Async: try to get device location and fly to it
   useEffect(() => {
     let mounted = true
@@ -91,6 +95,7 @@ const Map = memo<MapProps>(function Map({
         const [longitude, latitude] = position
         if (!isValidCoord(latitude, longitude)) return
 
+        animatedOnceRef.current = true
         mapRef.current?.animateToRegion(
           { latitude, longitude, latitudeDelta: 0.1, longitudeDelta: 0.1 },
           500
@@ -100,6 +105,58 @@ const Map = memo<MapProps>(function Map({
 
     return () => { mounted = false }
   }, [])
+
+  // Fallback when GPS hasn't fired (denied, slow, or logged-out). Priorities:
+  //   1. user's home center if it's in `points`
+  //   2. otherwise fit a bounding box around all valid points
+  // Solves "always starts in SF" — the previous SF default only applied when
+  // both GPS and home-center lookups failed at mount.
+  useEffect(() => {
+    if (animatedOnceRef.current) return
+    if (points.length === 0) return
+
+    // Home center first (logged-in users with a center set)
+    if (userCenterID) {
+      const homeCenter = points.find((p) => p.id === userCenterID && p.type === 'center')
+      if (homeCenter && isValidCoord(homeCenter.latitude, homeCenter.longitude)) {
+        animatedOnceRef.current = true
+        mapRef.current?.animateToRegion(
+          {
+            latitude: homeCenter.latitude,
+            longitude: homeCenter.longitude,
+            latitudeDelta: 0.2,
+            longitudeDelta: 0.2,
+          },
+          500
+        )
+      }
+      // If user has a center but it's not in points yet, wait for the next
+      // points update rather than jumping to fit-all.
+      return
+    }
+
+    // Logged-out / no home center: frame all valid points
+    const valid = points.filter((p) => isValidCoord(p.latitude, p.longitude))
+    if (valid.length === 0) return
+    const lats = valid.map((p) => p.latitude)
+    const lngs = valid.map((p) => p.longitude)
+    const minLat = Math.min(...lats)
+    const maxLat = Math.max(...lats)
+    const minLng = Math.min(...lngs)
+    const maxLng = Math.max(...lngs)
+    const latDelta = Math.max(0.5, (maxLat - minLat) * 1.2)
+    const lngDelta = Math.max(0.5, (maxLng - minLng) * 1.2)
+    animatedOnceRef.current = true
+    mapRef.current?.animateToRegion(
+      {
+        latitude: (minLat + maxLat) / 2,
+        longitude: (minLng + maxLng) / 2,
+        latitudeDelta: latDelta,
+        longitudeDelta: lngDelta,
+      },
+      500
+    )
+  }, [userCenterID, points])
 
   const handleMarkerPress = useCallback(
     (point: MapPoint) => {

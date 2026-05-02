@@ -446,7 +446,7 @@ function CenterPanelInner({
 
 // ─── Mobile Discover (map + CSS bottom sheet) ──────────
 
-type SheetSnap = 'collapsed' | 'mid' | 'expanded'
+type SheetSnap = 'peek' | 'collapsed' | 'mid' | 'expanded'
 
 function MobileDiscoverFallback() {
   const router = useRouter()
@@ -482,13 +482,18 @@ function MobileDiscoverFallback() {
   const dragStartTranslate = useRef(0)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Sheet snap positions (percentage from top of container)
+  // Sheet snap positions matching iOS native (4 stops):
+  //   expanded  = 0          → 100% sheet visible (full)
+  //   mid       = h * 0.2    → ~80% sheet visible
+  //   collapsed = h * 0.6    → ~40% sheet visible
+  //   peek      = h - 100    → 100px sheet visible (handle + search)
   const getSnapPositions = useCallback(() => {
     const h = containerRef.current?.clientHeight || window.innerHeight
     return {
-      expanded: 0, // flush with the top of the container — full height
-      mid: h * 0.45, // sheet ~55% of viewport — between low peek and full
-      collapsed: h - 80, // 80px from bottom (just the handle + peek)
+      expanded: 0,
+      mid: h * 0.2,
+      collapsed: h * 0.6,
+      peek: Math.max(0, h - 100),
     }
   }, [])
 
@@ -517,7 +522,7 @@ function MobileDiscoverFallback() {
       const positions = getSnapPositions()
       const next = Math.max(
         positions.expanded,
-        Math.min(positions.collapsed, dragStartTranslate.current + dy)
+        Math.min(positions.peek, dragStartTranslate.current + dy)
       )
       setSheetTranslateY(next)
     },
@@ -528,25 +533,29 @@ function MobileDiscoverFallback() {
     (e: React.TouchEvent) => {
       if (sheetTranslateY === null) return
       const positions = getSnapPositions()
-      const velocity = e.changedTouches[0].clientY - dragStartY.current > 0 ? 1 : -1
+      const dragDy = e.changedTouches[0].clientY - dragStartY.current
 
-      // Snap to nearest position, biased by velocity
+      // Snap to nearest of 4 positions, biased by velocity
       let snapTo: SheetSnap
-      const distToExpanded = Math.abs(sheetTranslateY - positions.expanded)
-      const distToMid = Math.abs(sheetTranslateY - positions.mid)
-      const distToCollapsed = Math.abs(sheetTranslateY - positions.collapsed)
-
-      if (velocity > 0 && Math.abs(e.changedTouches[0].clientY - dragStartY.current) > 40) {
-        // Swiped down fast
-        snapTo = sheetSnap === 'expanded' ? 'mid' : 'collapsed'
-      } else if (velocity < 0 && Math.abs(e.changedTouches[0].clientY - dragStartY.current) > 40) {
-        // Swiped up fast
-        snapTo = sheetSnap === 'collapsed' ? 'mid' : 'expanded'
+      if (dragDy > 40) {
+        // Fast swipe down — go one stop down from current
+        if (sheetSnap === 'expanded') snapTo = 'mid'
+        else if (sheetSnap === 'mid') snapTo = 'collapsed'
+        else snapTo = 'peek'
+      } else if (dragDy < -40) {
+        // Fast swipe up — go one stop up from current
+        if (sheetSnap === 'peek') snapTo = 'collapsed'
+        else if (sheetSnap === 'collapsed') snapTo = 'mid'
+        else snapTo = 'expanded'
       } else {
-        // Position-based snap
-        const minDist = Math.min(distToExpanded, distToMid, distToCollapsed)
+        // Position-based snap to nearest
+        const dExp = Math.abs(sheetTranslateY - positions.expanded)
+        const dMid = Math.abs(sheetTranslateY - positions.mid)
+        const dCol = Math.abs(sheetTranslateY - positions.collapsed)
+        const dPeek = Math.abs(sheetTranslateY - positions.peek)
+        const minD = Math.min(dExp, dMid, dCol, dPeek)
         snapTo =
-          minDist === distToExpanded ? 'expanded' : minDist === distToMid ? 'mid' : 'collapsed'
+          minD === dExp ? 'expanded' : minD === dMid ? 'mid' : minD === dCol ? 'collapsed' : 'peek'
       }
 
       setSheetSnap(snapTo)
@@ -625,8 +634,12 @@ function MobileDiscoverFallback() {
     if (collapsedInitFor.current === 'Centers') return
     if (items.length === 0) return
     const labels = new Set<string>()
+    let isFirst = true
     for (const item of items) {
-      if (item.type === 'section') labels.add(item.data.label)
+      if (item.type === 'section') {
+        if (!isFirst) labels.add(item.data.label)
+        isFirst = false
+      }
     }
     setCollapsedSections(labels)
     collapsedInitFor.current = 'Centers'
@@ -869,14 +882,20 @@ function MobileDiscoverFallback() {
                   <Pressable
                     key={`section-${idx}`}
                     onPress={() => toggleSection(label)}
-                    className="bg-white dark:bg-neutral-900"
-                    style={{ paddingTop: idx > 0 ? 12 : 4, paddingBottom: 6 }}
+                    className={`bg-white dark:bg-neutral-900 ${idx > 0 ? 'border-t border-stone-200 dark:border-neutral-800' : ''}`}
                   >
-                    <View className="flex-row items-center gap-2 px-1">
-                      <Text className="text-xs font-inter-semibold text-stone-400 dark:text-stone-500 uppercase" style={{ letterSpacing: 0.5 }}>
+                    <View
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 14,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Text className="text-xs font-inter-semibold text-stone-500 dark:text-stone-400 uppercase" style={{ letterSpacing: 0.6 }}>
                         {label}
                       </Text>
-                      <View className="flex-1 h-px bg-stone-200 dark:bg-neutral-700" />
                       {isCollapsed ? <ChevronDown size={14} color="#a8a29e" /> : <ChevronUp size={14} color="#a8a29e" />}
                     </View>
                   </Pressable>
@@ -938,6 +957,8 @@ export default function DiscoverScreenWeb() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showGoingOnly, setShowGoingOnly] = useState(false)
   const [showPastEvents, setShowPastEvents] = useState(false)
+  const [selectedCenterDesktop, setSelectedCenterDesktop] = useState<string | null>(null)
+  const [showCenterModalDesktop, setShowCenterModalDesktop] = useState(false)
   const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'center'; id: string } | null>(
     null
   )
@@ -1043,11 +1064,44 @@ export default function DiscoverScreenWeb() {
   }, [allEvents, selectedDate, showPastEvents, activeFilter, searchQuery])
 
   const displayItems = useMemo(() => {
-    if (!selectedDate) return items
-    return items.filter(
-      (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
-    )
-  }, [items, selectedDate])
+    let result = items
+    if (selectedDate) {
+      result = result.filter(
+        (item) => item.type === 'event' && (item.data as EventDisplay).date === selectedDate
+      )
+    }
+    if (selectedCenterDesktop) {
+      result = result.filter((item) => {
+        if (item.type !== 'event') return true
+        return (item.data as EventDisplay).centerId === selectedCenterDesktop
+      })
+    }
+    return result
+  }, [items, selectedDate, selectedCenterDesktop])
+
+  // Filter chip helpers — counts over upcoming events
+  const todayStrDesktop = new Date().toISOString().split('T')[0]
+  const eventsForCountsDesktop = useMemo(
+    () => (showPastEvents ? allEvents : allEvents.filter((e) => !e.date || e.date >= todayStrDesktop)),
+    [allEvents, showPastEvents, todayStrDesktop]
+  )
+  const centerOptionsDesktop = useMemo<FilterPickerOption<string>[]>(() => {
+    const counts: Record<string, number> = {}
+    for (const e of eventsForCountsDesktop) {
+      if (e.centerId) counts[e.centerId] = (counts[e.centerId] ?? 0) + 1
+    }
+    return [...allCenters]
+      .map((c) => ({ value: c.id, label: c.name, sublabel: c.address, count: counts[c.id] ?? 0 }))
+      .filter((o) => (o.count ?? 0) > 0)
+      .sort((a, b) => {
+        if (user?.centerID && a.value === user.centerID) return -1
+        if (user?.centerID && b.value === user.centerID) return 1
+        return a.label.localeCompare(b.label)
+      })
+  }, [allCenters, eventsForCountsDesktop, user?.centerID])
+  const centerChipLabelDesktop = selectedCenterDesktop
+    ? centerOptionsDesktop.find((o) => o.value === selectedCenterDesktop)?.label ?? 'Center'
+    : 'Center'
 
   const handleFilterPress = useCallback((f: DiscoverFilter) => {
     setActiveFilter(f)
@@ -1254,9 +1308,23 @@ export default function DiscoverScreenWeb() {
               />
             </View>
 
-            {/* Filter chips */}
+            {/* Filter chips — Today / Center / Going (max 4) */}
             {activeFilter === 'Events' && (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 6, gap: 8 }}>
+                <FilterChip
+                  label="Today"
+                  variant="outline"
+                  active={selectedDate === todayStrDesktop}
+                  onPress={() =>
+                    setSelectedDate((prev) => (prev === todayStrDesktop ? null : todayStrDesktop))
+                  }
+                />
+                <FilterChip
+                  label={centerChipLabelDesktop}
+                  variant="outline"
+                  active={selectedCenterDesktop !== null}
+                  onPress={() => setShowCenterModalDesktop(true)}
+                />
                 {user && (
                   <FilterChip
                     label="Going"
@@ -1265,23 +1333,6 @@ export default function DiscoverScreenWeb() {
                     onPress={() => setShowGoingOnly((prev: boolean) => !prev)}
                   />
                 )}
-                <FilterChip
-                  label="Show past"
-                  variant="outline"
-                  active={showPastEvents}
-                  onPress={() => setShowPastEvents((prev: boolean) => !prev)}
-                />
-              </View>
-            )}
-
-            {/* Week Calendar — hidden when Centers filter or searching */}
-            {activeFilter === 'Events' && !searchQuery.trim() && (
-              <View style={{ paddingHorizontal: 20, paddingTop: 4 }}>
-                <WeekCalendar
-                  eventDates={eventDates}
-                  selectedDate={selectedDate}
-                  onSelectDate={setSelectedDate}
-                />
               </View>
             )}
 
@@ -1295,7 +1346,7 @@ export default function DiscoverScreenWeb() {
             {/* List */}
             <ScrollView
               className="flex-1"
-              contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, gap: 4 }}
+              contentContainerStyle={{ paddingHorizontal: 4, paddingTop: 12, paddingBottom: 24, gap: 4 }}
               showsVerticalScrollIndicator={false}
             >
               {!loading && activeFilter === 'Seva' && (
@@ -1345,6 +1396,16 @@ export default function DiscoverScreenWeb() {
           </View>
         )}
       </View>
+
+      <FilterPickerModal
+        visible={showCenterModalDesktop}
+        title="Center"
+        options={centerOptionsDesktop}
+        selected={selectedCenterDesktop}
+        onSelect={setSelectedCenterDesktop}
+        onClear={() => setSelectedCenterDesktop(null)}
+        onClose={() => setShowCenterModalDesktop(false)}
+      />
     </View>
   )
 }

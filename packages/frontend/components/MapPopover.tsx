@@ -97,13 +97,11 @@ export default function MapPopover({
           <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5 mb-3">
             <p>{eventDetail.time}</p>
             <p>{eventDetail.location}</p>
-            <p>{eventDetail.attendees} going</p>
           </div>
         )}
         {centerDetail && (
           <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5 mb-3">
             {centerDetail.address && <p>{centerDetail.address}</p>}
-            {centerDetail.memberCount != null && <p>{centerDetail.memberCount} members</p>}
             {centerDetail.eventCount != null && centerDetail.eventCount > 0 && (
               <p className="font-medium" style={{ color: accent }}>{centerDetail.eventCount} events this week</p>
             )}

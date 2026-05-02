@@ -319,32 +319,43 @@ function MetaSection({
 
   return (
     <View style={{ gap: 16 }}>
-      {/* Location row */}
-      <View className="flex-row" style={{ gap: 12, alignItems: 'flex-start' }}>
-        <MetaIcon icon={MapPin} color={iconColor} colors={colors} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text
-            style={{
-              fontFamily: 'Inter-Medium',
-              fontSize: 14,
-              color: colors.text,
-            }}
-          >
-            {event.location}
-          </Text>
-          {event.address && (
-            <Text
-              style={{
-                fontFamily: 'Inter-Regular',
-                fontSize: 13,
-                color: colors.textSecondary,
-              }}
-            >
-              {event.address}
-            </Text>
-          )}
-        </View>
-      </View>
+      {/* Location row — split duplicate address into street / city,state,zip */}
+      {(() => {
+        const loc = (event.location || '').trim()
+        const addr = (event.address || '').trim()
+        const dupe = loc && addr && loc === addr
+        const line1 = dupe ? splitStreet(addr) : loc
+        const line2 = dupe ? splitRest(addr) : addr
+        return (
+          <View className="flex-row" style={{ gap: 12, alignItems: 'flex-start' }}>
+            <MetaIcon icon={MapPin} color={iconColor} colors={colors} />
+            <View style={{ flex: 1, gap: 2 }}>
+              {line1 && (
+                <Text
+                  style={{
+                    fontFamily: 'Inter-Medium',
+                    fontSize: 14,
+                    color: colors.text,
+                  }}
+                >
+                  {line1}
+                </Text>
+              )}
+              {line2 && (
+                <Text
+                  style={{
+                    fontFamily: 'Inter-Regular',
+                    fontSize: 13,
+                    color: colors.textSecondary,
+                  }}
+                >
+                  {line2}
+                </Text>
+              )}
+            </View>
+          </View>
+        )
+      })()}
 
       {/* Attendees row — hidden when external signup is exclusive (no native
           RSVP allowed), since the on-Janata count would always be 0. */}
@@ -678,6 +689,15 @@ function RegisteredContent({
 // ---------------------------------------------------------------------------
 // Action bar (sticky bottom)
 // ---------------------------------------------------------------------------
+
+function splitStreet(addr: string): string {
+  const i = addr.indexOf(',')
+  return i === -1 ? addr : addr.slice(0, i).trim()
+}
+function splitRest(addr: string): string {
+  const i = addr.indexOf(',')
+  return i === -1 ? '' : addr.slice(i + 1).trim()
+}
 
 function hostnameOf(url: string): string {
   try {
